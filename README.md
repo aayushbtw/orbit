@@ -35,6 +35,7 @@ Defaults assume [Vite+](https://viteplus.dev) (`vp`, `vpr`). Projects that diffe
 | `/orbit:correct` | Turn a mistake into a lasting guard | A lint rule, test or doc line |
 | `gitops` | Commits and PRs | Sonnet. Claude hands git work to it on its own |
 | `reviewer` | Pre-merge review | Opus, read-only. Checks correctness, TypeScript, React, prose and slop |
+| `advisor` | Second opinion at key checkpoints | Opus, read-only. Consulted before a big decision, when stuck, and before calling a task done. Adapted from pstack's advisor |
 
 Commands are namespaced, so `/ship` is `/orbit:ship`.
 
