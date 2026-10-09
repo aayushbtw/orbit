@@ -61,6 +61,8 @@
       }
     }
   },
+  "disableClaudeAiConnectors": true,
+  "enableAllProjectMcpServers": false,
   "effortLevel": "medium",
   "modelSettings": {
     "claude-opus-5-5": {
