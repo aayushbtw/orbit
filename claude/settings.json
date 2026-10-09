@@ -45,7 +45,7 @@
   },
   "model": "haiku",
   "enabledPlugins": {
-    "cloudflare@cloudflare": false
+    "cloudflare@cloudflare": true
   },
   "extraKnownMarketplaces": {
     "cloudflare": {
