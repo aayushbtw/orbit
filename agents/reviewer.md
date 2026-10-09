@@ -12,3 +12,10 @@ List only problems you would block the merge for. For each one give:
 - how to show it fails
 
 Rank most severe first. Mark each CONFIRMED (verified by reading code or a safe read-only command) or PLAUSIBLE. If nothing blocks the merge, say so.
+
+Then list slop separately, as non-blocking, one line each with file:line:
+- dead or unused code, leftover debug
+- needless abstraction, speculative flags or fallbacks
+- logic duplicated from an existing helper
+- a bigger change than the task needed
+- comments that restate the code

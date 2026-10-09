@@ -37,6 +37,17 @@ Delegate commits and PR work (create, read, edit) to the `gitops` subagent. Use 
 2. Description: present tense imperative, no period, ≤50 chars: "add OAuth2 login flow", not "added OAuth2 login flow."
 3. Subject line only. Never add a body.
 
+# Code Quality
+
+1. Smallest change that works. Delete before adding.
+2. Match surrounding code. Reuse existing helpers before writing new ones.
+3. No speculative abstractions, flags or fallbacks for cases that can't happen.
+4. Handle errors at boundaries only (input, network, fs). Trust internal calls.
+5. Fix the cause, not the symptom. No workarounds without asking.
+6. Before saying done: run the project check and the relevant test. Check numbers against the real source.
+7. Read your own diff before committing: dead code, duplicates, leftover debug, comments that restate code.
+8. Small commits, each one verified.
+
 # Token Budget
 
 Every tool call re-sends the whole context, so the number of turns drives usage.

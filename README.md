@@ -26,6 +26,8 @@ Personal Claude Code setup: global rules, settings and slash commands. Tracked i
 
 - `/handoff`: write HANDOFF.md before `/clear` and a model switch.
 - `/resume`: load HANDOFF.md and show git status.
+- `/correct`: turn a mistake into a lint rule, test or doc line.
+- `/playbook`: standard flow for `bug`, `feature`, `perf` or `ship`.
 
 ## Agents
 
