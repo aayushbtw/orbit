@@ -1,8 +1,8 @@
 {
   "name": "orbit",
   "displayName": "Orbit",
-  "version": "0.1.0",
-  "description": "Shared Claude Code workflow: commands, agents, skills and working rules.",
+  "version": "0.2.0",
+  "description": "One workflow for every project: shared rules, a reviewer, commit and PR automation, and handoff commands.",
   "author": {
     "name": "Aayush",
     "url": "https://github.com/aayushbtw"

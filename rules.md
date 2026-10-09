@@ -13,7 +13,7 @@ Delegate commits and PR work (create, read, edit) to the `gitops` subagent (`orb
 
 # Files
 
-Never create `.md` files in a repo root. The root holds only README, AGENTS (or CLAUDE), DESIGN, LICENSE and CHANGELOG. Working notes (plans, tasks, handoffs) go in `.claude/`, permanent docs in `docs/`.
+Never create `.md` files in a repo root. The root holds only README, AGENTS (or CLAUDE), DESIGN, LICENSE and CHANGELOG. Handoffs and other working notes go in your auto memory directory, not the repo (`.claude/` is a protected path and prompts on every write). Permanent docs go in `docs/`.
 
 # Workflow Defaults
 

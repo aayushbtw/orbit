@@ -1,6 +1,14 @@
 # orbit
 
-Shared Claude Code plugin for the team: slash commands, subagents, skills and working rules.
+One workflow for every project. Orbit teaches Claude Code to build, review and ship the same way in every repo, without being told each time.
+
+It's a Claude Code plugin: shared working rules that load every session, a cheaper model that handles commits and PRs for you, an Opus reviewer that checks a change before it lands, and commands that carry work across sessions.
+
+```
+build  →  /orbit:ship  →  check  →  review  →  docs  →  commit or PR  →  next-task prompt
+                          your     Opus       one       Sonnet
+                          script   reviewer   line      gitops
+```
 
 ## Install
 
@@ -11,45 +19,48 @@ In Claude Code:
 /plugin install orbit@orbit
 ```
 
-Update with `/plugin`. Everything is namespaced under `orbit`, so `/ship` is `/orbit:ship` and the agents are `orbit:reviewer` and `orbit:gitops`.
+Update from `/plugin`. Your own `CLAUDE.md` and `settings.json` stay yours.
 
-The shared rules (`rules.md`) load into every session through a SessionStart hook. Your own `CLAUDE.md` and `settings.json` stay yours.
+Defaults assume [Vite+](https://viteplus.dev) (`vp`, `vpr`). Projects that differ say so in their own AGENTS.md, see [Make it fit a project](#make-it-fit-a-project).
 
-## Layout
+## What you get
 
-- `.claude-plugin/`: `plugin.json` (name, version) and `marketplace.json`.
-- `commands/`: slash commands.
-- `agents/`: subagents.
-- `skills/`: vendored skills. Sources and local edits are in `skills.json`.
-- `hooks/hooks.json`: prints `rules.md` at session start.
-- `rules.md`: shared rules: delegation, code quality, where files go, workflow defaults.
-- `templates/workflow-block.md`: the `## Workflow` block a project adds to its AGENTS.md.
-- `.claude/commands/update-skills.md`: maintainer command, available only inside this repo.
+| | | |
+| --- | --- | --- |
+| **Rules** | Delegation, code quality, where files go, workflow defaults | Loaded into every session by a hook, about 500 tokens |
+| `/orbit:ship` | Check, review, docs, then land | `main` by default, or a PR if the project says so |
+| `/orbit:handoff` | Save the session before `/clear` or a model switch | Writes the project's handoff note, outside the repo |
+| `/orbit:resume` | Pick the work back up | Reads the note and does the next step |
+| `/orbit:playbook` | A standard flow for `bug`, `feature` or `perf` | Reproduce first, smallest change, measure |
+| `/orbit:correct` | Turn a mistake into a lasting guard | A lint rule, test or doc line |
+| `gitops` | Commits and PRs | Sonnet. Claude hands git work to it on its own |
+| `reviewer` | Pre-merge review | Opus, read-only. Checks correctness, TypeScript, React, prose and slop |
 
-## Commands
+Commands are namespaced, so `/ship` is `/orbit:ship`.
 
-- `/orbit:handoff`: write `.claude/HANDOFF.md` before `/clear` and a model switch.
-- `/orbit:resume`: load `.claude/HANDOFF.md` and show git status.
-- `/orbit:correct`: turn a mistake into a lint rule, test or doc line.
-- `/orbit:playbook`: standard flow for `bug`, `feature` or `perf`.
-- `/orbit:ship`: check, review, docs, then land by the project's Land rule.
+## Make it fit a project
 
-## Agents
+Add a `## Workflow` block to the project's AGENTS.md. List only what differs from the defaults:
 
-- `gitops` (Sonnet): commits and PR create, read, edit. Claude delegates to it on its own.
-- `reviewer` (Opus): read-only pre-merge review.
+```md
+## Workflow
+
+- Check: `vpr check`, plus `vpr e2e` when the UI changed.
+- Land: `pr`
+- Review also checks: `docs/architecture.md`, and that no demo fakes a missing component.
+```
+
+`templates/workflow-block.md` has the template. The reviewer also reads any "Mistakes made before" list in the same file.
 
 ## Skills
 
-- From poteto/plugins (pstack, MIT): `typescript-best-practices`, read by `reviewer`, and `unslop`, which runs when writing docs, READMEs, PR descriptions and copy.
-- From vercel-labs/agent-skills (MIT): `vercel-react-best-practices` and `vercel-composition-patterns`, which `reviewer` reads on demand for React diffs.
+Vendored and reviewed, with their sources and local edits tracked in `skills.json`:
 
-To update them, open Claude Code in this repo and say "update skills" or run `/update-skills [name]`. `skills.json` pins each skill's upstream commit and lists the local edits to redo. To record a new local edit, add a line to that skill's `edits`. Bump `version` in `plugin.json` to release.
+- `typescript-best-practices` and `unslop`, from [poteto/plugins](https://github.com/poteto/plugins) (pstack, MIT). Preloaded by `reviewer`.
+- `vercel-react-best-practices` and `vercel-composition-patterns`, from [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) (MIT). The reviewer reads them for React diffs and may ask once to read the plugin folder. Allow `Read(~/.claude/plugins/**)` to skip the prompt.
 
-## Projects
+## Maintain
 
-Each project adds a `## Workflow` block to its AGENTS.md (template: `templates/workflow-block.md`) listing only what differs from the defaults in `rules.md`. Commands and agents read it for Check, Land and Review also checks.
-
-## Develop
-
-Test local changes without installing: `claude --plugin-dir ~/Projects/orbit`. Check the plugin with `claude plugin validate .`.
+- Develop without installing: `claude --plugin-dir ~/Projects/orbit`. Check with `claude plugin validate .`.
+- Update the vendored skills: open Claude Code in this repo and run `/update-skills [name]`. It compares each skill with upstream, reads the changes, redoes the local edits listed in `skills.json`, and bumps the version.
+- Release: bump `version` in `.claude-plugin/plugin.json`.
