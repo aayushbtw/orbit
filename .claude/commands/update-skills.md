@@ -12,7 +12,7 @@ For each skill in scope:
 5. **Replace and redo.** Replace the local folder with upstream `path` (symlinks dereferenced, `skip` files left out), then redo every item in `edits`, in order. If an edit no longer fits because the text moved or changed, leave that skill's local folder as it was and tell me what needs a decision.
 6. **Pin.** Set `sha` in skills.json to the new commit.
 
-After all skills: run `./install.sh` in orbit, then have gitops commit as `chore(skills): update <names>`. Report per skill: old sha to new sha, what changed, anything skipped. Touch nothing outside orbit.
+After all skills: bump the patch `version` in `.claude-plugin/plugin.json` so installs pick up the change, then have gitops commit as `chore(skills): update <names>`. Report per skill: old sha to new sha, what changed, anything skipped. Touch nothing outside orbit.
 
 To add a skill: copy it in, apply your changes, and add an entry to skills.json with `repo`, `path`, `sha` and `edits`.
 To record a new local edit: apply it, then add a line to that skill's `edits`.

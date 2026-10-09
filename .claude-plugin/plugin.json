@@ -1,0 +1,11 @@
+{
+  "name": "orbit",
+  "displayName": "Orbit",
+  "version": "0.1.0",
+  "description": "Shared Claude Code workflow: commands, agents, skills and working rules.",
+  "author": {
+    "name": "Aayush",
+    "url": "https://github.com/aayushbtw"
+  },
+  "repository": "https://github.com/aayushbtw/orbit"
+}

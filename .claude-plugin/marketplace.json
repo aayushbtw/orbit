@@ -1,0 +1,15 @@
+{
+  "name": "orbit",
+  "owner": {
+    "name": "Aayush",
+    "url": "https://github.com/aayushbtw"
+  },
+  "description": "Shared Claude Code workflow for the team.",
+  "plugins": [
+    {
+      "name": "orbit",
+      "source": ".",
+      "description": "Commands, agents, skills and working rules for the team."
+    }
+  ]
+}

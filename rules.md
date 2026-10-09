@@ -1,6 +1,6 @@
 # Delegation
 
-Delegate commits and PR work (create, read, edit) to the `gitops` subagent. Use the `reviewer` subagent for a pre-merge review, and the `Explore` agent for broad repo search.
+Delegate commits and PR work (create, read, edit) to the `gitops` subagent (`orbit:gitops`). Use the `reviewer` subagent (`orbit:reviewer`) for a pre-merge review, and the `Explore` agent for broad repo search.
 
 # Code Quality
 
