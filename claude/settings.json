@@ -61,6 +61,18 @@
       }
     }
   },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/aayush/Projects/orbit/usage/ledger.mjs"
+          }
+        ]
+      }
+    ]
+  },
   "disableClaudeAiConnectors": true,
   "enableAllProjectMcpServers": false,
   "effortLevel": "medium",
