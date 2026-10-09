@@ -7,7 +7,7 @@ Personal Claude Code setup: global rules, settings and slash commands. Tracked i
 - `claude/CLAUDE.md`, `claude/settings.json`: symlinked into `~/.claude/`.
 - `commands/`: slash commands, symlinked into `~/.claude/commands/`.
 - `agents/`: subagents, symlinked into `~/.claude/agents/`.
-- `skills/`: global skills, symlinked into `~/.claude/skills/`. `typescript-best-practices` is from poteto/plugins (pstack, MIT) and is loaded by `reviewer`.
+- `skills/`: global skills, symlinked into `~/.claude/skills/`. From poteto/plugins (pstack, MIT): `typescript-best-practices` is loaded by `reviewer`, and `unslop` runs when writing docs, READMEs, PR descriptions and copy.
 - `usage/`: token usage ledger and its SessionStart hook.
 - `install.sh`: creates the symlinks. Safe to rerun.
 
