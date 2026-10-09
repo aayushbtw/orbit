@@ -39,6 +39,10 @@ Delegate commits and PR work (create, read, edit) to the `gitops` subagent. Use 
 5. Fix the cause, not the symptom. No workarounds without asking.
 6. Before saying done: run the project check and the relevant test. Check numbers against the real source.
 
+# Files
+
+Never create `.md` files in a repo root. The root holds only README, AGENTS (or CLAUDE), DESIGN, LICENSE and CHANGELOG. Working notes (plans, tasks, handoffs) go in `.claude/`, permanent docs in `docs/`.
+
 # Workflow Defaults
 
 A project's `## Workflow` block in AGENTS.md lists only what differs from these:

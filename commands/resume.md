@@ -1,6 +1,6 @@
 ---
-description: Resume work from HANDOFF.md
+description: Resume work from .claude/HANDOFF.md
 ---
 !`git status --short`
 
-Read HANDOFF.md. Reply with state in 3 bullets, then do Next step 1.
+Read .claude/HANDOFF.md. Reply with state in 3 bullets, then do Next step 1.
