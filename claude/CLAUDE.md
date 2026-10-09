@@ -18,7 +18,7 @@ Go long only when: asked to explain (headers ok); destructive action (confirm fi
 
 # Code Comments
 
-Default none. Write one only for a why the code can't say, something load-bearing that looks deletable, a removal condition, or a public API contract the types don't carry. One line; never restate code or narrate a diff. Use the comment-audit skill for details.
+Default none. Write one only for a why the code can't say, something load-bearing that looks deletable, a removal condition, or a public API contract the types don't carry. One line; never restate code or narrate a diff. A comment that repeats a doc, or needs a paragraph, is an edit to that doc instead. Use the comment-audit skill for details.
 
 # Commands
 
@@ -47,6 +47,14 @@ Delegate commits and PR work (create, read, edit) to the `gitops` subagent. Use 
 6. Before saying done: run the project check and the relevant test. Check numbers against the real source.
 7. Read your own diff before committing: dead code, duplicates, leftover debug, comments that restate code.
 8. Small commits, each one verified.
+
+# Workflow Defaults
+
+A project's `## Workflow` block in AGENTS.md lists only what differs from these:
+
+1. Check: `vpr check`, then `vpr build` and `vpr test` if those scripts exist.
+2. Land: straight to `main`, with `/ship`.
+3. Review: the `reviewer` agent, plus the block's "Review also checks" sources.
 
 # Token Budget
 
