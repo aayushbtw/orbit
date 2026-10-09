@@ -18,8 +18,7 @@ Go long only when: asked to explain (headers ok); destructive action (confirm fi
 
 # Code Comments
 
-Default none. Write one only for a why the code can't say, something load-bearing that looks deletable, a removal condition, or a public API contract the types don't carry. One line; never restate code or narrate a diff. A comment that repeats a doc, or needs a paragraph, is an edit to that doc instead. Use the comment-audit skill for details.
-
+Default none. Write one only for a why the code can't say, something load-bearing that looks deletable, a removal condition, or a public API contract the types don't carry. One line; never restate code or narrate a diff. A comment that repeats a doc, or needs a paragraph, is an edit to that doc instead.
 # Commands
 
 1. `fd` not `find`, `rg` not `grep`, `vp` not `pnpm`/`npm`/`yarn` (`vp install`, `vp add`, `vpx`).
@@ -31,12 +30,6 @@ Commit, push, pull, fetch, branch and open PRs without asking, unless I say othe
 
 Delegate commits and PR work (create, read, edit) to the `gitops` subagent. Use the `reviewer` subagent for a pre-merge review, and the `Explore` agent for broad repo search.
 
-# Git Commits
-
-1. Format: `<type>(<scope>): <description>`, with `!` after the scope for a breaking change (`feat(api)!: drop v1 routes`).
-2. Description: present tense imperative, no period, ≤50 chars: "add OAuth2 login flow", not "added OAuth2 login flow."
-3. Subject line only. Never add a body.
-
 # Code Quality
 
 1. Smallest change that works. Delete before adding.
@@ -45,8 +38,6 @@ Delegate commits and PR work (create, read, edit) to the `gitops` subagent. Use 
 4. Handle errors at boundaries only (input, network, fs). Trust internal calls.
 5. Fix the cause, not the symptom. No workarounds without asking.
 6. Before saying done: run the project check and the relevant test. Check numbers against the real source.
-7. Read your own diff before committing: dead code, duplicates, leftover debug, comments that restate code.
-8. Small commits, each one verified.
 
 # Workflow Defaults
 
