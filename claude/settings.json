@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "cleanupPeriodDays": 400,
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(gh *)",
+      "Bash(pnpm *)",
+      "Bash(vp *)",
+      "Bash(vpr *)",
+      "Bash(vpx *)",
+      "Bash(fd *)",
+      "Bash(rg *)"
+    ],
+    "deny": [
+      "Read(./.env.prod)",
+      "Read(./build)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(yarn *)",
+      "Bash(git *push -f*)",
+      "Bash(git *push * -f*)",
+      "Bash(git *push *--force*)",
+      "Bash(git *reset *--hard*)",
+      "Bash(git *clean *)",
+      "Bash(git *checkout -- *)",
+      "Bash(git *restore .)",
+      "Bash(git *branch -D *)",
+      "Bash(git *stash drop*)",
+      "Bash(git *stash clear*)",
+      "Bash(git *filter-branch *)",
+      "Bash(git *update-ref -d *)",
+      "Bash(gh repo delete*)",
+      "Bash(gh repo archive*)",
+      "Bash(gh release delete*)",
+      "Bash(gh api *DELETE*)",
+      "Bash(rm -rf *)",
+      "Bash(rm -fr *)",
+      "Bash(sudo *)"
+    ]
+  },
+  "model": "haiku",
+  "enabledPlugins": {
+    "cloudflare@cloudflare": false
+  },
+  "extraKnownMarketplaces": {
+    "cloudflare": {
+      "source": {
+        "source": "github",
+        "repo": "cloudflare/skills"
+      }
+    },
+    "tanstack-ai": {
+      "source": {
+        "source": "github",
+        "repo": "TanStack/ai"
+      }
+    }
+  },
+  "effortLevel": "medium",
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "effortLevel": "medium"
+    }
+  },
+  "tui": "fullscreen",
+  "theme": "dark-daltonized",
+  "remoteControlAtStartup": false,
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true
+}

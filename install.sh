@@ -1,18 +1,24 @@
 #!/bin/sh
-# Symlink each command into ~/.claude/commands. Safe to rerun.
+# Symlink commands and global Claude config into ~/.claude. Safe to rerun.
 set -eu
 
-src="$(cd "$(dirname "$0")" && pwd)/commands"
-dst="$HOME/.claude/commands"
-mkdir -p "$dst"
+root="$(cd "$(dirname "$0")" && pwd)"
+dst="$HOME/.claude"
+mkdir -p "$dst/commands"
 
-for f in "$src"/*.md; do
-  name="$(basename "$f")"
-  target="$dst/$name"
+link() {
+  target="$2/$(basename "$1")"
   if [ -e "$target" ] && [ ! -L "$target" ]; then
-    echo "skip $name: real file exists at $target" >&2
-    continue
+    echo "skip $(basename "$1"): real file exists at $target" >&2
+    return
   fi
-  ln -sfn "$f" "$target"
-  echo "linked $name"
+  ln -sfn "$1" "$target"
+  echo "linked $(basename "$1")"
+}
+
+for f in "$root"/commands/*.md; do
+  link "$f" "$dst/commands"
 done
+
+link "$root/claude/CLAUDE.md" "$dst"
+link "$root/claude/settings.json" "$dst"

@@ -1,13 +1,12 @@
-# claude-kit
+# aystack
 
-Personal Claude Code commands and workflow rules. Tracked in git.
+Personal Claude Code setup: global rules, settings and slash commands. Tracked in git.
 
 ## Layout
 
-- `commands/`: slash commands. Symlinked into `~/.claude/commands/`.
+- `claude/CLAUDE.md`, `claude/settings.json`: symlinked into `~/.claude/`.
+- `commands/`: slash commands, symlinked into `~/.claude/commands/`.
 - `install.sh`: creates the symlinks. Safe to rerun.
-
-Not here: `CLAUDE.md` and `settings.json` live in `~/Projects/dotfiles/claude/`.
 
 ## Install
 
