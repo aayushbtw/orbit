@@ -1,4 +1,4 @@
-# aystack
+# orbit
 
 Personal Claude Code setup: global rules, settings and slash commands. Tracked in git.
 
