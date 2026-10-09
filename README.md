@@ -31,6 +31,10 @@ Personal Claude Code setup: global rules, settings and slash commands. Tracked i
 - `/playbook`: standard flow for `bug`, `feature` or `perf`.
 - `/ship`: check, review, docs, then land by the project's Land rule.
 
+## Updating vendored skills
+
+Say "update skills" or run `/update-skills [name]`. `skills.json` pins each skill's upstream commit and lists the local edits to redo after an update. To record a new local edit, add a line to that skill's `edits`.
+
 ## Projects
 
 Each project adds a `## Workflow` block to its AGENTS.md (template: `templates/workflow-block.md`). Commands and agents read it for Check, Land and Review also checks.

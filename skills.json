@@ -1,0 +1,39 @@
+{
+  "typescript-best-practices": {
+    "repo": "poteto/plugins",
+    "path": "pstack/skills/typescript-best-practices",
+    "sha": "74dd2291e8e37b12fd6dc49b2acbd655c6bdaf12",
+    "edits": [
+      "Set the frontmatter description to: TypeScript rules for code review. Loaded by the reviewer agent when a diff touches .ts or .tsx files.",
+      "Under the H1 of SKILL.md, replace the line that applies the type-system-discipline skill with: Source: poteto/plugins, pstack (MIT).",
+      "Remove every reference to the type-system-discipline and boundary-discipline skills (they are not vendored), in SKILL.md and references/patterns.md."
+    ]
+  },
+  "unslop": {
+    "repo": "poteto/plugins",
+    "path": "pstack/skills/unslop",
+    "sha": "74dd2291e8e37b12fd6dc49b2acbd655c6bdaf12",
+    "edits": [
+      "Set the frontmatter description to: Cut AI tells from written content: docs pages, READMEs, PR descriptions, blog and site copy. Not for chat replies or code.",
+      "Add the line `Source: poteto/plugins, pstack (MIT).` under the H1."
+    ]
+  },
+  "vercel-react-best-practices": {
+    "repo": "vercel-labs/agent-skills",
+    "path": "skills/react-best-practices",
+    "sha": "063bee94c3f4df8453406c830b0a7df0f2860278",
+    "skip": ["metadata.json"],
+    "edits": [
+      "Set the frontmatter description to: React and Next.js performance rules from Vercel Engineering, for code review. Read by the reviewer agent when a diff touches React components, hooks or data fetching."
+    ]
+  },
+  "vercel-composition-patterns": {
+    "repo": "vercel-labs/agent-skills",
+    "path": "skills/composition-patterns",
+    "sha": "063bee94c3f4df8453406c830b0a7df0f2860278",
+    "skip": ["metadata.json"],
+    "edits": [
+      "Set the frontmatter description to one line: React composition rules from Vercel, for code review. Read by the reviewer agent when a diff touches React components, context providers or hooks."
+    ]
+  }
+}
