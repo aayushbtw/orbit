@@ -25,5 +25,10 @@ for f in "$root"/agents/*.md; do
   link "$f" "$dst/agents"
 done
 
+mkdir -p "$dst/skills"
+for d in "$root"/skills/*/; do
+  link "${d%/}" "$dst/skills"
+done
+
 link "$root/claude/CLAUDE.md" "$dst"
 link "$root/claude/settings.json" "$dst"
