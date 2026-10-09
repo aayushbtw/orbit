@@ -43,7 +43,7 @@
       "Bash(sudo *)"
     ]
   },
-  "model": "haiku",
+  "model": "opus",
   "enabledPlugins": {
     "cloudflare@cloudflare": true
   },

@@ -6,6 +6,8 @@ Personal Claude Code setup: global rules, settings and slash commands. Tracked i
 
 - `claude/CLAUDE.md`, `claude/settings.json`: symlinked into `~/.claude/`.
 - `commands/`: slash commands, symlinked into `~/.claude/commands/`.
+- `agents/`: subagents, symlinked into `~/.claude/agents/`.
+- `usage/`: token usage ledger and its SessionStart hook.
 - `install.sh`: creates the symlinks. Safe to rerun.
 
 ## Install
@@ -24,4 +26,9 @@ Personal Claude Code setup: global rules, settings and slash commands. Tracked i
 
 - `/handoff`: write HANDOFF.md before `/clear` and a model switch.
 - `/resume`: load HANDOFF.md and show git status.
-- `/commit`: commit with the `type(scope): desc` subject format.
+
+## Agents
+
+- `gitops` (Sonnet): commits and PR create, read, edit. Claude delegates to it on its own.
+- `reviewer` (Opus): read-only pre-merge review.
+- Main thread runs on Opus for coding and merge conflicts.

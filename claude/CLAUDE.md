@@ -29,6 +29,8 @@ Default none. Write one only for a why the code can't say, something load-bearin
 
 Commit, push, pull, fetch, branch and open PRs without asking, unless I say otherwise. Confirm anything that deletes or rewrites history.
 
+Delegate commits and PR work (create, read, edit) to the `gitops` subagent. Use the `reviewer` subagent for a pre-merge review, and the `Explore` agent for broad repo search.
+
 # Git Commits
 
 1. Format: `<type>(<scope>): <description>`, with `!` after the scope for a breaking change (`feat(api)!: drop v1 routes`).

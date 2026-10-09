@@ -4,7 +4,7 @@ set -eu
 
 root="$(cd "$(dirname "$0")" && pwd)"
 dst="$HOME/.claude"
-mkdir -p "$dst/commands"
+mkdir -p "$dst/commands" "$dst/agents"
 ln -sfn "$root" "$dst/orbit"
 
 link() {
@@ -19,6 +19,10 @@ link() {
 
 for f in "$root"/commands/*.md; do
   link "$f" "$dst/commands"
+done
+
+for f in "$root"/agents/*.md; do
+  link "$f" "$dst/agents"
 done
 
 link "$root/claude/CLAUDE.md" "$dst"
