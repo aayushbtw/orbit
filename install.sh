@@ -5,6 +5,7 @@ set -eu
 root="$(cd "$(dirname "$0")" && pwd)"
 dst="$HOME/.claude"
 mkdir -p "$dst/commands"
+ln -sfn "$root" "$dst/orbit"
 
 link() {
   target="$2/$(basename "$1")"

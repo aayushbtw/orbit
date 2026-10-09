@@ -67,7 +67,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /Users/aayush/Projects/orbit/usage/ledger.mjs"
+            "command": "sh \"$HOME/.claude/orbit/usage/hook.sh\""
           }
         ]
       }

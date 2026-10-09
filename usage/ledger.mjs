@@ -1,5 +1,5 @@
 // Appends new Claude Code request usage to ledger.jsonl before transcripts are cleaned up.
-import { appendFile, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { appendFile, readdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,8 +30,20 @@ async function readOr(path, fallback) {
   }
 }
 
+// Subagent transcripts live in <session>/subagents/, so they count toward their parent session.
+function sessionOf(file) {
+  const parts = file.split("/");
+  const at = parts.indexOf("subagents");
+  return at > 0 ? parts[at - 1] : basename(file, ".jsonl");
+}
+
 function git(args) {
-  return execFileSync("git", args, { cwd: join(here, ".."), encoding: "utf8" }).trim();
+  return execFileSync("git", args, {
+    cwd: join(here, ".."),
+    encoding: "utf8",
+    timeout: 5000,
+    stdio: ["ignore", "pipe", "ignore"],
+  }).trim();
 }
 
 function commitIfWeekOld() {
@@ -49,22 +61,39 @@ function commitIfWeekOld() {
 async function main() {
   const seen = new Set();
   for (const raw of (await readOr(LEDGER, "")).split("\n")) {
-    if (raw) {
-      seen.add(JSON.parse(raw).id);
+    try {
+      if (raw) {
+        seen.add(JSON.parse(raw).id);
+      }
+    } catch {
+      // A torn line must not stop capture; its request is re-read if its file changed.
     }
   }
-  const state = JSON.parse(await readOr(STATE, "{}"));
+  let state = {};
+  try {
+    state = JSON.parse(await readOr(STATE, "{}"));
+  } catch {
+    state = {};
+  }
   const nextState = {};
   const added = [];
 
   for await (const file of walk(ROOT)) {
-    const { mtimeMs } = await stat(file);
-    nextState[file] = mtimeMs;
-    if (state[file] === mtimeMs) {
-      continue;
+    let mtimeMs;
+    let text;
+    try {
+      ({ mtimeMs } = await stat(file));
+      if (state[file] === mtimeMs) {
+        nextState[file] = mtimeMs;
+        continue;
+      }
+      text = await readFile(file, "utf8");
+    } catch {
+      continue; // deleted mid-run by transcript cleanup
     }
-    const session = basename(file, ".jsonl");
-    for (const raw of (await readFile(file, "utf8")).split("\n")) {
+    nextState[file] = mtimeMs;
+    const session = sessionOf(file);
+    for (const raw of text.split("\n")) {
       if (!raw) {
         continue;
       }
@@ -100,9 +129,17 @@ async function main() {
 
   if (added.length) {
     await appendFile(LEDGER, added.map((row) => `${JSON.stringify(row)}\n`).join(""));
-    commitIfWeekOld();
   }
-  await writeFile(STATE, JSON.stringify(nextState));
+  await writeFile(`${STATE}.tmp`, JSON.stringify(nextState));
+  await rename(`${STATE}.tmp`, STATE);
+
+  if (added.length) {
+    try {
+      commitIfWeekOld();
+    } catch {
+      // A failed commit leaves the rows in the working tree; the next week's run retries.
+    }
+  }
 }
 
 main().catch((error) => {
