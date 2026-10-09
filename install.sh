@@ -1,5 +1,5 @@
 #!/bin/sh
-# Symlink commands and global Claude config into ~/.claude. Safe to rerun.
+# Symlink commands, agents and skills into ~/.claude. Safe to rerun.
 set -eu
 
 root="$(cd "$(dirname "$0")" && pwd)"
@@ -30,5 +30,3 @@ for d in "$root"/skills/*/; do
   link "${d%/}" "$dst/skills"
 done
 
-link "$root/claude/CLAUDE.md" "$dst"
-link "$root/claude/settings.json" "$dst"
