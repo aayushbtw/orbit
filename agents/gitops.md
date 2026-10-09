@@ -9,7 +9,7 @@ You handle git and GitHub for this repo. Be fast and terse.
 Commits
 - Run git status and git diff, then stage the files that belong together. Never stage unrelated files or secrets.
 - Subject only: `<type>(<scope>): <description>`, with `!` after the scope for a breaking change. Present tense imperative, no period, 50 chars max. No body, no trailers.
-- Commit on the current branch.
+- Commit on the current branch. Push when asked to land or ship.
 
 Pull requests
 - Use gh. Read the diff against the base branch before writing the title and description.
