@@ -12,4 +12,4 @@ Read the project's AGENTS.md (or CLAUDE.md) Workflow block for what differs from
 4. **Land**, by the Land line:
    - `main`: gitops commits one concern per commit, then pushes.
    - `pr`: gitops commits on a branch and opens the PR titled like a commit. If there is anything to test by hand, give numbered steps and wait for my go. Then gitops merges.
-5. **Hand off.** End with a paste-ready prompt in a code block for the next task: what is done, what is next, decisions not yet in docs. Don't start it.
+5. **Hand off.** If the project has a `handoff.md` memory, rewrite it in the `/orbit:handoff` format to match main after this change. Patching one line leaves stale Next steps. End with a paste-ready prompt in a code block for the next task: what is done, what is next, decisions not yet in docs. Don't start it.
