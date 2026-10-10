@@ -17,23 +17,23 @@ The rules load on their own at the start of every session. Update from `/plugin`
 
 ## Use it
 
-Ask for what you want as usual. Orbit adds these commands:
-
-| Type | When | What happens |
-| --- | --- | --- |
-| `/orbit:ship` | The change is ready | Runs the checks, gets a review, updates docs, then commits to `main` or opens a PR |
-| `/orbit:playbook bug` | Starting a task | Follows a short standard flow. Also `feature`, `refactor`, `perf` |
-| `/orbit:correct <mistake>` | Claude got something wrong again | Removes the cause, or adds a lint rule, test or doc line, so it can't happen again |
-| `/orbit:handoff` | Stopping mid-task, or switching model | Saves where you are, outside the repo |
-| `/orbit:pickup` | Starting the next session | Reads the handoff and does the next step |
-| `/orbit:verify-skill create` | Once per project | Builds a skill that lets Claude run your app and show proof a change works |
-
-A typical day:
+Start every task with `/orbit:start` and say what you want:
 
 ```
-fix the login redirect bug          ← or: /orbit:playbook bug fix the login redirect
-/orbit:ship
-/clear                              ← next task
+/orbit:start fix the login redirect bug
+```
+
+Orbit picks the flow, writes its steps as a todo list, and works through them. A step can only be skipped in plain sight (`skip: <reason>`).
+
+### The flow
+
+```
+/orbit:start <goal>
+  1. Pick the flow      bug, feature, refactor or perf
+  2. Plan gate          big change? the advisor reviews the plan first
+  3. Build              smallest change, bugs get a failing repro first
+  4. /orbit:ship        checks, proof it works, reviewer, docs, commit or PR
+  5. Next: line         /clear and start the next task
 ```
 
 Stopping before it's done:
@@ -43,6 +43,18 @@ Stopping before it's done:
 /clear
 /orbit:pickup
 ```
+
+### Commands
+
+| Type | When | What happens |
+| --- | --- | --- |
+| `/orbit:start <goal>` | Starting any task | Picks the flow, lists the steps, runs them |
+| `/orbit:ship` | The change is ready (`start` ends with it) | Runs the checks, gets a review, updates docs, then commits to `main` or opens a PR |
+| `/orbit:playbook <type>` | You want to pick the flow yourself | Same flows as `start`: `bug`, `feature`, `refactor`, `perf` |
+| `/orbit:correct <mistake>` | Claude got something wrong again | Removes the cause, or adds a lint rule, test or doc line, so it can't happen again |
+| `/orbit:handoff` | Stopping mid-task, or switching model | Saves where you are, outside the repo |
+| `/orbit:pickup` | Starting the next session | Reads the handoff and does the next step |
+| `/orbit:verify-skill create` | Once per project | Builds a skill that lets Claude run your app and show proof a change works |
 
 Each command also works as `/orbit:<name>`. Use that form if another plugin has a command with the same name.
 

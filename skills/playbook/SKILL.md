@@ -5,7 +5,11 @@ argument-hint: bug | feature | refactor | perf
 ---
 Task type: $ARGUMENTS
 
-Follow only the matching section. Check and Land come from the Workflow block in the project's AGENTS.md (or CLAUDE.md). To land a change, run /orbit:ship.
+Follow only the matching section. Check and Land come from the Workflow block in the project's AGENTS.md (or CLAUDE.md).
+
+Every section has two gates:
+- **Plan gate**, before editing: if the change adds a module or touches more than 3 files, brief the `advisor` with the plan and act on its verdict.
+- **Land gate**, the last step: run /orbit:ship. It checks, runs the `reviewer` and lands. A change never lands without it.
 
 ## bug
 1. Reproduce it. Write a failing test or exact command first.
