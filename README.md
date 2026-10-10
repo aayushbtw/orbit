@@ -2,7 +2,7 @@
 
 One workflow for every project. Orbit teaches Claude Code to build, check, review and ship the same way in every repo, so you don't repeat yourself each session.
 
-Much of it comes from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto): the reviewer's filters, the playbooks, `/correct`, verification skills, and the `unslop` and `typescript-best-practices` skills. Orbit keeps the ideas and stays small enough to read in one sitting.
+Much of it comes from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto): the reviewer's filters, the playbooks, `/orbit:correct`, verification skills, and the `unslop` and `typescript-best-practices` skills. Orbit keeps the ideas and stays small enough to read in one sitting.
 
 ## Install
 
@@ -21,41 +21,41 @@ Ask for what you want as usual. Orbit adds these commands:
 
 | Type | When | What happens |
 | --- | --- | --- |
-| `/ship` | The change is ready | Runs the checks, gets a review, updates docs, then commits to `main` or opens a PR |
-| `/playbook bug` | Starting a task | Follows a short standard flow. Also `feature`, `refactor`, `perf` |
-| `/correct <mistake>` | Claude got something wrong again | Removes the cause, or adds a lint rule, test or doc line, so it can't happen again |
-| `/handoff` | Stopping mid-task, or switching model | Saves where you are, outside the repo |
-| `/pickup` | Starting the next session | Reads the handoff and does the next step |
-| `/verify-skill create` | Once per project | Builds a skill that lets Claude run your app and show proof a change works |
+| `/orbit:ship` | The change is ready | Runs the checks, gets a review, updates docs, then commits to `main` or opens a PR |
+| `/orbit:playbook bug` | Starting a task | Follows a short standard flow. Also `feature`, `refactor`, `perf` |
+| `/orbit:correct <mistake>` | Claude got something wrong again | Removes the cause, or adds a lint rule, test or doc line, so it can't happen again |
+| `/orbit:handoff` | Stopping mid-task, or switching model | Saves where you are, outside the repo |
+| `/orbit:pickup` | Starting the next session | Reads the handoff and does the next step |
+| `/orbit:verify-skill create` | Once per project | Builds a skill that lets Claude run your app and show proof a change works |
 
 A typical day:
 
 ```
-fix the login redirect bug          ← or: /playbook bug fix the login redirect
-/ship
+fix the login redirect bug          ← or: /orbit:playbook bug fix the login redirect
+/orbit:ship
 /clear                              ← next task
 ```
 
 Stopping before it's done:
 
 ```
-/handoff
+/orbit:handoff
 /clear
-/pickup
+/orbit:pickup
 ```
 
 Each command also works as `/orbit:<name>`. Use that form if another plugin has a command with the same name.
 
 ## Let Claude prove its work
 
-Tests passing isn't the same as the feature working. Run `/verify-skill create` once in a project. Claude reads the repo and writes `.claude/skills/verify-<project>/`:
+Tests passing isn't the same as the feature working. Run `/orbit:verify-skill create` once in a project. Claude reads the repo and writes `.claude/skills/verify-<project>/`:
 
 - a small control script (`doctor`, start the app, drive it, save evidence, clean up), with JSON output and errors that say what to do next
 - a feature map: one file per feature, saying how a user reaches it, the exact commands to drive it, and what proves it worked
 
-Claude runs the new skill once end to end before handing it over. After that, `/ship` uses it on any change a user can see and reports where the evidence is.
+Claude runs the new skill once end to end before handing it over. After that, `/orbit:ship` uses it on any change a user can see and reports where the evidence is.
 
-When the app changes, run `/verify-skill maintain`. It drives every feature, fixes the skill and map where they drifted, and reports real bugs instead of hiding them.
+When the app changes, run `/orbit:verify-skill maintain`. It drives every feature, fixes the skill and map where they drifted, and reports real bugs instead of hiding them.
 
 ## What runs in the background
 

@@ -38,7 +38,7 @@ A verification skill lets an agent use the project the way a user does and captu
 
 Edit only the verification skill's folder. Never change product code here.
 
-1. Find `.claude/skills/verify-*/`. None: stop and say to run `/verify-skill create`.
+1. Find `.claude/skills/verify-*/`. None: stop and say to run `/orbit:verify-skill create`.
 2. Fix the index: missing, extra or dead feature entries.
 3. For each feature file, read the source it describes and note drift with `file:line`. Use parallel `Explore` agents when there are more than 3 features.
 4. Read commits since the skill last changed for user-facing features the map lacks.

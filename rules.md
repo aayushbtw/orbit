@@ -22,7 +22,7 @@ Never create `.md` files in a repo root. The root holds only README, AGENTS (or 
 When a task is done, end with one `Next:` line. It's a status line, not an offer. Any follow-up you know of counts as open, even if nothing is mid-edit; if you'd name it when asked "what's next?", it's open.
 
 - Nothing open → `Next: nothing pending; /clear for the next task.` No handoff needed.
-- Anything open → write the project's handoff note first (as `/handoff` does), then `Next: /clear, then /pickup`.
+- Anything open → write the project's handoff note first (as `/orbit:handoff` does), then `Next: /clear, then /orbit:pickup`.
 - Next task builds on this context → continue here: <task>.
 
 # Workflow Defaults
@@ -30,5 +30,5 @@ When a task is done, end with one `Next:` line. It's a status line, not an offer
 A project's `## Workflow` block in AGENTS.md lists only what differs from these:
 
 1. Check: `vpr check`, then `vpr build` and `vpr test` if those scripts exist. For a change a user can see, also the project's `verify-*` skill when it has one.
-2. Land: straight to `main`, with `/ship`.
+2. Land: straight to `main`, with `/orbit:ship`.
 3. Review: the `reviewer` agent, plus the block's "Review also checks" sources.

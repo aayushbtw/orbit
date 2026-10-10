@@ -10,6 +10,6 @@ Stop here. Overwrite the project's handoff note: the memory file `handoff.md` in
 - Open decisions
 - Next 3 steps
 
-Then tell me: run /clear, then /model <name>, then start the new session with /pickup.
+Then tell me: run /clear, then /model <name>, then start the new session with /orbit:pickup.
 
 Focus: $ARGUMENTS

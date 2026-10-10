@@ -5,7 +5,7 @@ argument-hint: bug | feature | refactor | perf
 ---
 Task type: $ARGUMENTS
 
-Follow only the matching section. Check and Land come from the Workflow block in the project's AGENTS.md (or CLAUDE.md). To land a change, run /ship.
+Follow only the matching section. Check and Land come from the Workflow block in the project's AGENTS.md (or CLAUDE.md). To land a change, run /orbit:ship.
 
 ## bug
 1. Reproduce it. Write a failing test or exact command first.
