@@ -6,4 +6,4 @@ List only what differs from the Workflow Defaults in orbit's rules; delete the l
 - Check: <only if not `vpr check` + build + test, eg `vpr e2e`, knip>.
 - Land: `pr` (default is `main`).
 - Before deploy: <steps>.
-- Review also checks: <docs, skills or library guides (eg `node_modules/effect/AGENTS.md`) read before planning and at review; scope with a path, eg `src/server/`>.
+- Review also checks: <docs or skills read before planning and at review; scope one to a path with `src/server/: <source>`>.
