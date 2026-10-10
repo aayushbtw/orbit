@@ -1,4 +1,5 @@
 ---
+name: playbook
 description: Run the standard flow for a task type
 argument-hint: bug | feature | perf
 ---

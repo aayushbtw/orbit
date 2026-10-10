@@ -22,7 +22,7 @@ Never create `.md` files in a repo root. The root holds only README, AGENTS (or 
 When a task is done, end with one `Next:` line. It's a status line, not an offer:
 
 - Nothing open → `/clear` for the next task. No handoff needed.
-- Work open but stopping → `/orbit:handoff`, then `/orbit:resume` in a new chat.
+- Work open but stopping → `/handoff`, then `/pickup` in a new chat.
 - Next task builds on this context → continue here: <task>.
 
 # Workflow Defaults

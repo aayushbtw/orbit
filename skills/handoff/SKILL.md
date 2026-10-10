@@ -1,4 +1,5 @@
 ---
+name: handoff
 description: Save session state to the project's handoff memory before clearing or switching model
 disable-model-invocation: true
 ---
@@ -9,6 +10,6 @@ Stop here. Overwrite the project's handoff note: the memory file `handoff.md` in
 - Open decisions
 - Next 3 steps
 
-Then tell me: run /clear, then /model <name>, then start the new session with /orbit:resume.
+Then tell me: run /clear, then /model <name>, then start the new session with /pickup.
 
 Focus: $ARGUMENTS

@@ -1,14 +1,6 @@
 # orbit
 
-One workflow for every project. Orbit teaches Claude Code to build, review and ship the same way in every repo, without being told each time.
-
-It's a Claude Code plugin: shared working rules that load every session, a cheaper model that handles commits and PRs for you, an Opus reviewer that checks a change before it lands, and commands that carry work across sessions.
-
-```
-build  →  /orbit:ship  →  check  →  review  →  docs  →  commit or PR  →  next-task prompt
-                          your     Opus       one       Sonnet
-                          script   reviewer   line      gitops
-```
+One workflow for every project. Orbit teaches Claude Code to build, review and ship the same way in every repo, so you don't repeat yourself each session.
 
 ## Install
 
@@ -19,49 +11,65 @@ In Claude Code:
 /plugin install orbit@orbit
 ```
 
-Update from `/plugin`. Your own `CLAUDE.md` and `settings.json` stay yours.
+The rules load on their own at the start of every session. Update from `/plugin`. Your own `CLAUDE.md` and `settings.json` stay yours.
 
-Defaults assume [Vite+](https://viteplus.dev) (`vp`, `vpr`). Projects that differ say so in their own AGENTS.md, see [Make it fit a project](#make-it-fit-a-project).
+## Use it
 
-## What you get
+Ask for what you want as usual. Orbit adds five commands:
 
-| | | |
+| Type | When | What happens |
 | --- | --- | --- |
-| **Rules** | Delegation, code quality, where files go, workflow defaults | Loaded into every session by a hook, about 500 tokens |
-| `/orbit:ship` | Check, review, docs, then land | `main` by default, or a PR if the project says so |
-| `/orbit:handoff` | Save the session before `/clear` or a model switch | Writes the project's handoff note, outside the repo |
-| `/orbit:resume` | Pick the work back up | Reads the note and does the next step |
-| `/orbit:playbook` | A standard flow for `bug`, `feature` or `perf` | Reproduce first, smallest change, measure |
-| `/orbit:correct` | Turn a mistake into a lasting guard | A lint rule, test or doc line |
-| `gitops` | Commits and PRs | Sonnet. Claude hands git work to it on its own |
-| `reviewer` | Pre-merge review | Opus, read-only. Checks correctness, TypeScript, React, prose and slop |
-| `advisor` | Second opinion at key checkpoints | Opus, read-only. Consulted before a big decision, when stuck, and before calling a task done. Adapted from pstack's advisor |
+| `/ship` | The change is ready | Runs the checks, gets a review, updates docs, then commits to `main` or opens a PR |
+| `/playbook bug` | Starting a task | Follows a short standard flow. Also `feature`, `refactor`, `perf` |
+| `/correct <mistake>` | Claude got something wrong again | Removes the cause, or adds a lint rule, test or doc line, so it can't happen again |
+| `/handoff` | Stopping mid-task, or switching model | Saves where you are, outside the repo |
+| `/pickup` | Starting the next session | Reads the handoff and does the next step |
 
-Commands are namespaced, so `/ship` is `/orbit:ship`.
+A typical day:
+
+```
+fix the login redirect bug          ← or: /playbook bug fix the login redirect
+/ship
+/clear                              ← next task
+```
+
+Stopping before it's done:
+
+```
+/handoff
+/clear
+/pickup
+```
+
+Each command also works as `/orbit:<name>`. Use that form if another plugin has a command with the same name.
+
+## What runs in the background
+
+Claude hands work to these agents itself. You don't call them.
+
+- **gitops** (Sonnet): commits and PRs.
+- **reviewer** (Opus, read-only): checks the change before it lands. Looks for bugs, TypeScript and React problems, AI-sounding prose, and slop.
+- **advisor** (Opus, read-only): a second opinion before a big decision, when Claude is stuck, and before it calls a task done.
 
 ## Make it fit a project
 
-Add a `## Workflow` block to the project's AGENTS.md. List only what differs from the defaults:
+Defaults assume [Vite+](https://viteplus.dev). `vpr check` must pass, plus `vpr build` and `vpr test` if those scripts exist. Changes land straight on `main`.
+
+If a project differs, add a `## Workflow` block to its AGENTS.md. List only what's different:
 
 ```md
 ## Workflow
 
 - Check: `vpr check`, plus `vpr e2e` when the UI changed.
 - Land: `pr`
-- Review also checks: `docs/architecture.md`, and that no demo fakes a missing component.
+- Review also checks: `docs/architecture.md`.
 ```
 
 `templates/workflow-block.md` has the template. The reviewer also reads any "Mistakes made before" list in the same file.
 
-## Skills
-
-Vendored and reviewed, with their sources and local edits tracked in `skills.json`:
-
-- `typescript-best-practices` and `unslop`, from [poteto/plugins](https://github.com/poteto/plugins) (pstack, MIT). Preloaded by `reviewer`.
-- `vercel-react-best-practices` and `vercel-composition-patterns`, from [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) (MIT). The reviewer reads them for React diffs and may ask once to read the plugin folder. Allow `Read(~/.claude/plugins/**)` to skip the prompt.
-
 ## Maintain
 
 - Develop without installing: `claude --plugin-dir ~/Projects/orbit`. Check with `claude plugin validate .`.
-- Update the vendored skills: open Claude Code in this repo and run `/update-skills [name]`. It compares each skill with upstream, reads the changes, redoes the local edits listed in `skills.json`, and bumps the version.
+- Vendored skills (`typescript-best-practices` and `unslop` from [pstack](https://github.com/cursor/plugins/tree/main/pstack), the two `vercel-*` skills from [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills), all MIT) are tracked in `skills.json`. Update them with `/update-skills [name]` from this repo.
+- The reviewer may ask once to read the plugin folder for the React rules. Allow `Read(~/.claude/plugins/**)` to skip the prompt.
 - Release: bump `version` in `.claude-plugin/plugin.json`.

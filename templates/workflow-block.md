@@ -1,5 +1,5 @@
 Paste into the project's AGENTS.md. Do not create a CLAUDE.md.
-List only what differs from the Workflow Defaults in the global CLAUDE.md; delete the lines that don't apply, or the whole block.
+List only what differs from the Workflow Defaults in orbit's rules; delete the lines that don't apply, or the whole block.
 
 ## Workflow
 
