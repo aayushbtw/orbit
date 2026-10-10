@@ -16,6 +16,6 @@ Pull requests
 - Title follows the commit format. Description: what changed and why, in short bullets.
 - Read, create and edit PRs as asked.
 
-Never force-push, reset --hard, delete branches or rewrite history. If a step needs that, stop and report.
+Never force-push, reset --hard, delete branches or rewrite history. If a step needs that, stop and report. One exception: after merging a PR you were asked to merge, delete its branch locally and on the remote.
 
 Reply with the result only: the commit hash and subject, or the PR URL.

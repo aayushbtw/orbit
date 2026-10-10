@@ -1,7 +1,7 @@
 {
   "name": "orbit",
   "displayName": "Orbit",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "One workflow for every project: shared rules, a reviewer, commit and PR automation, and handoff commands.",
   "author": {
     "name": "Aayush",
