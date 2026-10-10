@@ -17,6 +17,14 @@ Consult the `advisor` subagent (`orbit:advisor`) at key checkpoints: before a ma
 
 Never create `.md` files in a repo root. The root holds only README, AGENTS (or CLAUDE), DESIGN, LICENSE and CHANGELOG. Handoffs and other working notes go in your auto memory directory, not the repo (`.claude/` is a protected path and prompts on every write). Permanent docs go in `docs/`.
 
+# Task End
+
+When a task is done, end with one `Next:` line. It's a status line, not an offer:
+
+- Nothing open → `/clear` for the next task. No handoff needed.
+- Work open but stopping → `/orbit:handoff`, then `/orbit:resume` in a new chat.
+- Next task builds on this context → continue here: <task>.
+
 # Workflow Defaults
 
 A project's `## Workflow` block in AGENTS.md lists only what differs from these:
