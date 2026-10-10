@@ -29,6 +29,6 @@ When a task is done, end with one `Next:` line. It's a status line, not an offer
 
 A project's `## Workflow` block in AGENTS.md lists only what differs from these:
 
-1. Check: `vpr check`, then `vpr build` and `vpr test` if those scripts exist.
+1. Check: `vpr check`, then `vpr build` and `vpr test` if those scripts exist. For a change a user can see, also the project's `verify-*` skill when it has one.
 2. Land: straight to `main`, with `/ship`.
 3. Review: the `reviewer` agent, plus the block's "Review also checks" sources.
