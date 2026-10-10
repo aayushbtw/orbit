@@ -1,21 +1,23 @@
 {
   "typescript-best-practices": {
-    "repo": "poteto/plugins",
+    "repo": "cursor/plugins",
     "path": "pstack/skills/typescript-best-practices",
-    "sha": "74dd2291e8e37b12fd6dc49b2acbd655c6bdaf12",
+    "sha": "d73344bee8cf22e53b9d5f4cf5749d38ba38c174",
     "edits": [
       "Set the frontmatter description to: TypeScript rules for code review. Loaded by the reviewer agent when a diff touches .ts or .tsx files.",
-      "Under the H1 of SKILL.md, replace the line that applies the type-system-discipline skill with: Source: poteto/plugins, pstack (MIT).",
-      "Remove every reference to the type-system-discipline and boundary-discipline skills (they are not vendored), in SKILL.md and references/patterns.md."
+      "Under the H1 of SKILL.md, replace the line that applies the type-system-discipline skill with: Source: cursor/plugins, pstack (MIT).",
+      "Remove every reference to the type-system-discipline and boundary-discipline skills (they are not vendored), in SKILL.md and references/patterns.md.",
+      "Remove the `paths` and `disable-model-invocation` frontmatter keys; the reviewer preloads this skill, it should not auto-load in the main session."
     ]
   },
   "unslop": {
-    "repo": "poteto/plugins",
+    "repo": "cursor/plugins",
     "path": "pstack/skills/unslop",
-    "sha": "74dd2291e8e37b12fd6dc49b2acbd655c6bdaf12",
+    "sha": "d73344bee8cf22e53b9d5f4cf5749d38ba38c174",
     "edits": [
       "Set the frontmatter description to: Cut AI tells from written content: docs pages, READMEs, PR descriptions, blog and site copy. Not for chat replies or code.",
-      "Add the line `Source: poteto/plugins, pstack (MIT).` under the H1."
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "Remove the `disable-model-invocation` frontmatter key so the reviewer can preload it."
     ]
   },
   "vercel-react-best-practices": {
