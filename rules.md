@@ -21,7 +21,7 @@ Never create `.md` files in a repo root. The root holds only README, AGENTS (or 
 
 When a task is done, end with one `Next:` line. It's a status line, not an offer. Any follow-up you know of counts as open, even if nothing is mid-edit; if you'd name it when asked "what's next?", it's open.
 
-- Nothing open → `/clear` for the next task. No handoff needed.
+- Nothing open → `Next: nothing pending; /clear for the next task.` No handoff needed.
 - Anything open → write the project's handoff note first (as `/handoff` does), then `Next: /clear, then /pickup`.
 - Next task builds on this context → continue here: <task>.
 
