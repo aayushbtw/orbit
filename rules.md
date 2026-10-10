@@ -19,10 +19,10 @@ Never create `.md` files in a repo root. The root holds only README, AGENTS (or 
 
 # Task End
 
-When a task is done, end with one `Next:` line. It's a status line, not an offer:
+When a task is done, end with one `Next:` line. It's a status line, not an offer. Any follow-up you know of counts as open, even if nothing is mid-edit; if you'd name it when asked "what's next?", it's open.
 
 - Nothing open → `/clear` for the next task. No handoff needed.
-- Work open but stopping → `/handoff`, then `/pickup` in a new chat.
+- Anything open → write the project's handoff note first (as `/handoff` does), then `Next: /clear, then /pickup`.
 - Next task builds on this context → continue here: <task>.
 
 # Workflow Defaults
