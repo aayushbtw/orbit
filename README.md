@@ -2,7 +2,7 @@
 
 One workflow for every project. Orbit teaches Claude Code to build, check, review and ship the same way in every repo, so you don't repeat yourself each session.
 
-Much of it comes from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto): the reviewer's filters, the playbooks, `/correct`, verification skills, and the `unslop` and `typescript-best-practices` skills. Orbit keeps the ideas and drops the parts built for Cursor's cloud agents, so it stays small enough to read in one sitting.
+Much of it comes from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto): the reviewer's filters, the playbooks, `/correct`, verification skills, and the `unslop` and `typescript-best-practices` skills. Orbit keeps the ideas and stays small enough to read in one sitting.
 
 ## Install
 
