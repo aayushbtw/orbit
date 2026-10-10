@@ -88,7 +88,7 @@ If a project differs, add a `## Workflow` block to its AGENTS.md. List only what
 
 - Check: `vpr check`, plus `vpr e2e` when the UI changed.
 - Land: `pr`
-- Review also checks: `docs/architecture.md`.
+- Review also checks: `docs/architecture.md`, `src/server/`: `node_modules/effect/AGENTS.md`.
 ```
 
 `templates/workflow-block.md` has the template. The reviewer also reads any "Mistakes made before" list in the same file.

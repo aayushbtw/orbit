@@ -8,7 +8,7 @@ Task type: $ARGUMENTS
 Follow only the matching section. Check and Land come from the Workflow block in the project's AGENTS.md (or CLAUDE.md).
 
 Every section has two gates:
-- **Plan gate**, before editing: if the change adds a module or touches more than 3 files, brief the `advisor` with the plan and act on its verdict.
+- **Plan gate**, before editing: if the change adds a module or touches more than 3 files, brief the `advisor` with the plan and the Workflow block's "Review also checks" sources (read them first), and act on its verdict.
 - **Land gate**, the last step: run /orbit:ship. It checks, runs the `reviewer` and lands. A change never lands without it.
 
 ## bug
