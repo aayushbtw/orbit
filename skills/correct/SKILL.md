@@ -5,9 +5,12 @@ argument-hint: [what went wrong]
 ---
 Mistake: $ARGUMENTS
 
-Add the cheapest lasting guard, first that fits:
-1. A type or lint rule that makes it impossible.
-2. A test that fails when it happens.
-3. One line in the right doc: the nearest AGENTS.md, or DESIGN.md / ARCHITECTURE.md / DOCS.md if the project has them.
+No mistake given: read recent commits, reverts and review comments, and pick the one that has happened twice. If none repeats, ask which one.
 
-Add one guard only. Show the diff.
+Add the guard at the highest level that works, first that fits:
+1. Architecture that removes it: one owner per piece of state, one way to do each task. Delete the old way an agent would copy.
+2. A type or lint rule that makes it impossible. A lint error names what to use instead.
+3. A test that fails when it happens.
+4. One line in the right doc: the nearest AGENTS.md, or DESIGN.md / ARCHITECTURE.md / DOCS.md if the project has them. Only for judgment calls; nothing fails when an agent skips a doc.
+
+For 1-3, prove the guard catches the real mistake: run it against the bad code and show it fail. Add one guard only. Show the diff.

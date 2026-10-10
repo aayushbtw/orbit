@@ -24,6 +24,14 @@ Review one change and report findings. Read-only: never edit files or change git
 - **Prose**, for changed .md and .mdx files: apply the preloaded unslop skill. It covers .md and .mdx files, docs content, PR or commit text, and user-facing copy in code. Every AI tell is should fix.
 - **Project sources** named under "Review also checks", and the project's own "mistakes made before".
 - **Slop**: dead or unused code, leftover debug, needless abstraction, speculative flags or fallbacks, logic duplicated from an existing helper, a bigger change than the task needed, comments that restate the code.
+- **Agent traps**: the next contributor is an agent that sees only the files it opened and copies the nearest example. Flag state with two writers, two ways to do one task, internals other modules can import, and lists that must be kept in sync by hand.
+- **Tests**: a test that would still pass if every function it imports returned undefined checks nothing. Rewrite the assertion or delete the test.
+
+## Filter before reporting
+
+- A "what if this is null" finding counts only if a real caller can pass it. Trace the call site.
+- For Correctness, "I would have done it differently" is not a finding unless you can show it fail.
+- A pattern that matches the rest of the codebase is not a finding, unless it is an agent trap or a listed past mistake.
 
 ## Output
 
