@@ -93,6 +93,8 @@ If a project differs, add a `## Workflow` block to its AGENTS.md. List only what
 
 `templates/workflow-block.md` has the template. The reviewer also reads any "Mistakes made before" list in the same file.
 
+Rules for one folder go in an AGENTS.md (or CLAUDE.md) inside it, say `src/server/AGENTS.md` naming a library's guide. The reviewer and the plan gate read every such file above the files a change touches, plus `.claude/rules/` files whose `paths` match. The review lists each one as read or skipped, so a missed rule shows.
+
 ## Maintain
 
 - Develop without installing: `claude --plugin-dir ~/Projects/orbit`. Check with `claude plugin validate .`.
