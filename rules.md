@@ -2,7 +2,7 @@
 
 Delegate commits and PR work (create, read, edit) to the `gitops` subagent (`orbit:gitops`). Use the `reviewer` subagent (`orbit:reviewer`) for a pre-merge review, and the `Explore` agent for broad repo search.
 
-Consult the `advisor` subagent (`orbit:advisor`) before building a change that adds a module or touches more than 3 files, after two failed attempts, and before declaring a non-trivial task done. A change never lands without the `reviewer`. Brief it with the request, what happened, verbatim evidence, the current state and specific questions.
+Brief the `advisor` subagent (`orbit:advisor`) at the plan gate or when the user asks, with the request, what happened, verbatim evidence, the current state and specific questions.
 
 # Code Quality
 

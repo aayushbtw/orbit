@@ -2,6 +2,7 @@
 name: correct
 description: Turn a mistake into a lasting guard
 argument-hint: [what went wrong]
+disable-model-invocation: true
 ---
 Mistake: $ARGUMENTS
 

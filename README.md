@@ -93,12 +93,18 @@ When the app changes, run `/orbit:verify-skill maintain`. It drives every featur
 
 ## What runs in the background
 
-Claude hands work to these agents itself. You don't call them.
+Claude runs these itself. You can also ask for the advisor.
 
 - **gitops** (Sonnet): commits and PRs.
 - **comment-sicko**: deletes comments outside its keep list and flags the code they excuse, before review.
 - **reviewer** (Opus, read-only): checks the change against its intent before it lands, with pstack's review rubric and code-quality lens. Looks for bugs, missed simplifications, TypeScript and React problems, patterns the next agent would copy, tests that check nothing, and AI-sounding prose.
-- **advisor** (Opus, read-only): a second opinion before a big decision, when Claude is stuck, and before it calls a task done.
+- **advisor** (Opus, read-only): a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time.
+
+The reviewer, comment-sicko and advisor run only inside the flow you start. As in pstack, the rest is opt-in: `/orbit:correct`, `/orbit:pickup`, `/orbit:reflect` and `/orbit:verify-skill` run only when you type them.
+
+## Principles
+
+The playbook holds seven of pstack's principles, each with the situation that triggers it: laziness protocol, subtract before you add, minimize reader load, model the domain, boundary discipline, type-system discipline, attack the premise. Claude reads a principle only when its trigger fires, and adds one `Principles:` line to the reply, naming each one it applied and the choice it changed. Use the names to steer: "apply subtract before you add".
 
 ## Make it fit a project
 
@@ -121,6 +127,6 @@ Rules for one folder go in an AGENTS.md (or CLAUDE.md) inside it, say `src/serve
 ## Maintain
 
 - Develop without installing: `claude --plugin-dir ~/Projects/orbit`. Check with `claude plugin validate .`.
-- Vendored files (`typescript-best-practices`, `unslop`, `reflect`, Comment Sicko and the interrogate review references from pstack, `deslop` from cursor-team-kit, the two `vercel-*` skills from [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills), all MIT) are tracked in `skills.json`. Update them with `/update-skills [name]` from this repo.
+- Vendored files (`typescript-best-practices`, `unslop`, `reflect`, the seven `principle-*` skills, Comment Sicko and the interrogate review references from pstack, `deslop` from cursor-team-kit, the two `vercel-*` skills from [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills), all MIT) are tracked in `skills.json`. Update them with `/update-skills [name]` from this repo.
 - The reviewer may ask once to read the plugin folder for the review rubric and React rules. Allow `Read(~/.claude/plugins/**)` to skip the prompt.
 - Release: bump `version` in `.claude-plugin/plugin.json`.

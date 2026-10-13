@@ -5,8 +5,7 @@
     "sha": "d73344bee8cf22e53b9d5f4cf5749d38ba38c174",
     "edits": [
       "Set the frontmatter description to: TypeScript rules for code review. Loaded by the reviewer agent when a diff touches .ts or .tsx files.",
-      "Under the H1 of SKILL.md, replace the line that applies the type-system-discipline skill with: Source: cursor/plugins, pstack (MIT).",
-      "Remove every reference to the type-system-discipline and boundary-discipline skills (they are not vendored), in SKILL.md and references/patterns.md.",
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1 of SKILL.md.",
       "Remove the `paths` and `disable-model-invocation` frontmatter keys; the reviewer preloads this skill, it should not auto-load in the main session."
     ]
   },
@@ -67,18 +66,73 @@
     "repo": "vercel-labs/agent-skills",
     "path": "skills/react-best-practices",
     "sha": "063bee94c3f4df8453406c830b0a7df0f2860278",
-    "skip": ["metadata.json"],
+    "skip": ["metadata.json", "AGENTS.md", "README.md"],
     "edits": [
-      "Set the frontmatter description to: React and Next.js performance rules from Vercel Engineering, for code review. Read by the reviewer agent when a diff touches React components, hooks or data fetching."
+      "Set the frontmatter description to: React and Next.js performance rules from Vercel Engineering, for code review. Read by the reviewer agent when a diff touches React components, hooks or data fetching.",
+      "Add `disable-model-invocation: true` to the frontmatter; the reviewer reads it by path.",
+      "Remove the `## Full Compiled Document` section (AGENTS.md is skipped: a generated copy of rules/ that gets injected on every read in the folder)."
     ]
   },
   "vercel-composition-patterns": {
     "repo": "vercel-labs/agent-skills",
     "path": "skills/composition-patterns",
     "sha": "063bee94c3f4df8453406c830b0a7df0f2860278",
-    "skip": ["metadata.json"],
+    "skip": ["metadata.json", "AGENTS.md", "README.md"],
     "edits": [
-      "Set the frontmatter description to one line: React composition rules from Vercel, for code review. Read by the reviewer agent when a diff touches React components, context providers or hooks."
+      "Set the frontmatter description to one line: React composition rules from Vercel, for code review. Read by the reviewer agent when a diff touches React components, context providers or hooks.",
+      "Add `disable-model-invocation: true` to the frontmatter; the reviewer reads it by path.",
+      "Remove the `## Full Compiled Document` section (AGENTS.md is skipped: a generated copy of rules/ that gets injected on every read in the folder)."
+    ]
+  },
+  "principle-laziness-protocol": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-laziness-protocol",
+    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
+  "principle-subtract-before-you-add": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-subtract-before-you-add",
+    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
+  "principle-minimize-reader-load": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-minimize-reader-load",
+    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "Remove the sentence linking Guard the Context Window (not vendored)."
+    ]
+  },
+  "principle-model-the-domain": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-model-the-domain",
+    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
+  "principle-boundary-discipline": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-boundary-discipline",
+    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
+  "principle-type-system-discipline": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-type-system-discipline",
+    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "Replace the sentence naming the encode-lessons-in-structure principle skill with: See `/orbit:correct`."
+    ]
+  },
+  "principle-attack-the-premise": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-attack-the-premise",
+    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "Delete the ` per [Build the Lever](...)` and ` per [Fix Root Causes](...)` phrases, and unlink Redesign from First Principles to plain text (none are vendored); keep the Laziness Protocol link."
     ]
   }
 }

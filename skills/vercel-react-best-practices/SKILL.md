@@ -1,6 +1,7 @@
 ---
 name: vercel-react-best-practices
 description: React and Next.js performance rules from Vercel Engineering, for code review. Read by the reviewer agent when a diff touches React components, hooks or data fetching.
+disable-model-invocation: true
 license: MIT
 metadata:
   author: vercel
@@ -143,7 +144,3 @@ Each rule file contains:
 - Incorrect code example with explanation
 - Correct code example with explanation
 - Additional context and references
-
-## Full Compiled Document
-
-For the complete guide with all rules expanded: `AGENTS.md`

@@ -1,6 +1,6 @@
 ---
 name: advisor
-description: Senior advisor for key checkpoints: before a major decision, when stuck on an error, before declaring a non-trivial task done. Give it a briefing (the request, what happened, verbatim evidence, current state, specific questions). Read-only. Returns a verdict and concrete guidance, not edits.
+description: Senior advisor for the /orbit:playbook plan gate, or when the user asks for a second opinion. Give it a briefing (the request, what happened, verbatim evidence, current state, specific questions). Read-only. Returns a verdict and concrete guidance, not edits.
 model: opus
 effort: high
 tools: Read, Grep, Glob, Bash

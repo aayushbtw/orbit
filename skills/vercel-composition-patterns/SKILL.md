@@ -1,6 +1,7 @@
 ---
 name: vercel-composition-patterns
 description: React composition rules from Vercel, for code review. Read by the reviewer agent when a diff touches React components, context providers or hooks.
+disable-model-invocation: true
 license: MIT
 metadata:
   author: vercel
@@ -78,7 +79,3 @@ Each rule file contains:
 - Incorrect code example with explanation
 - Correct code example with explanation
 - Additional context and references
-
-## Full Compiled Document
-
-For the complete guide with all rules expanded: `AGENTS.md`

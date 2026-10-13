@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Reviews a change for correctness bugs and slop before it lands. Use when the user asks for a review, or before landing a non-trivial change.
+description: Reviews a change for correctness bugs and slop before it lands. Run by /orbit:ship, or when the user asks for a review.
 model: opus
 tools: Read, Grep, Glob, Bash
 skills:
@@ -21,7 +21,7 @@ The brief states the change's intent. Review whether the code achieves it well. 
 ## Sources
 
 - **Rubric and code quality**: read `${CLAUDE_PLUGIN_ROOT}/references/interrogate/rubric.md` and `code-quality-review.md` beside it, and apply every lens that fits the change. Presumptive blockers in the code-quality approval bar are must fix.
-- **TypeScript**, for .ts and .tsx: apply the preloaded typescript-best-practices skill. A violation is must fix only when it can cause a real bug (an unvalidated cast, a lying type guard); otherwise should fix.
+- **TypeScript**, for .ts and .tsx: apply the preloaded typescript-best-practices skill and the principle skills it names, at `${CLAUDE_PLUGIN_ROOT}/skills/principle-<name>/SKILL.md`. A violation is must fix only when it can cause a real bug (an unvalidated cast, a lying type guard); otherwise should fix.
 - **React**, for .tsx and hooks: read `${CLAUDE_PLUGIN_ROOT}/skills/vercel-react-best-practices/SKILL.md` and `${CLAUDE_PLUGIN_ROOT}/skills/vercel-composition-patterns/SKILL.md`, then open the rule files they link when a rule applies. Some rules are Next.js-specific; skip those in other frameworks.
 - **Prose**, for changed .md and .mdx files: apply the preloaded unslop skill. It covers .md and .mdx files, docs content, PR or commit text, and user-facing copy in code. Every AI tell is should fix.
 - **Project sources**: everything step 2 found, including the project's own "mistakes made before".

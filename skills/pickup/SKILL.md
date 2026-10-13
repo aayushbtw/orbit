@@ -1,6 +1,7 @@
 ---
 name: pickup
-description: Resume a prior session's work in this project from its transcript, branch or resume note. Use at the start of a session to continue where the last one stopped.
+description: Resume a prior session's work in this project from its transcript, branch or resume note.
+disable-model-invocation: true
 ---
 
 # Session pickup
