@@ -5,11 +5,23 @@ argument-hint: bug | feature | refactor | perf
 ---
 Task type: $ARGUMENTS
 
-Follow only the matching section. Check and Land come from the Workflow block in the project's AGENTS.md (or CLAUDE.md).
+Follow Principles and only the matching task section. Check and Land come from the Workflow block in the project's AGENTS.md (or CLAUDE.md).
 
 Every section has two gates:
 - **Plan gate**, before editing: if the change adds a module or touches more than 3 files, read the project sources for the paths it touches (as the `reviewer`'s step 2 finds them), then brief the `advisor` with the plan and those sources, and act on its verdict.
 - **Land gate**, the last step: run /orbit:ship. It checks, runs the `reviewer` and lands. A change never lands without it.
+
+## Principles
+
+Read the leaf in full for any principle you apply: `${CLAUDE_PLUGIN_ROOT}/skills/principle-<name>/SKILL.md`. In the reply, one line names each principle that shaped a decision and the choice it changed (`Principles: <name> -> <choice>`). Cite only leaves read this session.
+
+- **laziness-protocol.** Refactoring, sizing a diff, or tempted to add abstractions, layers, or signal threading. Bias to deletion and the smallest change that solves the problem.
+- **subtract-before-you-add.** Sequencing an addition, refactor, or rewrite. Remove dead weight first, then build on the simpler base.
+- **minimize-reader-load.** Reviewing or shaping code that's hard to trace. Count layers and hidden state, collapse one-caller wrappers, shrink mutable scope.
+- **model-the-domain.** Writing stateful logic, or code that branches a lot or repeats a shape assumption across files. Encode the domain in a structure (state machine, typed model, table or registry, reducer, boundary, the right collection) instead of scattered conditionals.
+- **boundary-discipline.** Wiring validation, error handling, or framework adapters. Guards at system boundaries, trust internal types, keep business logic pure.
+- **type-system-discipline.** Designing types or a signature in any typed language. Make illegal states unrepresentable, brand primitives, parse external data at boundaries.
+- **attack-the-premise.** Two or more fixes that share one premise have failed the same gate. Take a census of which actors hold the imbalance before the next fix, then question the premise instead of writing another fix that assumes it.
 
 ## bug
 1. Reproduce it yourself where the user sees it, with the project's `verify-*` skill when it has one. Write a failing test or exact command first.
@@ -18,7 +30,7 @@ Every section has two gates:
 ## feature
 1. State "done" in 3 bullets. Ask only if a real decision is missing.
 2. Read the nearest similar code and match it.
-3. Make the smallest change that meets "done". Run the check.
+3. Name the data shape first, per model-the-domain. Make the smallest change that meets "done". Run the check.
 ## refactor
 1. Pin current behavior first: a test or a saved output to diff against. Types and lint are not a pin.
 2. Delete dead code and one-caller wrappers before adding the new shape.
