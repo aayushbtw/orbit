@@ -2,7 +2,7 @@
 
 One workflow for every project. Orbit teaches Claude Code to build, check, review and ship the same way in every repo, so you don't repeat yourself each session.
 
-Much of it comes from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto): the reviewer's rubric and filters, the playbooks, `/orbit:correct`, verification skills, Comment Sicko, and the `unslop` and `typescript-best-practices` skills. `deslop` comes from pstack's sibling, cursor-team-kit. Orbit keeps the ideas and stays small enough to read in one sitting.
+Much of it comes from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto): the reviewer's rubric and filters, the playbooks, `/orbit:correct`, `/orbit:reflect`, verification skills, Comment Sicko, and the `unslop` and `typescript-best-practices` skills. `deslop` comes from pstack's sibling, cursor-team-kit. Orbit keeps the ideas and stays small enough to read in one sitting.
 
 ## Install
 
@@ -53,6 +53,7 @@ Stopping before it's done:
 | `/orbit:ship` | The change is ready (`start` ends with it) | Runs the checks, gets a review, updates docs, then commits to `main` or opens a PR |
 | `/orbit:playbook <type>` | You want to pick the flow yourself | Same flows as `start`: `bug`, `feature`, `refactor`, `perf` |
 | `/orbit:correct <mistake>` | Claude got something wrong again | Removes the cause, or adds a lint rule, test or doc line, so it can't happen again |
+| `/orbit:reflect` | After a session with corrections | Three reviewers mine the transcript; you approve which skill edits to make |
 | `/orbit:handoff` | Stopping mid-task, or switching model | Saves where you are, outside the repo |
 | `/orbit:pickup` | Starting the next session | Reads the handoff and lists pending tasks for `/orbit:start` |
 | `/orbit:verify-skill create` | Once per project | Builds a skill that lets Claude run your app and show proof a change works |
@@ -100,6 +101,6 @@ Rules for one folder go in an AGENTS.md (or CLAUDE.md) inside it, say `src/serve
 ## Maintain
 
 - Develop without installing: `claude --plugin-dir ~/Projects/orbit`. Check with `claude plugin validate .`.
-- Vendored files (`typescript-best-practices`, `unslop`, Comment Sicko and the interrogate review references from pstack, `deslop` from cursor-team-kit, the two `vercel-*` skills from [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills), all MIT) are tracked in `skills.json`. Update them with `/update-skills [name]` from this repo.
+- Vendored files (`typescript-best-practices`, `unslop`, `reflect`, Comment Sicko and the interrogate review references from pstack, `deslop` from cursor-team-kit, the two `vercel-*` skills from [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills), all MIT) are tracked in `skills.json`. Update them with `/update-skills [name]` from this repo.
 - The reviewer may ask once to read the plugin folder for the review rubric and React rules. Allow `Read(~/.claude/plugins/**)` to skip the prompt.
 - Release: bump `version` in `.claude-plugin/plugin.json`.

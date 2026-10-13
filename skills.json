@@ -38,6 +38,21 @@
       "Replace `Check the diff against main and remove AI-generated slop introduced in the branch` with `Check the uncommitted diff, or the branch's diff against main, and remove AI-generated slop introduced in that diff`."
     ]
   },
+  "reflect": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/reflect",
+    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "edits": [
+      "Set the frontmatter description to: Mine this session's transcript for durable learnings and route each to an edit on a skill it used. Use for /orbit:reflect.",
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "In step 1, replace the first two sentences with `Before fanning out, find this conversation's transcript by its session id. Do not read other sessions' transcripts.`; replace the code block with `ls ~/.claude/projects/*/${CLAUDE_SESSION_ID}.jsonl; ls ~/.claude/projects/*/${CLAUDE_SESSION_ID}/subagents/*.jsonl 2>/dev/null` (two commands: zsh aborts a line on an unmatched glob); replace the layouts paragraph with `That covers the session (`<id>.jsonl`) and its subagents (`<id>/subagents/<child>.jsonl`). If none matches, pass a tight digest of the session instead.`",
+      "In steps 2 and 3, use `Agent` calls with `subagent_type: general-purpose` instead of `Task`/`generalPurpose`/readonly, drop the pstack-models paragraph and the model columns (all inherit the parent model), and prefix each template path with `${CLAUDE_SKILL_DIR}/`.",
+      "In step 4, replace the encode-lessons-in-structure principle skill with `/orbit:correct`'s levels.",
+      "In step 5 and 6, list Backlog items as `/orbit:correct <pattern>` candidates instead of filing to a devex tracker; route create-skill work to `skill-creator` if installed, else the parent does it; add: edit a plugin skill in its source repo, never `~/.claude/plugins/cache/`, and add the change to `skills.json` `edits` when vendored.",
+      "In references/synthesizer.md, replace `The parent files each to whatever devex / backlog tracker the team uses.` with `The parent lists each as a `/orbit:correct <pattern>` candidate.`",
+      "In the three reviewer references, count a skill as used on a `Skill` tool call or `<command-name>` tag naming it, a `Read` of its SKILL.md under `.claude/skills/`, `~/.claude/skills/` or `~/.claude/plugins/`, an `Agent` prompt naming its path, or a matching Bash/Grep/MCP call."
+    ]
+  },
   "comment-sicko": {
     "repo": "cursor/plugins",
     "path": "pstack/agents/comment-sicko.md",
