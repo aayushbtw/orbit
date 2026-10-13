@@ -16,14 +16,14 @@ Consult the `advisor` subagent (`orbit:advisor`) before building a change that a
 
 # Files
 
-Never create `.md` files in a repo root. The root holds only README, AGENTS (or CLAUDE), DESIGN, LICENSE and CHANGELOG. Handoffs and other working notes go in your auto memory directory, not the repo (`.claude/` is a protected path and prompts on every write). Permanent docs go in `docs/`.
+Never create `.md` files in a repo root. The root holds only README, AGENTS (or CLAUDE), DESIGN, LICENSE and CHANGELOG. Resume notes and other working notes go in your auto memory directory, not the repo (`.claude/` is a protected path and prompts on every write). Permanent docs go in `docs/`.
 
 # Task End
 
 When a task is done, end with one `Next:` line. It's a status line, not an offer. Any follow-up you know of counts as open, even if nothing is mid-edit; if you'd name it when asked "what's next?", it's open.
 
-- Nothing open → `Next: nothing pending; /clear for the next task.` No handoff needed.
-- Anything open → write the project's handoff note first (in the `/orbit:handoff` format), then `Next: /clear, then /orbit:pickup`.
+- Nothing open → `Next: nothing pending; /clear for the next task.`
+- Anything open → `Next: /clear, then /orbit:pickup`.
 - Next task builds on this context → `Next: /orbit:start <task>` (no /clear), instead of the line above.
 
 # Workflow Defaults

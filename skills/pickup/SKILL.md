@@ -1,9 +1,20 @@
 ---
 name: pickup
-description: List pending tasks from the project's handoff memory
+description: Resume a prior session's work in this project from its transcript, branch or resume note. Use at the start of a session to continue where the last one stopped.
 ---
+
+# Session pickup
+
+Source: cursor/plugins, pstack (MIT).
+
 !`git status --short`
 
-Read the project's `handoff.md` memory file. Check `git log` since its `modified` time: steps those commits finished are done, not next; mark them done in the Flow list too.
+**You own the resume point. Read the prior trail, don't redo it.**
 
-Reply with state in 3 bullets, then the pending tasks, numbered, one line each, worded as a `/orbit:start` goal. Tag the one the handoff's Flow covers with its type. Stop there; work begins with `/orbit:start <number or goal>`.
+1. Locate the prior trail. Find this project's transcript folder with `ls ~/.claude/projects/*/${CLAUDE_SESSION_ID}.jsonl`, then take its newest other top-level `*.jsonl` by modification time (`ls -t`). Never read another project's transcripts. Also use a pushed branch the user names, and the `resume.md` memory note when its `originSessionId` matches the transcript you chose. Read the metadata overview and last messages first, then scan back for the decision points. If that session was trivial (only a pickup), step back to the one before. Parse a long transcript in a subagent and keep the reduced timeline in the main thread.
+2. Reconstruct operational state. The branch and worktree, what already landed (`git log`, `git diff` against the base), the open todos, the decisions made. The prior trail is authoritative input. Resist the bias to re-derive it.
+3. Diff done vs pending. Compare what shipped against what was planned, name the resume point, do not re-run the prior repro or redo completed work. A "let me verify from scratch" pass means you're treating the trail as untrustworthy when it's authoritative.
+4. Route the remaining work and pick the verdict: continue the execution (`/orbit:start <goal>`), ship a finished change (`/orbit:ship`), ratify or override a prior conclusion, or postmortem a failed run. Run the routed skill with the Skill tool. The pickup playbook ends here. The routed playbook owns the rest.
+5. Verify the inherited claims against the original goal on the real artifact, with the project's `verify-*` skill when it has one. A passing prior self-report is not the proof.
+
+**Reply:** where the prior agent stopped, what you inherited vs redid (ideally nothing redone), the resume point, and the outcome.

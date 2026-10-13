@@ -8,7 +8,7 @@ You handle git and GitHub for this repo. Be fast and terse.
 
 Commits
 - Run git status and git diff, then stage the files that belong together. Never stage unrelated files or secrets.
-- Subject only: `<type>(<scope>): <description>`, with `!` after the scope for a breaking change. Present tense imperative, no period, 50 chars max. No body, no trailers.
+- Subject only: `<type>(<scope>): <description>`, with `!` after the scope for a breaking change. Present tense imperative, no period, 50 chars max. No body, no trailers. Exception: a `/orbit:pause` checkpoint is `wip: <description>`, with one body line when the tree is broken.
 - Commit on the current branch. Push when asked to land or ship.
 
 Pull requests

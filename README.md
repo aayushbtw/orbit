@@ -2,7 +2,7 @@
 
 One workflow for every project. Orbit teaches Claude Code to build, check, review and ship the same way in every repo, so you don't repeat yourself each session.
 
-Much of it comes from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto): the reviewer's rubric and filters, the playbooks, `/orbit:correct`, `/orbit:reflect`, verification skills, Comment Sicko, and the `unslop` and `typescript-best-practices` skills. `deslop` comes from pstack's sibling, cursor-team-kit. Orbit keeps the ideas and stays small enough to read in one sitting.
+Much of it comes from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto): the reviewer's rubric and filters, the playbooks (pause and pickup included), `/orbit:correct`, `/orbit:reflect`, verification skills, Comment Sicko, and the `unslop` and `typescript-best-practices` skills. `deslop` comes from pstack's sibling, cursor-team-kit. Orbit keeps the ideas and stays small enough to read in one sitting.
 
 ## Install
 
@@ -17,7 +17,7 @@ The rules load on their own at the start of every session. Update from `/plugin`
 
 ## Use it
 
-Start every task with `/orbit:start` and say what you want:
+One session does one task. Start it with `/orbit:start`, let it run to `/orbit:ship`, then `/clear`.
 
 ```
 /orbit:start fix the login redirect bug
@@ -25,7 +25,7 @@ Start every task with `/orbit:start` and say what you want:
 
 Orbit picks the flow, writes its steps as a todo list, and works through them. A step can only be skipped in plain sight (`skip: <reason>`).
 
-### The flow
+### A task, start to finish
 
 ```
 /orbit:start <goal>
@@ -33,32 +33,52 @@ Orbit picks the flow, writes its steps as a todo list, and works through them. A
   2. Plan gate          big change? the advisor reviews the plan first
   3. Build              smallest change, bugs get a failing repro first
   4. /orbit:ship        checks, proof it works, deslop, comments, reviewer, docs, commit or PR
-  5. Next: line         /clear and start the next task
+  5. Next: line         one line telling you what to do next
 ```
 
-Stopping before it's done:
+Claude ends every task with one `Next:` line. Do what it says:
+
+- `Next: nothing pending; /clear for the next task.` Run `/clear`, then `/orbit:start` your next goal.
+- `Next: /clear, then /orbit:pickup`. Work is still open. Run `/clear`, then `/orbit:pickup`.
+- `Next: /orbit:start <task>`. The next task needs this session's context. Run it here, without `/clear`.
+
+Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh one.
+
+### Stopping and resuming
+
+To stop in the middle of a task, say so or run `/orbit:pause`. Claude finishes the current step, commits a `wip:` commit, saves a resume note outside the repo, and tells you the first action on resume. Pause before you switch model or close the session. "Keep going" or "don't stop" never pauses.
+
+To resume, start a fresh session (or `/clear`) and run `/orbit:pickup`. It reads the last session's transcript, the git log and the resume note from that session, works out what is done and what is left, and carries on through `/orbit:start` or `/orbit:ship`. It doesn't redo finished work.
 
 ```
-/orbit:handoff
+/orbit:pause
 /clear
 /orbit:pickup
-/orbit:start 1
 ```
 
-### Commands
+### When to use what
 
-| Type | When | What happens |
-| --- | --- | --- |
-| `/orbit:start <goal>` | Starting any task | Picks the flow, lists the steps, runs them |
-| `/orbit:ship` | The change is ready (`start` ends with it) | Runs the checks, gets a review, updates docs, then commits to `main` or opens a PR |
-| `/orbit:playbook <type>` | You want to pick the flow yourself | Same flows as `start`: `bug`, `feature`, `refactor`, `perf` |
-| `/orbit:correct <mistake>` | Claude got something wrong again | Removes the cause, or adds a lint rule, test or doc line, so it can't happen again |
-| `/orbit:reflect` | After a session with corrections | Three reviewers mine the transcript; you approve which skill edits to make |
-| `/orbit:handoff` | Stopping mid-task, or switching model | Saves where you are, outside the repo |
-| `/orbit:pickup` | Starting the next session | Reads the handoff and lists pending tasks for `/orbit:start` |
-| `/orbit:verify-skill create` | Once per project | Builds a skill that lets Claude run your app and show proof a change works |
+| Situation | Run |
+| --- | --- |
+| Any new task: a bug, a feature, a refactor, a slow path | `/orbit:start <goal>` |
+| You want a specific flow, or only its step list | `/orbit:playbook <bug\|feature\|refactor\|perf>` |
+| The change is built and you want it landed | `/orbit:ship` (`start` already ends with it) |
+| You have to stop mid-task, switch model, or step away | `/orbit:pause` |
+| New session, continuing earlier work | `/orbit:pickup` |
+| Claude made the same mistake again | `/orbit:correct <mistake>` |
+| A session had several corrections and you want the skills to learn from them | `/orbit:reflect` |
+| A question with no code change | Ask it. `/orbit:start` answers questions and stops |
+| First time in a project users can run or install | `/orbit:verify-skill create` |
+| The app changed and the verify skill drifted | `/orbit:verify-skill maintain` |
 
-Each command also works as `/orbit:<name>`. Use that form if another plugin has a command with the same name.
+`/orbit:correct` fixes one mistake you name, at the highest level that works: removing the cause, then a type or lint rule, then a test, then a doc line. It also keeps a table of each rule and what enforces it. `/orbit:reflect` is broader. Three reviewers read the whole session, and you approve which skill edits to make. Items a lint or check would enforce better come back as `/orbit:correct` candidates.
+
+### Correct usage
+
+- Give `/orbit:start` the goal, not the steps. Orbit picks the flow and the steps.
+- Don't land a change by hand. `/orbit:ship` runs the checks, the cleanup and the reviewer, and a change never lands without the reviewer.
+- Don't skip `/clear` after a `Next:` line that asks for it. A fresh session per task means the reviewer and the next task don't inherit this task's context.
+- Project differences (check command, PR landing, extra review sources) go in the project's `## Workflow` block, not in chat. See below.
 
 ## Let Claude prove its work
 
