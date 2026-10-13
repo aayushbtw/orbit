@@ -2,7 +2,7 @@
 
 One workflow for every project. Orbit teaches Claude Code to build, check, review and ship the same way in every repo, so you don't repeat yourself each session.
 
-Much of it comes from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto): the reviewer's filters, the playbooks, `/orbit:correct`, verification skills, and the `unslop` and `typescript-best-practices` skills. Orbit keeps the ideas and stays small enough to read in one sitting.
+Much of it comes from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto): the reviewer's rubric and filters, the playbooks, `/orbit:correct`, verification skills, Comment Sicko, and the `unslop` and `typescript-best-practices` skills. `deslop` comes from pstack's sibling, cursor-team-kit. Orbit keeps the ideas and stays small enough to read in one sitting.
 
 ## Install
 
@@ -32,7 +32,7 @@ Orbit picks the flow, writes its steps as a todo list, and works through them. A
   1. Pick the flow      bug, feature, refactor or perf
   2. Plan gate          big change? the advisor reviews the plan first
   3. Build              smallest change, bugs get a failing repro first
-  4. /orbit:ship        checks, proof it works, reviewer, docs, commit or PR
+  4. /orbit:ship        checks, proof it works, deslop, comments, reviewer, docs, commit or PR
   5. Next: line         /clear and start the next task
 ```
 
@@ -75,7 +75,8 @@ When the app changes, run `/orbit:verify-skill maintain`. It drives every featur
 Claude hands work to these agents itself. You don't call them.
 
 - **gitops** (Sonnet): commits and PRs.
-- **reviewer** (Opus, read-only): checks the change before it lands. Looks for bugs, TypeScript and React problems, patterns the next agent would copy, tests that check nothing, AI-sounding prose, and slop.
+- **comment-sicko**: deletes comments outside its keep list and flags the code they excuse, before review.
+- **reviewer** (Opus, read-only): checks the change against its intent before it lands, with pstack's review rubric and code-quality lens. Looks for bugs, missed simplifications, TypeScript and React problems, patterns the next agent would copy, tests that check nothing, and AI-sounding prose.
 - **advisor** (Opus, read-only): a second opinion before a big decision, when Claude is stuck, and before it calls a task done.
 
 ## Make it fit a project
@@ -99,6 +100,6 @@ Rules for one folder go in an AGENTS.md (or CLAUDE.md) inside it, say `src/serve
 ## Maintain
 
 - Develop without installing: `claude --plugin-dir ~/Projects/orbit`. Check with `claude plugin validate .`.
-- Vendored skills (`typescript-best-practices` and `unslop` from pstack, the two `vercel-*` skills from [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills), all MIT) are tracked in `skills.json`. Update them with `/update-skills [name]` from this repo.
-- The reviewer may ask once to read the plugin folder for the React rules. Allow `Read(~/.claude/plugins/**)` to skip the prompt.
+- Vendored files (`typescript-best-practices`, `unslop`, Comment Sicko and the interrogate review references from pstack, `deslop` from cursor-team-kit, the two `vercel-*` skills from [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills), all MIT) are tracked in `skills.json`. Update them with `/update-skills [name]` from this repo.
+- The reviewer may ask once to read the plugin folder for the review rubric and React rules. Allow `Read(~/.claude/plugins/**)` to skip the prompt.
 - Release: bump `version` in `.claude-plugin/plugin.json`.

@@ -12,14 +12,13 @@ Every section has two gates:
 - **Land gate**, the last step: run /orbit:ship. It checks, runs the `reviewer` and lands. A change never lands without it.
 
 ## bug
-1. Reproduce it. Write a failing test or exact command first.
+1. Reproduce it yourself where the user sees it, with the project's `verify-*` skill when it has one. Write a failing test or exact command first.
 2. Find the cause. Fix the cause, not the symptom.
-3. Confirm the repro passes and the check is green.
+3. Confirm the repro passes and the check is green. Unit tests show branch behavior, not bug absence. Paste the failing-then-passing output verbatim.
 ## feature
 1. State "done" in 3 bullets. Ask only if a real decision is missing.
 2. Read the nearest similar code and match it.
 3. Make the smallest change that meets "done". Run the check.
-
 ## refactor
 1. Pin current behavior first: a test or a saved output to diff against. Types and lint are not a pin.
 2. Delete dead code and one-caller wrappers before adding the new shape.

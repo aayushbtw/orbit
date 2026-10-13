@@ -12,6 +12,7 @@ Consult the `advisor` subagent (`orbit:advisor`) before building a change that a
 4. Handle errors at boundaries only (input, network, fs). Trust internal calls.
 5. Fix the cause, not the symptom. No workarounds without asking.
 6. Before saying done: run the project check and the relevant test. Check numbers against the real source.
+7. Every claim carries its evidence (command output, a path) or its label in the same sentence: measured, inferred or guess. Never hand the user a check you could run.
 
 # Files
 
