@@ -5,7 +5,7 @@ argument-hint: bug | feature | refactor | perf
 ---
 Task type: $ARGUMENTS
 
-Follow Principles and only the matching task section. Check and Land come from the Workflow block in the project's AGENTS.md (or CLAUDE.md).
+Follow Principles, Stack rules and only the matching task section. Check and Land come from the Workflow block in the project's AGENTS.md (or CLAUDE.md).
 
 Every section has two gates:
 - **Plan gate**, before editing: if the change adds a module or touches more than 3 files, read the project sources for the paths it touches (as the `reviewer`'s step 2 finds them), then brief the `advisor` with the plan and those sources, and act on its verdict.
@@ -22,6 +22,12 @@ Read the leaf in full for any principle you apply: `${CLAUDE_PLUGIN_ROOT}/skills
 - **boundary-discipline.** Wiring validation, error handling, or framework adapters. Guards at system boundaries, trust internal types, keep business logic pure.
 - **type-system-discipline.** Designing types or a signature in any typed language. Make illegal states unrepresentable, brand primitives, parse external data at boundaries.
 - **attack-the-premise.** Two or more fixes that share one premise have failed the same gate. Take a census of which actors hold the imbalance before the next fix, then question the premise instead of writing another fix that assumes it.
+
+## Stack rules
+
+Before writing code that matches a line below, read its index, then open only the rule files that apply:
+- `.ts` or `.tsx`: `${CLAUDE_PLUGIN_ROOT}/skills/typescript-best-practices/SKILL.md`.
+- React components, hooks, context or data fetching: `${CLAUDE_PLUGIN_ROOT}/skills/vercel-react-best-practices/SKILL.md` and `${CLAUDE_PLUGIN_ROOT}/skills/vercel-composition-patterns/SKILL.md`. Skip Next.js-only rules in other frameworks.
 
 ## bug
 1. Reproduce it yourself where the user sees it, with the project's `verify-*` skill when it has one. Write a failing test or exact command first.

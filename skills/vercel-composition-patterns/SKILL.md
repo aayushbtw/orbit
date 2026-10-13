@@ -1,6 +1,6 @@
 ---
 name: vercel-composition-patterns
-description: React composition rules from Vercel, for code review. Read by the reviewer agent when a diff touches React components, context providers or hooks.
+description: React composition rules from Vercel. Read by /orbit:playbook before writing React, and by the reviewer when a diff touches React components, context providers or hooks.
 disable-model-invocation: true
 license: MIT
 metadata:

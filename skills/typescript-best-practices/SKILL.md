@@ -1,6 +1,6 @@
 ---
 name: typescript-best-practices
-description: TypeScript rules for code review. Loaded by the reviewer agent when a diff touches .ts or .tsx files.
+description: TypeScript rules for the /orbit:start flow and the reviewer. Not for direct use.
 ---
 
 # TypeScript best practices
