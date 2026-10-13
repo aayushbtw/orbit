@@ -42,6 +42,7 @@ Stopping before it's done:
 /orbit:handoff
 /clear
 /orbit:pickup
+/orbit:start 1
 ```
 
 ### Commands
@@ -53,7 +54,7 @@ Stopping before it's done:
 | `/orbit:playbook <type>` | You want to pick the flow yourself | Same flows as `start`: `bug`, `feature`, `refactor`, `perf` |
 | `/orbit:correct <mistake>` | Claude got something wrong again | Removes the cause, or adds a lint rule, test or doc line, so it can't happen again |
 | `/orbit:handoff` | Stopping mid-task, or switching model | Saves where you are, outside the repo |
-| `/orbit:pickup` | Starting the next session | Reads the handoff and does the next step |
+| `/orbit:pickup` | Starting the next session | Reads the handoff and lists pending tasks for `/orbit:start` |
 | `/orbit:verify-skill create` | Once per project | Builds a skill that lets Claude run your app and show proof a change works |
 
 Each command also works as `/orbit:<name>`. Use that form if another plugin has a command with the same name.

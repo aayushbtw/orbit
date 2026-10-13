@@ -8,7 +8,8 @@ Stop here. Overwrite the project's handoff note: the memory file `handoff.md` in
 - Files touched (path + why)
 - Tried and failed (+ why)
 - Open decisions
-- Next 3 steps
+- Flow: the `/orbit:start` type and its todo list as it stands (done, `skip: <reason>`, open), or `none`
+- Next tasks beyond the Flow, one line each
 
 Then tell me: run /clear, then /model <name>, then start the new session with /orbit:pickup.
 

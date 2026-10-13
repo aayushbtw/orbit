@@ -23,7 +23,7 @@ When a task is done, end with one `Next:` line. It's a status line, not an offer
 
 - Nothing open → `Next: nothing pending; /clear for the next task.` No handoff needed.
 - Anything open → write the project's handoff note first (as `/orbit:handoff` does), then `Next: /clear, then /orbit:pickup`.
-- Next task builds on this context → continue here: <task>.
+- Next task builds on this context → continue here: /orbit:start <task>.
 
 # Workflow Defaults
 
