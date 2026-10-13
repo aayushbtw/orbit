@@ -20,6 +20,34 @@
       "Remove the `disable-model-invocation` frontmatter key so the reviewer can preload it."
     ]
   },
+  "interrogate": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/interrogate/references",
+    "dest": "references/interrogate",
+    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "skip": ["reviewer-prompt.md"],
+    "edits": []
+  },
+  "deslop": {
+    "repo": "cursor/plugins",
+    "path": "cursor-team-kit/skills/deslop",
+    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "edits": [
+      "Set the frontmatter description to: Remove AI-generated code slop from the current diff. Run by /orbit:ship before commit.",
+      "Add the line `Source: cursor/plugins, cursor-team-kit (MIT).` under the H1.",
+      "Replace `Check the diff against main and remove AI-generated slop introduced in the branch` with `Check the uncommitted diff, or the branch's diff against main, and remove AI-generated slop introduced in that diff`."
+    ]
+  },
+  "comment-sicko": {
+    "repo": "cursor/plugins",
+    "path": "pstack/agents/comment-sicko.md",
+    "dest": "agents/comment-sicko.md",
+    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "Replace the sentence that runs the how and why skills with: I read the named symbol's callers and its history with `git log -L` or `git blame`. (Orbit doesn't vendor how or why.)"
+    ]
+  },
   "vercel-react-best-practices": {
     "repo": "vercel-labs/agent-skills",
     "path": "skills/react-best-practices",
