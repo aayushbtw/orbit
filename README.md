@@ -17,7 +17,7 @@ The rules load on their own at the start of every session. Update from `/plugin`
 
 ## Use it
 
-One session does one task. Start it with `/orbit:start`. A change runs to `/orbit:ship`. Then `/clear`.
+Start a task with `/orbit:start`. A change runs to `/orbit:ship`. Bulk reading goes to subagents, so the session stays lean across tasks.
 
 ```
 /orbit:start fix the login redirect bug
@@ -38,10 +38,9 @@ Orbit picks the flow, writes its steps as a todo list, and works through them. A
 
 Claude ends every task with one `Next:` line. Do what it says:
 
-- `Next: nothing pending; /clear for the next task.` Run `/clear`, then `/orbit:start` your next goal.
-- `Next: /clear, then /orbit:start <follow-up>`. A follow-up is open. Run `/clear`, then start it.
-- `Next: /orbit:start <follow-up>`. The follow-up needs this session's context. Run it here, without `/clear`.
-- `Next: /clear, then /orbit:pickup`. Only after `/orbit:pause`. Pickup resumes paused work.
+- `Next: nothing pending.` Run `/orbit:start` with your next goal.
+- `Next: /orbit:start <follow-up>`. A follow-up is open. Run it.
+- `Next: new session, then /orbit:session-pickup`. Only after `/orbit:pause-safely`. Session pickup resumes paused work.
 
 Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh one.
 
@@ -81,7 +80,6 @@ To resume, start a new session and run `/orbit:session-pickup`. It reads the las
 
 - Give `/orbit:start` the goal, not the steps. Orbit picks the flow and the steps.
 - Don't land a change by hand. `/orbit:ship` runs the checks, the cleanup and the reviewer, and a change never lands without the reviewer.
-- Don't skip `/clear` after a `Next:` line that asks for it. A fresh session per task means the reviewer and the next task don't inherit this task's context.
 - Project differences (check command, PR landing, extra review sources) go in the project's `## Workflow` block, not in chat. See below.
 
 ## Let Claude prove its work

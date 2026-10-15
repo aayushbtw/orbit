@@ -4,6 +4,8 @@ Delegate commits and PR work (create, read, edit) to the `gitops` subagent (`orb
 
 Brief the `advisor` subagent (`orbit:advisor`) at the plan gate or when the user asks, with the request, what happened, verbatim evidence, the current state and specific questions.
 
+Guard the context window: route bulk reads and large outputs to subagents and keep only their summaries here. Give new work to a fresh subagent with the full brief, not a resumed one.
+
 You own every subagent's work. Review its diff or findings and write your own summary; don't pass through what it said.
 
 # Code Quality
@@ -24,10 +26,9 @@ Never create `.md` files in a repo root. The root holds only README, AGENTS (or 
 
 When a task is done, end with one `Next:` line. It's a status line, not an offer. Any follow-up you know of counts as open, even if nothing is mid-edit; if you'd name it when asked "what's next?", it's open.
 
-- Nothing open → `Next: nothing pending; /clear for the next task.`
-- Follow-up open → `Next: /clear, then /orbit:start <follow-up>`.
-- Follow-up needs this context → `Next: /orbit:start <follow-up>` (no /clear).
-- After `/orbit:pause` → `Next: /clear, then /orbit:pickup`. Pickup only resumes paused or another agent's work.
+- Nothing open → `Next: nothing pending.`
+- Follow-up open → `Next: /orbit:start <follow-up>`.
+- After `/orbit:pause-safely` → `Next: new session, then /orbit:session-pickup`. Session pickup only resumes paused or another agent's work.
 
 # Workflow Defaults
 
