@@ -99,11 +99,8 @@
   "principle-minimize-reader-load": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-minimize-reader-load",
-    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
-    "edits": [
-      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "Remove the sentence linking Guard the Context Window (not vendored)."
-    ]
+    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-model-the-domain": {
     "repo": "cursor/plugins",
@@ -139,10 +136,7 @@
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-prove-it-works",
     "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
-    "edits": [
-      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "Delete ` (the **show-me-your-work** skill)` (not vendored)."
-    ]
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-fix-root-causes": {
     "repo": "cursor/plugins",
@@ -163,6 +157,48 @@
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "Delete the sentence that runs the benchmark-checklist skill (not vendored)."
+    ]
+  },
+  "principle-guard-the-context-window": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-guard-the-context-window",
+    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
+  "show-me-your-work": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/show-me-your-work",
+    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "Prefix the `references/decision-log-template.tsv` and `scripts/log.sh` paths with `${CLAUDE_SKILL_DIR}/`.",
+      "Replace `(the **encode-lessons-in-structure** principle skill)` with `(`/orbit:correct`)`.",
+      "In the transcript audit, replace the `agent-transcripts/` sentence and the `~/.cursor/projects/*/` warning with: Read this run's transcript: `ls ~/.claude/projects/*/${CLAUDE_SESSION_ID}.jsonl`. Don't read other sessions' transcripts.",
+      "In the cross-model review, drop the poteto-mode Subagents sentence and add: Only Claude models are available here, so use an `Agent` call (`subagent_type: general-purpose`) with `model` set to a different Claude tier than yours (Sonnet if you are Opus, else Opus). Make the Attention header `reviewed by <model> (same family: no other available)`."
+    ]
+  },
+  "recall": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/recall",
+    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "Drop the **why** skill mention from the shared-record sentence (why is not vendored).",
+      "Replace the `~/.cursor/projects/<slug>/agent-transcripts/` paragraph with: Transcripts are the top-level `*.jsonl` files in this project's folder, found with `ls ~/.claude/projects/*/${CLAUDE_SESSION_ID}.jsonl`.",
+      "In step 1, route to `/orbit:session-pickup` and `/orbit:automate-me`.",
+      "In step 3, spawn `Agent` subagents with `subagent_type: general-purpose`, `model: haiku`, and drop the poteto-mode Subagents sentence.",
+      "In step 4, replace the **why** skill's source investigators with one investigator per source (`git log`/`git blame`, `gh pr list`/`gh issue list`, any connected tracker or error-tracking MCP), keeping the question and posture."
+    ]
+  },
+  "automate-me": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/automate-me",
+    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "Replace Cursor's `create-skill` with the `skill-creator` skill (or direct authoring if it isn't installed); `AskQuestion` with `AskUserQuestion` and `allow_multiple` with `multiSelect`; `.cursor/skills` and `~/.cursor/skills` with `.claude/skills` and `~/.claude/skills`.",
+      "In step 1, locate transcripts as the top-level `*.jsonl` files in the folder holding `ls ~/.claude/projects/*/${CLAUDE_SESSION_ID}.jsonl`, never other project folders; replace the poteto-mode Subagents sentence with `Agent` calls, `subagent_type: general-purpose`.",
+      "In step 3, point at `${CLAUDE_PLUGIN_ROOT}/rules.md` and `${CLAUDE_PLUGIN_ROOT}/skills/playbook/SKILL.md` instead of poteto-mode as the shape reference."
     ]
   }
 }

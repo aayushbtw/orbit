@@ -2,7 +2,7 @@
 
 One workflow for every project. Orbit teaches Claude Code to build, check, review and ship the same way in every repo, so you don't repeat yourself each session.
 
-Much of it comes from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto): the reviewer's rubric and filters, the playbooks (pause and pickup included), `/orbit:correct`, `/orbit:reflect`, verification skills, Comment Sicko, and the `unslop` and `typescript-best-practices` skills. `deslop` comes from pstack's sibling, cursor-team-kit. Orbit keeps the ideas and stays small enough to read in one sitting.
+Much of it comes from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto): the reviewer's rubric and filters, the playbooks (pause-safely and session-pickup included), `/orbit:correct`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `show-me-your-work`, verification skills, Comment Sicko, and the `unslop` and `typescript-best-practices` skills. `deslop` comes from pstack's sibling, cursor-team-kit. Orbit keeps the ideas and stays small enough to read in one sitting.
 
 ## Install
 
@@ -64,8 +64,11 @@ To resume, start a new session and run `/orbit:session-pickup`. It reads the las
 | Any new task: a bug, a feature, a refactor, a slow path | `/orbit:start <goal>` |
 | You want a specific flow, or only its step list | `/orbit:playbook <investigate\|bug\|feature\|refactor\|perf>` |
 | The change is built and you want it landed | `/orbit:ship` (`start` already ends with it) |
-| You have to stop mid-task, switch model, or step away | `/orbit:pause` |
-| New session, continuing earlier work | `/orbit:pickup` |
+| You have to stop mid-task, switch model, or step away | `/orbit:pause-safely` |
+| New session, continuing earlier work | `/orbit:session-pickup` |
+| Catch up on your recent work across sessions | `/orbit:recall [topic]` |
+| A long or unattended run you'll review later | `/orbit:show-me-your-work` |
+| Turn your working style into a `-mode` skill | `/orbit:automate-me` |
 | Claude made the same mistake again | `/orbit:correct <mistake>` |
 | A session had several corrections and you want the skills to learn from them | `/orbit:reflect` |
 | A question with no code change | `/orbit:start <question>` runs the read-only `investigate` flow and answers with citations |
@@ -101,11 +104,11 @@ Claude runs these itself. You can also ask for the advisor.
 - **reviewer** (Opus, read-only): checks the change against its intent before it lands, with pstack's review rubric and code-quality lens. Looks for bugs, missed simplifications, TypeScript and React problems, patterns the next agent would copy, tests that check nothing, and AI-sounding prose.
 - **advisor** (Opus, read-only): a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time.
 
-The reviewer, comment-sicko and advisor run only inside the flow you start. As in pstack, the rest is opt-in: `/orbit:correct`, `/orbit:pickup`, `/orbit:reflect` and `/orbit:verify-skill` run only when you type them.
+The reviewer, comment-sicko and advisor run only inside the flow you start. As in pstack, the rest is opt-in: `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me` and `/orbit:verify-skill` run only when you type them. `show-me-your-work` also runs when the playbook sees long or unattended work.
 
 ## Principles
 
-The playbook holds eleven of pstack's principles, each with the situation that triggers it: laziness protocol, subtract before you add, minimize reader load, model the domain, boundary discipline, type-system discipline, attack the premise, fix root causes, prove it works, test behavior not implementation, explain the number. Claude reads a principle only when its trigger fires, and adds one `Principles:` line to the reply, naming each one it applied and the choice it changed. Use the names to steer: "apply subtract before you add".
+The playbook holds twelve of pstack's principles, each with the situation that triggers it: laziness protocol, subtract before you add, minimize reader load, model the domain, boundary discipline, type-system discipline, attack the premise, fix root causes, prove it works, test behavior not implementation, guard the context window, explain the number. Claude reads a principle only when its trigger fires, and adds one `Principles:` line to the reply, naming each one it applied and the choice it changed. Use the names to steer: "apply subtract before you add".
 
 The same goes for the stack rules. Before writing TypeScript, Claude reads the TypeScript rules. Before writing React, it reads the Vercel React and composition indexes, then only the rule files that apply. The reviewer checks the same rules again before the change lands.
 
@@ -130,6 +133,6 @@ Rules for one folder go in an AGENTS.md (or CLAUDE.md) inside it, say `src/serve
 ## Maintain
 
 - Develop without installing: `claude --plugin-dir ~/Projects/orbit`. Check with `claude plugin validate .`.
-- Vendored files (`typescript-best-practices`, `unslop`, `reflect`, the eleven `principle-*` skills, Comment Sicko and the interrogate review references from pstack, `deslop` from cursor-team-kit, the two `vercel-*` skills from [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills), all MIT) are tracked in `skills.json`. Update them with `/update-skills [name]` from this repo.
+- Vendored files (`typescript-best-practices`, `unslop`, `reflect`, `recall`, `automate-me`, `show-me-your-work`, the twelve `principle-*` skills, Comment Sicko and the interrogate review references from pstack, `deslop` from cursor-team-kit, the two `vercel-*` skills from [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills), all MIT) are tracked in `skills.json`. Update them with `/update-skills [name]` from this repo.
 - The reviewer may ask once to read the plugin folder for the review rubric and React rules. Allow `Read(~/.claude/plugins/**)` to skip the prompt.
 - Release: bump `version` in `.claude-plugin/plugin.json`.

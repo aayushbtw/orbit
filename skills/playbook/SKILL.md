@@ -11,6 +11,8 @@ Every section except `investigate` has two gates:
 - **Plan gate**, before editing: if the change adds a module or touches more than 3 files, read the project sources for the paths it touches (as the `reviewer`'s step 2 finds them), then brief the `advisor` with the plan and those sources, and act on its verdict.
 - **Land gate**, the last step: run /orbit:ship. It checks, runs the `reviewer` and lands. A change never lands without it.
 
+Long, autonomous or multi-phase work, or a task the user steps away from: read `${CLAUDE_PLUGIN_ROOT}/skills/show-me-your-work/SKILL.md` and keep its decision trail.
+
 ## Principles
 
 Read the leaf in full for any principle you apply: `${CLAUDE_PLUGIN_ROOT}/skills/principle-<name>/SKILL.md`. In the reply, one line names each principle that shaped a decision and the choice it changed (`Principles: <name> -> <choice>`). Cite only leaves read this session.
@@ -25,6 +27,7 @@ Read the leaf in full for any principle you apply: `${CLAUDE_PLUGIN_ROOT}/skills
 - **fix-root-causes.** Debugging. Trace each symptom back to the first place the system went wrong and fix it there. A guard is a fix only when the state it handles is legitimate.
 - **prove-it-works.** After a task, before declaring done. Verify against the real artifact, not a proxy or "it compiles".
 - **test-behavior-not-implementation.** Writing, changing, or keeping a test. Assert what the code's users can observe, so the test fails when that behavior breaks and keeps passing when only the internals change.
+- **guard-the-context-window.** Context is filling up: large outputs, long files, repeated reads, fan-out planning. Route bulk to subagents. Keep summaries in the main thread, not raw payloads.
 - **explain-the-number.** Before you trust, report, or act on a number you measured. Find what limits it, and rule out that it measured something other than the work you think.
 
 ## Stack rules
