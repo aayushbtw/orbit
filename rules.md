@@ -25,8 +25,9 @@ Never create `.md` files in a repo root. The root holds only README, AGENTS (or 
 When a task is done, end with one `Next:` line. It's a status line, not an offer. Any follow-up you know of counts as open, even if nothing is mid-edit; if you'd name it when asked "what's next?", it's open.
 
 - Nothing open → `Next: nothing pending; /clear for the next task.`
-- Anything open → `Next: /clear, then /orbit:pickup`.
-- Next task builds on this context → `Next: /orbit:start <task>` (no /clear), instead of the line above.
+- Follow-up open → `Next: /clear, then /orbit:start <follow-up>`.
+- Follow-up needs this context → `Next: /orbit:start <follow-up>` (no /clear).
+- After `/orbit:pause` → `Next: /clear, then /orbit:pickup`. Pickup only resumes paused or another agent's work.
 
 # Workflow Defaults
 

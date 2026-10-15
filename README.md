@@ -39,8 +39,9 @@ Orbit picks the flow, writes its steps as a todo list, and works through them. A
 Claude ends every task with one `Next:` line. Do what it says:
 
 - `Next: nothing pending; /clear for the next task.` Run `/clear`, then `/orbit:start` your next goal.
-- `Next: /clear, then /orbit:pickup`. Work is still open. Run `/clear`, then `/orbit:pickup`.
-- `Next: /orbit:start <task>`. The next task needs this session's context. Run it here, without `/clear`.
+- `Next: /clear, then /orbit:start <follow-up>`. A follow-up is open. Run `/clear`, then start it.
+- `Next: /orbit:start <follow-up>`. The follow-up needs this session's context. Run it here, without `/clear`.
+- `Next: /clear, then /orbit:pickup`. Only after `/orbit:pause`. Pickup resumes paused work.
 
 Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh one.
 
