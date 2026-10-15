@@ -1,5 +1,5 @@
 ---
-name: pickup
+name: session-pickup
 description: Resume a prior session's work in this project from its transcript, branch or resume note.
 disable-model-invocation: true
 ---

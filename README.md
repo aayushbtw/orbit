@@ -47,14 +47,14 @@ Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh
 
 ### Stopping and resuming
 
-To stop in the middle of a task, say so or run `/orbit:pause`. Claude finishes the current step, commits a `wip:` commit, saves a resume note outside the repo, and tells you the first action on resume. Pause before you switch model or close the session. "Keep going" or "don't stop" never pauses.
+To stop in the middle of a task, say so or run `/orbit:pause-safely`. Claude finishes the current step, commits a `wip:` commit, saves a resume note outside the repo, and tells you the first action on resume. Pause before you switch model or close the session. "Keep going" or "don't stop" never pauses.
 
-To resume, start a fresh session (or `/clear`) and run `/orbit:pickup`. It reads the last session's transcript, the git log and the resume note from that session, works out what is done and what is left, and carries on through `/orbit:start` or `/orbit:ship`. It doesn't redo finished work.
+To resume, start a new session and run `/orbit:session-pickup`. It reads the last session's transcript, the git log and the resume note from that session, works out what is done and what is left, and carries on through `/orbit:start` or `/orbit:ship`. It doesn't redo finished work.
 
 ```
-/orbit:pause
-/clear
-/orbit:pickup
+/orbit:pause-safely
+(new session)
+/orbit:session-pickup
 ```
 
 ### When to use what

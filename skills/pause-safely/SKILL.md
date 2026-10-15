@@ -1,5 +1,5 @@
 ---
-name: pause
+name: pause-safely
 description: Stop cleanly and leave a resume note a fresh session can pick up. Use when the user asks to pause, stop for now or go offline, before switching model, or before imminent context compaction. Not on "keep going" or "don't stop".
 ---
 
