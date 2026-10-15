@@ -1,8 +1,8 @@
 # orbit
 
-One workflow for every project. Orbit teaches Claude Code to build, check, review and ship the same way in every repo, so you don't repeat yourself each session.
+A Claude Code plugin that runs every task through the same steps: pick the flow, build the smallest change, review it, ship it. Same steps in every repo, so you don't repeat yourself each session.
 
-Much of it comes from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto): the reviewer's rubric and filters, the playbooks (pause-safely and session-pickup included), `/orbit:correct`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `show-me-your-work`, verification skills, Comment Sicko, and the `unslop` and `typescript-best-practices` skills. `deslop` comes from pstack's sibling, cursor-team-kit. Orbit keeps the ideas and stays small enough to read in one sitting.
+Orbit is mostly [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto), repackaged. The flows, the reviewer, the principles and most of the skills are hers. Orbit trims them, ports them from Cursor to Claude Code, and wires them to a set of defaults. For the original thinking, read pstack. [Credits](#credits) lists what came from where.
 
 ## Install
 
@@ -128,9 +128,24 @@ If a project differs, add a `## Workflow` block to its AGENTS.md. List only what
 
 Rules for one folder go in an AGENTS.md (or CLAUDE.md) inside it, say `src/server/AGENTS.md` naming a library's guide. The reviewer and the plan gate read every such file above the files a change touches, plus `.claude/rules/` files whose `paths` match. The review lists each one as read or skipped, so a missed rule shows.
 
+## Credits
+
+Most of orbit is other people's work, all MIT:
+
+- [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto):
+  - the playbook flows, pause-safely and session-pickup
+  - the twelve principles
+  - the reviewer's filters and interrogate references (rubric, code-quality lens, lead judgment), and Comment Sicko
+  - `/orbit:correct`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:verify-skill` and `show-me-your-work`
+  - `unslop` and `typescript-best-practices`
+- [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit): `deslop`.
+- [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills): the React and composition rules.
+
+Orbit's own parts are the `/orbit:start` to `/orbit:ship` wiring and the project defaults.
+
 ## Maintain
 
 - Develop without installing: `claude --plugin-dir ~/Projects/orbit`. Check with `claude plugin validate .`.
-- Vendored files (`typescript-best-practices`, `unslop`, `reflect`, `recall`, `automate-me`, `show-me-your-work`, the twelve `principle-*` skills, Comment Sicko and the interrogate review references from pstack, `deslop` from cursor-team-kit, the two `vercel-*` skills from [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills), all MIT) are tracked in `skills.json`. Update them with `/update-skills [name]` from this repo.
+- Files copied verbatim or with small edits are tracked in `skills.json`. Update them with `/update-skills [name]` from this repo.
 - The reviewer may ask once to read the plugin folder for the review rubric and React rules. Allow `Read(~/.claude/plugins/**)` to skip the prompt.
 - Release: bump `version` in `.claude-plugin/plugin.json`.
