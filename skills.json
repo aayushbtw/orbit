@@ -134,5 +134,35 @@
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "Delete the ` per [Build the Lever](...)` and ` per [Fix Root Causes](...)` phrases, and unlink Redesign from First Principles to plain text (none are vendored); keep the Laziness Protocol link."
     ]
+  },
+  "principle-prove-it-works": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-prove-it-works",
+    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "Delete ` (the **show-me-your-work** skill)` (not vendored)."
+    ]
+  },
+  "principle-fix-root-causes": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-fix-root-causes",
+    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
+  "principle-test-behavior-not-implementation": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-test-behavior-not-implementation",
+    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
+  "principle-explain-the-number": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-explain-the-number",
+    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "Delete the sentence that runs the benchmark-checklist skill (not vendored)."
+    ]
   }
 }
