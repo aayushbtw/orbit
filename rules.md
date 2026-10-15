@@ -4,6 +4,8 @@ Delegate commits and PR work (create, read, edit) to the `gitops` subagent (`orb
 
 Brief the `advisor` subagent (`orbit:advisor`) at the plan gate or when the user asks, with the request, what happened, verbatim evidence, the current state and specific questions.
 
+You own every subagent's work. Review its diff or findings and write your own summary; don't pass through what it said.
+
 # Code Quality
 
 1. Smallest change that works. Delete before adding.

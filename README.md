@@ -17,7 +17,7 @@ The rules load on their own at the start of every session. Update from `/plugin`
 
 ## Use it
 
-One session does one task. Start it with `/orbit:start`, let it run to `/orbit:ship`, then `/clear`.
+One session does one task. Start it with `/orbit:start`. A change runs to `/orbit:ship`. Then `/clear`.
 
 ```
 /orbit:start fix the login redirect bug
@@ -29,7 +29,7 @@ Orbit picks the flow, writes its steps as a todo list, and works through them. A
 
 ```
 /orbit:start <goal>
-  1. Pick the flow      bug, feature, refactor or perf
+  1. Pick the flow      investigate, bug, feature, refactor or perf (investigate stops after answering)
   2. Plan gate          big change? the advisor reviews the plan first
   3. Build              smallest change, bugs get a failing repro first
   4. /orbit:ship        checks, proof it works, deslop, comments, reviewer, docs, commit or PR
@@ -61,13 +61,13 @@ To resume, start a fresh session (or `/clear`) and run `/orbit:pickup`. It reads
 | Situation | Run |
 | --- | --- |
 | Any new task: a bug, a feature, a refactor, a slow path | `/orbit:start <goal>` |
-| You want a specific flow, or only its step list | `/orbit:playbook <bug\|feature\|refactor\|perf>` |
+| You want a specific flow, or only its step list | `/orbit:playbook <investigate\|bug\|feature\|refactor\|perf>` |
 | The change is built and you want it landed | `/orbit:ship` (`start` already ends with it) |
 | You have to stop mid-task, switch model, or step away | `/orbit:pause` |
 | New session, continuing earlier work | `/orbit:pickup` |
 | Claude made the same mistake again | `/orbit:correct <mistake>` |
 | A session had several corrections and you want the skills to learn from them | `/orbit:reflect` |
-| A question with no code change | Ask it. `/orbit:start` answers questions and stops |
+| A question with no code change | `/orbit:start <question>` runs the read-only `investigate` flow and answers with citations |
 | First time in a project users can run or install | `/orbit:verify-skill create` |
 | The app changed and the verify skill drifted | `/orbit:verify-skill maintain` |
 
@@ -104,7 +104,7 @@ The reviewer, comment-sicko and advisor run only inside the flow you start. As i
 
 ## Principles
 
-The playbook holds seven of pstack's principles, each with the situation that triggers it: laziness protocol, subtract before you add, minimize reader load, model the domain, boundary discipline, type-system discipline, attack the premise. Claude reads a principle only when its trigger fires, and adds one `Principles:` line to the reply, naming each one it applied and the choice it changed. Use the names to steer: "apply subtract before you add".
+The playbook holds eleven of pstack's principles, each with the situation that triggers it: laziness protocol, subtract before you add, minimize reader load, model the domain, boundary discipline, type-system discipline, attack the premise, fix root causes, prove it works, test behavior not implementation, explain the number. Claude reads a principle only when its trigger fires, and adds one `Principles:` line to the reply, naming each one it applied and the choice it changed. Use the names to steer: "apply subtract before you add".
 
 The same goes for the stack rules. Before writing TypeScript, Claude reads the TypeScript rules. Before writing React, it reads the Vercel React and composition indexes, then only the rule files that apply. The reviewer checks the same rules again before the change lands.
 
@@ -129,6 +129,6 @@ Rules for one folder go in an AGENTS.md (or CLAUDE.md) inside it, say `src/serve
 ## Maintain
 
 - Develop without installing: `claude --plugin-dir ~/Projects/orbit`. Check with `claude plugin validate .`.
-- Vendored files (`typescript-best-practices`, `unslop`, `reflect`, the seven `principle-*` skills, Comment Sicko and the interrogate review references from pstack, `deslop` from cursor-team-kit, the two `vercel-*` skills from [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills), all MIT) are tracked in `skills.json`. Update them with `/update-skills [name]` from this repo.
+- Vendored files (`typescript-best-practices`, `unslop`, `reflect`, the eleven `principle-*` skills, Comment Sicko and the interrogate review references from pstack, `deslop` from cursor-team-kit, the two `vercel-*` skills from [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills), all MIT) are tracked in `skills.json`. Update them with `/update-skills [name]` from this repo.
 - The reviewer may ask once to read the plugin folder for the review rubric and React rules. Allow `Read(~/.claude/plugins/**)` to skip the prompt.
 - Release: bump `version` in `.claude-plugin/plugin.json`.

@@ -15,4 +15,4 @@ Read the project's AGENTS.md (or CLAUDE.md) Workflow block for what differs from
    - `main`: gitops commits one concern per commit, then pushes.
    - `pr`: gitops commits on a branch and opens the PR titled like a commit. If there is anything to test by hand, give numbered steps and wait for my go. Then gitops merges with the Land line's merge method (default merge commit) and cleans up: switch to `main`, pull, prune, delete the merged branch.
 
-End with the one Task End `Next:` line. Don't start the next task.
+The reply also holds the playbook section's **Reply:**. End with the one Task End `Next:` line. Don't start the next task.
