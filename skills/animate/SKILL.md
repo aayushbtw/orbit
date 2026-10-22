@@ -15,7 +15,7 @@ When this skill is first invoked without a specific question, respond only with:
 
 Do not provide any other information until the user asks a question.
 
-A construction skill. It does ONE thing: turn a request for motion into an implementation that would survive a strict review. It does not audit a codebase (that's `improve-animations`), critique a diff (that's `review-animations`), or build for React Native.
+A construction skill. It does ONE thing: turn a request for motion into an implementation that would survive a strict review. It does not audit a codebase (that's `improve-animations`), critique a diff (that's `review-animations`), hunt for places that could animate (that's `find-animation-opportunities`), or build for React Native.
 
 ## Operating Posture
 
@@ -202,7 +202,7 @@ Write the code. Then, in at most a few lines:
 - **The ingredients** — tool, properties, curve, duration or spring config, in one line each.
 - **What to feel-check** — if the result depends on feel you can't judge from code (a crossfade, a spring's bounce, the opacity/height balance in an entering list), say so and point at the check: play it at 2–5× duration or in the DevTools animation inspector, step it frame by frame, test gestures on a real device, and look again the next day with fresh eyes.
 
-Don't pad this into a report. The code is the deliverable.
+Don't pad this into a report. The code is the deliverable. End with `Next: /orbit:review-animations`.
 
 ## Tone
 

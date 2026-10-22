@@ -207,8 +207,18 @@
     "sha": "2d228630ba1446365f614a108cb8252f1feda202",
     "edits": [
       "Add the line `Source: emilkowalski/skills (MIT).` under the H1.",
-      "Drop the `find-animation-opportunities` and `animate-expo` mentions from the scope sentence, keeping `or build for React Native` (not vendored).",
-      "Replace `stop and invoke `pick-ui-library`.` with `stop and use an established headless library (Base UI, Radix) instead.` (not vendored)."
+      "Drop the `animate-expo` mention from the scope sentence, keeping `or build for React Native` (not vendored).",
+      "Replace `stop and invoke `pick-ui-library`.` with `stop and use an established headless library (Base UI, Radix) instead.` (not vendored).",
+      "Append `End with `Next: /orbit:review-animations`.` to the Output section's last paragraph."
+    ]
+  },
+  "find-animation-opportunities": {
+    "repo": "emilkowalski/skills",
+    "path": "skills/find-animation-opportunities",
+    "sha": "2d228630ba1446365f614a108cb8252f1feda202",
+    "edits": [
+      "Add the line `Source: emilkowalski/skills (MIT).` under the H1.",
+      "Point both handoffs (Hard Rule 1 and the Verdict close) at `/orbit:animate <suggestion>` instead of `improve-animations plan`; the Verdict also names `/orbit:review-animations` on the diff after."
     ]
   },
   "review-animations": {

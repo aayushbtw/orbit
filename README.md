@@ -68,6 +68,7 @@ To resume, start a new session and run `/orbit:session-pickup`. It reads the las
 | Catch up on your recent work across sessions | `/orbit:recall [topic]` |
 | A long or unattended run you'll review later | `/orbit:show-me-your-work` |
 | Turn your working style into a `-mode` skill | `/orbit:automate-me` |
+| Find where the UI should (and shouldn't) animate | `/orbit:find-animation-opportunities` |
 | Add motion to a component | `/orbit:animate <what>` |
 | Review animation code in a diff | `/orbit:review-animations` |
 | Audit a whole app's motion and plan fixes | `/orbit:improve-animations [quick\|deep]` |
@@ -143,7 +144,7 @@ Most of orbit is other people's work, all MIT:
   - `unslop` and `typescript-best-practices`
 - [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit): `deslop`.
 - [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills): the React and composition rules.
-- [emilkowalski/skills](https://github.com/emilkowalski/skills) by [Emil Kowalski](https://emilkowal.ski): `animate`, `review-animations` and `improve-animations`.
+- [emilkowalski/skills](https://github.com/emilkowalski/skills) by [Emil Kowalski](https://emilkowal.ski): `find-animation-opportunities`, `animate`, `review-animations` and `improve-animations`.
 
 Orbit's own parts are the `/orbit:start` to `/orbit:ship` wiring and the project defaults.
 
