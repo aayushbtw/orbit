@@ -68,6 +68,9 @@ To resume, start a new session and run `/orbit:session-pickup`. It reads the las
 | Catch up on your recent work across sessions | `/orbit:recall [topic]` |
 | A long or unattended run you'll review later | `/orbit:show-me-your-work` |
 | Turn your working style into a `-mode` skill | `/orbit:automate-me` |
+| Add motion to a component | `/orbit:animate <what>` |
+| Review animation code in a diff | `/orbit:review-animations` |
+| Audit a whole app's motion and plan fixes | `/orbit:improve-animations [quick\|deep]` |
 | Claude made the same mistake again | `/orbit:correct <mistake>` |
 | A session had several corrections and you want the skills to learn from them | `/orbit:reflect` |
 | A question with no code change | `/orbit:start <question>` runs the read-only `investigate` flow and answers with citations |
@@ -108,7 +111,7 @@ The reviewer, comment-sicko and advisor run only inside the flow you start. As i
 
 The playbook holds twelve of pstack's principles, each with the situation that triggers it: laziness protocol, subtract before you add, minimize reader load, model the domain, boundary discipline, type-system discipline, attack the premise, fix root causes, prove it works, test behavior not implementation, guard the context window, explain the number. Claude reads a principle only when its trigger fires, and adds one `Principles:` line to the reply, naming each one it applied and the choice it changed. Use the names to steer: "apply subtract before you add".
 
-The same goes for the stack rules. Before writing TypeScript, Claude reads the TypeScript rules. Before writing React, it reads the Vercel React and composition indexes, then only the rule files that apply. The reviewer checks the same rules again before the change lands.
+The same goes for the stack rules. Before writing TypeScript, Claude reads the TypeScript rules. Before writing React, it reads the Vercel React and composition indexes, then only the rule files that apply. Before writing animation, it reads `animate`. The reviewer checks the same rules again before the change lands, and checks motion against `review-animations`.
 
 ## Make it fit a project
 
@@ -140,6 +143,7 @@ Most of orbit is other people's work, all MIT:
   - `unslop` and `typescript-best-practices`
 - [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit): `deslop`.
 - [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills): the React and composition rules.
+- [emilkowalski/skills](https://github.com/emilkowalski/skills) by [Emil Kowalski](https://emilkowal.ski): `animate`, `review-animations` and `improve-animations`.
 
 Orbit's own parts are the `/orbit:start` to `/orbit:ship` wiring and the project defaults.
 

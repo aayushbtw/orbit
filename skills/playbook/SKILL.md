@@ -35,6 +35,7 @@ Read the leaf in full for any principle you apply: `${CLAUDE_PLUGIN_ROOT}/skills
 Before writing code that matches a line below, read its index, then open only the rule files that apply:
 - `.ts` or `.tsx`: `${CLAUDE_PLUGIN_ROOT}/skills/typescript-best-practices/SKILL.md`.
 - React components, hooks, context or data fetching: `${CLAUDE_PLUGIN_ROOT}/skills/vercel-react-best-practices/SKILL.md` and `${CLAUDE_PLUGIN_ROOT}/skills/vercel-composition-patterns/SKILL.md`. Skip Next.js-only rules in other frameworks.
+- Animation or motion (transitions, keyframes, Motion props, gestures): `${CLAUDE_PLUGIN_ROOT}/skills/animate/SKILL.md`, and its RECIPES.md when a recipe matches.
 
 ## investigate
 **You own the answer.** Read-only: a cited explanation or a recommendation, not a code change.
