@@ -78,6 +78,7 @@ To resume, start a new session and run `/orbit:session-pickup`. It reads the las
 | Claude made the same mistake again | `/orbit:correct <mistake>` |
 | A session had several corrections and you want the skills to learn from them | `/orbit:reflect` |
 | How a subsystem works, or where new code should live | `/orbit:how <subsystem>` |
+| Adversarial review of a change or a design sketch | `/orbit:interrogate` |
 | Why code is the way it is: rationale, regressions, history | `/orbit:why <code or decision>` |
 | A question with no code change | `/orbit:start <question>` runs the read-only `investigate` flow and answers with citations |
 | First time in a project users can run or install | `/orbit:verify-skill create` |
@@ -147,7 +148,7 @@ Most of orbit is other people's work, all MIT:
   - the playbook flows, pause-safely and session-pickup
   - delegated coding with `poteto-agent`, worktree-per-task, the PR body sections and the independent verifier
   - the thirteen principles
-  - the reviewer's filters and interrogate references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
+  - the reviewer's filters, `/orbit:interrogate` and its references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
   - `/orbit:correct`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:verify-skill` and `show-me-your-work`
   - `/orbit:how` and `/orbit:why`
   - `unslop` and `typescript-best-practices`

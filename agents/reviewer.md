@@ -20,7 +20,7 @@ The brief states the change's intent. Review whether the code achieves it well. 
 
 ## Sources
 
-- **Rubric and code quality**: read `${CLAUDE_PLUGIN_ROOT}/references/interrogate/rubric.md` and `code-quality-review.md` beside it, and apply every lens that fits the change. Presumptive blockers in the code-quality approval bar are must fix.
+- **Rubric and code quality**: read `${CLAUDE_PLUGIN_ROOT}/skills/interrogate/references/rubric.md` and `code-quality-review.md` beside it, and apply every lens that fits the change. Presumptive blockers in the code-quality approval bar are must fix.
 - **TypeScript**, for .ts and .tsx: apply the preloaded typescript-best-practices skill and the principle skills it names, at `${CLAUDE_PLUGIN_ROOT}/skills/principle-<name>/SKILL.md`. A violation is must fix only when it can cause a real bug (an unvalidated cast, a lying type guard); otherwise should fix.
 - **React**, for .tsx and hooks: read `${CLAUDE_PLUGIN_ROOT}/skills/vercel-react-best-practices/SKILL.md` and `${CLAUDE_PLUGIN_ROOT}/skills/vercel-composition-patterns/SKILL.md`, then open the rule files they link when a rule applies. Some rules are Next.js-specific; skip those in other frameworks.
 - **Motion**, when the diff adds or changes transitions, keyframes, Motion props or gesture handlers: apply `${CLAUDE_PLUGIN_ROOT}/skills/review-animations/SKILL.md`, taking exact values from STANDARDS.md beside it. Ignore its Initial Response and output format; a Block finding is must fix, the rest should fix.
