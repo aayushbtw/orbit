@@ -24,4 +24,4 @@ Read the project's AGENTS.md (or CLAUDE.md) Workflow block for what differs from
 
    Then, if the Worktree gate entered this worktree, clean up: `ExitWorktree` with `keep`, and from the main checkout gitops runs `git pull --ff-only`, removes the worktree and deletes its local branch (and the remote `<type>/<slug>` for `pr`, passing that name). If the main checkout isn't on a clean `main`, leave the worktree and say so.
 
-The reply also holds the playbook section's **Reply:**, plus one line naming the verifier's verdict and one naming the panel's agreement. End with the one Task End `Next:` line. Don't start the next task.
+The reply also holds the flow's **Reply:**, plus one line naming the verifier's verdict and one naming the panel's agreement. End with the one Task End `Next:` line. Don't start the next task.
