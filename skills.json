@@ -52,6 +52,21 @@
       "In references/rationale-template.md, `*Filled in by [arena](../../arena/SKILL.md).` becomes `*Filled in by Phase B synthesis.`"
     ]
   },
+  "figure-it-out": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/figure-it-out",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": [
+      "Set the frontmatter description to: Design an auditable playbook when no narrower one fits: a large migration, an ambitious multi-part change, or work a human reviews after stepping away. Scales rigor to the task, runs a hypothesis loop, and logs decisions. Use for /orbit:figure-it-out, or when /orbit:start routes here.",
+      "Remove the `disable-model-invocation` frontmatter key so /orbit:start can invoke it.",
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "In Start, replace `read the Principles section of the **poteto-mode** skill` with: read the Principles, Stack rules and gates (Worktree, Plan, Delegate, Land) in `${CLAUDE_PLUGIN_ROOT}/skills/playbook/SKILL.md`. Those gates hold for this run, and the last todo is `/orbit:ship` when the run changes code.",
+      "In Phase B (foundational-thinking, separate-before-serializing-shared-state and arena are not vendored), drop the `(the **foundational-thinking** principle skill)` parenthetical; the **architect** skill (it runs **arena**) becomes `/orbit:architect`; `A second arena` becomes `A second architect run`; `(the **separate-before-serializing-shared-state** principle skill)` becomes `, so no shared state needs serializing`; replace the poteto-mode Subagents sentence with: Delegates are `orbit:poteto-agent` per the playbook's Delegate gate. Fan-out workers get their own worktree via the `Agent` tool's `isolation: \"worktree\"`.",
+      "In Phase C (sequence-verifiable-units is not vendored), `Apply the **sequence-verifiable-units** principle skill, verifying` becomes `Sequence verifiable units, verifying`.",
+      "In Phase D, the **show-me-your-work** skill becomes `/orbit:show-me-your-work` (read `${CLAUDE_PLUGIN_ROOT}/skills/show-me-your-work/SKILL.md`).",
+      "In Phase E, `(the **encode-lessons-in-structure** principle skill)` becomes `(`/orbit:correct`)`."
+    ]
+  },
   "deslop": {
     "repo": "cursor/plugins",
     "path": "cursor-team-kit/skills/deslop",
