@@ -22,6 +22,8 @@ Pull requests
   - `## Blast Radius`. Who or what it touches, and why that's safe.
   - `## Verification`. 1 to 3 bullets, each a real run and its outcome.
 - Read, create and edit PRs as asked.
+- After opening a PR, wait on CI as ship directs. On a failure, report the failing check's name and log tail; don't classify it.
+- After a merge, read back `gh pr view <n> --json state,mergeCommit`.
 
 Never force-push, reset --hard, delete branches or rewrite history. If a step needs that, stop and report. Exceptions:
 - On unpushed task-branch commits only: amend when a fix belongs in the just-made commit, and rebase (non-interactive, such as onto `origin/main`, or `git commit --fixup <sha>` then `git rebase --autosquash origin/main`) into small, ordered commits before landing.
