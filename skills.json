@@ -2,7 +2,7 @@
   "typescript-best-practices": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/typescript-best-practices",
-    "sha": "d73344bee8cf22e53b9d5f4cf5749d38ba38c174",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
       "Set the frontmatter description to: TypeScript rules for the /orbit:start flow and the reviewer. Not for direct use.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1 of SKILL.md.",
@@ -12,7 +12,7 @@
   "unslop": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/unslop",
-    "sha": "d73344bee8cf22e53b9d5f4cf5749d38ba38c174",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
       "Set the frontmatter description to: Cut AI tells from written content: docs pages, READMEs, PR descriptions, blog and site copy. Not for chat replies or code.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
@@ -23,14 +23,14 @@
     "repo": "cursor/plugins",
     "path": "pstack/skills/interrogate/references",
     "dest": "references/interrogate",
-    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "skip": ["reviewer-prompt.md"],
     "edits": []
   },
   "deslop": {
     "repo": "cursor/plugins",
     "path": "cursor-team-kit/skills/deslop",
-    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
       "Set the frontmatter description to: Remove AI-generated code slop from the current diff. Run by /orbit:ship before commit.",
       "Add the line `Source: cursor/plugins, cursor-team-kit (MIT).` under the H1.",
@@ -40,7 +40,7 @@
   "reflect": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/reflect",
-    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
       "Set the frontmatter description to: Mine this session's transcript for durable learnings and route each to an edit on a skill it used. Use for /orbit:reflect.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
@@ -56,10 +56,50 @@
     "repo": "cursor/plugins",
     "path": "pstack/agents/comment-sicko.md",
     "dest": "agents/comment-sicko.md",
-    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "Replace the sentence that runs the how and why skills with: I read the named symbol's callers and its history with `git log -L` or `git blame`. (Orbit doesn't vendor how or why.)"
+      "Replace the sentence that runs the how and why skills with: I read the named symbol's callers and its history with `git log -L` or `git blame`. (Comment Sicko runs as a subagent and can't spawn the agents how and why need; no-comments runs them from the parent.)"
+    ]
+  },
+  "how": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/how",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": [
+      "Set the frontmatter description to: Explain how a subsystem works (architecture, runtime flow, where things live, where new code belongs) from parallel read-only explorers. Use for /orbit:how; use /orbit:why for motivation.",
+      "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook and no-comments can invoke it.",
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "Replace the Task / generalPurpose / readonly / pstack-models / poteto-mode paragraph with: Explorers are `Agent` calls with `subagent_type: \"Explore\"`. The explainer is an `Agent` call with `subagent_type: \"general-purpose\"`, so it runs on the parent model. Every brief says \"do not edit files\".",
+      "Prefix each `references/` path with `${CLAUDE_SKILL_DIR}/`."
+    ]
+  },
+  "why": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/why",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": [
+      "Set the frontmatter description to: Explain why code is the way it is (design rationale, regressions, postmortems, thresholds) from git, PRs and every connected MCP, with cited, confidence-tiered findings. Use for /orbit:why; use /orbit:how for runtime behavior.",
+      "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook, /orbit:recall and no-comments can invoke it.",
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "Replace the pstack-models / poteto-mode paragraph and the generalPurpose / readonly paragraph with: Every spawn is an `Agent` call with `subagent_type: \"general-purpose\"`, so investigators keep MCP access and the synthesizer can spot-check citations. Investigators still shouldn't write anything. Drop the per-spawn `model` sentences in steps 3 and 4 (all inherit the parent model).",
+      "In step 1, drop `cursor location` from the context list.",
+      "In Discovery, replace the Cursor `mcps/` sentence with: list the MCP servers available in this session from its tools: the `mcp__<server>__<tool>` names, including deferred tools, and any MCP server instructions in the system prompt.",
+      "Prefix each `references/` path in SKILL.md with `${CLAUDE_SKILL_DIR}/`. Leave the reference files as upstream: the variable only expands in SKILL.md."
+    ]
+  },
+  "no-comments": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/no-comments",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": [
+      "Set the frontmatter description to: Spawn Comment Sicko over a diff, fix its accepted findings, and offer encodings for claimed constraints. Run by /orbit:ship before review.",
+      "Remove the `disable-model-invocation` frontmatter key; /orbit:ship invokes it.",
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "In step 1, spawn an `Agent` with `subagent_type: \"orbit:comment-sicko\"` instead of `Task` / `comment-sicko`, and drop the poteto-mode Subagents sentence.",
+      "In step 2, replace `/how` or `/why` with `/orbit:how` or `/orbit:why`, and `/no-comments` with `/orbit:no-comments`.",
+      "In step 3, replace the `/architect` run with: sketch it once for the accepted set and surrounding code, then implement it in step 4. (architect is not vendored.) In step 6, `architect sketch` becomes `shape sketch`.",
+      "In step 4, drop the principle-redesign-from-first-principles mention (not vendored): The **principle-fix-root-causes** skill guides intent only. It neither authorizes widening the fence nor fixing instances outside it."
     ]
   },
   "vercel-react-best-practices": {
@@ -87,37 +127,37 @@
   "principle-laziness-protocol": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-laziness-protocol",
-    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-subtract-before-you-add": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-subtract-before-you-add",
-    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-minimize-reader-load": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-minimize-reader-load",
-    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-model-the-domain": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-model-the-domain",
-    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-boundary-discipline": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-boundary-discipline",
-    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-type-system-discipline": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-type-system-discipline",
-    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "Replace the sentence naming the encode-lessons-in-structure principle skill with: See `/orbit:correct`."
@@ -126,34 +166,34 @@
   "principle-attack-the-premise": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-attack-the-premise",
-    "sha": "1dcc2bacde73ddd284803b7af28164d0436198fc",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "Delete the ` per [Build the Lever](...)` and ` per [Fix Root Causes](...)` phrases, and unlink Redesign from First Principles to plain text (none are vendored); keep the Laziness Protocol link."
+      "Delete the ` per [Build the Lever](...)` phrase and unlink Redesign from First Principles to plain text (neither is vendored); keep the Fix Root Causes and Laziness Protocol links."
     ]
   },
   "principle-prove-it-works": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-prove-it-works",
-    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-fix-root-causes": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-fix-root-causes",
-    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-test-behavior-not-implementation": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-test-behavior-not-implementation",
-    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-explain-the-number": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-explain-the-number",
-    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "Delete the sentence that runs the benchmark-checklist skill (not vendored)."
@@ -162,13 +202,13 @@
   "principle-guard-the-context-window": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-guard-the-context-window",
-    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "show-me-your-work": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/show-me-your-work",
-    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "Prefix the `references/decision-log-template.tsv` and `scripts/log.sh` paths with `${CLAUDE_SKILL_DIR}/`.",
@@ -180,20 +220,20 @@
   "recall": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/recall",
-    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "Drop the **why** skill mention from the shared-record sentence (why is not vendored).",
+      "In the shared-record sentence, name the **why** skill as the `/orbit:why` skill.",
       "Replace the `~/.cursor/projects/<slug>/agent-transcripts/` paragraph with: Transcripts are the top-level `*.jsonl` files in this project's folder, found with `ls ~/.claude/projects/*/${CLAUDE_SESSION_ID}.jsonl`.",
       "In step 1, route to `/orbit:session-pickup` and `/orbit:automate-me`.",
       "In step 3, spawn `Agent` subagents with `subagent_type: general-purpose`, `model: haiku`, and drop the poteto-mode Subagents sentence.",
-      "In step 4, replace the **why** skill's source investigators with one investigator per source (`git log`/`git blame`, `gh pr list`/`gh issue list`, any connected tracker or error-tracking MCP), keeping the question and posture."
+      "In step 4, name the **why** skill as the `/orbit:why` skill."
     ]
   },
   "automate-me": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/automate-me",
-    "sha": "e5136d82418d2db3165ea1050d17577cd618cc05",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "Replace Cursor's `create-skill` with the `skill-creator` skill (or direct authoring if it isn't installed); `AskQuestion` with `AskUserQuestion` and `allow_multiple` with `multiSelect`; `.cursor/skills` and `~/.cursor/skills` with `.claude/skills` and `~/.claude/skills`.",

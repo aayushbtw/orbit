@@ -23,7 +23,7 @@ Read the leaf in full for any principle you apply: `${CLAUDE_PLUGIN_ROOT}/skills
 - **model-the-domain.** Writing stateful logic, or code that branches a lot or repeats a shape assumption across files. Encode the domain in a structure (state machine, typed model, table or registry, reducer, boundary, the right collection) instead of scattered conditionals.
 - **boundary-discipline.** Wiring validation, error handling, or framework adapters. Guards at system boundaries, trust internal types, keep business logic pure.
 - **type-system-discipline.** Designing types or a signature in any typed language. Make illegal states unrepresentable, brand primitives, parse external data at boundaries.
-- **attack-the-premise.** Two or more fixes that share one premise have failed the same gate. Take a census of which actors hold the imbalance before the next fix, then question the premise instead of writing another fix that assumes it.
+- **attack-the-premise.** Two or more fixes that share one premise have failed the same gate. Write the premise down and test it directly before you write another fix that assumes it.
 - **fix-root-causes.** Debugging. Trace each symptom back to the first place the system went wrong and fix it there. A guard is a fix only when the state it handles is legitimate.
 - **prove-it-works.** After a task, before declaring done. Verify against the real artifact, not a proxy or "it compiles".
 - **test-behavior-not-implementation.** Writing, changing, or keeping a test. Assert what the code's users can observe, so the test fails when that behavior breaks and keeps passing when only the internals change.
@@ -39,7 +39,7 @@ Before writing code that matches a line below, read its index, then open only th
 
 ## investigate
 **You own the answer.** Read-only: a cited explanation or a recommendation, not a code change.
-1. Read the code and its history (`git log -L`, `git blame`) for the part in question. Cite `path:line` for each claim.
+1. Run `/orbit:how` on the part in question. For motivation or history questions, also run `/orbit:why`. Cite `path:line` for each claim.
 2. For a choice between options, give a recommendation and a tradeoffs table. If the premise is wrong, say so.
 3. If the answer leads to a code change, stop, give the answer, and name the change as the next `/orbit:start <goal>`.
 
@@ -48,7 +48,7 @@ Before writing code that matches a line below, read its index, then open only th
 ## bug
 **Every shipped line traces to runtime evidence.** A change that "might help" is a hypothesis, not a fix. When evidence refutes a hypothesis, revert what it motivated.
 1. Reproduce it yourself where the user sees it, with the project's `verify-*` skill when it has one. Write a failing test or exact command first.
-2. Find the cause by ruling out hypotheses with runtime evidence, per fix-root-causes. Fix the cause, not the symptom.
+2. Seed hypotheses with `/orbit:how` over the subsystem and `/orbit:why` for its regression history. Find the cause by ruling out hypotheses with runtime evidence, per fix-root-causes. Fix the cause, not the symptom.
 3. Confirm the repro passes and the check is green. Unit tests show branch behavior, not bug absence.
 
 **Reply:** what was broken, the root cause, the fix, how you verified. Paste the failing-then-passing output verbatim.

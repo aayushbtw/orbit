@@ -32,7 +32,7 @@ Orbit picks the flow, writes its steps as a todo list, and works through them. A
   1. Pick the flow      investigate, bug, feature, refactor or perf (investigate stops after answering)
   2. Plan gate          big change? the advisor reviews the plan first
   3. Build              smallest change, bugs get a failing repro first
-  4. /orbit:ship        checks, proof it works, deslop, comments, reviewer, docs, commit or PR
+  4. /orbit:ship        checks, proof it works, deslop, no-comments, reviewer, docs, commit or PR
   5. Next: line         one line telling you what to do next
 ```
 
@@ -74,6 +74,8 @@ To resume, start a new session and run `/orbit:session-pickup`. It reads the las
 | Audit a whole app's motion and plan fixes | `/orbit:improve-animations [quick\|deep]` |
 | Claude made the same mistake again | `/orbit:correct <mistake>` |
 | A session had several corrections and you want the skills to learn from them | `/orbit:reflect` |
+| How a subsystem works, or where new code should live | `/orbit:how <subsystem>` |
+| Why code is the way it is: rationale, regressions, history | `/orbit:why <code or decision>` |
 | A question with no code change | `/orbit:start <question>` runs the read-only `investigate` flow and answers with citations |
 | First time in a project users can run or install | `/orbit:verify-skill create` |
 | The app changed and the verify skill drifted | `/orbit:verify-skill maintain` |
@@ -106,7 +108,7 @@ Claude runs these itself. You can also ask for the advisor.
 - **reviewer** (Opus, read-only): checks the change against its intent before it lands, with pstack's review rubric and code-quality lens. Looks for bugs, missed simplifications, TypeScript and React problems, patterns the next agent would copy, tests that check nothing, and AI-sounding prose.
 - **advisor** (Opus, read-only): a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time.
 
-The reviewer, comment-sicko and advisor run only inside the flow you start. As in pstack, the rest is opt-in: `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me` and `/orbit:verify-skill` run only when you type them. `show-me-your-work` also runs when the playbook sees long or unattended work.
+The reviewer, comment-sicko and advisor run only inside the flow you start. As in pstack, the rest is opt-in: `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me` and `/orbit:verify-skill` run only when you type them. `/orbit:how` and `/orbit:why` run when you type them, when Claude matches a question to them, and inside the investigate and bug flows and `no-comments`. `show-me-your-work` also runs when the playbook sees long or unattended work.
 
 ## Principles
 
@@ -139,8 +141,9 @@ Most of orbit is other people's work, all MIT:
 - [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto):
   - the playbook flows, pause-safely and session-pickup
   - the twelve principles
-  - the reviewer's filters and interrogate references (rubric, code-quality lens, lead judgment), and Comment Sicko
+  - the reviewer's filters and interrogate references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
   - `/orbit:correct`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:verify-skill` and `show-me-your-work`
+  - `/orbit:how` and `/orbit:why`
   - `unslop` and `typescript-best-practices`
 - [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit): `deslop`.
 - [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills): the React and composition rules.
