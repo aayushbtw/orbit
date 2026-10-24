@@ -32,6 +32,25 @@
       "Prefix each `references/` path in SKILL.md with `${CLAUDE_SKILL_DIR}/`. Leave the reference files as upstream: the variable only expands in SKILL.md."
     ]
   },
+  "architect": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/architect",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": [
+      "Set the frontmatter description to: Sketch types, signatures and module structure before code, from two parallel design runners, then implement against the chosen sketch. Use for /orbit:architect, or the architect step of an /orbit:playbook flow.",
+      "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook can invoke it.",
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "In Phase A, the **how** / **why** skills become `/orbit:how` / `/orbit:why`, and add after the how sentence: Reuse the flow's earlier `/orbit:how` output when it already covers these subsystems.",
+      "In Phase B (arena is not vendored), replace the arena paragraph and the architect-runners / pstack-models paragraph with: Spawn two runners in one message as `Agent` calls with `subagent_type: \"general-purpose\"`, one with `model: \"opus\"` and one with `model: \"sonnet\"`. Each brief holds the design task, the Phase A grounding, and absolute paths to read: `${CLAUDE_SKILL_DIR}/SKILL.md`, `${CLAUDE_SKILL_DIR}/references/runner-prompt.md`, `${CLAUDE_SKILL_DIR}/references/rationale-template.md`, and the principle leaves under `${CLAUDE_PLUGIN_ROOT}/skills/principle-<name>/SKILL.md`. Each brief says \"do not edit files\" and asks for the candidate design package in the reply. If the two candidates are not structurally distinct, spawn a third runner briefed to avoid the shared shape.",
+      "In Phase B, drop the exhaust-the-design-space sentence from the Design it twice paragraph (not vendored); prefix the design-red-flags link target with `${CLAUDE_SKILL_DIR}/`; replace the `Arena returns one synthesized design package...` paragraph with: You synthesize: pick a base candidate, graft what's better from the others, and record it in the rationale's \"Synthesis decision\" section.",
+      "In Phase C, `/architect with checkpoint` becomes `/orbit:architect with checkpoint`; replace the foundational-thinking and outcome-oriented-execution sentences (not vendored) with: The synthesis can ship as its own commit either way: scaffold first, then fill in. In an /orbit:playbook flow, that scaffold commit goes through the Delegate gate. Planned and scoped breakage during fill-in is fine. The **interrogate** skill becomes `/orbit:interrogate`.",
+      "In Phase D, after `The synthesized sketch is the contract.` add: In an /orbit:playbook flow, the Delegate gate's poteto-agent implements, briefed with the sketch as the contract.",
+      "In Phase E (redesign-from-first-principles is not vendored), the opening becomes `Don't bolt fixes onto a wrong design: redesign from first principles, per the **fix-root-causes** principle skill.`; scrap step 2 drops `, per redesign-from-first-principles`; the **how** skill becomes `/orbit:how`; `re-run arena` becomes `re-run the runners`.",
+      "In Outputs, prefix the template path with `${CLAUDE_SKILL_DIR}/` and append: It goes in the PR body when the project lands by PR, else in the reply; never as a file in the repo root.",
+      "In references/runner-prompt.md, replace the first paragraph with: The orchestrator passes this file to each parallel candidate runner during Phase B with the task and the Phase A grounding. Runners don't edit files and return their candidate design package in the reply. What matters is independence between candidates. `Read the **architect** skill in full first.` becomes `Read the architect SKILL.md at the path in your brief in full first.` Drop the `per the **separate-before-serializing-shared-state** principle skill` and `per the **make-operations-idempotent** principle skill` clauses (not vendored); the encode-lessons-in-structure clause becomes `per `/orbit:correct`'s levels`.",
+      "In references/rationale-template.md, `*Filled in by [arena](../../arena/SKILL.md).` becomes `*Filled in by Phase B synthesis.`"
+    ]
+  },
   "deslop": {
     "repo": "cursor/plugins",
     "path": "cursor-team-kit/skills/deslop",
