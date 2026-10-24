@@ -254,7 +254,7 @@
     "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "Rename the pstack playbooks to orbit's: `the **Opening a PR** playbook` becomes `/orbit:ship`; `the **Perf issue** playbook` becomes `the perf flow in `/orbit:playbook perf``; `the **Hillclimb** playbook` becomes `the hillclimb flow in `/orbit:playbook hillclimb``."
+      "Rename the pstack playbooks to orbit's: `the **Opening a PR** playbook` becomes `/orbit:ship`; `the **Perf issue** playbook's baseline` becomes `the perf flow's baseline (`/orbit:playbook perf`)`; `the **Hillclimb** playbook's harness` becomes `the hillclimb flow's harness (`/orbit:playbook hillclimb`)`."
     ]
   },
   "tdd": {

@@ -20,7 +20,9 @@ flowchart TD
     start["/orbit:start &lt;goal&gt;"] --> flow{Pick the flow}
     flow -- investigate --> answer[Answer, no commit]
     answer --> next
-    flow -- bug, feature, refactor, perf --> wt[Own worktree]
+    flow -- bug, feature, refactor,<br/>perf, hillclimb --> wt[Own worktree]
+    flow -- large or cross-cutting --> fio["/orbit:figure-it-out<br/>designs the steps"]
+    fio --> wt
     wt --> big{Adds module or<br/>over 3 files?}
     big -- yes --> advisor[Advisor reviews plan]
     big -- no --> build

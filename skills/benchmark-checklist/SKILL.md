@@ -33,9 +33,9 @@ For a quick ballpark the user asked for, one run is enough. Still check question
 - Lead with the verdict: faster, slower, no measurable difference, or inconclusive.
 - Give the number with its unit, the run count, the range, and the limiter. For example, "p50 41 ms → 33 ms, median of 7 runs per side, range 32 to 35 ms after, bound by JSON parsing on one core."
 - Call the verdict inconclusive when you claim a difference but cannot name the limiter, when a side ran untuned, or when you could not check questions 4 and 7. Name the gap.
-- Keep a PR body to one primary number, per `/orbit:ship`. Put the runs, range, and limiter evidence in a linked artifact or notes file.
+- Keep a PR body to one primary number. Put the runs, range, and limiter evidence in a linked artifact or notes file.
 
 ## Other perf material
 
-- Vet the perf flow in `/orbit:playbook perf`'s baseline before the playbook plans from it, and every number after that.
-- Vet the hillclimb flow in `/orbit:playbook hillclimb`'s harness before it is frozen. The frozen harness then prints error and work counts, so each keep-or-revert checks questions 4 and 7 for free.
+- Vet the perf flow's baseline (`/orbit:playbook perf`) before the playbook plans from it, and every number after that.
+- Vet the hillclimb flow's harness (`/orbit:playbook hillclimb`) before it is frozen. The frozen harness then prints error and work counts, so each keep-or-revert checks questions 4 and 7 for free.

@@ -12,7 +12,7 @@ Start a task with `/orbit:start`. A change runs to `/orbit:ship`. Bulk reading g
 
 Orbit picks the flow, writes its steps as a todo list, and works through them. A step can only be skipped in plain sight (`skip: <reason>`).
 
-1. **Pick the flow.** `investigate`, `bug`, `feature`, `refactor` or `perf`. `investigate` stops after answering.
+1. **Pick the flow.** `investigate`, `bug`, `feature`, `refactor`, `perf` or `hillclimb`. `investigate` stops after answering. Large or cross-cutting work, work you step away from, and work no flow fits go to `/orbit:figure-it-out`, which designs its own steps.
 2. **Worktree.** A change gets its own git worktree, so parallel sessions never collide.
 3. **Plan gate.** When a change adds a module or touches more than 3 files, the advisor reviews the plan first.
 4. **Build.** A fresh poteto-agent writes each unit. Claude reviews and verifies it, and gitops commits it.
@@ -30,7 +30,9 @@ Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh
 | Situation | Run |
 | --- | --- |
 | Any new task (a bug, a feature, a refactor, a slow path), or a question with no code change | `/orbit:start <goal>` |
-| A specific flow, or only its step list | `/orbit:playbook <investigate\|bug\|feature\|refactor\|perf>` |
+| A specific flow, or only its step list | `/orbit:playbook <investigate\|bug\|feature\|refactor\|perf\|hillclimb>` |
+| Improve one metric over many rounds, toward a target | `/orbit:playbook hillclimb`, or `/orbit:start` with a metric goal |
+| Large or cross-cutting work, or work you step away from | `/orbit:figure-it-out <goal>` (`/orbit:start` routes there too) |
 | Change is built, land it | `/orbit:ship` (`start` already ends with it) |
 | Stop mid-task, switch model, step away | `/orbit:pause-safely`, then `/orbit:session-pickup` in a new session. See [stopping and resuming](#stopping-and-resuming). |
 | A long or unattended run you'll review later | `/orbit:show-me-your-work` |
@@ -159,13 +161,13 @@ Rules for one folder go in an AGENTS.md (or CLAUDE.md) inside it, say `src/serve
 Most of orbit is other people's work, all MIT. Orbit trims it, ports it from Cursor to Claude Code, and wires it to a set of defaults. For the original thinking, read pstack.
 
 - [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto):
-  - the playbook flows, pause-safely and session-pickup
+  - the playbook flows (hillclimb included), `/orbit:figure-it-out`, pause-safely and session-pickup
   - delegated coding with `poteto-agent`, worktree-per-task, the PR body sections and the independent verifier
   - the thirteen principles
   - the reviewer's filters, `/orbit:architect`, `/orbit:interrogate` and its references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
   - `/orbit:correct`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:verify-skill` and `show-me-your-work`
   - `/orbit:how` and `/orbit:why`
-  - `unslop` and `typescript-best-practices`
+  - `unslop`, `typescript-best-practices`, `tdd` and `benchmark-checklist`
 - [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit): `deslop`.
 - [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills): the React and composition rules.
 - [emilkowalski/skills](https://github.com/emilkowalski/skills) by [Emil Kowalski](https://emilkowal.ski): `find-animation-opportunities`, `animate`, `review-animations` and `improve-animations`.
