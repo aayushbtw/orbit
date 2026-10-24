@@ -13,7 +13,9 @@ In Claude Code:
 /plugin install orbit@orbit
 ```
 
-The rules load on their own at the start of every session. Update from `/plugin`. Your own `CLAUDE.md` and `settings.json` stay yours.
+The rules load on their own at the start of every session. Your own `CLAUDE.md` and `settings.json` stay yours.
+
+Claude Code leaves auto-update off for third-party marketplaces, so orbit stays on the version you installed. To turn it on, run `/plugin`, open the **Marketplaces** tab, select `orbit`, and choose **Enable auto-update**. To update once by hand, run `claude plugin update orbit@orbit`.
 
 ## Use it
 
@@ -32,8 +34,8 @@ Orbit picks the flow, writes its steps as a todo list, and works through them. A
   1. Pick the flow      investigate, bug, feature, refactor or perf (investigate stops after answering)
   2. Worktree           a change gets its own git worktree, so parallel sessions never collide
   3. Plan gate          big change? the advisor reviews the plan first
-  4. Build              a fresh poteto-agent writes each unit; Claude reviews, verifies, commits it
-  5. /orbit:ship        checks, proof it works, deslop, no-comments, reviewer, docs, lands on main or as a PR, removes the worktree
+  4. Build              a fresh poteto-agent writes each unit; Claude reviews and verifies it, gitops commits it
+  5. /orbit:ship        checks, deslop, no-comments, reviewer on Opus and Sonnet, verifier, docs, lands on main or as a PR after CI, removes the worktree
   6. Next: line         one line telling you what to do next
 ```
 
@@ -86,7 +88,7 @@ To resume, start a new session and run `/orbit:session-pickup`. It reads the las
 ### Correct usage
 
 - Give `/orbit:start` the goal, not the steps. Orbit picks the flow and the steps.
-- Don't land a change by hand. `/orbit:ship` runs the checks, the cleanup and the reviewer, and a change never lands without the reviewer.
+- Don't land a change by hand. `/orbit:ship` runs the checks, the cleanup, the reviewer and the verifier, and a change never lands without them.
 - Project differences (check command, PR landing, extra review sources) go in the project's `## Workflow` block, not in chat. See below.
 
 ## Let Claude prove its work
@@ -96,21 +98,22 @@ Tests passing isn't the same as the feature working. Run `/orbit:verify-skill cr
 - a small control script (`doctor`, start the app, drive it, save evidence, clean up), with JSON output and errors that say what to do next
 - a feature map: one file per feature, saying how a user reaches it, the exact commands to drive it, and what proves it worked
 
-Claude runs the new skill once end to end before handing it over. After that, `/orbit:ship` uses it on any change a user can see and reports where the evidence is.
+Claude runs the new skill once end to end before handing it over. After that, ship's `verifier` uses it on any change a user can see and reports where the evidence is. The verifier is a fresh agent, not the main chat, so the change is never judged by the session that built it.
 
 When the app changes, run `/orbit:verify-skill maintain`. It drives every feature, fixes the skill and map where they drifted, and reports real bugs instead of hiding them.
 
 ## What runs in the background
 
-Claude runs these itself. You can also ask for the advisor.
+Claude runs these itself. You can also ask for the reviewer or the advisor.
 
 - **poteto-agent**: writes the code for each unit of a change, so the code is never reviewed by the agent that wrote it.
 - **gitops** (Sonnet): commits, PRs, and removing a landed worktree.
 - **comment-sicko**: deletes comments outside its keep list and flags the code they excuse, before review.
-- **reviewer** (Opus, read-only): checks the change against its intent before it lands, with pstack's review rubric and code-quality lens. Looks for bugs, missed simplifications, TypeScript and React problems, patterns the next agent would copy, tests that check nothing, and AI-sounding prose.
+- **reviewer** (read-only): checks the change against its intent before it lands, with pstack's review rubric and code-quality lens. Ship runs it twice, on Opus and Sonnet, and merges what both find. Looks for bugs, missed simplifications, TypeScript and React problems, patterns the next agent would copy, tests that check nothing, and AI-sounding prose.
+- **verifier** (read-only): runs the change the way a user would before it lands and returns PASS, PASS+NOTES or FAIL. A fresh agent, never the one that wrote the change.
 - **advisor** (Opus, read-only): a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time.
 
-poteto-agent, the reviewer, comment-sicko and advisor run only inside the flow you start. As in pstack, the rest is opt-in: `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me` and `/orbit:verify-skill` run only when you type them. `/orbit:how` and `/orbit:why` run when you type them, when Claude matches a question to them, and inside the investigate and bug flows and `no-comments`. `show-me-your-work` also runs when the playbook sees long or unattended work.
+poteto-agent, the verifier and comment-sicko run only inside the flow you start. The reviewer and advisor run there too, or when you ask for them. As in pstack, the rest is opt-in: `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me` and `/orbit:verify-skill` run only when you type them. `/orbit:how` and `/orbit:why` run when you type them, when Claude matches a question to them, and inside the investigate and bug flows and `no-comments`. `show-me-your-work` also runs when the playbook sees long or unattended work.
 
 ## Principles
 
@@ -142,7 +145,7 @@ Most of orbit is other people's work, all MIT:
 
 - [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto):
   - the playbook flows, pause-safely and session-pickup
-  - delegated coding with `poteto-agent`, worktree-per-task and the PR body sections
+  - delegated coding with `poteto-agent`, worktree-per-task, the PR body sections and the independent verifier
   - the thirteen principles
   - the reviewer's filters and interrogate references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
   - `/orbit:correct`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:verify-skill` and `show-me-your-work`
