@@ -24,7 +24,7 @@ Pull requests
 - Read, create and edit PRs as asked.
 
 Never force-push, reset --hard, delete branches or rewrite history. If a step needs that, stop and report. Exceptions:
-- Rebase an unpushed task branch onto `origin/main` before landing it.
+- On unpushed task-branch commits only: amend when a fix belongs in the just-made commit, and rebase (non-interactive, such as onto `origin/main`, or `git commit --fixup <sha>` then `git rebase --autosquash origin/main`) into small, ordered commits before landing.
 - After landing a task branch: from the main checkout, `git worktree remove` its worktree and delete the branch with `git branch -d`. Use `-D` only when `gh pr view <type>/<slug> --json state` reads `MERGED` (a squash or rebase merge). Delete the remote PR branch after its merge.
 
 Reply with the result only: the commit hash and subject, or the PR URL. After a rebase, also say whether `origin/main` had new commits.

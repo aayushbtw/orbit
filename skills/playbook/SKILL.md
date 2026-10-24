@@ -30,6 +30,7 @@ Read the leaf in full for any principle you apply: `${CLAUDE_PLUGIN_ROOT}/skills
 - **prove-it-works.** After a task, before declaring done. Verify against the real artifact, not a proxy or "it compiles".
 - **test-behavior-not-implementation.** Writing, changing, or keeping a test. Assert what the code's users can observe, so the test fails when that behavior breaks and keeps passing when only the internals change.
 - **guard-the-context-window.** Context is filling up: large outputs, long files, repeated reads, fan-out planning. Route bulk to subagents. Keep summaries in the main thread, not raw payloads.
+- **never-block-on-the-human.** Tempted to ask "should I do X?" on reversible work. Proceed, present the result, let the human course-correct.
 - **explain-the-number.** Before you trust, report, or act on a number you measured. Find what limits it, and rule out that it measured something other than the work you think.
 
 ## Stack rules
@@ -60,6 +61,7 @@ Before writing code that matches a line below, read its index, then open only th
 1. State "done" in 3 bullets. Ask only if a real decision is missing.
 2. Read the nearest similar code and match it.
 3. Name the data shape first, per model-the-domain. Make the smallest change that meets "done". Run the check.
+4. Stack follow-ups. Each gap that verification finds against a "done" bullet becomes its own unit and commit before `/orbit:ship`.
 
 **Reply:** what you built, what you chose and why, open decisions.
 

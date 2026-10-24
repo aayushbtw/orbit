@@ -40,7 +40,7 @@ Orbit picks the flow, writes its steps as a todo list, and works through them. A
 Claude ends every task with one `Next:` line. Do what it says:
 
 - `Next: nothing pending.` Run `/orbit:start` with your next goal.
-- `Next: /orbit:start <follow-up>`. A follow-up is open. Run it.
+- `Next: /orbit:start <follow-up>`. The follow-up is outside the goal or needs your decision. Claude says which. Run it when you're ready.
 - `Next: new session, then /orbit:session-pickup`. Only after `/orbit:pause-safely`. Session pickup resumes paused work.
 
 Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh one.
@@ -114,7 +114,7 @@ poteto-agent, the reviewer, comment-sicko and advisor run only inside the flow y
 
 ## Principles
 
-The playbook holds twelve of pstack's principles, each with the situation that triggers it: laziness protocol, subtract before you add, minimize reader load, model the domain, boundary discipline, type-system discipline, attack the premise, fix root causes, prove it works, test behavior not implementation, guard the context window, explain the number. Claude reads a principle only when its trigger fires, and adds one `Principles:` line to the reply, naming each one it applied and the choice it changed. Use the names to steer: "apply subtract before you add".
+The playbook holds thirteen of pstack's principles, each with the situation that triggers it: laziness protocol, subtract before you add, minimize reader load, model the domain, boundary discipline, type-system discipline, attack the premise, fix root causes, prove it works, test behavior not implementation, guard the context window, never block on the human, explain the number. Claude reads a principle only when its trigger fires, and adds one `Principles:` line to the reply, naming each one it applied and the choice it changed. Use the names to steer: "apply subtract before you add".
 
 The same goes for the stack rules. Before writing TypeScript, Claude reads the TypeScript rules. Before writing React, it reads the Vercel React and composition indexes, then only the rule files that apply. Before writing animation, it reads `animate`. The reviewer checks the same rules again before the change lands, and checks motion against `review-animations`.
 
@@ -143,7 +143,7 @@ Most of orbit is other people's work, all MIT:
 - [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto):
   - the playbook flows, pause-safely and session-pickup
   - delegated coding with `poteto-agent`, worktree-per-task and the PR body sections
-  - the twelve principles
+  - the thirteen principles
   - the reviewer's filters and interrogate references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
   - `/orbit:correct`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:verify-skill` and `show-me-your-work`
   - `/orbit:how` and `/orbit:why`
@@ -152,7 +152,7 @@ Most of orbit is other people's work, all MIT:
 - [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills): the React and composition rules.
 - [emilkowalski/skills](https://github.com/emilkowalski/skills) by [Emil Kowalski](https://emilkowal.ski): `find-animation-opportunities`, `animate`, `review-animations` and `improve-animations`.
 
-Orbit's own parts are the `/orbit:start` to `/orbit:ship` wiring and the project defaults.
+Orbit's own parts are the `/orbit:start` to `/orbit:ship` wiring and the project defaults. [Differences from pstack](docs/pstack-differences.md) lists where orbit departs from pstack's Claude Code port, and why.
 
 ## Maintain
 
