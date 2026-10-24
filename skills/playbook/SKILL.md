@@ -51,33 +51,40 @@ Before writing code that matches a line below, read its index, then open only th
 ## bug
 **Every shipped line traces to runtime evidence.** A change that "might help" is a hypothesis, not a fix. When evidence refutes a hypothesis, revert what it motivated.
 1. Reproduce it yourself where the user sees it, with the project's `verify-*` skill when it has one. Write a failing test or exact command first.
-2. Seed hypotheses with `/orbit:how` over the subsystem and `/orbit:why` for its regression history. Find the cause by ruling out hypotheses with runtime evidence, per fix-root-causes. Fix the cause, not the symptom. The failing repro lands as its own unit before the fix.
-3. Confirm the repro passes and the check is green. Unit tests show branch behavior, not bug absence.
+2. Binary-search the cause. Form candidate hypotheses, seeded by `/orbit:how` over the subsystem and `/orbit:why` for its regression history. Each pass, take the split that cuts the most remaining problem space, get runtime evidence, eliminate. When program state is unclear, add instrumentation or logging and read it as the code runs. Don't guess. Drive a long or stubborn hunt with `/loop`. Confirm the surviving mechanism with runtime evidence before planning the fix.
+3. Fix the cause, not the symptom, per fix-root-causes. If the fix crosses a function boundary, run `/orbit:architect` first. The failing repro lands as its own unit before the fix.
+4. Confirm the repro passes and the check is green. Unit tests show branch behavior, not bug absence.
 
 **Reply:** what was broken, the root cause, the fix, how you verified. Paste the failing-then-passing output verbatim.
 
 ## feature
 **You own the design.**
 1. State "done" in 3 bullets. Ask only if a real decision is missing.
-2. Read the nearest similar code and match it.
-3. Name the data shape first, per model-the-domain. Make the smallest change that meets "done". Run the check.
-4. Stack follow-ups. Each gap that verification finds against a "done" bullet becomes its own unit and commit before `/orbit:ship`.
+2. Run `/orbit:how` over the affected subsystem. Read the nearest similar code and match it.
+3. Run `/orbit:architect` for parallel design exploration, through its synthesized sketch. If the design is contested, run `/orbit:interrogate` on the sketch before the delegate starts.
+4. Implement against the sketch through the Delegate gate. Its types are the data shape. Without a sketch, name the data shape first, per model-the-domain. Make the smallest change that meets "done". Run the check.
+5. Stack follow-ups. Each gap that verification finds against a "done" bullet becomes its own unit and commit before `/orbit:ship`.
 
-**Reply:** what you built, what you chose and why, open decisions.
+**Reply:** what you built, what you chose and why, open decisions. Tables for design alternatives.
 
 ## refactor
 **The structure changes. The behavior does not.** A bug or missing feature found on the way is split out as its own task.
-1. Pin current behavior first: a test or a saved output to diff against. Types and lint are not a pin.
-2. Delete dead code and one-caller wrappers before adding the new shape, as its own unit.
-3. Move in small steps, pin green after each. Migrate every caller and delete the old API in the same change. Check each rename against strings and docs too.
-4. Keep it only if the code is easier to read. Otherwise revert.
+1. Run `/orbit:how` over the affected subsystem to learn the contract. Pin it before any structure moves with a characterization test, snapshot or equivalence harness. Types and lint are not a pin.
+2. Name the structure the code is missing, per model-the-domain, and the target shape. Boring code stays when the shape is already clear and local. The reshape must delete branches or invalid states, not add indirection. If the target crosses a function boundary, run `/orbit:architect` before the move.
+3. Delete dead code and one-caller wrappers before adding the new shape, as its own unit.
+4. Move in small steps, pin green after each. Migrate every caller and delete the old API in the same change. No compatibility shims or parallel old and new paths. Check each rename against strings and docs too.
+5. Prove behavior is unchanged on the real artifact, not "it compiles", per prove-it-works. For larger reshapes, diff old and new outputs with a script, replay a recorded baseline against the new code, or smoke-run the matching surface.
+6. Keep it only if the code is easier to read. Otherwise revert.
 
-**Reply:** the structure that changed, the pin it held against, what got easier to read, what got reverted.
+**Reply:** the structure that changed, the pin it held against, the equivalence proof, what got easier to read, what got reverted.
 
 ## perf
 **Tie every fix to a measurement.** Don't read source in place of measuring.
-1. Measure first and record the number. Check the timed work actually ran and didn't error.
-2. Try fixes cheapest first: don't do it, don't do it again, do less, do it later, do it concurrently, do it cheaper. Stop when one meets the target.
-3. Change one thing, measure again over several runs. Keep it only if the gain beats run-to-run noise, per explain-the-number.
+1. Measure first and record the number. Check the timed work actually ran and didn't error. Save the raw output as an artifact under `$TMPDIR/orbit-perf/<slug>/`, outside the worktree, since ship deletes it.
+2. Run `/orbit:how` to ground hypotheses. Don't claim a perf ceiling without running it.
+3. Try fixes cheapest first: don't do it, don't do it again, do less, do it later, do it when they're not looking, do it concurrently, do it cheaper. Stop when one meets the target.
+4. If the fix crosses a function boundary, run `/orbit:architect` first.
+5. Change one thing, measure again over several runs. Save each run's raw output next to the baseline. Keep it only if the gain beats run-to-run noise, per explain-the-number.
+6. Parse and compare the artifacts (diff, JSON into sqlite). "Inconclusive" or wrong-surface is not a pass. Flag it. Cite the measurement in the PR body when Land is `pr`, else in the reply.
 
-**Reply:** baseline number, post-fix number, delta, run count and spread.
+**Reply:** baseline number, post-fix number, delta, run count and spread, artifact path.
