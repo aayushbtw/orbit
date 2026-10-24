@@ -211,6 +211,12 @@
       "Delete the sentence that runs the benchmark-checklist skill (not vendored)."
     ]
   },
+  "principle-never-block-on-the-human": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-never-block-on-the-human",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
   "principle-guard-the-context-window": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-guard-the-context-window",
