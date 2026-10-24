@@ -14,7 +14,7 @@
     "path": "pstack/skills/unslop",
     "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
-      "Set the frontmatter description to: Cut AI tells from written content: docs pages, READMEs, PR descriptions, blog and site copy. Not for chat replies or code.",
+      "Set the frontmatter description to: Cut AI tells from written content: docs pages, READMEs, PR descriptions, blog and site copy, and chat replies. Not for code.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "Remove the `disable-model-invocation` frontmatter key so the reviewer can preload it."
     ]

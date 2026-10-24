@@ -1,6 +1,6 @@
 ---
 name: unslop
-description: Cut AI tells from written content: docs pages, READMEs, PR descriptions, blog and site copy. Not for chat replies or code.
+description: Cut AI tells from written content: docs pages, READMEs, PR descriptions, blog and site copy, and chat replies. Not for code.
 ---
 
 # Unslop

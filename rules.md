@@ -14,7 +14,7 @@ You own every subagent's work. Review its diff or findings and write your own su
 2. Match surrounding code. Reuse existing helpers before writing new ones.
 3. No speculative abstractions, flags or fallbacks for cases that can't happen.
 4. Handle errors at boundaries only (input, network, fs). Trust internal calls.
-5. Fix the cause, not the symptom. A workaround is a product call, so ask.
+5. Fix the cause, not the symptom. Never bolt on a symptom guard. If the root cause is out of scope, land the smallest in-scope fix and report the rest open.
 6. Before saying done: run the project check and the relevant test. Check numbers against the real source.
 7. Every claim carries its evidence (command output, a path) or its label in the same sentence: measured, inferred or guess. Never hand the user a check you could run.
 
@@ -25,6 +25,8 @@ Never create `.md` files in a repo root. The root holds only README, AGENTS (or 
 # Task End
 
 Before ending, finish every follow-up inside the goal yourself, including verifying your own change end to end. The goal is what the user asked for. A feature's "done" bullets restate it and never widen it. Don't stop to ask on reversible work. Decide, act, and report the choice, per never-block-on-the-human.
+
+Before asking on a "which approach", "how should I" or "what should this do" fork, classify it. If running something could answer it (behavior, timing, layout, output, perf), it isn't the user's question. Try it, sketch the options, and let the result decide. Keep questions for product or preference calls no experiment can settle, asked as numbered options with the recommendation first.
 
 - List anything outside the goal. Don't build it. The one exception is a broken orbit skill or a flaky check that blocks this task, which you fix in its own commit.
 - Pause only for:
@@ -39,6 +41,20 @@ End with one `Next:` line. It's a status, not an offer.
 - Nothing left → `Next: nothing pending.`
 - Work outside the goal, or waiting on the user's call → `Next: /orbit:start <follow-up>`, saying which.
 - After `/orbit:pause-safely` → `Next: new session, then /orbit:session-pickup`. Session pickup only resumes paused or another agent's work.
+
+# Writing the reply
+
+Write the reply clean as you draft it. Unslop's patterns apply to replies too.
+
+- Short declarative sentences, one thought each.
+- No long dash anywhere.
+- No colon as a mid-sentence connector. A colon before a list is fine.
+- Terse is not an excuse to drop content. Every part the flow's **Reply:** names stays.
+- Lead with what changes for the user, then what the next maintainer inherits.
+- Never fabricate a link, citation or transcript reference. Link only what you produced or read this session.
+- "No" is an acceptable answer. Asked to add scope or shown an approach, give your real judgment, including "this doesn't earn its place".
+
+The user's own CLAUDE.md format and length rules win where they differ.
 
 # Workflow Defaults
 
