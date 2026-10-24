@@ -98,7 +98,7 @@ Tests passing isn't the same as the feature working. Run `/orbit:verify-skill cr
 - a small control script (`doctor`, start the app, drive it, save evidence, clean up), with JSON output and errors that say what to do next
 - a feature map: one file per feature, saying how a user reaches it, the exact commands to drive it, and what proves it worked
 
-Claude runs the new skill once end to end before handing it over. After that, ship's `verifier` uses it on any change a user can see and reports where the evidence is. The verifier is a fresh agent, not the main chat, so the change is never judged by the session that built it.
+Claude runs the new skill once end to end before handing it over. After that, ship's `verifier` uses it on every change that isn't docs-only and reports where the evidence is. The verifier is a fresh agent, not the main chat, so the change is never judged by the session that built it.
 
 When the app changes, run `/orbit:verify-skill maintain`. It drives every feature, fixes the skill and map where they drifted, and reports real bugs instead of hiding them.
 
@@ -110,7 +110,7 @@ Claude runs these itself. You can also ask for the reviewer or the advisor.
 - **gitops** (Sonnet): commits, PRs, and removing a landed worktree.
 - **comment-sicko**: deletes comments outside its keep list and flags the code they excuse, before review.
 - **reviewer** (read-only): checks the change against its intent before it lands, with pstack's review rubric and code-quality lens. Ship runs it twice, on Opus and Sonnet, and merges what both find. Looks for bugs, missed simplifications, TypeScript and React problems, patterns the next agent would copy, tests that check nothing, and AI-sounding prose.
-- **verifier** (read-only): runs the change the way a user would before it lands and returns PASS, PASS+NOTES or FAIL. A fresh agent, never the one that wrote the change.
+- **verifier** (no Edit or Write tools): runs the change the way a user would before it lands and returns PASS, PASS+NOTES or FAIL. A fresh agent, never the one that wrote the change.
 - **advisor** (Opus, read-only): a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time.
 
 poteto-agent, the verifier and comment-sicko run only inside the flow you start. The reviewer and advisor run there too, or when you ask for them. As in pstack, the rest is opt-in: `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me` and `/orbit:verify-skill` run only when you type them. `/orbit:how` and `/orbit:why` run when you type them, when Claude matches a question to them, and inside the investigate and bug flows and `no-comments`. `show-me-your-work` also runs when the playbook sees long or unattended work.

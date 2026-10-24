@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Reviews a change for correctness bugs and slop before it lands. Run by /orbit:ship, or when the user asks for a review.
+description: Reviews a change for correctness bugs and slop before it lands. Run by /orbit:ship on Opus and Sonnet (ship overrides the model per spawn), or when the user asks for a review.
 model: opus
 tools: Read, Grep, Glob, Bash
 skills:
