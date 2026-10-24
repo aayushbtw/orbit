@@ -52,6 +52,18 @@
       "In the three reviewer references, count a skill as used on a `Skill` tool call or `<command-name>` tag naming it, a `Read` of its SKILL.md under `.claude/skills/`, `~/.claude/skills/` or `~/.claude/plugins/`, an `Agent` prompt naming its path, or a matching Bash/Grep/MCP call."
     ]
   },
+  "poteto-agent": {
+    "repo": "cursor/plugins",
+    "path": "pstack/agents/poteto-agent.md",
+    "dest": "agents/poteto-agent.md",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "Set the frontmatter description to orbit's flow: a delegate spawned during an /orbit:start flow, fresh per unit of work, that reads orbit's playbook SKILL.md first; drop `is_background`.",
+      "Point the read at orbit's playbook: `poteto-mode's full agent style` becomes `orbit's full agent style`, `receives `/poteto-mode`` becomes `runs `/orbit:start``, `Task` becomes `Agent`, the `poteto-mode` skill becomes orbit's playbook, `inline Principles index` becomes `Principles index`, `generalPurpose` becomes `general-purpose`, the search is `~/.claude/plugins/` for `skills/playbook/SKILL.md` under a folder whose `.claude-plugin/plugin.json` has name `orbit`, highest version wins, and drop the hidden-catalog sentence.",
+      "Append a paragraph: work only in the worktree path and unit the parent scoped; don't commit, push or spawn agents, since the parent reviews and commits; before returning, run `git status --short` and report changed paths, what was built, and the check run with its result."
+    ]
+  },
   "comment-sicko": {
     "repo": "cursor/plugins",
     "path": "pstack/agents/comment-sicko.md",

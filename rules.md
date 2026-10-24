@@ -1,6 +1,6 @@
 # Delegation
 
-Delegate commits and PR work (create, read, edit) to the `gitops` subagent (`orbit:gitops`). Use the `reviewer` subagent (`orbit:reviewer`) for a pre-merge review, and the `Explore` agent for broad repo search.
+Delegate code-writing to the `poteto-agent` subagent (`orbit:poteto-agent`) per the playbook's Delegate gate. Delegate commits and PR work (create, read, edit) to the `gitops` subagent (`orbit:gitops`). Use the `reviewer` subagent (`orbit:reviewer`) for a pre-merge review, and the `Explore` agent for broad repo search.
 
 Brief the `advisor` subagent (`orbit:advisor`) at the plan gate or when the user asks, with the request, what happened, verbatim evidence, the current state and specific questions.
 
@@ -35,5 +35,5 @@ When a task is done, end with one `Next:` line. It's a status line, not an offer
 A project's `## Workflow` block in AGENTS.md lists only what differs from these:
 
 1. Check: `vpr check`, then `vpr build` and `vpr test` if those scripts exist. For a change a user can see, also the project's `verify-*` skill when it has one.
-2. Land: straight to `main`, with `/orbit:ship`. When Land is `pr`, cut `<type>/<slug>` off an up-to-date `main` before the first edit, and commit each working piece on it.
+2. Land: every change task works in its own worktree off `origin/main` (the playbook's Worktree gate) and commits each reviewed unit there. `/orbit:ship` fast-forwards `main` to it. When Land is `pr`, ship opens a PR from it instead.
 3. Review: the `reviewer` agent, plus the block's "Review also checks" sources.

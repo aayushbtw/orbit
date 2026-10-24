@@ -30,10 +30,11 @@ Orbit picks the flow, writes its steps as a todo list, and works through them. A
 ```
 /orbit:start <goal>
   1. Pick the flow      investigate, bug, feature, refactor or perf (investigate stops after answering)
-  2. Plan gate          big change? the advisor reviews the plan first
-  3. Build              smallest change, bugs get a failing repro first
-  4. /orbit:ship        checks, proof it works, deslop, no-comments, reviewer, docs, commit or PR
-  5. Next: line         one line telling you what to do next
+  2. Worktree           a change gets its own git worktree, so parallel sessions never collide
+  3. Plan gate          big change? the advisor reviews the plan first
+  4. Build              a fresh poteto-agent writes each unit; Claude reviews, verifies, commits it
+  5. /orbit:ship        checks, proof it works, deslop, no-comments, reviewer, docs, lands on main or as a PR, removes the worktree
+  6. Next: line         one line telling you what to do next
 ```
 
 Claude ends every task with one `Next:` line. Do what it says:
@@ -103,12 +104,13 @@ When the app changes, run `/orbit:verify-skill maintain`. It drives every featur
 
 Claude runs these itself. You can also ask for the advisor.
 
-- **gitops** (Sonnet): commits and PRs.
+- **poteto-agent**: writes the code for each unit of a change, so the code is never reviewed by the agent that wrote it.
+- **gitops** (Sonnet): commits, PRs, and removing a landed worktree.
 - **comment-sicko**: deletes comments outside its keep list and flags the code they excuse, before review.
 - **reviewer** (Opus, read-only): checks the change against its intent before it lands, with pstack's review rubric and code-quality lens. Looks for bugs, missed simplifications, TypeScript and React problems, patterns the next agent would copy, tests that check nothing, and AI-sounding prose.
 - **advisor** (Opus, read-only): a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time.
 
-The reviewer, comment-sicko and advisor run only inside the flow you start. As in pstack, the rest is opt-in: `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me` and `/orbit:verify-skill` run only when you type them. `/orbit:how` and `/orbit:why` run when you type them, when Claude matches a question to them, and inside the investigate and bug flows and `no-comments`. `show-me-your-work` also runs when the playbook sees long or unattended work.
+poteto-agent, the reviewer, comment-sicko and advisor run only inside the flow you start. As in pstack, the rest is opt-in: `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me` and `/orbit:verify-skill` run only when you type them. `/orbit:how` and `/orbit:why` run when you type them, when Claude matches a question to them, and inside the investigate and bug flows and `no-comments`. `show-me-your-work` also runs when the playbook sees long or unattended work.
 
 ## Principles
 
@@ -118,7 +120,7 @@ The same goes for the stack rules. Before writing TypeScript, Claude reads the T
 
 ## Make it fit a project
 
-Defaults assume [Vite+](https://viteplus.dev). `vpr check` must pass, plus `vpr build` and `vpr test` if those scripts exist. Changes land straight on `main`.
+Defaults assume [Vite+](https://viteplus.dev). `vpr check` must pass, plus `vpr build` and `vpr test` if those scripts exist. Each change is built in a worktree under `.claude/worktrees/` and fast-forwarded onto `main`. `.git/info/exclude` keeps the worktrees out of `git status`, and ship removes each one after it lands.
 
 If a project differs, add a `## Workflow` block to its AGENTS.md. List only what's different:
 
@@ -140,6 +142,7 @@ Most of orbit is other people's work, all MIT:
 
 - [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto):
   - the playbook flows, pause-safely and session-pickup
+  - delegated coding with `poteto-agent`, worktree-per-task and the PR body sections
   - the twelve principles
   - the reviewer's filters and interrogate references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
   - `/orbit:correct`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:verify-skill` and `show-me-your-work`
