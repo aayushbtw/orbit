@@ -152,7 +152,7 @@ Most of orbit is other people's work, all MIT:
 - [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills): the React and composition rules.
 - [emilkowalski/skills](https://github.com/emilkowalski/skills) by [Emil Kowalski](https://emilkowal.ski): `find-animation-opportunities`, `animate`, `review-animations` and `improve-animations`.
 
-Orbit's own parts are the `/orbit:start` to `/orbit:ship` wiring and the project defaults.
+Orbit's own parts are the `/orbit:start` to `/orbit:ship` wiring and the project defaults. [Differences from pstack](docs/pstack-differences.md) lists where orbit departs from pstack's Claude Code port, and why.
 
 ## Maintain
 
