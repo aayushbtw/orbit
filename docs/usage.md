@@ -73,8 +73,8 @@ See [let Claude prove its work](#let-claude-prove-its-work).
 
 | Situation | Run |
 | --- | --- |
-| First time in a project users can run or install | `/orbit:verify-skill create` |
-| App changed, verify skill drifted | `/orbit:verify-skill maintain` |
+| First time in a project users can run or install | `/orbit:create-verification-skill` |
+| App changed, verify skill drifted | `/orbit:maintain-verification-skill` |
 
 ## Stopping and resuming
 
@@ -95,14 +95,14 @@ To resume, start a new session and run `/orbit:session-pickup`. It reads the las
 `/orbit:reflect` is broader. Three reviewers read the whole session, and you approve which skill edits to make. Items a lint or check would enforce better come back as `/orbit:correct` candidates.
 ## Let Claude prove its work
 
-Tests passing isn't the same as the feature working. Run `/orbit:verify-skill create` once in a project users can run or install. Claude reads the repo and writes `.claude/skills/verify-<project>/`:
+Tests passing isn't the same as the feature working. Run `/orbit:create-verification-skill` once in a project users can run or install. Claude reads the repo and writes `.claude/skills/verify-<app>/`:
 
-- a small control script (`doctor`, start the app, drive it, save evidence, clean up), with JSON output and errors that say what to do next
-- a feature map: one file per feature, saying how a user reaches it, the exact commands to drive it, and what proves it worked
+- a SKILL.md with six sections. Launch starts the app and says how to tell it's ready. Doctor is one read-only health check. Drive uses the repo's real selectors and commands. Evidence says what to capture and where it goes. Cleanup tears down only what the run started and keeps the evidence. Helpers shows how to run any script the skill ships.
+- a feature map in `features/`: an index plus one file per feature, saying how a user reaches it, how to drive it, and what end state proves it worked
 
 Claude runs the new skill once end to end before handing it over. After that, ship's `verifier` uses it on every change that isn't docs-only and reports where the evidence is. The verifier is a fresh agent, not the main chat, so the change is never judged by the session that built it.
 
-When the app changes, run `/orbit:verify-skill maintain`. It drives every feature, fixes the skill and map where they drifted, and reports real bugs instead of hiding them.
+When the app changes, run `/orbit:maintain-verification-skill`. It reads each feature's source in parallel, drives every feature live, fixes the skill and map where they drifted, and reports real bugs instead of hiding them.
 
 ## What runs in the background
 
@@ -119,7 +119,7 @@ When each runs:
 
 - poteto-agent, the verifier and comment-sicko run only inside the flow you start.
 - The reviewer and advisor run there too, or when you ask for them.
-- As in pstack, the rest is opt-in. `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me` and `/orbit:verify-skill` run only when you type them.
+- As in pstack, the rest is opt-in. `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill` and `/orbit:maintain-verification-skill` run only when you type them.
 - `/orbit:how` and `/orbit:why` run when you type them, when Claude matches a question to them, and inside the investigate and bug flows and `no-comments`.
 - `show-me-your-work` also runs when the playbook sees long or unattended work.
 - `/orbit:worktree-cleanup` runs when you type it, or when Claude matches "clean up worktrees" or "free up space".
@@ -167,7 +167,7 @@ Most of orbit is other people's work, all MIT. Orbit trims it, ports it from Cur
   - delegated coding with `poteto-agent`, worktree-per-task, the PR body sections and the independent verifier
   - the thirteen principles
   - the reviewer's filters, `/orbit:architect`, `/orbit:interrogate` and its references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
-  - `/orbit:correct`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:verify-skill` and `show-me-your-work`
+  - `/orbit:correct`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill`, `/orbit:maintain-verification-skill` and `show-me-your-work`
   - `/orbit:how` and `/orbit:why`
   - `unslop`, `typescript-best-practices`, `tdd` and `benchmark-checklist`
 - [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit): `deslop`.

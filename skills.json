@@ -311,6 +311,33 @@
       "In step 3, point at `${CLAUDE_PLUGIN_ROOT}/rules.md` and `${CLAUDE_PLUGIN_ROOT}/skills/playbook/SKILL.md` instead of poteto-mode as the shape reference."
     ]
   },
+  "create-verification-skill": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/create-verification-skill",
+    "sha": "99b609a72323b70204eab407c622f436e858e112",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "In the frontmatter description, `/create-verification-skill` becomes `/orbit:create-verification-skill`.",
+      "`.cursor/skills/` becomes `.claude/skills/` (intro, step 2, step 3).",
+      "In step 3, prefix both the text and the target of the `references/feature-map-example/` link with `${CLAUDE_SKILL_DIR}/`. Leave the reference files as upstream.",
+      "In step 5, `/maintain-verification-skill` becomes `/orbit:maintain-verification-skill`."
+    ]
+  },
+  "maintain-verification-skill": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/maintain-verification-skill",
+    "sha": "99b609a72323b70204eab407c622f436e858e112",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "`/create-verification-skill` becomes `/orbit:create-verification-skill` (intro, step 0), and `/maintain-verification-skill` in the frontmatter description becomes `/orbit:maintain-verification-skill`.",
+      "In step 0, `.cursor/skills/verify-*/` becomes `.claude/skills/verify-*/`.",
+      "In step 2, `One read-only subagent per feature file` becomes `One `Agent` call with `subagent_type: \"Explore\"` per feature file`.",
+      "In the frontmatter description, `at most one PR of proven corrections.` becomes `at most one change of proven corrections, landed through /orbit:ship.`",
+      "In Outcomes, `clean`'s `No branch, no PR.` becomes `Nothing to land.`, and `changed`'s `one PR ships proven doc, harness, or map corrections.` becomes `one change of proven doc, harness, or map corrections lands through `/orbit:ship`.`",
+      "In step 5, `keep it out of this PR.` becomes `keep it out of this change.`",
+      "In step 6, `For changed: one PR of proven corrections, re-read every changed file first. For clean or blocked: no PR,` becomes `For changed: re-read every changed file first, then land one change of proven corrections with `/orbit:ship`. For clean or blocked: nothing lands,`."
+    ]
+  },
   "animate": {
     "repo": "emilkowalski/skills",
     "path": "skills/animate",
