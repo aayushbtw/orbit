@@ -58,6 +58,8 @@ The user's own CLAUDE.md format and length rules win where they differ.
 
 # Workflow Defaults
 
+A goal given without a named skill goes through `/orbit:start <goal>`.
+
 A project's `## Workflow` block in AGENTS.md lists only what differs from these:
 
 1. Check: `vpr check`, then `vpr build` and `vpr test` if those scripts exist. Ship's `verifier` agent then runs every change except one only to files no agent or runtime loads, with the project's `verify-*` skill when it has one.
