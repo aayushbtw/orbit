@@ -22,6 +22,6 @@ Read the project's AGENTS.md (or CLAUDE.md) Workflow block for what differs from
 
      Once CI is green, if there is anything to test by hand, give numbered steps and wait for my go. Then gitops merges with the Land line's merge method (default merge commit) and reads back `gh pr view <n> --json state,mergeCommit`. If `state` isn't `MERGED`, report it as queued and stop before cleanup.
 
-   Then, if the Worktree gate entered this worktree, clean up: `ExitWorktree` with `keep`, and from the main checkout gitops runs `git pull --ff-only`, removes the worktree and deletes its local branch (and the remote `<type>/<slug>` for `pr`, passing that name). If the main checkout isn't on a clean `main`, leave the worktree and say so.
+   Then, if the Worktree gate entered this worktree, clean up: `ExitWorktree` with `keep`, and from the main checkout gitops runs `git pull --ff-only` and removes the worktree. The branch stays. If the main checkout isn't on a clean `main`, leave the worktree and say so.
 
 The reply also holds the flow's **Reply:**, plus one line naming the verifier's verdict and one naming the panel's agreement. End with the one Task End `Next:` line. Don't start the next task.
