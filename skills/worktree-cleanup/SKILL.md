@@ -1,0 +1,19 @@
+---
+name: worktree-cleanup
+description: Reclaim local disk by pruning merged or abandoned git worktrees and stale iOS simulators. Use on "what's using my disk", "clean up worktrees", "prune safe-to-prune worktrees", "free up space" or "delete old simulators".
+---
+
+# Worktree and simulator cleanup
+
+Source: cursor/plugins, pstack (MIT).
+
+1. Snapshot and audit. Record `df -h /`, then run `${CLAUDE_SKILL_DIR}/scripts/worktree-audit.sh [-b <pr-base-ref>] [repo-path]`. Without `-b` it checks `MERGED` against `origin/HEAD`, so pass `-b origin/<branch>` when PRs target another branch. It reads paths from `git worktree list`, never hand-typed, since a hand-typed `myrepo-worktrees/x` misses one that lives at `.claude/worktrees/x`. It classifies each worktree by size, age, merge state, uncommitted work, PR state, and the newest chat that touched it, then suggests a bucket. The transcript scan is slow, so background it.
+2. The bucket is advice, not permission. The active sessions are the real artifact (**prove-it-works**). Get that set from the user and cross-check every candidate. The audit has marked `safe` a worktree an active session was using, so the user's set wins.
+3. Verify usage before deleting. For every `verify-recent-chat` row, or anything you doubt, fan subagents out to read the transcripts and report whether the session is still running and which worktrees it touches (**guard-the-context-window**, transcripts are bulk). An active session spawns attempt and repro trees into sibling worktrees via background subagents, and those are in use even when the user never names them.
+4. Pause on irreversible loss. `wip:N` is N tracked uncommitted edits. Show the diff and get a decision first, since removing a clean worktree is recoverable from its branch but uncommitted work is gone. `scratch:N` is untracked throwaway, safe to drop, but name the files. Clean and merged and not-in-use proceeds. `wip` and in-use pause.
+5. Prune the confirmed set. Per path, `git worktree remove --force <path>`. If the dir survives on ignored build artifacts, `rm -rf` it, then `git worktree prune`. Branch refs survive, so no commits are lost. A `hold-locked` worktree belongs to a live Claude Code session, so never remove it or pass `-f -f`. Confirm with `df -h /` and re-list.
+6. Simulators and other reclaimers. Simulators are usually the next-biggest win. `xcrun simctl --set testing delete all` (XCTestDevices clones), `xcrun simctl delete unavailable`, and `xcrun simctl runtime list` then `runtime delete <id>` for old runtimes. More when needed: Xcode `DerivedData` and `iOS DeviceSupport`, package caches (pnpm, uv, brew, yarn). Clear only caches the user has not said to keep.
+
+This is the one playbook that deletes user state with no code review to catch a slip, so the gates above are the review.
+
+**Reply:** `df -h /` before and after with space reclaimed, the worktrees pruned, and a one-line reason for each held back (in-use by which session, or uncommitted work).

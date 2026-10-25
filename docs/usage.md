@@ -36,6 +36,7 @@ Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh
 | Change is built, land it | `/orbit:ship` (`start` already ends with it) |
 | Stop mid-task, switch model, step away | `/orbit:pause-safely`, then `/orbit:session-pickup` in a new session. See [stopping and resuming](#stopping-and-resuming). |
 | A long or unattended run you'll review later | `/orbit:show-me-your-work` |
+| Disk is tight, or worktrees have piled up | `/orbit:worktree-cleanup` |
 
 ### Understand code
 
@@ -121,6 +122,7 @@ When each runs:
 - As in pstack, the rest is opt-in. `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me` and `/orbit:verify-skill` run only when you type them.
 - `/orbit:how` and `/orbit:why` run when you type them, when Claude matches a question to them, and inside the investigate and bug flows and `no-comments`.
 - `show-me-your-work` also runs when the playbook sees long or unattended work.
+- `/orbit:worktree-cleanup` runs when you type it, or when Claude matches "clean up worktrees" or "free up space".
 
 ## Principles
 
@@ -161,7 +163,7 @@ Rules for one folder go in an AGENTS.md (or CLAUDE.md) inside it, say `src/serve
 Most of orbit is other people's work, all MIT. Orbit trims it, ports it from Cursor to Claude Code, and wires it to a set of defaults. For the original thinking, read pstack.
 
 - [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto):
-  - the playbook flows (hillclimb included), `/orbit:figure-it-out`, pause-safely and session-pickup
+  - the playbook flows (hillclimb included), `/orbit:figure-it-out`, pause-safely, session-pickup and worktree-cleanup
   - delegated coding with `poteto-agent`, worktree-per-task, the PR body sections and the independent verifier
   - the thirteen principles
   - the reviewer's filters, `/orbit:architect`, `/orbit:interrogate` and its references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
