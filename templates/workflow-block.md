@@ -7,4 +7,5 @@ List only what differs from the Workflow Defaults in orbit's rules; delete the l
 - Land: `pr` (default is `main`), plus the merge method if not a merge commit.
 - Manual test: <where to test by hand, eg a local URL>.
 - Before deploy: <steps>.
-- Review also checks: <docs or skills read before planning and at review; scope one to a path with `src/server/: <source>`>.
+- Before code: <guidance for writing code under a path, which code delegates and the reviewer load and never skip; one `<path>: <source>` entry per source, separated by `;`, where a source is a file to read or a command that prints a skill or its path, eg `src/server/: node_modules/effect/AGENTS.md`; `src/routes/: vpx @tanstack/intent@latest load @tanstack/react-start#react-start --path`>.
+- Review also checks: <docs read before planning and at review only; scope one to a path with `src/server/: <source>`>.

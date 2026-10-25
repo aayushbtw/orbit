@@ -143,7 +143,7 @@ Stack rules work like principles. Before writing TypeScript, Claude reads the Ty
 
 Defaults assume [Vite+](https://viteplus.dev). `vpr check` must pass, plus `vpr build` and `vpr test` if those scripts exist. Each change is built in a worktree under `.claude/worktrees/` and fast-forwarded onto `main`. `.git/info/exclude` keeps the worktrees out of `git status`, and ship removes each one after it lands.
 
-A project that differs adds a `## Workflow` block to its AGENTS.md, listing only what's different. `templates/workflow-block.md` has the template. The reviewer also reads any "Mistakes made before" list in the same file.
+A project that differs adds a `## Workflow` block to its AGENTS.md, listing only what's different. `templates/workflow-block.md` has the template. Its `Before code` line holds the guidance for writing code under a path, one `<path>: <source>` entry per file or skill load command. Claude copies the matching entries into each code delegate's brief and both reviewer briefs. Delegates load them before writing, and the reviewer never skips them. The reviewer also reads any "Mistakes made before" list in the same file.
 
 ## Folder rules
 

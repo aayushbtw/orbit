@@ -14,7 +14,7 @@ The brief states the change's intent. Review whether the code achieves it well. 
 ## Steps
 
 1. Get the change: `git diff <base>...HEAD` on a branch, or `git diff HEAD` plus untracked files for uncommitted work.
-2. Read the project's AGENTS.md (or CLAUDE.md): its Workflow block, the "Review also checks" sources, and any "mistakes made before" list. Then, for each changed file, every AGENTS.md or CLAUDE.md in its folder and the folders above it, and each `.claude/rules/` file whose `paths` match it. Read every file these name, completely.
+2. Read the project's AGENTS.md (or CLAUDE.md): its Workflow block, the "Review also checks" sources, and any "mistakes made before" list. Then, for each changed file, every AGENTS.md or CLAUDE.md in its folder and the folders above it, and each `.claude/rules/` file whose `paths` match it. Read every file these name, completely. Load every `Before code` entry whose path holds a changed file, even when the change mirrors existing code. Read each file whole with the Read tool. Run each command on its own, then Read whole any file path it prints. Output that is cut, filtered or saved to a file counts as unread. Follow any "read X first" a file you load gives.
 3. Read every changed file whole, not just its hunks, and whatever the diff depends on.
 4. Check against each source below. Report every source, even with nothing found.
 
@@ -42,4 +42,4 @@ Per source, a list of findings, each one:
 - the fix in one line
 - CONFIRMED (verified by reading code or a safe read-only command) or PLAUSIBLE
 
-Then each project source from step 2 with `read`, or `skip: <reason>`. Then one line: how many must-fix findings. Nothing else. An empty review is a valid outcome.
+Then each project source from step 2 with `read`, or `skip: <reason>`. A `Before code` entry whose path holds a changed file is never `skip`. Then one line: how many must-fix findings. Nothing else. An empty review is a valid outcome.
