@@ -58,15 +58,6 @@ See [correct vs reflect](#correct-vs-reflect).
 | Learn from a session's corrections | `/orbit:reflect` |
 | Turn your working style into a `-mode` skill | `/orbit:automate-me` |
 
-### Animation
-
-| Situation | Run |
-| --- | --- |
-| Where the UI should (and shouldn't) animate | `/orbit:find-animation-opportunities` |
-| Add motion to a component | `/orbit:animate <what>` |
-| Review animation code in a diff | `/orbit:review-animations` |
-| Audit a whole app's motion and plan fixes | `/orbit:improve-animations [quick\|deep]` |
-
 ### Prove it works
 
 See [let Claude prove its work](#let-claude-prove-its-work).
@@ -111,7 +102,7 @@ Claude runs these itself. You can also ask for the reviewer or the advisor.
 - **poteto-agent**: writes the code for each unit of a change, so the code is never reviewed by the agent that wrote it.
 - **gitops** (Sonnet): commits, PRs, and removing a landed worktree.
 - **comment-sicko**: deletes comments outside its keep list and flags the code they excuse, before review.
-- **reviewer** (read-only): checks the change against its intent before it lands, with pstack's review rubric and code-quality lens. Ship runs it twice, on Opus and Sonnet, and merges what both find. Looks for bugs, missed simplifications, TypeScript and React problems, patterns the next agent would copy, tests that check nothing, and AI-sounding prose.
+- **reviewer** (read-only): checks the change against its intent before it lands, with pstack's review rubric and code-quality lens. Ship runs it twice, on Opus and Sonnet, and merges what both find. Looks for bugs, missed simplifications, TypeScript problems, patterns the next agent would copy, tests that check nothing, and AI-sounding prose.
 - **verifier** (no Edit or Write tools): runs the change the way a user would before it lands and returns PASS, PASS+NOTES or FAIL. A fresh agent, never the one that wrote the change.
 - **advisor** (Opus, read-only): a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time.
 
@@ -146,7 +137,7 @@ Claude reads a principle only when its trigger fires. It adds one `Principles:` 
 
 ## Stack rules
 
-Stack rules work like principles. Before writing TypeScript, Claude reads the TypeScript rules. Before writing React, it reads the Vercel React and composition indexes, then only the rule files that apply. Before writing animation, it reads `animate`. The reviewer checks the same rules again before the change lands, and checks motion against `review-animations`.
+Stack rules work like principles. Before writing TypeScript, Claude reads the TypeScript rules. The reviewer checks the same rules again before the change lands.
 
 ## Project defaults
 
@@ -171,8 +162,6 @@ Most of orbit is other people's work, all MIT. Orbit trims it, ports it from Cur
   - `/orbit:how` and `/orbit:why`
   - `unslop`, `typescript-best-practices`, `tdd` and `benchmark-checklist`
 - [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit): `deslop`.
-- [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills): the React and composition rules.
-- [emilkowalski/skills](https://github.com/emilkowalski/skills) by [Emil Kowalski](https://emilkowal.ski): `find-animation-opportunities`, `animate`, `review-animations` and `improve-animations`.
 
 ## Install notes
 

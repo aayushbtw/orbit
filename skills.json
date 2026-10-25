@@ -154,28 +154,6 @@
       "In step 4, drop the principle-redesign-from-first-principles mention (not vendored): The **principle-fix-root-causes** skill guides intent only. It neither authorizes widening the fence nor fixing instances outside it."
     ]
   },
-  "vercel-react-best-practices": {
-    "repo": "vercel-labs/agent-skills",
-    "path": "skills/react-best-practices",
-    "sha": "063bee94c3f4df8453406c830b0a7df0f2860278",
-    "skip": ["metadata.json", "AGENTS.md", "README.md"],
-    "edits": [
-      "Set the frontmatter description to: React and Next.js performance rules from Vercel Engineering. Read by /orbit:playbook before writing React, and by the reviewer when a diff touches React components, hooks or data fetching.",
-      "Add `disable-model-invocation: true` to the frontmatter; the reviewer and /orbit:playbook read it by path.",
-      "Remove the `## Full Compiled Document` section (AGENTS.md is skipped: a generated copy of rules/ that gets injected on every read in the folder)."
-    ]
-  },
-  "vercel-composition-patterns": {
-    "repo": "vercel-labs/agent-skills",
-    "path": "skills/composition-patterns",
-    "sha": "063bee94c3f4df8453406c830b0a7df0f2860278",
-    "skip": ["metadata.json", "AGENTS.md", "README.md"],
-    "edits": [
-      "Set the frontmatter description to one line: React composition rules from Vercel. Read by /orbit:playbook before writing React, and by the reviewer when a diff touches React components, context providers or hooks.",
-      "Add `disable-model-invocation: true` to the frontmatter; the reviewer and /orbit:playbook read it by path.",
-      "Remove the `## Full Compiled Document` section (AGENTS.md is skipped: a generated copy of rules/ that gets injected on every read in the folder)."
-    ]
-  },
   "principle-laziness-protocol": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-laziness-protocol",
@@ -337,37 +315,5 @@
       "In step 5, `keep it out of this PR.` becomes `keep it out of this change.`",
       "In step 6, `For changed: one PR of proven corrections, re-read every changed file first. For clean or blocked: no PR,` becomes `For changed: re-read every changed file first, then land one change of proven corrections with `/orbit:ship`. For clean or blocked: nothing lands,`."
     ]
-  },
-  "animate": {
-    "repo": "emilkowalski/skills",
-    "path": "skills/animate",
-    "sha": "2d228630ba1446365f614a108cb8252f1feda202",
-    "edits": [
-      "Add the line `Source: emilkowalski/skills (MIT).` under the H1.",
-      "Drop the `animate-expo` mention from the scope sentence, keeping `or build for React Native` (not vendored).",
-      "Replace `stop and invoke `pick-ui-library`.` with `stop and use an established headless library (Base UI, Radix) instead.` (not vendored).",
-      "Append `End with `Next: /orbit:review-animations`.` to the Output section's last paragraph."
-    ]
-  },
-  "find-animation-opportunities": {
-    "repo": "emilkowalski/skills",
-    "path": "skills/find-animation-opportunities",
-    "sha": "2d228630ba1446365f614a108cb8252f1feda202",
-    "edits": [
-      "Add the line `Source: emilkowalski/skills (MIT).` under the H1.",
-      "Point both handoffs (Hard Rule 1 and the Verdict close) at `/orbit:animate <suggestion>` instead of `improve-animations plan`; the Verdict also names `/orbit:review-animations` on the diff after."
-    ]
-  },
-  "review-animations": {
-    "repo": "emilkowalski/skills",
-    "path": "skills/review-animations",
-    "sha": "2d228630ba1446365f614a108cb8252f1feda202",
-    "edits": ["Add the line `Source: emilkowalski/skills (MIT).` under the H1."]
-  },
-  "improve-animations": {
-    "repo": "emilkowalski/skills",
-    "path": "skills/improve-animations",
-    "sha": "2d228630ba1446365f614a108cb8252f1feda202",
-    "edits": ["Add the line `Source: emilkowalski/skills (MIT).` under the H1."]
   }
 }

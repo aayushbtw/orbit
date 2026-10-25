@@ -96,7 +96,7 @@ More in [docs/usage.md](docs/usage.md):
 
 ## Credits
 
-Most of orbit is MIT work from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto), [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit), [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) and [emilkowalski/skills](https://github.com/emilkowalski/skills) by [Emil Kowalski](https://emilkowal.ski). [What came from where](docs/usage.md#credits-in-full).
+Most of orbit is MIT work from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto) and [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit). [What came from where](docs/usage.md#credits-in-full).
 
 Orbit's own parts are the `/orbit:start` to `/orbit:ship` wiring and the project defaults. [Differences from pstack](docs/pstack-differences.md) lists where orbit departs and why.
 
@@ -104,5 +104,5 @@ Orbit's own parts are the `/orbit:start` to `/orbit:ship` wiring and the project
 
 - Develop without installing: `claude --plugin-dir ~/Projects/orbit`. Check with `claude plugin validate .`.
 - Vendored files are tracked in `skills.json`. Update them with `/update-skills [name]` from this repo.
-- The reviewer may ask once to read the plugin folder for the review rubric and React rules. Allow `Read(~/.claude/plugins/**)` to skip the prompt.
+- The reviewer may ask once to read the plugin folder for the review rubric. Allow `Read(~/.claude/plugins/**)` to skip the prompt.
 - Release: bump `version` in `.claude-plugin/plugin.json`.
