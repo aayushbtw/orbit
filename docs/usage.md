@@ -99,11 +99,11 @@ When the app changes, run `/orbit:maintain-verification-skill`. It reads each fe
 
 Claude runs these itself. You can also ask for the reviewer or the advisor.
 
-- **poteto-agent**: writes the code for each unit of a change, so the code is never reviewed by the agent that wrote it.
+- **poteto-agent** (Opus for the hardest changes, else Sonnet): writes the code for each unit of a change, so the code is never reviewed by the agent that wrote it.
 - **gitops** (Sonnet): commits, PRs, and removing a landed worktree.
 - **comment-sicko**: deletes comments outside its keep list and flags the code they excuse, before review.
 - **reviewer** (read-only): checks the change against its intent before it lands, with pstack's review rubric and code-quality lens. Ship runs it twice, on Opus and Sonnet, and merges what both find. Looks for bugs, missed simplifications, TypeScript problems, patterns the next agent would copy, tests that check nothing, and AI-sounding prose.
-- **verifier** (no Edit or Write tools): runs the change the way a user would before it lands and returns PASS, PASS+NOTES or FAIL. A fresh agent, never the one that wrote the change.
+- **verifier** (Sonnet, no Edit or Write tools): runs the change the way a user would before it lands and returns PASS, PASS+NOTES or FAIL. A fresh agent, never the one that wrote the change.
 - **advisor** (Opus, read-only): a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time.
 
 When each runs:
