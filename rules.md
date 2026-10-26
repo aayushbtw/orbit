@@ -1,6 +1,6 @@
 # Delegation
 
-Delegate code-writing to the `poteto-agent` subagent (`orbit:poteto-agent`) per the playbook's Delegate gate. Delegate commits and PR work (create, read, edit) to the `gitops` subagent (`orbit:gitops`). Use the `reviewer` subagent (`orbit:reviewer`) for a pre-merge review. Ship spawns the `verifier` subagent (`orbit:verifier`) to run the change before it lands. Use the `Explore` agent for broad repo search.
+Delegate code-writing to the `poteto-agent` subagent (`orbit:poteto-agent`) per the playbook's Delegate gate. Delegate commits and PR work (create, read, edit) to the `gitops` subagent (`orbit:gitops`). Ship spawns the `verifier` subagent (`orbit:verifier`) to run the change before it lands. Use the `Explore` agent for broad repo search.
 
 Brief the `advisor` subagent (`orbit:advisor`) at the plan gate or when the user asks, with the request, what happened, verbatim evidence, the current state and specific questions.
 
@@ -64,4 +64,4 @@ A project's `## Workflow` block in AGENTS.md lists only what differs from these:
 
 1. Check: `vpr check`, then `vpr build` and `vpr test` if those scripts exist. Ship's `verifier` agent then runs every change except one only to files no agent or runtime loads, with the project's `verify-*` skill when it has one.
 2. Land: every change task works in its own worktree off `origin/main` (the playbook's Worktree gate) and commits each reviewed unit there. `/orbit:ship` fast-forwards `main` to it. When Land is `pr`, ship opens a PR from it instead.
-3. Review: the `reviewer` agent on two models (Opus and Sonnet), plus the block's "Review also checks" sources and the `Before code` entries for the changed paths.
+3. Review: `/orbit:interrogate` before shipping when the design is contested, with the block's "Review also checks" sources and the `Before code` entries for the changed paths.

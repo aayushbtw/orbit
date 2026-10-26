@@ -35,8 +35,9 @@ flowchart TD
     commit -- all units done --> ship
     subgraph ship ["/orbit:ship"]
         check[Run checks] --> clean[deslop, no-comments]
-        clean --> panel[Reviewers Opus + Sonnet]
-        panel --> verify[Verifier]
+        clean --> verify[Verifier]
+        clean -. contested design .-> interrogate["/orbit:interrogate"]
+        interrogate --> verify
         verify --> docs[Docs]
         docs --> land[Main, or PR after CI]
     end
@@ -73,7 +74,7 @@ Every task ends with one `Next:` line. Do what it says.
 ## Correct usage
 
 - Give `/orbit:start` the goal, not the steps. Orbit picks the flow and the steps.
-- Don't land a change by hand. `/orbit:ship` runs the checks, the cleanup, the reviewer and the verifier, and a change never lands without them.
+- Don't land a change by hand. `/orbit:ship` runs the checks, the cleanup and the verifier, plus `/orbit:interrogate` on a contested design. A change never lands without them.
 - Project differences (check command, PR landing, extra review sources) go in the project's `## Workflow` block, not in chat.
 
 ## Make it fit a project
@@ -104,5 +105,5 @@ Orbit's own parts are the `/orbit:start` to `/orbit:ship` wiring and the project
 
 - Develop without installing: `claude --plugin-dir ~/Projects/orbit`. Check with `claude plugin validate .`.
 - Vendored files are tracked in `skills.json`. Update them with `/update-skills [name]` from this repo.
-- The reviewer may ask once to read the plugin folder for the review rubric. Allow `Read(~/.claude/plugins/**)` to skip the prompt.
+- `/orbit:interrogate` may ask once to read the plugin folder for its review rubric. Allow `Read(~/.claude/plugins/**)` to skip the prompt.
 - Release: bump `version` in `.claude-plugin/plugin.json`.

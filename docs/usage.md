@@ -16,7 +16,7 @@ Orbit picks the flow, writes its steps as a todo list, and works through them. A
 2. **Worktree.** A change gets its own git worktree, so parallel sessions never collide.
 3. **Plan gate.** When a change adds a module or touches more than 3 files, the advisor reviews the plan first.
 4. **Build.** A fresh poteto-agent writes each unit. Claude reviews and verifies it, and gitops commits it.
-5. **`/orbit:ship`.** Checks, deslop, no-comments, the reviewer on Opus and Sonnet, the verifier and docs. It lands on `main` or as a PR after CI, then removes the worktree.
+5. **`/orbit:ship`.** Checks, deslop, no-comments, `/orbit:interrogate` on a contested design, the verifier and docs. It lands on `main` or as a PR after CI, then removes the worktree.
 6. **`Next:` line.** One line telling you what to do next.
 
 A question with no code change also goes through `/orbit:start <question>`. It runs the read-only `investigate` flow and answers with citations.
@@ -45,7 +45,7 @@ Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh
 | How a subsystem works, where new code goes | `/orbit:how <subsystem>` |
 | Why code is the way it is: rationale, regressions, history | `/orbit:why <code or decision>` |
 | Design the shape before writing code | `/orbit:architect <what>` |
-| Adversarial review of a change or sketch | `/orbit:interrogate` |
+| Adversarial review of a change | `/orbit:interrogate` |
 | Catch up on recent work across sessions | `/orbit:recall [topic]` |
 
 ### Improve Claude
@@ -97,19 +97,18 @@ When the app changes, run `/orbit:maintain-verification-skill`. It reads each fe
 
 ## What runs in the background
 
-Claude runs these itself. You can also ask for the reviewer or the advisor.
+Claude runs these itself. You can also ask for the advisor.
 
 - **poteto-agent** (Opus for the hardest changes, else Sonnet): writes the code for each unit of a change, so the code is never reviewed by the agent that wrote it.
 - **gitops** (Sonnet): commits, PRs, and removing a landed worktree.
 - **comment-sicko**: deletes comments outside its keep list and flags the code they excuse, before review.
-- **reviewer** (read-only): checks the change against its intent before it lands, with pstack's review rubric and code-quality lens. Ship runs it twice, on Opus and Sonnet, and merges what both find. Looks for bugs, missed simplifications, TypeScript problems, patterns the next agent would copy, tests that check nothing, and AI-sounding prose.
 - **verifier** (Sonnet, no Edit or Write tools): runs the change the way a user would before it lands and returns PASS, PASS+NOTES or FAIL. A fresh agent, never the one that wrote the change.
 - **advisor** (Opus, read-only): a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time.
 
 When each runs:
 
 - poteto-agent, the verifier and comment-sicko run only inside the flow you start.
-- The reviewer and advisor run there too, or when you ask for them.
+- The advisor runs there too, or when you ask for it.
 - As in pstack, the rest is opt-in. `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill` and `/orbit:maintain-verification-skill` run only when you type them.
 - `/orbit:how` and `/orbit:why` run when you type them, when Claude matches a question to them, and inside the investigate and bug flows and `no-comments`.
 - `show-me-your-work` also runs when the playbook sees long or unattended work.
@@ -137,17 +136,17 @@ Claude reads a principle only when its trigger fires. It adds one `Principles:` 
 
 ## Stack rules
 
-Stack rules work like principles. Before writing TypeScript, Claude reads the TypeScript rules. The reviewer checks the same rules again before the change lands.
+Stack rules work like principles. Before writing TypeScript, Claude reads the TypeScript rules.
 
 ## Project defaults
 
 Defaults assume [Vite+](https://viteplus.dev). `vpr check` must pass, plus `vpr build` and `vpr test` if those scripts exist. Each change is built in a worktree under `.claude/worktrees/` and fast-forwarded onto `main`. `.git/info/exclude` keeps the worktrees out of `git status`, and ship removes each one after it lands.
 
-A project that differs adds a `## Workflow` block to its AGENTS.md, listing only what's different. `templates/workflow-block.md` has the template. Its `Before code` line holds the guidance for writing code under a path, one `<path>: <source>` entry per file or skill load command. Claude copies the matching entries into each code delegate's brief and both reviewer briefs. Delegates load them before writing, and the reviewer never skips them. The reviewer also reads any "Mistakes made before" list in the same file.
+A project that differs adds a `## Workflow` block to its AGENTS.md, listing only what's different. `templates/workflow-block.md` has the template. Its `Before code` line holds the guidance for writing code under a path, one `<path>: <source>` entry per file or skill load command. Claude copies the matching entries into each code delegate's brief. Delegates load them before writing. The plan gate reads them, and so does `/orbit:interrogate` when it runs.
 
 ## Folder rules
 
-Rules for one folder go in an AGENTS.md (or CLAUDE.md) inside it, say `src/server/AGENTS.md` naming a library's guide. The reviewer and the plan gate read every such file above the files a change touches, plus `.claude/rules/` files whose `paths` match. The review lists each one as read or skipped, so a missed rule shows.
+Rules for one folder go in an AGENTS.md (or CLAUDE.md) inside it, say `src/server/AGENTS.md` naming a library's guide. The plan gate reads every such file above the files a change touches, plus `.claude/rules/` files whose `paths` match.
 
 ## Credits in full
 
@@ -157,7 +156,7 @@ Most of orbit is other people's work, all MIT. Orbit trims it, ports it from Cur
   - the playbook flows (hillclimb included), `/orbit:figure-it-out`, pause-safely, session-pickup and worktree-cleanup
   - delegated coding with `poteto-agent`, worktree-per-task, the PR body sections and the independent verifier
   - the thirteen principles
-  - the reviewer's filters, `/orbit:architect`, `/orbit:interrogate` and its references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
+  - `/orbit:architect`, `/orbit:interrogate` and its references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
   - `/orbit:correct`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill`, `/orbit:maintain-verification-skill` and `show-me-your-work`
   - `/orbit:how` and `/orbit:why`
   - `unslop`, `typescript-best-practices`, `tdd` and `benchmark-checklist`

@@ -1,20 +1,19 @@
 ---
 name: interrogate
-description: "Adversarial multi-model review of a change or a design sketch. One reviewer per model, merged into a lead verdict. Never auto-applies. Use for /orbit:interrogate, or on a contested /orbit:architect sketch."
+description: "Adversarial multi-model review of a change. One reviewer per model, merged into a lead verdict. Never auto-applies. Use for /orbit:interrogate."
 ---
 
 # Interrogate
 
 Source: cursor/plugins, pstack (MIT).
 
-Spawn two reviewers, one on Opus and one on Sonnet, to adversarially review code changes or a design sketch. The adversarial signal comes from model diversity, not assigned personas. The deliverable is a synthesized verdict. Do NOT auto-apply changes.
+Spawn two reviewers, one on Opus and one on Sonnet, to adversarially review code changes. The adversarial signal comes from model diversity, not assigned personas. The deliverable is a synthesized verdict. Do NOT auto-apply changes.
 
 ## Step 1, Scope
 
 Identify what to review from context:
 
 - If the user points at specific files or a diff, use that.
-- If handed a design sketch, such as an `/orbit:architect` synthesis, review the sketch and its rationale.
 - If on a feature branch, run `git diff origin/main...HEAD` (or the appropriate base branch) plus the uncommitted files from `git status --short` for the full changeset.
 - If the user's message references recent work, gather the relevant files.
 

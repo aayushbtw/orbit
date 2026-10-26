@@ -4,9 +4,9 @@
     "path": "pstack/skills/typescript-best-practices",
     "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
-      "Set the frontmatter description to: TypeScript rules for the /orbit:start flow and the reviewer. Not for direct use.",
+      "Set the frontmatter description to: TypeScript rules for the /orbit:start flow. Not for direct use.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1 of SKILL.md.",
-      "Remove the `paths` and `disable-model-invocation` frontmatter keys; the reviewer preloads this skill, it should not auto-load in the main session."
+      "Remove the `paths` and `disable-model-invocation` frontmatter keys; the playbook's Stack rules read it by path, it should not auto-load in the main session."
     ]
   },
   "unslop": {
@@ -16,7 +16,7 @@
     "edits": [
       "Set the frontmatter description to: Cut AI tells from written content: docs pages, READMEs, PR descriptions, blog and site copy, and chat replies. Not for code.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "Remove the `disable-model-invocation` frontmatter key so the reviewer can preload it."
+      "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook's investigate flow and the skills that apply it (recall, automate-me, show-me-your-work) can invoke it through the Skill tool."
     ]
   },
   "interrogate": {
@@ -24,11 +24,11 @@
     "path": "pstack/skills/interrogate",
     "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
-      "Set the frontmatter description to: Adversarial multi-model review of a change or a design sketch. One reviewer per model, merged into a lead verdict. Never auto-applies. Use for /orbit:interrogate, or on a contested /orbit:architect sketch.",
-      "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook and architect can invoke it.",
+      "Set the frontmatter description to: Adversarial multi-model review of a change. One reviewer per model, merged into a lead verdict. Never auto-applies. Use for /orbit:interrogate.",
+      "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook and /orbit:ship can invoke it.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "In the intro, `Spawn one reviewer per configured model to adversarially review code changes.` becomes `Spawn two reviewers, one on Opus and one on Sonnet, to adversarially review code changes or a design sketch.`",
-      "In step 1, add after the first bullet: `- If handed a design sketch, such as an `/orbit:architect` synthesis, review the sketch and its rationale.` The feature-branch scope becomes `git diff origin/main...HEAD` (or the appropriate base branch) plus the uncommitted files from `git status --short`.",
+      "In the intro, `Spawn one reviewer per configured model to adversarially review code changes.` becomes `Spawn two reviewers, one on Opus and one on Sonnet, to adversarially review code changes.`",
+      "In step 1, the feature-branch scope becomes `git diff origin/main...HEAD` (or the appropriate base branch) plus the uncommitted files from `git status --short`.",
       "In step 3, replace the pstack-models line, the model table, the subagent_type / readonly / model paragraph and the rejected-slug / family-fallback paragraph with: Spawn two reviewers in a single message, Reviewer A and Reviewer B, as `Agent` calls with `subagent_type: \"general-purpose\"` and `model: \"opus\"` for A, `model: \"sonnet\"` for B. Only Claude models run here, so diversity is across tiers. Every brief says \"do not edit files\". Keep the reviewer-prompt / rubric / code-quality fill-in sentence and drop the poteto-mode Subagents sentence.",
       "Prefix each `references/` path in SKILL.md with `${CLAUDE_SKILL_DIR}/`. Leave the reference files as upstream: the variable only expands in SKILL.md."
     ]

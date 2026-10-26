@@ -1,6 +1,6 @@
 ---
 name: typescript-best-practices
-description: TypeScript rules for the /orbit:start flow and the reviewer. Not for direct use.
+description: TypeScript rules for the /orbit:start flow. Not for direct use.
 ---
 
 # TypeScript best practices
