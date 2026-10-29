@@ -1,6 +1,8 @@
 # Delegation
 
-Delegate code-writing to the `poteto-agent` subagent (`orbit:poteto-agent`) per the playbook's Delegate gate. Delegate commits and PR work (create, read, edit) to the `gitops` subagent (`orbit:gitops`). Ship spawns the `verifier` subagent (`orbit:verifier`) to run the change before it lands. Use the `Explore` agent for broad repo search.
+Delegate code-writing to the `poteto-agent` subagent (`orbit:poteto-agent`) per the playbook's Delegate gate. Delegate commits and PR work (create, read, edit) to the `gitops` subagent (`orbit:gitops`). Ship spawns the `verifier` subagent (`orbit:verifier`) to run the change before it lands. Use `orbit:poteto-agent` for any subagent you spawn inside a playbook step (code-writing delegates, ad-hoc helpers). The chat that runs `/orbit:start` runs the playbook. Never spawn a `poteto-agent` to run the playbook itself. Routed workflow skills (`how`, `why`, `interrogate`, `reflect`, `architect`) set their own `subagent_type` for diverse-model review. Respect what the skill prescribes, don't override to `poteto-agent`.
+
+Match the model to the job. Before each spawn, start from the role's model and pick the reasoning level the job needs. Pass it as the `Agent` call's `effort`. Each role starts at xhigh. Raise it one step, up to max, for the hardest or subtlest work. Lower it one step for judgment and two or more steps for routine work. Verification is the exception and stays at the verifier's own level. Change only the effort level and keep the model the role names, so a diverse panel stays diverse. If the `Agent` tool rejects the level, use xhigh and say so.
 
 Brief the `advisor` subagent (`orbit:advisor`) at the plan gate or when the user asks, with the request, what happened, verbatim evidence, the current state and specific questions.
 

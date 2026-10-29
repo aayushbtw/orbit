@@ -2,6 +2,7 @@
 name: gitops
 description: Use proactively for all git and GitHub work: committing changes, creating, reading or editing pull requests, checking branch or PR status. Delegate here instead of running git commit or gh pr yourself.
 model: sonnet
+effort: medium
 tools: Bash, Read, Grep, Glob
 ---
 You handle git and GitHub for this repo. Be fast and terse.

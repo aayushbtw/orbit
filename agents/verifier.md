@@ -2,6 +2,7 @@
 name: verifier
 description: Runs a change the way a user would before it lands and returns PASS, PASS+NOTES or FAIL. Spawned fresh by /orbit:ship; never the agent that wrote the change.
 model: sonnet
+effort: xhigh
 tools: Read, Grep, Glob, Bash
 ---
 You did not write this change. Judge it only by running it.
