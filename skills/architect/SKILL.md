@@ -27,7 +27,9 @@ Skip Phase A only when the work is genuinely greenfield with no surrounding syst
 
 ## Phase B: Sketch
 
-Spawn two runners in one message as `Agent` calls with `subagent_type: "general-purpose"`, one with `model: "opus"` and one with `model: "sonnet"`. Each brief holds the design task, the Phase A grounding, and absolute paths to read: `${CLAUDE_SKILL_DIR}/SKILL.md`, `${CLAUDE_SKILL_DIR}/references/runner-prompt.md`, `${CLAUDE_SKILL_DIR}/references/rationale-template.md`, and the principle leaves under `${CLAUDE_PLUGIN_ROOT}/skills/principle-<name>/SKILL.md`. Each brief says "do not edit files" and asks for the candidate design package in the reply. It also says the runner only sketches: no re-grounding and no spawning agents. If the two candidates are not structurally distinct, spawn a third runner briefed to avoid the shared shape.
+Run `/orbit:arena` with the design-sketch task and the Phase A grounding artifacts. Pass `${CLAUDE_SKILL_DIR}/references/runner-prompt.md` as each runner's prompt. Each runner's brief also gives the absolute paths `${CLAUDE_SKILL_DIR}/SKILL.md`, `${CLAUDE_SKILL_DIR}/references/rationale-template.md` and the principle leaves under `${CLAUDE_PLUGIN_ROOT}/skills/principle-<name>/SKILL.md`.
+
+Use arena's default runners, one on `model: "opus"` and one on `model: "sonnet"`.
 
 Design it twice. Require at least two structurally distinct candidates before synthesis, even when the first looks sufficient. This is the **exhaust-the-design-space** principle skill made concrete. Whole-shape alternatives, not point fixes inside one shape.
 
@@ -35,7 +37,7 @@ Screen every candidate against [`references/design-red-flags.md`](${CLAUDE_SKILL
 
 Compare viable candidates on interface depth. Prefer the design that hides more complexity behind a smaller, simpler public surface. A rich interface can keep call chains short by concentrating capability instead of scattering it across layers.
 
-You synthesize. Pick a base candidate, graft what's better from the others, and record it in the rationale's "Synthesis decision" section.
+Arena returns one synthesized design package. Its synthesis decision fills the rationale's "Synthesis decision" section.
 
 ## Phase C: Agree (opt-in)
 
@@ -71,7 +73,7 @@ When you scrap:
 1. Re-run `/orbit:how` over what's been built.
 2. Redesign as if the new constraints had been day-one assumptions, per redesign-from-first-principles.
 3. Subtract before adding, per the **subtract-before-you-add** principle skill. The new sketch should be smaller than the old one before it grows.
-4. Return to Phase B and re-run the runners.
+4. Return to Phase B and re-run arena.
 
 ## Outputs
 

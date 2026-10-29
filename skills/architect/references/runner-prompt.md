@@ -1,6 +1,6 @@
 # Architect runner prompt
 
-The orchestrator passes this file to each parallel candidate runner during Phase B with the task and the Phase A grounding. Runners don't edit files and return their candidate design package in the reply. What matters is independence between candidates.
+The orchestrator passes this file through to every parallel candidate runner during Phase B and fills in the variable inputs around it: the task, the Phase A grounding artifacts, the isolated working directory, and the path to write outputs. The working directory is a git worktree when available, otherwise a per-runner subdirectory under the sketch dir. What matters is independence between candidates.
 
 You are producing one candidate design in architect's parallel exploration. Read the architect SKILL.md at the path in your brief in full first. That's the workflow you're inside. Output a candidate design package: type sketch, function signatures, module map, and prose rationale shaped per [`rationale-template.md`](rationale-template.md).
 
