@@ -276,6 +276,72 @@
     "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
+  "principle-build-the-lever": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-build-the-lever",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
+  "principle-encode-lessons-in-structure": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-encode-lessons-in-structure",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
+  "principle-exhaust-the-design-space": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-exhaust-the-design-space",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
+  "principle-experience-first": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-experience-first",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
+  "principle-foundational-thinking": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-foundational-thinking",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
+  "principle-make-operations-idempotent": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-make-operations-idempotent",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
+  "principle-migrate-callers-then-delete-legacy-apis": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-migrate-callers-then-delete-legacy-apis",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
+  "principle-outcome-oriented-execution": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-outcome-oriented-execution",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
+  "principle-redesign-from-first-principles": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-redesign-from-first-principles",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
+  "principle-separate-before-serializing-shared-state": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-separate-before-serializing-shared-state",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
+  "principle-sequence-verifiable-units": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/principle-sequence-verifiable-units",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+  },
   "show-me-your-work": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/show-me-your-work",
