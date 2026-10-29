@@ -33,7 +33,7 @@ Before asking on a "which approach", "how should I" or "what should this do" for
 - List anything outside the goal. Don't build it. The one exception is a broken orbit skill or a flaky check that blocks this task, which you fix in its own commit.
 - Pause only for:
   - a product call that's the user's
-  - an irreversible action: force-push, deploys, deleting data, sending external messages
+  - an irreversible action: force-push to shared branches, deploys, deleting data, sending external messages
 
   Pushing, merging and opening PRs are not irreversible.
 

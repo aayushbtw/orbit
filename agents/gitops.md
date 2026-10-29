@@ -28,8 +28,11 @@ Pull requests
 - On a failure, report the failing check, its run id and the tail of `gh run view <run-id> --log-failed`. Don't classify it. Rerun only when told, with `gh run rerun <run-id>` (the whole run, never `--job`).
 - After a merge, read back `gh pr view <n> --json state,mergeCommit` and report `state` as it reads.
 
-Never force-push, reset --hard, delete branches or rewrite history. If a step needs that, stop and report. Exceptions:
-- On unpushed task-branch commits only: amend when a fix belongs in the just-made commit, and rebase (non-interactive, such as onto `origin/main`, or `git commit --fixup <sha>` then `git rebase --autosquash origin/main`) into small, ordered commits before landing.
+Never reset --hard or delete branches. If a step needs that, stop and report.
+
+Rewrite history only on a task branch. Amend when a fix belongs in the just-made commit. Rebase non-interactively onto the branch's base, `origin/main` or a stacked child's parent tip, or onto trunk to retarget a child whose parent merged. Fold a fix into its commit with `git commit --fixup <sha>`, then `git rebase --autosquash <base>`.
+
+Rewrite pushed history only on a task branch you pushed or took over, never `main` or another session's branch. Publish it with `git push --force-with-lease=<branch>:<sha>`, pinned to the SHA you last pushed or took over. The lead passes that SHA. If the remote tip differs, stop and report.
 
 A conflict is the one blocker you report rather than resolve. Say which branch needs the rebase and stop. Never push while a rebase or merge is in progress.
 
