@@ -4,7 +4,7 @@ The detail behind the [README](../README.md).
 
 ## A task, start to finish
 
-Start a task with `/orbit:start`. A change runs to Opening a PR. Bulk reading goes to subagents, so the session stays lean across tasks.
+Start a task with `/orbit:start`. A change runs through Opening a PR and ships once a fresh verifier passes it. Bulk reading goes to subagents, so the session stays lean across tasks.
 
 ```
 /orbit:start fix the login redirect bug
@@ -17,9 +17,11 @@ Orbit picks the flow, writes its steps as a todo list, and works through them. A
 3. **Plan gate.** When a change adds a module or touches more than 3 files, the advisor reviews the plan first.
 4. **Build.** A fresh poteto-agent writes each unit. Claude reviews and verifies it, and gitops commits it.
 5. **Opening a PR.** `/orbit:interrogate` first on a contested design, then deslop and no-comments. Under Land `pr` it opens a ready PR. Under Land `main` the task branch stays committed and unpushed. The worktree stays until `/orbit:worktree-cleanup`.
-6. **`Next:` line.** One line telling you what to do next.
+6. **Babysit.** Under Land `pr`, Babysit drives the PR, or the whole stack, to merge-ready: conflicts, review threads, CI.
+7. **Shipping.** A fresh verifier runs the change, then Shipping merges the PR or pushes the branch to `main`. Only a verified change lands.
+8. **`Next:` line.** One line telling you what to do next.
 
-Landing is a separate step you ask for. `/orbit:playbook babysit` drives an open PR to merge-ready. `/orbit:ship` runs a fresh verifier, then merges the PR or pushes the branch to `main`.
+Shipping is the default. Say "don't ship" or "I'll land it" in the goal, and the task stops at the PR, or at the branch under Land `main`. Land it later with `/orbit:ship`. `/orbit:playbook babysit` drives any open PR to merge-ready on its own.
 
 A question with no code change also goes through `/orbit:start <question>`. It runs the read-only `investigate` flow and answers with citations.
 
@@ -27,7 +29,7 @@ A queue of independent changes goes through `/orbit:start` too, as "autopilot th
 
 Say "build the stack, I'll land it" instead, and the `autopilot-stack` flow runs the same way without merging. A change that builds on another goes on that change's branch. The flow stops when every head has passed its verifier and its checks. You land the stack with `/orbit:ship`.
 
-Work that spans phases or several PRs can start as a plan. Ask `/orbit:start` for a multi-PR plan, and the `multi-phase-plan` flow writes a checklist with one section per PR, naming what to build, what you should see, and the checks that prove it. It settles open questions with throwaway prototypes first, lints the plan with `check-plan.mjs`, and stops. On your go, the plan runs under `autopilot-full`, or under `autopilot-stack` when you land the PRs.
+Work that spans phases or several PRs can start as a plan. Ask `/orbit:start` for a multi-PR plan, and the `multi-phase-plan` flow writes a checklist with one section per PR, naming what to build, what you should see, and the checks that prove it. It settles open questions with throwaway prototypes first, lints the plan with `check-plan.mjs`, and stops. On your go, the plan runs under `autopilot-full` by default, or under `autopilot-stack` when you said "don't ship" or "I'll land it".
 
 Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh one.
 
@@ -45,6 +47,7 @@ Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh
 | Plan work that spans phases or several PRs, to run on your go | `/orbit:start multi-PR plan: <goal>` |
 | Large or cross-cutting work, or work you step away from | `/orbit:figure-it-out <goal>` (`/orbit:start` routes there too) |
 | An open PR: get it green, answer review threads, or check its status | `/orbit:playbook babysit` (`/orbit:start` routes "babysit this" there) |
+| Build a change but land it yourself | `/orbit:start <goal>, don't ship` (or "I'll land it") |
 | Change is ready, land it | `/orbit:ship`. A fresh verifier runs the change first. |
 | Stop mid-task, switch model, step away | `/orbit:pause-safely`, then `/orbit:session-pickup` in a new session. See [stopping and resuming](#stopping-and-resuming). |
 | A long or unattended run you'll review later | `/orbit:show-me-your-work` |
@@ -119,7 +122,7 @@ Claude runs these itself. You can also ask for the advisor.
 
 When each runs:
 
-- poteto-agent and comment-sicko run only inside the flow you start. The verifier runs only inside `/orbit:ship`, autopilot-full and autopilot-stack.
+- poteto-agent and comment-sicko run only inside the flow you start. The verifier runs only inside Shipping (at task end or `/orbit:ship`), autopilot-full and autopilot-stack.
 - The advisor runs there too, or when you ask for it.
 - As in pstack, the rest is opt-in. `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill` and `/orbit:maintain-verification-skill` run only when you type them.
 - `/orbit:how` and `/orbit:why` run when you type them, when Claude matches a question to them, and inside the investigate and bug flows and `no-comments`.
@@ -152,7 +155,7 @@ Stack rules work like principles. Before writing TypeScript, Claude reads the Ty
 
 ## Project defaults
 
-Defaults assume [Vite+](https://viteplus.dev). `vpr check` must pass, plus `vpr build` and `vpr test` if those scripts exist. Each change is built in a worktree under `.claude/worktrees/`, and `/orbit:ship` fast-forwards it onto `main` when you ask. `.git/info/exclude` keeps the worktrees out of `git status`, and `/orbit:worktree-cleanup` removes them when you ask.
+Defaults assume [Vite+](https://viteplus.dev). `vpr check` must pass, plus `vpr build` and `vpr test` if those scripts exist. Each change is built in a worktree under `.claude/worktrees/`, and Shipping fast-forwards it onto `main` at task end, unless you said "don't ship". `.git/info/exclude` keeps the worktrees out of `git status`, and `/orbit:worktree-cleanup` removes them when you ask.
 
 A project that differs adds a `## Workflow` block to its AGENTS.md, listing only what's different. `templates/workflow-block.md` has the template. Its `Before code` line holds the guidance for writing code under a path, one `<path>: <source>` entry per file or skill load command. Claude copies the matching entries into each code delegate's brief. Delegates load them before writing. The plan gate reads them, and so does `/orbit:interrogate` when it runs.
 

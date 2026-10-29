@@ -40,7 +40,7 @@ Before asking on a "which approach", "how should I" or "what should this do" for
 End with one `Next:` line. It's a status, not an offer.
 
 - Nothing left → `Next: nothing pending.`
-- A change that ran Opening a PR → the `Next:` line its **Reply:** names, `/orbit:playbook babysit` under Land `pr`, else `/orbit:ship`.
+- A change that ran Opening a PR → the `Next:` line its **Reply:** names. Shipped → `Next: nothing pending.` once the whole run landed. Opted out with "don't ship" or "I'll land it" → `Next: /orbit:ship`.
 - Work outside the goal, or waiting on the user's call → `Next: /orbit:start <follow-up>`, saying which.
 - After `/orbit:pause-safely` → `Next: new session, then /orbit:session-pickup`. Session pickup only resumes paused or another agent's work.
 
@@ -65,5 +65,5 @@ A goal given without a named skill goes through `/orbit:start <goal>`.
 A project's `## Workflow` block in AGENTS.md lists only what differs from these:
 
 1. Check: `vpr check`, then `vpr build` and `vpr test` if those scripts exist. The flows' verify steps run it, and so does Shipping under Land `main`, in place of CI. Shipping's `verifier` agent runs every change before it lands, with the project's `verify-*` skill when it has one.
-2. Land: every change task works in its own worktree off `origin/main` (the playbook's Worktree gate) and commits each reviewed unit there. Under Land `main`, `/orbit:ship` fast-forwards `main` to it when asked. When Land is `pr`, Opening a PR opens a PR from it at task end.
+2. Land: every change task works in its own worktree off `origin/main` (the playbook's Worktree gate) and commits each reviewed unit there. When Land is `pr`, Opening a PR opens a PR from it, Babysit drives it to merge-ready, and Shipping merges it. Under Land `main`, Shipping fast-forwards `main` to it. Either way the independent verifier gates the landing, and "don't ship" or "I'll land it" stops the task at the PR or branch.
 3. Review: `/orbit:interrogate` before shipping when the design is contested, with the block's "Review also checks" sources and the `Before code` entries for the changed paths.

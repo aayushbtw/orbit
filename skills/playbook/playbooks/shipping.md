@@ -1,5 +1,7 @@
 ### Shipping
 
+Runs by default at task end, per **Ship by default** in `playbooks/opening-a-pr.md`, or on request.
+
 **You own what lands. Verify each PR independently, land only the verified run from the root, then keep your hands off the stack.**
 
 The Land line in the project's Workflow block picks `pr` or `main`, and the merge method. Under Land `main` there is no PR, so a PR in the steps below is a task branch, and a stack is a chain of unpushed task branches, each child on its parent's exact tip. Step 1's verifier runs on each branch in the worktree that Opening a PR's reply named, and its verdict goes in the reply. In place of steps 4 and 5, fast-forward `main` through the run bottom-up, one branch at a time. gitops fetches and rebases the branch onto `origin/main`. Run the Check line, which stands in for CI, and compare the patch-id per step 3. Then gitops pushes `HEAD:main`. If `main` moved and the push is rejected, gitops fetches and rebases again, and you repeat the Check run and the comparison before it pushes. Once a branch lands, gitops rebases the next one onto the new `main` locally, moving only that branch's own commits. Nothing pushed is rewritten, so no push needs force.

@@ -42,8 +42,13 @@ flowchart TD
         land -- pr --> pr[Push, open a ready PR]
         land -- main --> branch[Keep the branch, unpushed]
     end
-    pr --> next([Next: line])
-    branch --> next
+    pr --> optout{Said don't ship?}
+    branch --> optout
+    optout -- yes --> next([Next: line])
+    optout -- "no, Land pr" --> babysit[Babysit to merge-ready]
+    optout -- "no, Land main" --> ship
+    babysit --> ship[Shipping: verifier, then land]
+    ship --> next
 ```
 
 [Full walkthrough](docs/usage.md#a-task-start-to-finish)
@@ -71,15 +76,14 @@ Every task ends with one `Next:` line. Do what it says.
 | Line | Means | You do |
 | --- | --- | --- |
 | `Next: nothing pending.` | Task is done | `/orbit:start` your next goal |
-| `Next: /orbit:playbook babysit` | A PR is open | Run it to get the PR green, or leave it |
-| `Next: /orbit:ship` | The change waits on an unpushed branch | Run it to verify and land the change |
+| `Next: /orbit:ship` | You said "don't ship", so the PR or unpushed branch waits | Run it to verify and land the change |
 | `Next: /orbit:start <follow-up>` | Outside the goal or needs your decision. Claude says which. | Run it when ready |
 | `Next: new session, then /orbit:session-pickup` | Work was paused | Open a new session, run it |
 
 ## Correct usage
 
 - Give `/orbit:start` the goal, not the steps. Orbit picks the flow and the steps.
-- Don't land a change by hand. A task ends at a ready PR, or an unpushed branch under Land `main`. `/orbit:ship` lands it only after a fresh verifier passes it.
+- Don't land a change by hand. A change task ships by default, and only after a fresh verifier passes it. Say "don't ship" or "I'll land it" to stop at the PR, or the unpushed branch under Land `main`, then land it with `/orbit:ship`.
 - Project differences (check command, PR landing, extra review sources) go in the project's `## Workflow` block, not in chat.
 
 ## Make it fit a project
