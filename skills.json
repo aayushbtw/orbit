@@ -75,6 +75,22 @@
       "In references/rationale-template.md, `*Filled in by [arena](../../arena/SKILL.md).` becomes `*Filled in by Phase B synthesis.`"
     ]
   },
+  "arena": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/arena",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": [
+      "Set the frontmatter description to: Spawn N parallel candidates at the same task, pick a base, graft the strongest parts of the losers into it. Use for /orbit:arena, 'arena this', 'throw it in the arena', the arena step of /orbit:architect, or when one attempt at a non-trivial artifact would lock in the wrong shape.",
+      "Remove the `disable-model-invocation` frontmatter key so /orbit:architect and the feature flow can invoke it with the Skill tool.",
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "In Phase A step 3 (only Claude models run here), replace the `arena runners` / pstack-models sentences and the rejected-slug / family-fallback sentences with: Default to two runners, each an `Agent` call with `subagent_type: \"orbit:poteto-agent\"`, one with `model: \"opus\"` and one with `model: \"sonnet\"`. Keep the more-runners and same-model sentences. The poteto-mode Subagents sentence becomes: Pick each runner's `effort` for the job, per \"Match the model to the job\" in orbit's rules.md.",
+      "In Phase A step 4 (separate-before-serializing-shared-state is not vendored), `, per the **separate-before-serializing-shared-state** principle skill.` becomes: , so no shared state needs serializing. A worktree runner is spawned with `isolation: \"worktree\"`, per the playbook Delegate gate's parallel exception.",
+      "In Phase B (Claude Code subagents run in the background by default), drop ` with `run_in_background: true``.",
+      "In Phase C (only Claude models run here), replace the `arena cross-judge pool` / pstack-models, family-preference and readonly-judge sentences with: choose the judge's model from `opus` and `sonnet`. Prefer the one that differs from the parent's model. Spawn one judge as an `Agent` call with `subagent_type: \"Explore\"` on that model. Its brief says \"do not edit files\", and you check `git status` afterward.",
+      "In Phase D, `per the Laziness Protocol.` becomes `per the **laziness-protocol** principle skill.`",
+      "In Phase E (redesign-from-first-principles is not vendored), drop `, per the **redesign-from-first-principles** principle skill` from the graft sentence; append to that paragraph (the parent writes no code under the Delegate gate): In an /orbit:playbook flow, gitops commits the base candidate in its worktree and cherry-picks it onto the task branch, and a fresh `orbit:poteto-agent` folds in the grafts, per the Delegate gate."
+    ]
+  },
   "figure-it-out": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/figure-it-out",
