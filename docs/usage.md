@@ -12,7 +12,7 @@ Start a task with `/orbit:start`. A change runs through Opening a PR and ships o
 
 Orbit picks the flow, writes its steps as a todo list, and works through them. A step can only be skipped in plain sight (`skip: <reason>`).
 
-1. **Pick the flow.** `investigate`, `bug`, `feature`, `refactor`, `perf` or `hillclimb`. `investigate` stops after answering. Large or cross-cutting work, work you step away from, and work no flow fits go to `/orbit:figure-it-out`, which designs its own steps.
+1. **Pick the flow.** `investigate`, `bug`, `feature`, `refactor`, `prototype`, `perf` or `hillclimb`. `investigate` stops after answering. `prototype` stops at a decision and a throwaway sketch, and ships nothing. Large or cross-cutting work, work you step away from, and work no flow fits go to `/orbit:figure-it-out`, which designs its own steps.
 2. **Worktree.** A change gets its own git worktree, so parallel sessions never collide.
 3. **Plan gate.** When a change adds a module or touches more than 3 files, the advisor reviews the plan first.
 4. **Build.** A fresh poteto-agent writes each unit. Claude reviews and verifies it, and gitops commits it.
@@ -40,7 +40,7 @@ Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh
 | Situation | Run |
 | --- | --- |
 | Any new task (a bug, a feature, a refactor, a slow path), or a question with no code change | `/orbit:start <goal>` |
-| A specific flow, or only its step list | `/orbit:playbook <investigate\|bug\|feature\|refactor\|perf\|hillclimb\|autopilot-full\|autopilot-stack\|multi-phase-plan>` |
+| A specific flow, or only its step list | `/orbit:playbook <investigate\|bug\|feature\|refactor\|prototype\|perf\|hillclimb\|autopilot-full\|autopilot-stack\|multi-phase-plan>` |
 | Improve one metric over many rounds, toward a target | `/orbit:playbook hillclimb`, or `/orbit:start` with a metric goal |
 | Run a queue of independent changes to merged, one owner each | `/orbit:start autopilot this queue: <items>` |
 | Build and verify a queue as one stack you land yourself | `/orbit:start build the stack, I'll land it: <items>` |
