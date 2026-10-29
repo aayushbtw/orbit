@@ -331,7 +331,7 @@
     "path": "harness/pstack/claude-code/skills/poteto-mode/scripts",
     "dest": "skills/playbook/scripts",
     "sha": "1ba91fc25c0977741dd0e267849e6234b037ed0a",
-    "skip": ["check-plan.mjs", "check-plan.test.ts", "worktree-audit.sh"],
+    "skip": ["worktree-audit.sh"],
     "edits": [
       "Add `.gitignore` holding `node_modules/`, so the dependencies `bootstrap.ts` installs stay untracked."
     ]

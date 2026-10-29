@@ -25,6 +25,10 @@ A question with no code change also goes through `/orbit:start <question>`. It r
 
 A queue of independent changes goes through `/orbit:start` too, as "autopilot this queue" with the items. The `autopilot-full` flow writes no code itself. It spawns one owner per item, and each owner runs its own flow, opens its PR and babysits it to merge-ready. A fresh verifier checks each head before a fresh owner merges it. Items you name as yours stop at merge-ready.
 
+Say "build the stack, I'll land it" instead, and the `autopilot-stack` flow runs the same way without merging. A change that builds on another goes on that change's branch. The flow stops when every head has passed its verifier and its checks. You land the stack with `/orbit:ship`.
+
+Work that spans phases or several PRs can start as a plan. Ask `/orbit:start` for a multi-PR plan, and the `multi-phase-plan` flow writes a checklist with one section per PR, naming what to build, what you should see, and the checks that prove it. It settles open questions with throwaway prototypes first, lints the plan with `check-plan.mjs`, and stops. On your go, the plan runs under `autopilot-full`, or under `autopilot-stack` when you land the PRs.
+
 Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh one.
 
 ## Every command
@@ -34,9 +38,11 @@ Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh
 | Situation | Run |
 | --- | --- |
 | Any new task (a bug, a feature, a refactor, a slow path), or a question with no code change | `/orbit:start <goal>` |
-| A specific flow, or only its step list | `/orbit:playbook <investigate\|bug\|feature\|refactor\|perf\|hillclimb\|autopilot-full>` |
+| A specific flow, or only its step list | `/orbit:playbook <investigate\|bug\|feature\|refactor\|perf\|hillclimb\|autopilot-full\|autopilot-stack\|multi-phase-plan>` |
 | Improve one metric over many rounds, toward a target | `/orbit:playbook hillclimb`, or `/orbit:start` with a metric goal |
 | Run a queue of independent changes to merged, one owner each | `/orbit:start autopilot this queue: <items>` |
+| Build and verify a queue as one stack you land yourself | `/orbit:start build the stack, I'll land it: <items>` |
+| Plan work that spans phases or several PRs, to run on your go | `/orbit:start multi-PR plan: <goal>` |
 | Large or cross-cutting work, or work you step away from | `/orbit:figure-it-out <goal>` (`/orbit:start` routes there too) |
 | An open PR: get it green, answer review threads, or check its status | `/orbit:playbook babysit` (`/orbit:start` routes "babysit this" there) |
 | Change is ready, land it | `/orbit:ship`. A fresh verifier runs the change first. |
@@ -113,7 +119,7 @@ Claude runs these itself. You can also ask for the advisor.
 
 When each runs:
 
-- poteto-agent and comment-sicko run only inside the flow you start. The verifier runs only inside `/orbit:ship` and autopilot-full.
+- poteto-agent and comment-sicko run only inside the flow you start. The verifier runs only inside `/orbit:ship`, autopilot-full and autopilot-stack.
 - The advisor runs there too, or when you ask for it.
 - As in pstack, the rest is opt-in. `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill` and `/orbit:maintain-verification-skill` run only when you type them.
 - `/orbit:how` and `/orbit:why` run when you type them, when Claude matches a question to them, and inside the investigate and bug flows and `no-comments`.

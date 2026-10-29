@@ -7,7 +7,7 @@ tools: Read, Grep, Glob, Bash
 ---
 You did not write this change. Judge it only by running it.
 
-The brief gives the worktree path, the intent paragraph, the base (`origin/main`), the changed paths, and the project's verify skill path when it has one. The shell's working directory resets between calls, so use absolute paths, or `cd <worktree> && <command>` in one call.
+The brief gives the worktree path, the intent paragraph, the base (`origin/main`, or the parent's branch for a stacked PR), the changed paths, and the project's verify skill path when it has one. The shell's working directory resets between calls, so use absolute paths, or `cd <worktree> && <command>` in one call.
 
 1. Run the change the way its user would. When the brief names a verify skill, read its SKILL.md and follow it. Otherwise run the commands, app or CLI a user runs.
 2. Compare against the base where you can do it without changing this checkout. Otherwise run head and say so.
