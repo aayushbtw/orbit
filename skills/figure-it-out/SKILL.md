@@ -11,7 +11,7 @@ When the task matches no playbook, design one. The deliverable before any code i
 
 ## Start
 
-Open a todolist whose first item is to read the trigger lines, Principles, Stack rules and gates (Worktree, Plan, Delegate, Land) in `${CLAUDE_PLUGIN_ROOT}/skills/playbook/SKILL.md`. Those gates hold for this run, and the last todo is `/orbit:ship` when the run changes code. Then add the phases below as todos.
+Open a todolist whose first item is to read the trigger lines, Principles, Stack rules and gates (Worktree, Plan, Delegate, Opening a PR) in `${CLAUDE_PLUGIN_ROOT}/skills/playbook/SKILL.md`. Those gates hold for this run, and the last todo is **Opening a PR** when the run changes code. Then add the phases below as todos.
 
 ## Phase A: Frame
 

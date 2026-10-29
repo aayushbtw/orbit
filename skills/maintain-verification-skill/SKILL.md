@@ -1,6 +1,6 @@
 ---
 name: maintain-verification-skill
-description: "Periodic pass that keeps a project's verification skill and feature map honest: parallel source readers per feature, one live session driving every feature, at most one change of proven corrections, landed through /orbit:ship. Use for /orbit:maintain-verification-skill or \"audit the verify skill\"."
+description: "Periodic pass that keeps a project's verification skill and feature map honest: parallel source readers per feature, one live session driving every feature, at most one change of proven corrections, through the playbook's opening-a-pr section. Use for /orbit:maintain-verification-skill or \"audit the verify skill\"."
 disable-model-invocation: true
 ---
 
@@ -15,7 +15,7 @@ A feature map rots the moment the app changes. This skill is the upkeep loop for
 Pick one, and say which:
 
 - **clean** — every feature got source and live coverage; nothing worth shipping. Nothing to land.
-- **changed** — one change of proven doc, harness, or map corrections lands through `/orbit:ship`.
+- **changed** — one change of proven doc, harness, or map corrections goes through Opening a PR (`/orbit:playbook opening-a-pr`).
 - **blocked** — coverage could not finish or a proven fix could not ship safely. Say exactly what blocked it.
 
 ## Edit scope
@@ -36,6 +36,6 @@ Only edit the verification skill's own directory (its SKILL.md, features/, and a
 
 5. **Triage.** Wrong or missing user-POV description → doc drift, fix it. Working behavior the harness can't drive → harness gap, fix it; a harness fix follows the same helpers rule as generation (scripts executable, invocation documented in the skill body). App behavior that's actually broken → product gap; record it for the user, keep it out of this change.
 
-6. **Ship or stop.** For changed: re-read every changed file first, then land one change of proven corrections with `/orbit:ship`. For clean or blocked: nothing lands, report the outcome and the coverage honestly.
+6. **Ship or stop.** For changed: re-read every changed file first, then take one change of proven corrections through Opening a PR (`/orbit:playbook opening-a-pr`). For clean or blocked: nothing lands, report the outcome and the coverage honestly.
 
 Keep concise run notes (features covered, unreachable prerequisites, confirmed drift, outcome) in a scratch location; don't commit them.

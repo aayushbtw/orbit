@@ -1,6 +1,6 @@
 ---
 name: deslop
-description: Remove AI-generated code slop from the current diff. Run by /orbit:ship before commit.
+description: Remove AI-generated code slop from the current diff. Run by the playbook's opening-a-pr section before commit.
 ---
 
 # Remove AI code slop

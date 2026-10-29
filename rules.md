@@ -1,6 +1,6 @@
 # Delegation
 
-Delegate code-writing to the `poteto-agent` subagent (`orbit:poteto-agent`) per the playbook's Delegate gate. Delegate commits and PR work (create, read, edit) to the `gitops` subagent (`orbit:gitops`). Ship spawns the `verifier` subagent (`orbit:verifier`) to run the change before it lands. Use `orbit:poteto-agent` for any subagent you spawn inside a playbook step (code-writing delegates, ad-hoc helpers). The chat that runs `/orbit:start` runs the playbook. Never spawn a `poteto-agent` to run the playbook itself. Routed workflow skills (`how`, `why`, `interrogate`, `reflect`, `architect`) set their own `subagent_type` for diverse-model review. Respect what the skill prescribes, don't override to `poteto-agent`.
+Delegate code-writing to the `poteto-agent` subagent (`orbit:poteto-agent`) per the playbook's Delegate gate. Delegate commits and PR work (create, read, edit) to the `gitops` subagent (`orbit:gitops`). The playbook's Shipping section (`/orbit:ship`) spawns the `verifier` subagent (`orbit:verifier`) to run the change before it lands. Use `orbit:poteto-agent` for any subagent you spawn inside a playbook step (code-writing delegates, ad-hoc helpers). The chat that runs `/orbit:start` runs the playbook. Never spawn a `poteto-agent` to run the playbook itself. Routed workflow skills (`how`, `why`, `interrogate`, `reflect`, `architect`) set their own `subagent_type` for diverse-model review. Respect what the skill prescribes, don't override to `poteto-agent`.
 
 Match the model to the job. Before each spawn, start from the role's model and pick the reasoning level the job needs. Pass it as the `Agent` call's `effort`. Each role starts at xhigh. Raise it one step, up to max, for the hardest or subtlest work. Lower it one step for judgment and two or more steps for routine work. Verification is the exception and stays at the verifier's own level. Change only the effort level and keep the model the role names, so a diverse panel stays diverse. If the `Agent` tool rejects the level, use xhigh and say so.
 
@@ -33,7 +33,6 @@ Before asking on a "which approach", "how should I" or "what should this do" for
 - List anything outside the goal. Don't build it. The one exception is a broken orbit skill or a flaky check that blocks this task, which you fix in its own commit.
 - Pause only for:
   - a product call that's the user's
-  - a gate a skill names, such as ship's manual-test go or an unclear intent
   - an irreversible action: force-push, deploys, deleting data, sending external messages
 
   Pushing, merging and opening PRs are not irreversible.
@@ -41,6 +40,7 @@ Before asking on a "which approach", "how should I" or "what should this do" for
 End with one `Next:` line. It's a status, not an offer.
 
 - Nothing left → `Next: nothing pending.`
+- A change that ran Opening a PR → the `Next:` line its **Reply:** names, `/orbit:playbook babysit` under Land `pr`, else `/orbit:ship`.
 - Work outside the goal, or waiting on the user's call → `Next: /orbit:start <follow-up>`, saying which.
 - After `/orbit:pause-safely` → `Next: new session, then /orbit:session-pickup`. Session pickup only resumes paused or another agent's work.
 
@@ -64,6 +64,6 @@ A goal given without a named skill goes through `/orbit:start <goal>`.
 
 A project's `## Workflow` block in AGENTS.md lists only what differs from these:
 
-1. Check: `vpr check`, then `vpr build` and `vpr test` if those scripts exist. Ship's `verifier` agent then runs every change except one only to files no agent or runtime loads, with the project's `verify-*` skill when it has one.
-2. Land: every change task works in its own worktree off `origin/main` (the playbook's Worktree gate) and commits each reviewed unit there. `/orbit:ship` fast-forwards `main` to it. When Land is `pr`, ship opens a PR from it instead.
+1. Check: `vpr check`, then `vpr build` and `vpr test` if those scripts exist. The flows' verify steps run it, and so does Shipping under Land `main`, in place of CI. Shipping's `verifier` agent runs every change before it lands, with the project's `verify-*` skill when it has one.
+2. Land: every change task works in its own worktree off `origin/main` (the playbook's Worktree gate) and commits each reviewed unit there. Under Land `main`, `/orbit:ship` fast-forwards `main` to it when asked. When Land is `pr`, Opening a PR opens a PR from it at task end.
 3. Review: `/orbit:interrogate` before shipping when the design is contested, with the block's "Review also checks" sources and the `Before code` entries for the changed paths.

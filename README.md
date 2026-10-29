@@ -34,16 +34,16 @@ flowchart TD
         review --> commit[gitops commits]
         commit -- next unit --> build
     end
-    commit -- all units done --> ship
-    subgraph ship ["/orbit:ship"]
-        check[Run checks] --> clean[deslop, no-comments]
-        clean --> verify[Verifier]
-        clean -. contested design .-> interrogate["/orbit:interrogate"]
-        interrogate --> verify
-        verify --> docs[Docs]
-        docs --> land[Main, or PR after CI]
+    commit -- all units done --> clean
+    commit -. contested design .-> interrogate["/orbit:interrogate"]
+    interrogate --> clean
+    subgraph opr [Opening a PR]
+        clean[deslop, no-comments] --> land{Land line}
+        land -- pr --> pr[Push, open a ready PR]
+        land -- main --> branch[Keep the branch, unpushed]
     end
-    land --> next([Next: line])
+    pr --> next([Next: line])
+    branch --> next
 ```
 
 [Full walkthrough](docs/usage.md#a-task-start-to-finish)
@@ -54,7 +54,8 @@ flowchart TD
 flowchart LR
     q{What now?}
     q -- new task or question --> start["/orbit:start &lt;goal&gt;"]
-    q -- change built, land it --> ship["/orbit:ship"]
+    q -- PR open, get it green --> babysit["/orbit:playbook babysit"]
+    q -- change ready, land it --> ship["/orbit:ship"]
     q -- stop or switch model --> pause["/orbit:pause-safely"]
     pause -- new session --> pickup["/orbit:session-pickup"]
     q -- how or why code works --> how["/orbit:how or /orbit:why"]
@@ -70,13 +71,15 @@ Every task ends with one `Next:` line. Do what it says.
 | Line | Means | You do |
 | --- | --- | --- |
 | `Next: nothing pending.` | Task is done | `/orbit:start` your next goal |
+| `Next: /orbit:playbook babysit` | A PR is open | Run it to get the PR green, or leave it |
+| `Next: /orbit:ship` | The change waits on an unpushed branch | Run it to verify and land the change |
 | `Next: /orbit:start <follow-up>` | Outside the goal or needs your decision. Claude says which. | Run it when ready |
 | `Next: new session, then /orbit:session-pickup` | Work was paused | Open a new session, run it |
 
 ## Correct usage
 
 - Give `/orbit:start` the goal, not the steps. Orbit picks the flow and the steps.
-- Don't land a change by hand. `/orbit:ship` runs the checks, the cleanup and the verifier, plus `/orbit:interrogate` on a contested design. A change never lands without them.
+- Don't land a change by hand. A task ends at a ready PR, or an unpushed branch under Land `main`. `/orbit:ship` lands it only after a fresh verifier passes it.
 - Project differences (check command, PR landing, extra review sources) go in the project's `## Workflow` block, not in chat.
 
 ## Make it fit a project
@@ -101,7 +104,7 @@ More in [docs/usage.md](docs/usage.md):
 
 Most of orbit is MIT work from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto) and [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit). [What came from where](docs/usage.md#credits-in-full).
 
-Orbit's own parts are the `/orbit:start` to `/orbit:ship` wiring and the project defaults. [Differences from pstack](docs/pstack-differences.md) lists where orbit departs and why.
+Orbit's own parts are the `/orbit:start` routing, the playbook gates and the project defaults. [Differences from pstack](docs/pstack-differences.md) lists where orbit departs and why.
 
 ## Maintain
 
