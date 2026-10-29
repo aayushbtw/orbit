@@ -16,7 +16,7 @@ Every candidate gets the same prompt, so the prompt is the contract.
 1. State the artifact each candidate is producing.
 2. Derive the rubric, 3-6 concrete gradeable criteria for what success looks like on *this* task. It is the picker's tool in Phase D. Candidates only see the task.
 3. Pick the runners. Default to two runners, each an `Agent` call with `subagent_type: "orbit:poteto-agent"`, one with `model: "opus"` and one with `model: "sonnet"`. Spawn more runners when the arena covers multiple design directions. Use the same model N times when the work is generation-bound rather than judgment-sensitive. Pick each runner's `effort` for the job, per "Match the model to the job" in orbit's rules.md.
-4. Give each candidate its own output location (a git worktree where possible, otherwise `/tmp/arena-<slug>/candidate-<n>/`), so no shared state needs serializing. A worktree runner is spawned with `isolation: "worktree"`, per the playbook Delegate gate's parallel exception.
+4. Give each candidate its own output location (a git worktree where possible, otherwise `/tmp/arena-<slug>/candidate-<n>/`), per the **separate-before-serializing-shared-state** principle skill. A worktree runner is spawned with `isolation: "worktree"`, per the playbook Delegate gate's parallel exception.
 
 ## Phase B: Fan out
 
@@ -36,7 +36,7 @@ Pick the base a future maintainer can extend most easily without breaking invari
 
 ## Phase E: Graft
 
-Walk each losing candidate once more for what is worth porting into the base, usually one or two things per candidate, not most of it. Fold each graft in by hand, so the result stays coherent under one mental model. Don't paste mechanically. In an /orbit:playbook flow, gitops commits the base candidate in its worktree and cherry-picks it onto the task branch, and a fresh `orbit:poteto-agent` folds in the grafts, per the Delegate gate.
+Walk each losing candidate once more for what is worth porting into the base, usually one or two things per candidate, not most of it. Fold each graft in by hand, per the **redesign-from-first-principles** principle skill, so the result stays coherent under one mental model. Don't paste mechanically. In an /orbit:playbook flow, gitops commits the base candidate in its worktree and cherry-picks it onto the task branch, and a fresh `orbit:poteto-agent` folds in the grafts, per the Delegate gate.
 
 If the candidates converge on one shape, that is strong agreement. Note it and ship the consensus shape. No graft is needed. If they wildly diverge, Phase A was under-specified. Reframe and re-run rather than averaging the divergence.
 
