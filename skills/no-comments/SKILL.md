@@ -1,6 +1,6 @@
 ---
 name: no-comments
-description: Spawn Comment Sicko over a diff, fix its accepted findings, and offer encodings for claimed constraints. Run by the playbook's opening-a-pr section before review.
+description: Spawn Comment Sicko over a diff, fix its accepted findings, and offer encodings for claimed constraints. Run by the opening-a-pr playbook before review.
 ---
 
 # No comments

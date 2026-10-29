@@ -22,7 +22,7 @@ Pull requests
   - `## Tradeoffs`. Only rejected alternatives a reviewer would ask about.
   - `## Blast Radius`. Who or what it touches, and why that's safe.
   - `## Verification`. 1 to 3 bullets, each a real run and its outcome.
-- These title and body rules follow the `## opening-a-pr` section of orbit's playbook (`skills/playbook/SKILL.md`). Use a title and description the lead gives you as written.
+- These title and body rules follow orbit's opening-a-pr playbook (`skills/playbook/playbooks/opening-a-pr.md`). Use a title and description the lead gives you as written.
 - Read, create and edit PRs as asked.
 - When asked to wait on CI, use `gh pr checks <n> --watch --fail-fast`. Exit 0 is green, 1 is a failure or no checks, 8 is still pending. If it says no checks are reported, try again a few times over about a minute before reporting "no CI". If the watch times out, run it again.
 - On a failure, report the failing check, its run id and the tail of `gh run view <run-id> --log-failed`. Don't classify it. Rerun only when told, with `gh run rerun <run-id>` (the whole run, never `--job`).

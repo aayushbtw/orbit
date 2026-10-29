@@ -72,7 +72,7 @@
     "path": "cursor-team-kit/skills/deslop",
     "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
-      "Set the frontmatter description to: Remove AI-generated code slop from the current diff. Run by the playbook's opening-a-pr section before commit.",
+      "Set the frontmatter description to: Remove AI-generated code slop from the current diff. Run by the opening-a-pr playbook before commit.",
       "Add the line `Source: cursor/plugins, cursor-team-kit (MIT).` under the H1.",
       "Replace `Check the diff against main and remove AI-generated slop introduced in the branch` with `Check the uncommitted diff, or the branch's diff against main, and remove AI-generated slop introduced in that diff`."
     ]
@@ -145,8 +145,8 @@
     "path": "pstack/skills/no-comments",
     "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
-      "Set the frontmatter description to: Spawn Comment Sicko over a diff, fix its accepted findings, and offer encodings for claimed constraints. Run by the playbook's opening-a-pr section before review.",
-      "Remove the `disable-model-invocation` frontmatter key; the playbook's opening-a-pr section invokes it.",
+      "Set the frontmatter description to: Spawn Comment Sicko over a diff, fix its accepted findings, and offer encodings for claimed constraints. Run by the opening-a-pr playbook before review.",
+      "Remove the `disable-model-invocation` frontmatter key; the opening-a-pr playbook invokes it.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "In step 1, spawn an `Agent` with `subagent_type: \"orbit:comment-sicko\"` instead of `Task` / `comment-sicko`, and drop the poteto-mode Subagents sentence.",
       "In step 2, replace `/how` or `/why` with `/orbit:how` or `/orbit:why`, and `/no-comments` with `/orbit:no-comments`.",
@@ -310,7 +310,7 @@
       "`/create-verification-skill` becomes `/orbit:create-verification-skill` (intro, step 0), and `/maintain-verification-skill` in the frontmatter description becomes `/orbit:maintain-verification-skill`.",
       "In step 0, `.cursor/skills/verify-*/` becomes `.claude/skills/verify-*/`.",
       "In step 2, `One read-only subagent per feature file` becomes `One `Agent` call with `subagent_type: \"Explore\"` per feature file`.",
-      "In the frontmatter description, `at most one PR of proven corrections.` becomes `at most one change of proven corrections, through the playbook's opening-a-pr section.`",
+      "In the frontmatter description, `at most one PR of proven corrections.` becomes `at most one change of proven corrections, through the opening-a-pr playbook.`",
       "In Outcomes, `clean`'s `No branch, no PR.` becomes `Nothing to land.`, and `changed`'s `one PR ships proven doc, harness, or map corrections.` becomes `one change of proven doc, harness, or map corrections goes through Opening a PR (`/orbit:playbook opening-a-pr`).`",
       "In step 5, `keep it out of this PR.` becomes `keep it out of this change.`",
       "In step 6, `For changed: one PR of proven corrections, re-read every changed file first. For clean or blocked: no PR,` becomes `For changed: re-read every changed file first, then take one change of proven corrections through Opening a PR (`/orbit:playbook opening-a-pr`). For clean or blocked: nothing lands,`."
@@ -322,8 +322,7 @@
     "dest": "skills/playbook/references/bugbot-triage.md",
     "sha": "1ba91fc25c0977741dd0e267849e6234b037ed0a",
     "edits": [
-      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1, above the intro paragraph.",
-      "In the intro, `the Babysit playbook (`../playbooks/babysit.md`)` becomes `the Babysit playbook (`## babysit` in `../SKILL.md`)`."
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1, above the intro paragraph."
     ]
   },
   "playbook-scripts": {

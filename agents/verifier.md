@@ -1,6 +1,6 @@
 ---
 name: verifier
-description: Runs a change the way a user would before it lands and returns PASS, PASS+NOTES or FAIL. Spawned fresh by the playbook's shipping section (/orbit:ship) or the autopilot-full root; never the agent that wrote the change.
+description: Runs a change the way a user would before it lands and returns PASS, PASS+NOTES or FAIL. Spawned fresh by the shipping playbook (/orbit:ship) or the autopilot-full root; never the agent that wrote the change.
 model: sonnet
 effort: xhigh
 tools: Read, Grep, Glob, Bash
