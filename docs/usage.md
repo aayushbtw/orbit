@@ -60,6 +60,7 @@ Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh
 | How a subsystem works, where new code goes | `/orbit:how <subsystem>` |
 | Why code is the way it is: rationale, regressions, history | `/orbit:why <code or decision>` |
 | Design the shape before writing code | `/orbit:architect <what>` |
+| Several attempts at one artifact, then pick a base and graft the best parts | `/orbit:arena <task>` |
 | Adversarial review of a change | `/orbit:interrogate` |
 | Fan out parallel workers for coverage, races or exploration | `/orbit:swarm <job>` |
 | Catch up on recent work across sessions | `/orbit:recall [topic]` |
@@ -127,6 +128,7 @@ When each runs:
 - The advisor runs there too, or when you ask for it.
 - As in pstack, the rest is opt-in. `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill` and `/orbit:maintain-verification-skill` run only when you type them.
 - `/orbit:how` and `/orbit:why` run when you type them, when Claude matches a question to them, and inside the investigate and bug flows and `no-comments`.
+- `/orbit:arena` runs when you type it, inside `/orbit:architect`, and in the feature flow on a choice with several valid shapes.
 - `show-me-your-work` also runs when the playbook sees long or unattended work.
 - `/orbit:worktree-cleanup` runs when you type it, or when Claude matches "clean up worktrees" or "free up space".
 
@@ -163,7 +165,7 @@ Most of orbit is other people's work, all MIT. Orbit trims it, ports it from Cur
 - [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto):
   - the playbook flows (hillclimb included), `/orbit:figure-it-out`, pause-safely, session-pickup and worktree-cleanup
   - delegated coding with `poteto-agent`, worktree-per-task, the PR body sections and the independent verifier
-  - `/orbit:architect`, `/orbit:swarm`, `/orbit:interrogate` and its references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
+  - `/orbit:architect`, `/orbit:arena`, `/orbit:swarm`, `/orbit:interrogate` and its references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
   - the 24 principles
   - `/orbit:correct`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill`, `/orbit:maintain-verification-skill` and `show-me-your-work`
   - `/orbit:how` and `/orbit:why`
