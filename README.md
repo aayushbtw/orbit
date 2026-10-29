@@ -1,6 +1,8 @@
 # orbit
 
-A Claude Code plugin that runs every task through the same steps: pick the flow, build the smallest change, review it, ship it. Same steps in every repo, so you don't repeat yourself each session.
+**Claude Code on steroids.**
+
+It plans, builds, tests and ships on its own. You just name the goal.
 
 Orbit is mostly [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto), trimmed and ported to Claude Code. See [Credits](#credits).
 
