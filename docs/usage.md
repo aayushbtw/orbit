@@ -174,7 +174,7 @@ Most of orbit is other people's work, all MIT. Orbit trims it, ports it from Cur
   - `/orbit:architect`, `/orbit:interrogate` and its references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
   - `/orbit:correct`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill`, `/orbit:maintain-verification-skill` and `show-me-your-work`
   - `/orbit:how` and `/orbit:why`
-  - `unslop`, `typescript-best-practices`, `tdd` and `benchmark-checklist`
+  - `unslop`, `technical-writing`, `typescript-best-practices`, `tdd` and `benchmark-checklist`
 - [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit): `deslop`.
 
 ## Install notes
