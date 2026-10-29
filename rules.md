@@ -48,6 +48,8 @@ End with one `Next:` line. It's a status, not an offer.
 
 Write the reply clean as you draft it. Unslop's patterns apply to replies too.
 
+Write docs, RFCs, readmes, PR descriptions, and commit messages with `/orbit:technical-writing`.
+
 - Short declarative sentences, one thought each.
 - No long dash anywhere.
 - No colon as a mid-sentence connector. A colon before a list is fine.
