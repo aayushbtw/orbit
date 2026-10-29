@@ -21,6 +21,8 @@ Orbit picks the flow, writes its steps as a todo list, and works through them. A
 
 A question with no code change also goes through `/orbit:start <question>`. It runs the read-only `investigate` flow and answers with citations.
 
+A queue of independent changes goes through `/orbit:start` too, as "autopilot this queue" with the items. The `autopilot-full` flow writes no code itself. It spawns one owner per item, and each owner runs its own flow and `/orbit:ship` up to merge-ready. A fresh verifier checks each head before a fresh owner merges it. Items you name as yours stop at merge-ready.
+
 Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh one.
 
 ## Every command
@@ -30,8 +32,9 @@ Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh
 | Situation | Run |
 | --- | --- |
 | Any new task (a bug, a feature, a refactor, a slow path), or a question with no code change | `/orbit:start <goal>` |
-| A specific flow, or only its step list | `/orbit:playbook <investigate\|bug\|feature\|refactor\|perf\|hillclimb>` |
+| A specific flow, or only its step list | `/orbit:playbook <investigate\|bug\|feature\|refactor\|perf\|hillclimb\|autopilot-full>` |
 | Improve one metric over many rounds, toward a target | `/orbit:playbook hillclimb`, or `/orbit:start` with a metric goal |
+| Run a queue of independent changes to merged, one owner each | `/orbit:start autopilot this queue: <items>` |
 | Large or cross-cutting work, or work you step away from | `/orbit:figure-it-out <goal>` (`/orbit:start` routes there too) |
 | Change is built, land it | `/orbit:ship` (`start` already ends with it) |
 | Stop mid-task, switch model, step away | `/orbit:pause-safely`, then `/orbit:session-pickup` in a new session. See [stopping and resuming](#stopping-and-resuming). |
