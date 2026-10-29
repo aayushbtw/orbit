@@ -13,7 +13,8 @@
    7. Do it cheaper.
 
    When an earlier mantra meets the target, stop.
-3. Plan the fix from the trace. If it crosses a function boundary, `/orbit:architect` first. Delegate implementation to a fresh `orbit:poteto-agent` per the Delegate gate. Review the diff. Capture a post-fix trace. Verify each attempt before trying the next.
+3. Plan the fix from the trace. If it crosses a function boundary, `/orbit:architect` first. Delegate implementation to a fresh `orbit:poteto-agent` per the Delegate gate. Review the diff. Capture a post-fix trace.
+   Apply the **sequence-verifiable-units** principle skill, verifying each attempt before trying the next.
 4. Parse and compare the artifacts (JSON to sqlite, diff). "Inconclusive" or wrong-surface is not a pass. Flag it.
 5. Cite the measurement in the PR body when Land is `pr`, else in the reply.
 6. Run **Opening a PR**.

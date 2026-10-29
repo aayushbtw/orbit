@@ -132,21 +132,13 @@ When each runs:
 
 ## Principles
 
-The playbook holds thirteen of pstack's principles, each with the situation that triggers it:
+The playbook holds all 24 of pstack's principles, in pstack's five groups, each with the situation that triggers it:
 
-- laziness protocol
-- subtract before you add
-- minimize reader load
-- model the domain
-- boundary discipline
-- type-system discipline
-- attack the premise
-- fix root causes
-- prove it works
-- test behavior not implementation
-- guard the context window
-- never block on the human
-- explain the number
+- Core: laziness protocol, foundational thinking, redesign from first principles, attack the premise, subtract before you add, minimize reader load, outcome-oriented execution, experience first, exhaust the design space, build the lever
+- Architecture: model the domain, boundary discipline, type-system discipline, make operations idempotent, migrate callers then delete legacy APIs, separate before serializing shared state
+- Verification: prove it works, fix root causes, sequence verifiable units, test behavior not implementation, explain the number
+- Delegation: guard the context window, never block on the human
+- Meta: encode lessons in structure
 
 Claude reads a principle only when its trigger fires. It adds one `Principles:` line to the reply, naming each one it applied and the choice it changed. Use the names to steer: "apply subtract before you add".
 
@@ -171,8 +163,8 @@ Most of orbit is other people's work, all MIT. Orbit trims it, ports it from Cur
 - [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto):
   - the playbook flows (hillclimb included), `/orbit:figure-it-out`, pause-safely, session-pickup and worktree-cleanup
   - delegated coding with `poteto-agent`, worktree-per-task, the PR body sections and the independent verifier
-  - the thirteen principles
   - `/orbit:architect`, `/orbit:swarm`, `/orbit:interrogate` and its references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
+  - the 24 principles
   - `/orbit:correct`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill`, `/orbit:maintain-verification-skill` and `show-me-your-work`
   - `/orbit:how` and `/orbit:why`
   - `unslop`, `technical-writing`, `typescript-best-practices`, `tdd` and `benchmark-checklist`

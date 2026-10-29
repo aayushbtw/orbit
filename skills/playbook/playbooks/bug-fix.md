@@ -7,7 +7,8 @@ Be scientific. Every shipped line traces to runtime evidence. Belt-and-suspender
 2. Binary-search the cause. Form the candidate hypotheses, then rule them out until one survives. Seed them with `/orbit:how` over the affected subsystem and `/orbit:why` for regression history. Each pass, take the split that cuts the most remaining problem space, get runtime evidence, eliminate. When program state is unclear, add instrumentation or logging and read it as the code runs. Don't guess. Drive a long or stubborn hunt with `/loop`. Confirm the surviving *mechanism* with runtime evidence before the step-3 `/orbit:architect`/`/orbit:interrogate` fan-out.
 3. Plan the fix. If it crosses a function boundary, `/orbit:architect` first. Delegate implementation to a fresh `orbit:poteto-agent` per the Delegate gate, with a specific scope. The failing repro is its own unit, committed before the fix unit (step 5).
 4. Verify on the same surface. The original repro now passes. "Inconclusive" or wrong-surface is not a pass. Flag it. Unit tests show branch behavior, not bug absence.
-5. Stage the commits so the failing repro lands before the fix in git history, the failing test first and the fix on top. See `../tdd/SKILL.md` for the failing-test-first cadence when the bug has a cheap local test path. Skip it when the test would be expensive, integration-heavy, or unclear.
+5. Stage the commits so the failing repro lands before the fix in git history. See `../tdd/SKILL.md` for the failing-test-first cadence when the bug has a cheap local test path. Skip it when the test would be expensive, integration-heavy, or unclear.
+   This is the canonical **sequence-verifiable-units** principle skill, the failing test first and the fix on top.
 6. Run **Opening a PR**.
 
 **Reply:** what was broken, root cause, fix, how you verified. Paste failing-then-passing repro output verbatim.
