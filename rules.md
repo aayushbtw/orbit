@@ -28,7 +28,7 @@ Never create `.md` files in a repo root. The root holds only README, AGENTS (or 
 
 Before ending, finish every follow-up inside the goal yourself, including verifying your own change end to end. The goal is what the user asked for. A feature's "done" bullets restate it and never widen it. Don't stop to ask on reversible work. Decide, act, and report the choice, per never-block-on-the-human.
 
-Before asking on a "which approach", "how should I" or "what should this do" fork, classify it. If running something could answer it (behavior, timing, layout, output, perf), it isn't the user's question. Run the experiment and act on the result. In an investigate task, answer from the evidence instead of building anything. Keep questions for product or preference calls no experiment can settle, asked as numbered options with the recommendation first.
+Before asking on a "which approach", "how should I" or "what should this do" fork, classify it. If running something could answer it (behavior, timing, layout, output, perf), it isn't the user's question. Sketch it with the `prototype` flow (`/orbit:playbook prototype`) and let the result decide. In an investigate task, answer from the evidence instead of building anything. Keep questions for product or preference calls no experiment can settle, asked as numbered options with the recommendation first.
 
 - List anything outside the goal. Don't build it. The one exception is a broken orbit skill or a flaky check that blocks this task, which you fix in its own commit.
 - Pause only for:
