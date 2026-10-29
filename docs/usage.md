@@ -61,6 +61,7 @@ Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh
 | Why code is the way it is: rationale, regressions, history | `/orbit:why <code or decision>` |
 | Design the shape before writing code | `/orbit:architect <what>` |
 | Adversarial review of a change | `/orbit:interrogate` |
+| Fan out parallel workers for coverage, races or exploration | `/orbit:swarm <job>` |
 | Catch up on recent work across sessions | `/orbit:recall [topic]` |
 
 ### Improve Claude
@@ -171,7 +172,7 @@ Most of orbit is other people's work, all MIT. Orbit trims it, ports it from Cur
   - the playbook flows (hillclimb included), `/orbit:figure-it-out`, pause-safely, session-pickup and worktree-cleanup
   - delegated coding with `poteto-agent`, worktree-per-task, the PR body sections and the independent verifier
   - the thirteen principles
-  - `/orbit:architect`, `/orbit:interrogate` and its references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
+  - `/orbit:architect`, `/orbit:swarm`, `/orbit:interrogate` and its references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
   - `/orbit:correct`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill`, `/orbit:maintain-verification-skill` and `show-me-your-work`
   - `/orbit:how` and `/orbit:why`
   - `unslop`, `technical-writing`, `typescript-best-practices`, `tdd` and `benchmark-checklist`

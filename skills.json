@@ -43,6 +43,19 @@
       "Prefix each `references/` path in SKILL.md with `${CLAUDE_SKILL_DIR}/`. Leave the reference files as upstream: the variable only expands in SKILL.md."
     ]
   },
+  "swarm": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/swarm",
+    "sha": "e73df471cd4bd918367e99f3dd9c51bd53ddf5f0",
+    "edits": [
+      "Set the frontmatter description to: Fan out N parallel workers, drain them, and return one report. Use for /orbit:swarm, 'swarm this', or parallel coverage, races, gauntlets, and exploration.",
+      "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook flows can run it through the Skill tool.",
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "In Phase A step 3, replace the pstack-models line, the grok default, the auto / inherit-parent, rejected-slug and family-fallback sentences, and fast or standard speed with: Workers run on `model: \"sonnet\"`. For a model race, name each arm's model up front. Pick each worker's `effort` for the job per \"Match the model to the job\" in orbit's rules, starting at xhigh.",
+      "In Phase B, replace the first paragraph with: Spawn all N workers in one message as `Agent` calls with `subagent_type: \"general-purpose\"`, `isolation: \"worktree\"`, and the step 3 model and effort. Name the branch or commit each worker checks out. Omit `isolation` only when the worker needs something a fresh worktree lacks, such as the parent's uncommitted files.",
+      "In Phase B, replace the `cloud_base_branch` paragraph with: When a worker must start from another branch or commit, tell it to check out that ref first."
+    ]
+  },
   "architect": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/architect",
