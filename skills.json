@@ -185,7 +185,7 @@
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "In step 1, spawn an `Agent` with `subagent_type: \"orbit:comment-sicko\"` instead of `Task` / `comment-sicko`, and drop the poteto-mode Subagents sentence.",
       "In step 2, replace `/how` or `/why` with `/orbit:how` or `/orbit:why`, and `/no-comments` with `/orbit:no-comments`.",
-      "In step 3, replace the `/architect` run with: sketch it once for the accepted set and surrounding code, then implement it in step 4. (architect is not vendored.) In step 6, `architect sketch` becomes `shape sketch`."
+      "In step 3, replace the `/architect` run with: sketch it once for the accepted set and surrounding code, then implement it in step 4. In step 6, `architect sketch` becomes `shape sketch`."
     ]
   },
   "principle-laziness-protocol": {
