@@ -19,6 +19,16 @@
       "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook's investigate flow and the skills that apply it (recall, automate-me, show-me-your-work) can invoke it through the Skill tool."
     ]
   },
+  "technical-writing": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/technical-writing",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": [
+      "Set the frontmatter description's `Use for /technical-writing` to `Use for /orbit:technical-writing`.",
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook's opening-a-pr and multi-phase-plan flows can invoke it through the Skill tool."
+    ]
+  },
   "interrogate": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/interrogate",
