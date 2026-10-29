@@ -19,9 +19,9 @@ Invoked at the end of every other flow.
 - `## Scope`. Always. 1 to 3 short items on what it covers and what it deliberately leaves out (a follow-up, a known gap). No symbols, paths, or file-by-file essay.
 - `## Tradeoffs`. Only rejected alternatives a reviewer would otherwise ask about. Skip when there was no real choice.
 - `## Blast Radius`. 1 to 2 sentences on who or what it touches and why that is safe or risky. If main is red, state the cost of leaving it red.
-- `## Verification`. 1 to 3 bullets, each a real run path and its outcome. For perf, one primary number with its unit, `before → after`. No sample-size methodology or metric tables.
+- `## Verification`. 1 to 3 bullets, each a real run path and its outcome. For perf, one primary number with its unit, `before → after`, and a link to the arena directory for the rest. No sample-size methodology or metric tables.
 
-After the sections, attach videos or screenshots when they prove a claim. Full SHAs, file-by-file checklists, and "CLEAN" verdicts go in a linked artifact, not the body.
+After the sections, attach videos or screenshots when they prove a claim. Full SHAs, arena lane recitals, file-by-file checklists, and "CLEAN" verdicts go in a linked artifact, not the body.
 
 **Forge.** GitHub CLI (`gh`) is the forge.
 
