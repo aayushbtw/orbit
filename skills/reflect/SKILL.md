@@ -40,7 +40,7 @@ One `Agent` call, `subagent_type: general-purpose`. It spot-verifies citations t
 
 ## 4. Structural enforcement check
 
-Move any Accepted item that a lint rule, script, metadata flag, or runtime check would enforce more reliably to Backlog. See `/orbit:correct`'s levels.
+Move any Accepted item that a lint rule, script, metadata flag, or runtime check would enforce more reliably to Backlog. See the **encode-lessons-in-structure** principle skill.
 
 ## 5. Apply
 

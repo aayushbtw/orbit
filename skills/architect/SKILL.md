@@ -29,7 +29,7 @@ Skip Phase A only when the work is genuinely greenfield with no surrounding syst
 
 Spawn two runners in one message as `Agent` calls with `subagent_type: "general-purpose"`, one with `model: "opus"` and one with `model: "sonnet"`. Each brief holds the design task, the Phase A grounding, and absolute paths to read: `${CLAUDE_SKILL_DIR}/SKILL.md`, `${CLAUDE_SKILL_DIR}/references/runner-prompt.md`, `${CLAUDE_SKILL_DIR}/references/rationale-template.md`, and the principle leaves under `${CLAUDE_PLUGIN_ROOT}/skills/principle-<name>/SKILL.md`. Each brief says "do not edit files" and asks for the candidate design package in the reply. It also says the runner only sketches: no re-grounding and no spawning agents. If the two candidates are not structurally distinct, spawn a third runner briefed to avoid the shared shape.
 
-Design it twice. Require at least two structurally distinct candidates before synthesis, even when the first looks sufficient. Whole-shape alternatives, not point fixes inside one shape.
+Design it twice. Require at least two structurally distinct candidates before synthesis, even when the first looks sufficient. This is the **exhaust-the-design-space** principle skill made concrete. Whole-shape alternatives, not point fixes inside one shape.
 
 Screen every candidate against [`references/design-red-flags.md`](${CLAUDE_SKILL_DIR}/references/design-red-flags.md) before synthesis. Assume the next contributor is an agent that sees only the files it opened, copies the nearest example, and takes the shortest path that compiles. Prefer the design where a change that looks right from one file is right for the whole repo.
 
@@ -43,7 +43,7 @@ Default: proceed directly to implementation with the synthesized design. No huma
 
 Opt in to a checkpoint when the invoker explicitly asks: "/orbit:architect with checkpoint," "stop and show me before implementing," or similar. Then surface the synthesized design and pause for sign-off.
 
-The synthesis can ship as its own commit either way. Scaffold first, then fill in. In an /orbit:playbook flow, that scaffold commit goes through the Delegate gate. Planned and scoped breakage during fill-in is fine. For adversarial pressure on the design before implementing, run `/orbit:interrogate` on the synthesized sketch.
+The synthesis can ship as its own commit either way, as the "scaffold first" mode of the **foundational-thinking** principle skill. In an /orbit:playbook flow, that scaffold commit goes through the Delegate gate. Planned and scoped breakage during fill-in is fine, per the **outcome-oriented-execution** principle skill. For adversarial pressure on the design before implementing, run `/orbit:interrogate` on the synthesized sketch.
 
 If the human pushes back on the shape (in a checkpoint or after the fact), treat that as Phase A evidence. Re-ground and re-run Phase B before writing more code.
 
@@ -53,7 +53,7 @@ Replace `not implemented` bodies with code, pseudocode with logic. The synthesiz
 
 ## Phase E: Scrap when the architecture is wrong
 
-If implementation keeps producing friction the sketch can't absorb, throw the sketch out. Don't bolt fixes onto a wrong design. Redesign from first principles, per the **fix-root-causes** principle skill.
+If implementation keeps producing friction the sketch can't absorb, throw the sketch out. Don't bolt fixes onto a wrong design, per the **redesign-from-first-principles** and **fix-root-causes** principle skills.
 
 The signal is a *pattern*, not single instances. Tells:
 
@@ -69,7 +69,7 @@ Use judgment. A few edge cases don't condemn an architecture. Some problems are 
 When you scrap:
 
 1. Re-run `/orbit:how` over what's been built.
-2. Redesign as if the new constraints had been day-one assumptions.
+2. Redesign as if the new constraints had been day-one assumptions, per redesign-from-first-principles.
 3. Subtract before adding, per the **subtract-before-you-add** principle skill. The new sketch should be smaller than the old one before it grows.
 4. Return to Phase B and re-run the runners.
 
