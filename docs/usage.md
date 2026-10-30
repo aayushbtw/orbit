@@ -130,7 +130,7 @@ When each runs:
 - As in pstack, the rest is opt-in. `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill` and `/orbit:maintain-verification-skill` run only when you type them.
 - `/orbit:how` and `/orbit:why` run when you type them, when Claude matches a question to them, and inside the investigate and bug flows and `no-comments`.
 - `/orbit:arena` runs when you type it, inside `/orbit:architect`, and in the feature flow on a choice with several valid shapes.
-- `show-me-your-work` also runs when the playbook sees long or unattended work.
+- `show-me-your-work` also runs when Claude sees long or unattended work.
 - `/orbit:worktree-cleanup` runs when you type it, or when Claude matches "clean up worktrees" or "free up space".
 
 ## Principles
@@ -143,7 +143,7 @@ The playbook holds all 24 of pstack's principles, in pstack's five groups, each 
 - Delegation: guard the context window, never block on the human
 - Meta: encode lessons in structure
 
-Claude reads a principle only when its trigger fires. It adds one `Principles:` line to the reply, naming each one it applied and the choice it changed. Use the names to steer: "apply subtract before you add".
+Claude reads a principle only when its trigger fires. The reply names each one that shaped a decision and the choice it changed. Use the names to steer: "apply subtract before you add".
 
 ## Stack rules
 

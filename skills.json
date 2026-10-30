@@ -98,7 +98,7 @@
       "Set the frontmatter description to: Design an auditable playbook when no narrower one fits: a large migration, an ambitious multi-part change, or work a human reviews after stepping away. Scales rigor to the task, runs a hypothesis loop, and logs decisions. Use for /orbit:figure-it-out, or when /orbit:start routes here.",
       "Remove the `disable-model-invocation` frontmatter key so /orbit:start can invoke it.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "In Start, replace `read the Principles section of the **poteto-mode** skill` with: read the trigger lines, Principles, Stack rules and gates (Worktree, Plan, Delegate, Opening a PR) in `${CLAUDE_PLUGIN_ROOT}/skills/playbook/SKILL.md`. Those gates hold for this run, and the last todo is **Opening a PR** when the run changes code.",
+      "In Start, replace `read the Principles section of the **poteto-mode** skill` with: read the Principles, Stack rules and gates (Worktree, Plan, Delegate, Opening a PR) in `${CLAUDE_PLUGIN_ROOT}/skills/playbook/SKILL.md`. Those gates hold for this run, and the last todo is **Opening a PR** when the run changes code.",
       "In Phase B, the **architect** skill (it runs **arena**) becomes `/orbit:architect` (it runs `/orbit:arena`); replace the poteto-mode Subagents sentence with: Delegates are `orbit:poteto-agent`, and fan-out follows the playbook Delegate gate's parallel exception.",
       "In Phase D, the **show-me-your-work** skill becomes `/orbit:show-me-your-work` (read `${CLAUDE_PLUGIN_ROOT}/skills/show-me-your-work/SKILL.md`)."
     ]
