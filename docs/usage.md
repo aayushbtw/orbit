@@ -158,20 +158,6 @@ A project that differs adds a `## Workflow` block to its AGENTS.md, listing only
 
 Rules for one folder go in an AGENTS.md (or CLAUDE.md) inside it, say `src/server/AGENTS.md` naming a library's guide. The plan gate reads every such file above the files a change touches, plus `.claude/rules/` files whose `paths` match.
 
-## Credits in full
-
-Most of orbit is other people's work, all MIT. Orbit trims it, ports it from Cursor to Claude Code, and wires it to a set of defaults. For the original thinking, read pstack.
-
-- [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto):
-  - the playbook flows (hillclimb included), `/orbit:figure-it-out`, pause-safely, session-pickup and worktree-cleanup
-  - delegated coding with `poteto-agent`, worktree-per-task, the PR body sections and the independent verifier
-  - `/orbit:architect`, `/orbit:arena`, `/orbit:swarm`, `/orbit:interrogate` and its references (rubric, code-quality lens, lead judgment), Comment Sicko and `no-comments`
-  - the 24 principles
-  - `/orbit:correct`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill`, `/orbit:maintain-verification-skill` and `show-me-your-work`
-  - `/orbit:how` and `/orbit:why`
-  - `unslop`, `technical-writing`, `typescript-best-practices`, `tdd` and `benchmark-checklist`
-- [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit): `deslop`.
-
 ## Install notes
 
 The rules load on their own at the start of every session. Your own `CLAUDE.md` and `settings.json` stay yours.

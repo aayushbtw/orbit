@@ -4,7 +4,7 @@
 
 It plans, builds, tests and ships on its own. You just name the goal.
 
-Orbit is mostly [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto), trimmed and ported to Claude Code. See [Credits](#credits).
+Orbit is mostly [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan, trimmed and ported to Claude Code. [Differences from pstack](docs/pstack-differences.md) lists where orbit departs and why.
 
 ## Install
 
@@ -103,12 +103,6 @@ More in [docs/usage.md](docs/usage.md):
 - [Project defaults](docs/usage.md#project-defaults) and [folder rules](docs/usage.md#folder-rules)
 - [Background agents](docs/usage.md#what-runs-in-the-background)
 - [Principles](docs/usage.md#principles) and [stack rules](docs/usage.md#stack-rules)
-
-## Credits
-
-Most of orbit is MIT work from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by [Lauren Tan](https://x.com/poteto) and [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit). [What came from where](docs/usage.md#credits-in-full).
-
-Orbit's own parts are the `/orbit:start` routing, the playbook gates and the project defaults. [Differences from pstack](docs/pstack-differences.md) lists where orbit departs and why.
 
 ## Maintain
 
