@@ -117,10 +117,10 @@ When the app changes, run `/orbit:maintain-verification-skill`. It reads each fe
 
 Claude runs these itself. You can also ask for the advisor.
 
-- **poteto-agent** (Opus for the hardest changes, else Sonnet): writes the code for each unit of a change, so the code is never reviewed by the agent that wrote it.
+- **poteto-agent** (Opus for the hardest changes, else your session's model): writes the code for each unit of a change, so the code is never reviewed by the agent that wrote it.
 - **gitops** (Sonnet): commits, pushes, PRs and merges.
 - **comment-sicko**: deletes comments outside its keep list and flags the code they excuse, before review.
-- **verifier** (Sonnet, no Edit or Write tools): runs the change the way a user would before it lands and returns PASS, PASS+NOTES or FAIL. A fresh agent, never the one that wrote the change.
+- **verifier** (your session's model, no Edit or Write tools, in its own worktree): runs the change the way a user would before it lands and returns PASS, PASS+NOTES or FAIL. A fresh agent, never the one that wrote the change.
 - **advisor** (Opus, read-only): a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time.
 
 When each runs:
