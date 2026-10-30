@@ -51,6 +51,7 @@ Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh
 | Change is ready, land it | `/orbit:ship`. A fresh verifier runs the change first. |
 | Stop mid-task, switch model, step away | `/orbit:pause-safely`, then `/orbit:session-pickup` in a new session. See [stopping and resuming](#stopping-and-resuming). |
 | A long or unattended run you'll review later | `/orbit:show-me-your-work` |
+| Catch up on what changed since your last message | `/orbit:ketchup` |
 | Disk is tight, or worktrees have piled up | `/orbit:worktree-cleanup` |
 
 ### Understand code

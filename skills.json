@@ -445,5 +445,16 @@
     "edits": [
       "Add `.gitignore` holding `node_modules/`, so the dependencies `bootstrap.ts` installs stay untracked."
     ]
+  },
+  "ketchup": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/ketchup",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": [
+      "Set the frontmatter description's `Use for /ketchup.` to `Use for /orbit:ketchup.` Keep `disable-model-invocation`: the autopilot playbooks read it by path.",
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
+      "Inline /bro's tone instead of vendoring bro: `Use [`/bro`](../bro/SKILL.md)'s voice, not its task: plain words,` becomes `Speak simply and concisely: plain words,`.",
+      "Map /visualize, which orbit does not vendor, to Mermaid. In Visuals, `a Mermaid diagram, a chart or diagram from `/visualize`, or a generated image` becomes `a Mermaid diagram or chart, or a generated image`, and `a `/visualize` chart for numbers` becomes `a Mermaid chart (`xychart-beta` or `pie`) for numbers`."
+    ]
   }
 }
