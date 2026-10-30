@@ -28,11 +28,11 @@ Pull requests
 - Read, create and edit PRs as asked.
 - When asked to wait on CI, use `gh pr checks <n> --watch --fail-fast`. Exit 0 is green, 1 is a failure or no checks, 8 is still pending. If it says no checks are reported, try again a few times over about a minute before reporting "no CI". If the watch times out, run it again.
 - On a failure, report the failing check, its run id and the tail of `gh run view <run-id> --log-failed`. Don't classify it. Rerun only when told, with `gh run rerun <run-id>` (the whole run, never `--job`).
-- After a merge, read back `gh pr view <n> --json state,mergeCommit` and report `state` as it reads.
+- After a merge, read back `gh pr view <n> --json state,mergedAt,baseRefName` and report each field as it reads.
 
 Never reset --hard or delete branches. If a step needs that, stop and report.
 
-Rewrite history only on a task branch. Amend when a fix belongs in the just-made commit. Rebase non-interactively onto the branch's base, `origin/main` or a stacked child's parent tip, or onto trunk to retarget a child whose parent merged. Fold a fix into its commit with `git commit --fixup <sha>`, then `git rebase --autosquash <base>`.
+Rewrite history only on a task branch. Amend when a fix belongs in the just-made commit. Rebase non-interactively onto the branch's base, `origin/main` or a stacked child's parent tip. To retarget a child whose parent merged, fetch and run `git rebase --onto origin/<trunk> <parent's pre-merge tip>`, so commits a squash merge replaced don't replay. The lead passes that tip, the merged PR's `headRefOid`. Fold a fix into its commit with `git commit --fixup <sha>`, then `git rebase --autosquash <base>`.
 
 Rewrite pushed history only on a task branch you pushed or took over, never `main` or another session's branch. Publish it with `git push --force-with-lease=<branch>:<sha>`, pinned to the SHA you last pushed or took over. The lead passes that SHA. If the remote tip differs, stop and report.
 
