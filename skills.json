@@ -46,7 +46,7 @@
   "swarm": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/swarm",
-    "sha": "e73df471cd4bd918367e99f3dd9c51bd53ddf5f0",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
       "Set the frontmatter description to: Fan out N parallel workers, drain them, and return one report. Use for /orbit:swarm, 'swarm this', or parallel coverage, races, gauntlets, and exploration.",
       "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook flows can run it through the Skill tool.",
@@ -403,7 +403,7 @@
   "create-verification-skill": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/create-verification-skill",
-    "sha": "99b609a72323b70204eab407c622f436e858e112",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "In the frontmatter description, `/create-verification-skill` becomes `/orbit:create-verification-skill`.",
@@ -415,7 +415,7 @@
   "maintain-verification-skill": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/maintain-verification-skill",
-    "sha": "99b609a72323b70204eab407c622f436e858e112",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "`/create-verification-skill` becomes `/orbit:create-verification-skill` (intro, step 0), and `/maintain-verification-skill` in the frontmatter description becomes `/orbit:maintain-verification-skill`.",
@@ -429,9 +429,9 @@
   },
   "playbook-bugbot-triage": {
     "repo": "cursor/plugins",
-    "path": "harness/pstack/claude-code/skills/poteto-mode/references/bugbot-triage.md",
+    "path": "pstack/skills/poteto-mode/references/bugbot-triage.md",
     "dest": "skills/playbook/references/bugbot-triage.md",
-    "sha": "1ba91fc25c0977741dd0e267849e6234b037ed0a",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1, above the intro paragraph."
     ]
