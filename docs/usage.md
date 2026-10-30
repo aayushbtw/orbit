@@ -27,7 +27,7 @@ A question with no code change also goes through `/orbit:start <question>`. It r
 
 A queue of independent changes goes through `/orbit:start` too, as "autopilot this queue" with the items. The `autopilot-full` flow writes no code itself. It spawns one owner per item, and each owner runs its own flow, opens its PR and babysits it to merge-ready. A fresh verifier checks each head before a fresh owner merges it. Items you name as yours stop at merge-ready.
 
-Say "build the stack, I'll land it" instead, and the `autopilot-stack` flow runs the same way without merging. A change that builds on another goes on that change's branch. The flow stops when every head has passed its verifier and its checks. You land the stack with `/orbit:ship`.
+Say "build the stack, I'll land it" instead, and the `autopilot-stack` flow builds and verifies the same way, but never merges. It hands you one linear stack of PRs, each based on the one below and carrying its verdict. You land the stack with `/orbit:ship`.
 
 Work that spans phases or several PRs can start as a plan. Ask `/orbit:start` for a multi-PR plan, and the `multi-phase-plan` flow writes a checklist with one section per PR, naming what to build, what you should see, and the checks that prove it. It settles open questions with throwaway prototypes first, lints the plan with `check-plan.mjs`, and stops. On your go, the plan runs under `autopilot-full` by default, or under `autopilot-stack` when you said "don't ship" or "I'll land it".
 

@@ -74,7 +74,7 @@ Before writing code that matches a line below, read its index, then open only th
 - `perf`, `playbooks/perf-issue.md`. A measured slowness to trace and improve against a baseline.
 - `hillclimb`, `playbooks/hillclimb.md`. Sustained, scientific improvement of one metric against a target. Distinct from `perf`, which is a one-off fix.
 - `autopilot-full`, `playbooks/autopilot-full.md`. A queue of independent PRs run to merged with full autonomy. One owner per PR carries build through merge, and the root swarm-verifies each PR before its owner merges.
-- `autopilot-stack`, `playbooks/autopilot-stack.md`. A queue of changes built and verified with full autonomy, handed to the operator to land.
+- `autopilot-stack`, `playbooks/autopilot-stack.md`. A queue of changes built and verified with full autonomy, delivered as one linear reviewed base-branch stack the operator lands.
 - `multi-phase-plan`, `playbooks/multi-phase-plan.md`. A plan for work that spans phases or stacked PRs.
 - `opening-a-pr`, `playbooks/opening-a-pr.md`. Invoked at the end of every other flow.
 - `babysit`, `playbooks/babysit.md`. Driving a PR or a stack to merge-ready: conflicts, review threads, CI.
