@@ -15,7 +15,7 @@ Every candidate gets the same prompt, so the prompt is the contract.
 
 1. State the artifact each candidate is producing.
 2. Derive the rubric, 3-6 concrete gradeable criteria for what success looks like on *this* task. It is the picker's tool in Phase D. Candidates only see the task.
-3. Pick the runners. Default to two runners, each an `Agent` call with `subagent_type: "orbit:poteto-agent"`, one with `model: "opus"` and one with `model: "sonnet"`. Spawn more runners when the arena covers multiple design directions. Use the same model N times when the work is generation-bound rather than judgment-sensitive. Pick each runner's `effort` for the job, per "Match the model to the job" in orbit's rules.md.
+3. Pick the runners. Default to two runners, each an `Agent` call with `subagent_type: "orbit:poteto-agent"`, one with `model: "opus"` and one that omits `model`, so it runs on the session model. Spawn more runners when the arena covers multiple design directions. Use the same model N times when the work is generation-bound rather than judgment-sensitive. Pick each runner's `effort` for the job, per "Match the model to the job" in orbit's rules.md.
 4. Give each candidate its own output location (a git worktree where possible, otherwise `/tmp/arena-<slug>/candidate-<n>/`), per the **separate-before-serializing-shared-state** principle skill. A worktree runner is spawned with `isolation: "worktree"`, per the playbook Delegate gate's parallel exception.
 
 ## Phase B: Fan out
@@ -26,7 +26,7 @@ If a candidate produces no output, proceed with N-1 and note the dropout.
 
 ## Phase C: Cross-judge
 
-After all Phase B candidates complete, choose the judge's model from `opus` and `sonnet`. Prefer the one that differs from the parent's model. Spawn one judge as an `Agent` call with `subagent_type: "Explore"` on that model. Its brief says "do not edit files", and you check `git status` afterward. It sees the rubric and the candidates by path label, scores each criterion, and recommends a base with rationale. It runs in parallel with your reading in Phase D. Don't spawn it while candidates are still writing.
+After all Phase B candidates complete, choose the judge's model from `opus` and the session model (omit `model`). Prefer the one that differs from the parent's model. Spawn one judge as an `Agent` call with `subagent_type: "Explore"` on that model. Its brief says "do not edit files", and you check `git status` afterward. It sees the rubric and the candidates by path label, scores each criterion, and recommends a base with rationale. It runs in parallel with your reading in Phase D. Don't spawn it while candidates are still writing.
 
 ## Phase D: Pick a base
 

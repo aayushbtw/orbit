@@ -20,7 +20,7 @@ Open a todolist with one entry per phase before launching anything.
 
 1. State the done predicate and the artifact or report the swarm must return.
 2. Choose the shape. Partition into slices, race N workers on identical briefs, or mix both. For a race or mixed shape, declare `first pass`, `rank all`, or `best-of` before spawning.
-3. Workers run on `model: "sonnet"`. For a model race, name each arm's model up front. Pick each worker's `effort` for the job per "Match the model to the job" in orbit's rules, starting at xhigh.
+3. Workers omit `model`, so they run on the session model. For a model race, name each arm's model up front. Pick each worker's `effort` for the job per "Match the model to the job" in orbit's rules, starting at xhigh.
 4. Give each worker its own writable output when it writes. When workers verify or measure commits, each brief names the exact SHAs. A measurement brief also names the method (sample count, what one sample is, order). The worker records both in its result.
 
 ## Phase B: Fan out

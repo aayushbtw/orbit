@@ -29,7 +29,7 @@ Skip Phase A only when the work is genuinely greenfield with no surrounding syst
 
 Run `/orbit:arena` with the design-sketch task and the Phase A grounding artifacts. Pass `${CLAUDE_SKILL_DIR}/references/runner-prompt.md` as each runner's prompt. Each runner's brief also gives the absolute paths `${CLAUDE_SKILL_DIR}/SKILL.md`, `${CLAUDE_SKILL_DIR}/references/rationale-template.md` and the principle leaves under `${CLAUDE_PLUGIN_ROOT}/skills/principle-<name>/SKILL.md`.
 
-Use arena's default runners, one on `model: "opus"` and one on `model: "sonnet"`.
+Use arena's default runners, one on `model: "opus"` and one on the session model.
 
 Design it twice. Require at least two structurally distinct candidates before synthesis, even when the first looks sufficient. This is the **exhaust-the-design-space** principle skill made concrete. Whole-shape alternatives, not point fixes inside one shape.
 
