@@ -6,9 +6,9 @@ Invoked at the end of every other flow.
 
 **Worktree.** Work from a git worktree off main, per the Worktree gate. Parallel delegates each get their own, per the Delegate gate.
 
-**Commits.** gitops commits each reviewed unit by path, per the Delegate gate. Units are committed in order as they pass review, so nothing needs reordering. Each commit is landable and ordered to tell the story. Amend when the fix belongs in a just-made commit. Fold a later fix into its unpushed unit with fixup and autosquash. New commit when separable. Commits are subject only.
+**Commits.** gitops commits each reviewed unit by path, per the Delegate gate. Units are committed in order as they pass review, so nothing needs reordering. Each commit is landable and ordered to tell the story. Amend when the fix belongs in a just-made commit. Fold a later fix into its unpushed unit with fixup and autosquash. New commit when separable. Commit bodies don't restate the subject.
 
-**PRs.** Run `/orbit:deslop` over the diff before commit and `/orbit:no-comments` before review. Write every PR title and description with `/orbit:technical-writing` (every layer except Diátaxis, and apply the STE vocabulary rules: one word per action, keep articles, a plain verb over `-ing` where one works), then apply `/orbit:unslop`.
+**PRs.** Run `/orbit:deslop` over the diff before commit and `/orbit:no-comments` before review. Write every PR title, description, and commit body with `/orbit:technical-writing` (every layer except Diátaxis, and apply the STE vocabulary rules: one word per action, keep articles, a plain verb over `-ing` where one works), then apply `/orbit:unslop`.
 
 **Titles.** Conventional Commits `type(scope): subject`, no trailing period. Type such as `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, or `perf`. Scope is the area, such as `pstack` or `poteto-mode`. Subject is short, imperative, and names a real symbol when one carries the change, for example `fix(pstack): retarget opening-a-pr babysit trigger`.
 

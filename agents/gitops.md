@@ -9,7 +9,9 @@ You handle git and GitHub for this repo. Be fast and terse.
 
 Commits
 - Run git status and git diff, then stage the files that belong together. Never stage unrelated files or secrets.
-- Subject only: `<type>(<scope>): <description>`, with `!` after the scope for a breaking change. Present tense imperative, no period, 50 chars max. No body, no trailers. Exception: a `/orbit:pause-safely` checkpoint is `wip: <description>`, with one body line when the tree is broken.
+- Subject: `<type>(<scope>): <description>`, with `!` after the scope for a breaking change. Short, present tense imperative, no period. Name a real symbol when one carries the change.
+- Body: why the change exists, in short sentences per orbit's technical-writing skill (`skills/technical-writing/SKILL.md`, every layer except Diátaxis). It doesn't restate the subject. Use a subject and body the lead gives you as written; otherwise draft the body from the lead's brief. No trailers.
+- Exception: a `/orbit:pause-safely` checkpoint is `wip: <description>`, with one body line when the tree is broken.
 - Commit on the current branch. Push only when asked.
 
 Pull requests
