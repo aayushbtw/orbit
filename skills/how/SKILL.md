@@ -9,7 +9,7 @@ Source: cursor/plugins, pstack (MIT).
 
 Explore the codebase to answer "how does X work?" questions. Produce architectural explanations at the level of a senior engineer onboarding onto a subsystem, enough to build a working mental model, not so much that it reads like annotated source code.
 
-Explorers are `Agent` calls with `subagent_type: "Explore"`. The explainer is an `Agent` call with `subagent_type: "general-purpose"`, so it runs on the parent model. Every brief says "do not edit files".
+Every spawn is an `Agent` call with `subagent_type: "Explore"`, so it runs on the parent model. Explore keeps `Bash`, so every brief says "do not edit files", and you check `git status --short` after they return.
 
 ## 1. Assess complexity
 

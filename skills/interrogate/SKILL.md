@@ -25,7 +25,7 @@ Before spawning reviewers, state the intent in one clear paragraph from the user
 
 ## Step 3, Spawn Reviewers
 
-Spawn two reviewers in a single message, Reviewer A and Reviewer B, as `Agent` calls with `subagent_type: "general-purpose"` and `model: "opus"` for A. B omits `model`, so it runs on the session model. Every brief says "do not edit files".
+Spawn two reviewers in a single message, Reviewer A and Reviewer B, as `Agent` calls with `subagent_type: "Explore"` and `model: "opus"` for A. B omits `model`, so it runs on the session model. Explore keeps `Bash`, so every brief says "do not edit files". After the reviewers return, run `git status --short`. Any change it shows fails that review: revert it and report it.
 
 Read `${CLAUDE_SKILL_DIR}/references/reviewer-prompt.md` and fill in the same template for every reviewer with the stated intent, the diff or file contents, the rubric from `${CLAUDE_SKILL_DIR}/references/rubric.md`, and the code-quality lens from `${CLAUDE_SKILL_DIR}/references/code-quality-review.md`.
 
