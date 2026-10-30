@@ -29,7 +29,7 @@ A queue of independent changes goes through `/orbit:start` too, as "autopilot th
 
 Say "build the stack, I'll land it" instead, and the `autopilot-stack` flow builds and verifies the same way, but never merges. It hands you one linear stack of PRs, each based on the one below and carrying its verdict. You land the stack with `/orbit:ship`.
 
-Work that spans phases or several PRs can start as a plan. Ask `/orbit:start` for a multi-PR plan, and the `multi-phase-plan` flow writes a checklist with one section per PR, naming what to build, what you should see, and the checks that prove it. It settles open questions with throwaway prototypes first, lints the plan with `check-plan.mjs`, and stops. On your go, the plan runs under `autopilot-full` by default, or under `autopilot-stack` when you said "don't ship" or "I'll land it".
+Work that spans phases or several PRs can start as a plan. Ask `/orbit:start` for a multi-PR plan, and the `multi-phase-plan` flow writes a checklist with one section per PR, naming what to build, what you should see, and the checks that prove it. It settles open questions with throwaway prototypes first, lints the plan with `check-plan.mjs`, and stops. On your go, the plan runs under `autopilot-full` when its PRs are independent. It runs under `autopilot-stack` when they are sequenced or coupled, or when you said "don't ship" or "I'll land it".
 
 Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh one.
 
