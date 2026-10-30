@@ -14,3 +14,4 @@ ts	phase	decision	why	evidence	result
 2026-10-30T18:23:00Z	run	O5 bump to 0.28.0	release rule in README	.claude-plugin/plugin.json	kept
 2026-10-30T18:45:00Z	verify	re-audit found the multi-phase default contradicted the restored pin rule; the plan now picks by that rule, and the opt-out picks autopilot-stack	ship by default grants landing authority, which is the pin rule's input, so both hold	independent re-audit P5 defect 1	reverses the 18:07:30 row
 2026-10-30T18:45:30Z	verify	restore pstack's reasoning-level line in six flows, minus speed	dropped with no row	re-audit defect 2	kept
+2026-10-30T19:20:00Z	verify	split the SessionStart output across two hooks and move the /orbit:start line to the top	verifier FAIL: 12.6 KB hook output was cut to a 2 KB preview, routing 0/6 vs parent 3/3	per-hook cap measured; routing 3/3 after split	kept

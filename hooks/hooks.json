@@ -5,7 +5,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sed \"s|[$]{CLAUDE_PLUGIN_ROOT}|${CLAUDE_PLUGIN_ROOT}|g\" \"${CLAUDE_PLUGIN_ROOT}/rules.md\""
+            "command": "sed -e '/^# Code Quality$/,$d' -e \"s|[$]{CLAUDE_PLUGIN_ROOT}|${CLAUDE_PLUGIN_ROOT}|g\" \"${CLAUDE_PLUGIN_ROOT}/rules.md\""
+          },
+          {
+            "type": "command",
+            "command": "sed -e '/^# Code Quality$/,$!d' -e \"s|[$]{CLAUDE_PLUGIN_ROOT}|${CLAUDE_PLUGIN_ROOT}|g\" \"${CLAUDE_PLUGIN_ROOT}/rules.md\""
           }
         ]
       }
