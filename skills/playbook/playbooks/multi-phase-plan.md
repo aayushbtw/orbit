@@ -14,7 +14,7 @@ Under Land `main`, a PR in the plan is a task branch, as `playbooks/autopilot-fu
 
 **Verification.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked (**prove-it-works**). That sentence is the verification rule. Every verification block opens with it. The live block is mandatory. Ten lanes at the PR head drive the real surface through its control skill, per `/orbit:swarm`, on its worker model (the session model) at xhigh. Each lane is one box with a concrete scenario, the screenshot it saves, and its pass predicate. One lane is the **Regression lane against trunk.** It runs the same load-bearing scenario on trunk and head. If trunk does not have the feature, the lane records that fact and gates the behavior the diff adds plus the end state the user waits for instead of inventing a trunk result. The perf gate is dual-sided. Trunk and head must both produce the named metric. If trunk lacks the feature, also isolate the work the diff adds and set an absolute budget for that work plus the end-to-end state the user waits for. Do not claim a ratio between unlike scenarios. The perf block names the metric, the interleaved probe, the trunk baseline measured first, and the rule with the number that fails. A PR that changes an interaction is review-gated. The operator reviews it in chat with screenshots and a video before merge. A PR that changes no interaction writes `**Review gate.** None. <PR id> is not review-gated.` and no boxes under it.
 
-**Control skill.** Pick it by surface. The project's `verify-*` skill for that surface is its control skill. Native mobile uses whatever simulator-driving skill the repo has. A PR that touches two surfaces gets lanes on both. A surface with no control skill is a risk in Appendix C, and its live block still names how each lane drives it.
+**Control skill.** Pick it by surface. The project's `verify-*` skill for that surface is its control skill when it has one. Otherwise browser, Electron, and web UIs use `/orbit:control-ui`, and CLIs and TUIs use `/orbit:control-cli`. Native mobile uses whatever simulator-driving skill the repo has. A PR that touches two surfaces gets lanes on both. A surface with no control skill is a risk in Appendix C, and its live block still names how each lane drives it.
 
 ````markdown
 # <Program> plan
@@ -70,7 +70,7 @@ Tests alone are not sufficient verification. A PR is verified only when its unit
 
 ### Boot recipe, for every live lane
 
-Each live lane runs in its own worktree at the PR head, as a swarm worker spawned with `isolation: "worktree"`. Drive through the project's `verify-*` skill.
+Each live lane runs in its own worktree at the PR head, as a swarm worker spawned with `isolation: "worktree"`. Drive through the project's `verify-*` skill when it has one, else `/orbit:control-ui` or `/orbit:control-cli`.
 
 - [ ] `git checkout <head SHA>`.
 - [ ] <Start the backend and the surface on ports no other lane uses. Wait for ready.>

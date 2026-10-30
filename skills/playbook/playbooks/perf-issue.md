@@ -1,7 +1,7 @@
 ### Perf issue
 
 **You own the measurement story. Plan, review, verify the numbers.** Tie every fix to a measurement, don't read source instead of measuring.
-1. Capture a baseline trace via the project's `verify-*` skill when it has one. Vet the baseline, and each later number, with `../benchmark-checklist/SKILL.md`.
+1. Capture a baseline trace via the project's `verify-*` skill when it has one, else `/orbit:control-ui` (UI) or `/orbit:control-cli` (CLI or TUI). Vet the baseline, and each later number, with `../benchmark-checklist/SKILL.md`.
 2. `/orbit:how` to ground hypotheses. Don't claim a perf ceiling without running it first.
    Try the performance mantras in order, cheapest first:
    1. Don't do it. Stop work whose result nothing uses rather than cheapening it.

@@ -71,6 +71,6 @@ A goal given without a named skill goes through `/orbit:start <goal>`.
 
 A project's `## Workflow` block in AGENTS.md lists only what differs from these:
 
-1. Check: `vpr check`, then `vpr build` and `vpr test` if those scripts exist. The flows' verify steps run it, and so does Shipping under Land `main`, in place of CI. Shipping's `verifier` agent runs every change before it lands, with the project's `verify-*` skill when it has one.
+1. Check: `vpr check`, then `vpr build` and `vpr test` if those scripts exist. The flows' verify steps run it, and so does Shipping under Land `main`, in place of CI. Shipping's `verifier` agent runs every change before it lands, with the project's `verify-*` skill when it has one. Shipping a UI or CLI without one uses the matching control skill: `/orbit:control-ui` for browser, Electron and web UIs, `/orbit:control-cli` for CLIs and TUIs. For a bug fix, reproduce it first on the same surface yourself.
 2. Land: every change task works in its own worktree off `origin/main` (the playbook's Worktree gate) and commits each reviewed unit there. When Land is `pr`, Opening a PR opens a PR from it, Babysit drives it to merge-ready, and Shipping merges it. Under Land `main`, Shipping fast-forwards `main` to it. Either way the independent verifier gates the landing, and "don't ship" or "I'll land it" stops the task at the PR or branch.
 3. Review: `/orbit:interrogate` before shipping when the design is contested, with the block's "Review also checks" sources and the `Before code` entries for the changed paths.

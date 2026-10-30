@@ -113,6 +113,23 @@
       "Replace `Check the diff against main and remove AI-generated slop introduced in the branch` with `Check the uncommitted diff, or the branch's diff against main, and remove AI-generated slop introduced in that diff`."
     ]
   },
+  "control-ui": {
+    "repo": "cursor/plugins",
+    "path": "cursor-team-kit/skills/control-ui",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": [
+      "Add the line `Source: cursor/plugins, cursor-team-kit (MIT).` under the H1.",
+      "In What It Is Used For, `verify-this` becomes the `orbit:verifier` agent, since orbit does not vendor cursor-team-kit's verify-this."
+    ]
+  },
+  "control-cli": {
+    "repo": "cursor/plugins",
+    "path": "cursor-team-kit/skills/control-cli",
+    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "edits": [
+      "Add the line `Source: cursor/plugins, cursor-team-kit (MIT).` under the H1."
+    ]
+  },
   "reflect": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/reflect",
