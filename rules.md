@@ -26,14 +26,15 @@ Never create `.md` files in a repo root. The root holds only README, AGENTS (or 
 
 # Task End
 
-Before ending, finish every follow-up inside the goal yourself, including verifying your own change end to end. The goal is what the user asked for. A feature's "done" bullets restate it and never widen it. Don't stop to ask on reversible work. Decide, act, and report the choice, per never-block-on-the-human.
+Before ending, finish every follow-up inside the goal yourself, including verifying your own change end to end. The goal is what the user asked for. Don't stop to ask on reversible work. Decide, act, and report the choice, per never-block-on-the-human.
 
-Before asking on a "which approach", "how should I" or "what should this do" fork, classify it. If running something could answer it (behavior, timing, layout, output, perf), it isn't the user's question. Sketch it with the `prototype` flow (`/orbit:playbook prototype`) and let the result decide. In an investigate task, answer from the evidence instead of building anything. Keep questions for product or preference calls no experiment can settle, asked as numbered options with the recommendation first.
+Before asking on a "which approach", "how should I" or "what should this do" fork, classify it. If running something could answer it (behavior, timing, layout, output, perf), it isn't the user's question. Sketch it with the `prototype` flow (`/orbit:playbook prototype`) and let the result decide. In an investigate task, answer from the evidence instead of building anything. Keep questions for product or preference calls no experiment can settle, asked as numbered options with the recommendation first. Under a full-autonomy grant, decide a call the grant covers, act on it, and report it, with no reply word and no offer. Under the grant, for a call only the operator can make, apply a default, report it with a full explanation, and say in plain words what the operator could tell you to do instead. The operator answers in their own words. Never give a shorthand token to type back. Gates the operator named and the pause list below still need the operator.
 
-- List anything outside the goal. Don't build it. The one exception is a broken orbit skill or a flaky check that blocks this task, which you fix in its own commit.
+- List anything outside the goal. Don't build it. The one exception is a broken orbit skill mid-task. Fix it in its own PR. Under Land `main`, that is its own worktree and branch in orbit's repo with its own Opening a PR run, not a commit in this task. Don't block. Don't silently work around it.
+- Reversible work and external actions (team chat, ticket updates) proceed without asking.
 - Pause only for:
   - a product call that's the user's
-  - an irreversible action: force-push to shared branches, deploys, deleting data, sending external messages
+  - an irreversible action: force-push to shared branches, deploys, deleting data, customer messages
 
   Pushing, merging and opening PRs are not irreversible.
 
@@ -59,6 +60,10 @@ Write docs, RFCs, readmes, PR descriptions, and commit messages with `/orbit:tec
 - "No" is an acceptable answer. Asked to add scope or shown an approach, give your real judgment, including "this doesn't earn its place".
 
 The user's own CLAUDE.md format and length rules win where they differ.
+
+# Comments
+
+Comments follow the same rule as the reply. Write them clean as you go. Keep a comment only for a non-obvious *why* the code can't show. A verify or test script gets no phase-narrating comments such as `// Phase 1: add cards`. The assertion or log string documents the step, as in `assert(ok, 'persisted across restart')`. This applies to every file you produce, including the delegate's diff.
 
 # Workflow Defaults
 
