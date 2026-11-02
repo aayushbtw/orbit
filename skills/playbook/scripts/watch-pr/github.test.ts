@@ -12,6 +12,7 @@ import {
   parseFastCheck,
   parsePullRequest,
   parseReviewThreadPage,
+  parseRunsChecks,
   resolveChecks,
   resolveContext,
   resolveReviewThreads,
@@ -29,13 +30,14 @@ const context = {
   repo: "repo",
   number: parsePrNumber(42),
 };
+const facts = await fakeReader().pullRequest(context);
 
 describe("checks fallback chain", () => {
   it("uses a non-empty fast-path result without a rollup query", async () => {
     const reader = fakeReader({
       fastPath: { kind: "checks", checks: [passingCheck("fast")] },
     });
-    const read = await resolveChecks(reader, context);
+    const read = await resolveChecks(reader, facts);
     expect(read.source).toBe("gh-pr-checks");
     expect(read.checks.map((check) => check.name)).toEqual(["fast"]);
     expect(reader.calls).toEqual(["checksFastPath"]);
@@ -49,7 +51,7 @@ describe("checks fallback chain", () => {
         { checks: [failedCheck("second")], endCursor: null },
       ],
     });
-    const read = await resolveChecks(reader, context);
+    const read = await resolveChecks(reader, facts);
     expect(read.source).toBe("graphql-rollup");
     expect(read.checks.map((check) => check.name)).toEqual(["first", "second"]);
     expect(reader.calls).toEqual([
@@ -64,24 +66,72 @@ describe("checks fallback chain", () => {
       fastPath: { kind: "checks", checks: [] },
       rollupPages: [{ checks: [pendingCheck("fallback")], endCursor: null }],
     });
-    expect((await resolveChecks(reader, context)).checks[0].name).toBe(
-      "fallback"
-    );
+    expect(await resolveChecks(reader, facts)).toMatchObject({
+      checks: [{ name: "fallback" }],
+    });
     expect(reader.calls).toEqual(["checksFastPath", "checkRollupPage:null"]);
   });
 
-  it("fails closed when both paths are empty", async () => {
+  it("fails closed when both paths are empty on a repository that runs checks", async () => {
     const reader = fakeReader({
-      fastPath: {
-        kind: "unusable",
-        exitCode: 8,
-        stderr: "credential cannot read checks",
-      },
+      fastPath: { kind: "unusable", exitCode: 1, stderr: "no checks reported" },
+      runsChecks: true,
     });
-    await expect(resolveChecks(reader, context)).rejects.toBeInstanceOf(
+    await expect(resolveChecks(reader, facts)).rejects.toBeInstanceOf(
       ChecksUnavailable
     );
-    expect(reader.calls).toEqual(["checksFastPath", "checkRollupPage:null"]);
+  });
+
+  it("reads zero checks when both paths are empty on a repository that runs none", async () => {
+    const reader = fakeReader({
+      fastPath: { kind: "unusable", exitCode: 1, stderr: "no checks reported" },
+      runsChecks: false,
+    });
+    expect(await resolveChecks(reader, facts)).toEqual({
+      source: "no-ci",
+      checks: [],
+    });
+  });
+});
+
+describe("repository check presence", () => {
+  const baseRef = {
+    target: { statusCheckRollup: null },
+    branchProtectionRule: null,
+    rules: { nodes: [{ type: "COPILOT_CODE_REVIEW" }] },
+  };
+  const response = ({
+    workflows = null,
+    baseRef: base = baseRef,
+  }: {
+    readonly workflows?: unknown;
+    readonly baseRef?: unknown;
+  }) => ({
+    data: {
+      repository: { object: workflows, pullRequest: { baseRef: base } },
+    },
+  });
+
+  it("finds no checks when no source of checks exists", () => {
+    expect(parseRunsChecks(response({}))).toBe(false);
+  });
+
+  it("finds checks from any one source", () => {
+    const cases = [
+      { workflows: { __typename: "Tree" } },
+      {
+        baseRef: { ...baseRef, target: { statusCheckRollup: { state: "SUCCESS" } } },
+      },
+      {
+        baseRef: { ...baseRef, branchProtectionRule: { requiresStatusChecks: true } },
+      },
+      {
+        baseRef: { ...baseRef, rules: { nodes: [{ type: "REQUIRED_STATUS_CHECKS" }] } },
+      },
+      { baseRef: null },
+    ];
+    for (const overrides of cases)
+      expect(parseRunsChecks(response(overrides))).toBe(true);
   });
 });
 
