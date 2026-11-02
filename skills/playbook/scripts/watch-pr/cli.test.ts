@@ -191,6 +191,27 @@ describe("main", () => {
     expect(harness.stdout[0]).not.toContain('"kind":"QUEUE"');
   });
 
+  it("reports a status-only query failure once without retrying", async () => {
+    const reader = fakeReader({
+      fastPath: {
+        kind: "unusable",
+        exitCode: 1,
+        stderr: "no checks reported on the 'feature' branch",
+      },
+    });
+    const harness = testRuntime(reader);
+    const code = await main(
+      ["--owner", "owner", "--repo", "repo", "--pr", "1", "--status-only"],
+      harness.runtime
+    );
+    expect(code).toBe(7);
+    expect(harness.stdout).toHaveLength(1);
+    expect(JSON.parse(harness.stdout[0])).toMatchObject({
+      kind: "BLOCKER",
+      blocker: { kind: "status-query", failures: 1 },
+    });
+  });
+
   it("returns exit 4 for a hidden GitHub-side CI refusal", async () => {
     const reader = fakeReader({
       facts: { mergeStateStatus: "BLOCKED" },
