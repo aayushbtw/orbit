@@ -100,20 +100,23 @@ describe("repository check presence", () => {
     branchProtectionRule: null,
     rules: { nodes: [{ type: "COPILOT_CODE_REVIEW" }] },
   };
+  const unchecked = { commit: { statusCheckRollup: null } };
   const response = ({
     headWorkflows = null,
     baseWorkflows = null,
     baseRef: base = baseRef,
+    commits = [unchecked, unchecked],
   }: {
     readonly headWorkflows?: unknown;
     readonly baseWorkflows?: unknown;
     readonly baseRef?: unknown;
+    readonly commits?: readonly unknown[];
   }) => ({
     data: {
       repository: {
         headWorkflows,
         baseWorkflows,
-        pullRequest: { baseRef: base },
+        pullRequest: { baseRef: base, commits: { nodes: commits } },
       },
     },
   });
@@ -139,6 +142,13 @@ describe("repository check presence", () => {
     ];
     for (const overrides of cases)
       expect(parseRunsChecks(response(overrides))).toBe(true);
+  });
+
+  it("finds checks when only an earlier commit of the PR carried one", () => {
+    const checked = { commit: { statusCheckRollup: { state: "SUCCESS" } } };
+    expect(parseRunsChecks(response({ commits: [checked, unchecked] }))).toBe(
+      true
+    );
   });
 });
 

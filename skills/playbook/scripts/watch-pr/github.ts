@@ -8,7 +8,7 @@ export const PR_COMMIT_STATUS_QUERY =
 export const PR_CHECK_ROLLUP_QUERY =
   "\nquery PrCheckRollup($owner: String!, $repo: String!, $pr: Int!, $after: String) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      commits(last: 1) {\n        nodes {\n          commit {\n            statusCheckRollup {\n              contexts(first: 100, after: $after) {\n                pageInfo {\n                  hasNextPage\n                  endCursor\n                }\n                nodes {\n                  __typename\n                  ... on CheckRun {\n                    name\n                    status\n                    conclusion\n                    detailsUrl\n                  }\n                  ... on StatusContext {\n                    context\n                    state\n                    targetUrl\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
 export const PR_RUNS_CHECKS_QUERY =
-  "\nquery PrRunsChecks($owner: String!, $repo: String!, $pr: Int!, $headWorkflows: String!, $baseWorkflows: String!) {\n  repository(owner: $owner, name: $repo) {\n    headWorkflows: object(expression: $headWorkflows) {\n      __typename\n    }\n    baseWorkflows: object(expression: $baseWorkflows) {\n      __typename\n    }\n    pullRequest(number: $pr) {\n      baseRef {\n        target {\n          ... on Commit {\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n        branchProtectionRule {\n          requiresStatusChecks\n        }\n        rules(first: 100) {\n          nodes {\n            type\n          }\n        }\n      }\n    }\n  }\n}\n";
+  "\nquery PrRunsChecks($owner: String!, $repo: String!, $pr: Int!, $headWorkflows: String!, $baseWorkflows: String!) {\n  repository(owner: $owner, name: $repo) {\n    headWorkflows: object(expression: $headWorkflows) {\n      __typename\n    }\n    baseWorkflows: object(expression: $baseWorkflows) {\n      __typename\n    }\n    pullRequest(number: $pr) {\n      baseRef {\n        target {\n          ... on Commit {\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n        branchProtectionRule {\n          requiresStatusChecks\n        }\n        rules(first: 100) {\n          nodes {\n            type\n          }\n        }\n      }\n      commits(last: 50) {\n        nodes {\n          commit {\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
 
 interface CommandResult {
   readonly code: number;
@@ -323,7 +323,11 @@ export function parseRunsChecks(value: unknown): boolean {
     (protection !== null && at(protection, ["requiresStatusChecks"]) === true) ||
     list(at(baseRef, ["rules", "nodes"]), "baseRef.rules.nodes").some((rule) =>
       CHECK_RULES.includes(string(at(rule, ["type"]), "baseRef.rules.type"))
-    )
+    ) ||
+    list(
+      at(repository, ["pullRequest", "commits", "nodes"]),
+      "commits.nodes"
+    ).some((node) => at(node, ["commit", "statusCheckRollup"]) !== null)
   );
 }
 function parseComment(value: unknown): T.ReviewComment {
