@@ -18,54 +18,26 @@ Auto-update is off for third-party marketplaces. [Turn it on](docs/usage.md#auto
 ## A task, start to finish
 
 ```mermaid
-flowchart TD
-    start["/orbit:start &lt;goal&gt;"] --> flow{Pick the flow}
-    flow -- investigate --> answer[Answer, no commit]
-    answer --> next
-    flow -- bug, feature, refactor,<br/>perf, hillclimb --> wt[Own worktree]
-    flow -- large or cross-cutting --> fio["/orbit:figure-it-out<br/>designs the steps"]
-    fio --> wt
-    wt --> big{Adds module or<br/>over 3 files?}
-    big -- yes --> advisor[Advisor reviews plan]
-    big -- no --> build
-    advisor --> build
-    subgraph loop [Build loop]
-        build[poteto-agent writes unit] --> review[Claude reviews, verifies]
-        review --> commit[gitops commits]
-        commit -- next unit --> build
-    end
-    commit -- all units done --> clean
-    commit -. contested design .-> interrogate["/orbit:interrogate"]
-    interrogate --> clean
-    subgraph opr [Opening a PR]
-        clean[deslop, no-comments] --> land{Land line}
-        land -- pr --> pr[Push, open a ready PR]
-        land -- main --> branch[Keep the branch, unpushed]
-    end
-    pr --> optout{Said don't ship?}
-    branch --> optout
-    optout -- yes --> next([Next: line])
-    optout -- "no, Land pr" --> babysit[Babysit to merge-ready]
-    optout -- "no, Land main" --> ship
-    babysit --> ship[Shipping: verifier, then land]
-    ship --> next
+flowchart LR
+    start(["/orbit:start"]) --> plan[Pick the flow] --> build[Build and review] --> pr[Open a PR] --> ship[Verify, then land] --> next(["Next: line"])
 ```
+
+- A question stops after the answer, with citations.
+- Large or cross-cutting work goes through `/orbit:figure-it-out`, which designs its own steps.
+- Say "don't ship" to stop at the PR.
 
 [Full walkthrough](docs/usage.md#a-task-start-to-finish)
 
 ## What do I run?
 
-```mermaid
-flowchart LR
-    q{What now?}
-    q -- new task or question --> start["/orbit:start &lt;goal&gt;"]
-    q -- PR open, get it green --> babysit["/orbit:playbook babysit"]
-    q -- change ready, land it --> ship["/orbit:ship"]
-    q -- stop or switch model --> pause["/orbit:pause-safely"]
-    pause -- new session --> pickup["/orbit:session-pickup"]
-    q -- how or why code works --> how["/orbit:how or /orbit:why"]
-    q -- Claude repeats a mistake --> correct["/orbit:correct"]
-```
+| You want to | Run |
+| --- | --- |
+| Start a task or ask a question | `/orbit:start <goal>` |
+| Get an open PR green | `/orbit:playbook babysit` |
+| Land a ready change | `/orbit:ship` |
+| Stop or switch model | `/orbit:pause-safely`, then `/orbit:session-pickup` in a new session |
+| Learn how or why code works | `/orbit:how` or `/orbit:why` |
+| Stop Claude repeating a mistake | `/orbit:correct` |
 
 Every command: [docs/usage.md](docs/usage.md#every-command)
 
