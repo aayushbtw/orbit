@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "orbit",
-      "source": ".",
+      "source": "./plugin",
       "description": "Commands, agents, skills and working rules for the team."
     }
   ]
