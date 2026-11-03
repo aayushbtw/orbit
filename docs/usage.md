@@ -12,6 +12,11 @@ Start a task with `/orbit:start`. A change runs through Opening a PR and ships o
 
 Orbit picks the flow, writes its steps as a todo list, and works through them. A step can only be skipped in plain sight (`skip: <reason>`).
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="diagrams/docs-dark.svg">
+  <img alt="Swimlanes for you, Claude and subagents, following the numbered steps below. Dashed steps run only when they apply: the answer to a question, the advisor's plan check, interrogate, the don't-ship stop and Babysit." src="diagrams/docs-light.svg">
+</picture>
+
 1. **Pick the flow.** `investigate`, `bug`, `feature`, `refactor`, `prototype`, `perf` or `hillclimb`. `investigate` stops after answering. `prototype` stops at a decision and a throwaway sketch, and ships nothing. Large or cross-cutting work, work you step away from, and work no flow fits go to `/orbit:figure-it-out`, which designs its own steps.
 2. **Worktree.** A change gets its own git worktree, so parallel sessions never collide.
 3. **Plan gate.** When a change adds a module or touches more than 3 files, the advisor reviews the plan first.

@@ -17,10 +17,10 @@ Auto-update is off for third-party marketplaces. [Turn it on](docs/usage.md#auto
 
 ## A task, start to finish
 
-```mermaid
-flowchart LR
-    start(["/orbit:start"]) --> plan[Pick the flow] --> build[Build and review] --> pr[Open a PR] --> ship[Verify, then land] --> next(["Next: line"])
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/readme-dark.svg">
+  <img alt="You run /orbit:start. Claude picks the flow and a worktree. For each unit, poteto-agent writes it, Claude reviews and runs it, and gitops commits it. Claude cleans up, a fresh verifier runs the change, and on PASS it lands and you get a Next: line." src="docs/diagrams/readme-light.svg">
+</picture>
 
 - A question stops after the answer, with citations.
 - Large or cross-cutting work goes through `/orbit:figure-it-out`, which designs its own steps.
