@@ -444,7 +444,8 @@
     "skip": ["worktree-audit.sh"],
     "edits": [
       "Add `.gitignore` holding `node_modules/`, so the dependencies `bootstrap.ts` installs stay untracked.",
-      "In `watch-pr/`, when both check sources are empty, `resolveChecks` asks GitHub whether the repository runs checks (`runsChecks`, `PR_RUNS_CHECKS_QUERY`: a `.github/workflows` tree on the PR head or the base branch, a check on the base branch head, a check on an earlier commit of the PR, a check on one of the repository's 10 most recently updated pull requests, or a protection rule or ruleset that requires checks). With none, the read is `source: \"no-ci\"` with zero checks, and the status table shows `✅ no CI`."
+      "In `watch-pr/`, when both check sources are empty, `resolveChecks` asks GitHub whether the repository runs checks (`runsChecks`, `PR_RUNS_CHECKS_QUERY`: a `.github/workflows` tree on the PR head or the base branch, a check on the base branch head, a check on an earlier commit of the PR, a check on one of the repository's 10 most recently updated pull requests, or a protection rule or ruleset that requires checks). With none, the read is `source: \"no-ci\"` with zero checks, and the status table shows `✅ no CI`.",
+      "In `watch-pr/policy.ts`, `runSimple` runs a `--status-only` read with `maxQueryErrors: 1`, so a query error returns the `status-query` blocker at once instead of retrying."
     ]
   },
   "ketchup": {
