@@ -101,22 +101,27 @@ describe("repository check presence", () => {
     rules: { nodes: [{ type: "COPILOT_CODE_REVIEW" }] },
   };
   const unchecked = { commit: { statusCheckRollup: null } };
+  const checked = { commit: { statusCheckRollup: { state: "SUCCESS" } } };
+  const uncheckedPr = { commits: { nodes: [unchecked] } };
   const response = ({
     headWorkflows = null,
     baseWorkflows = null,
     baseRef: base = baseRef,
     commits = [unchecked, unchecked],
+    recentPullRequests = [uncheckedPr, uncheckedPr],
   }: {
     readonly headWorkflows?: unknown;
     readonly baseWorkflows?: unknown;
     readonly baseRef?: unknown;
     readonly commits?: readonly unknown[];
+    readonly recentPullRequests?: readonly unknown[];
   }) => ({
     data: {
       repository: {
         headWorkflows,
         baseWorkflows,
         pullRequest: { baseRef: base, commits: { nodes: commits } },
+        recentPullRequests: { nodes: recentPullRequests },
       },
     },
   });
@@ -145,10 +150,16 @@ describe("repository check presence", () => {
   });
 
   it("finds checks when only an earlier commit of the PR carried one", () => {
-    const checked = { commit: { statusCheckRollup: { state: "SUCCESS" } } };
     expect(parseRunsChecks(response({ commits: [checked, unchecked] }))).toBe(
       true
     );
+  });
+
+  it("finds checks when only another recent PR's head carried one", () => {
+    const checkedPr = { commits: { nodes: [checked] } };
+    expect(
+      parseRunsChecks(response({ recentPullRequests: [uncheckedPr, checkedPr] }))
+    ).toBe(true);
   });
 });
 

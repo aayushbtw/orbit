@@ -8,7 +8,7 @@ export const PR_COMMIT_STATUS_QUERY =
 export const PR_CHECK_ROLLUP_QUERY =
   "\nquery PrCheckRollup($owner: String!, $repo: String!, $pr: Int!, $after: String) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      commits(last: 1) {\n        nodes {\n          commit {\n            statusCheckRollup {\n              contexts(first: 100, after: $after) {\n                pageInfo {\n                  hasNextPage\n                  endCursor\n                }\n                nodes {\n                  __typename\n                  ... on CheckRun {\n                    name\n                    status\n                    conclusion\n                    detailsUrl\n                  }\n                  ... on StatusContext {\n                    context\n                    state\n                    targetUrl\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
 export const PR_RUNS_CHECKS_QUERY =
-  "\nquery PrRunsChecks($owner: String!, $repo: String!, $pr: Int!, $headWorkflows: String!, $baseWorkflows: String!) {\n  repository(owner: $owner, name: $repo) {\n    headWorkflows: object(expression: $headWorkflows) {\n      __typename\n    }\n    baseWorkflows: object(expression: $baseWorkflows) {\n      __typename\n    }\n    pullRequest(number: $pr) {\n      baseRef {\n        target {\n          ... on Commit {\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n        branchProtectionRule {\n          requiresStatusChecks\n        }\n        rules(first: 100) {\n          nodes {\n            type\n          }\n        }\n      }\n      commits(last: 50) {\n        nodes {\n          commit {\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
+  "\nquery PrRunsChecks($owner: String!, $repo: String!, $pr: Int!, $headWorkflows: String!, $baseWorkflows: String!) {\n  repository(owner: $owner, name: $repo) {\n    headWorkflows: object(expression: $headWorkflows) {\n      __typename\n    }\n    baseWorkflows: object(expression: $baseWorkflows) {\n      __typename\n    }\n    pullRequest(number: $pr) {\n      baseRef {\n        target {\n          ... on Commit {\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n        branchProtectionRule {\n          requiresStatusChecks\n        }\n        rules(first: 100) {\n          nodes {\n            type\n          }\n        }\n      }\n      commits(last: 50) {\n        nodes {\n          commit {\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n      }\n    }\n    recentPullRequests: pullRequests(first: 10, states: [OPEN, MERGED, CLOSED], orderBy: {field: UPDATED_AT, direction: DESC}) {\n      nodes {\n        commits(last: 1) {\n          nodes {\n            commit {\n              statusCheckRollup {\n                state\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
 
 interface CommandResult {
   readonly code: number;
@@ -307,6 +307,10 @@ export function mapRollupNode(value: unknown): T.Check | null {
     : { ...details, link, kind: "failed", reportedState: state || "FAILURE" };
 }
 const CHECK_RULES = ["REQUIRED_STATUS_CHECKS", "WORKFLOWS"];
+const anyChecked = (commits: unknown): boolean =>
+  list(commits, "commits.nodes").some(
+    (node) => at(node, ["commit", "statusCheckRollup"]) !== null
+  );
 export function parseRunsChecks(value: unknown): boolean {
   const repository = record(at(value, ["data", "repository"]), "repository");
   if (
@@ -324,10 +328,11 @@ export function parseRunsChecks(value: unknown): boolean {
     list(at(baseRef, ["rules", "nodes"]), "baseRef.rules.nodes").some((rule) =>
       CHECK_RULES.includes(string(at(rule, ["type"]), "baseRef.rules.type"))
     ) ||
+    anyChecked(at(repository, ["pullRequest", "commits", "nodes"])) ||
     list(
-      at(repository, ["pullRequest", "commits", "nodes"]),
-      "commits.nodes"
-    ).some((node) => at(node, ["commit", "statusCheckRollup"]) !== null)
+      at(repository, ["recentPullRequests", "nodes"]),
+      "recentPullRequests.nodes"
+    ).some((pr) => anyChecked(at(pr, ["commits", "nodes"])))
   );
 }
 function parseComment(value: unknown): T.ReviewComment {
