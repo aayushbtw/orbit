@@ -142,6 +142,7 @@ function docs(theme) {
   const stop = box('you', 9, 'Next:', '/orbit:ship', { kind: 'done', optional: true });
   const baby = box('claude', 10, 'Babysit', 'Land pr: to merge-ready', { optional: true });
   const verify = box('agent', 11, 'Verify', 'fresh verifier');
+  const fail = box('claude', 11, 'Nothing lands', 'FAIL, with a repro', { kind: 'fail' });
   const land = box('agent', 12, 'Land', 'gitops merges or pushes');
   const next = box('you', 13, 'Next: line', 'what to do next', { kind: 'done' });
 
@@ -163,34 +164,38 @@ function docs(theme) {
   down(baby, verify);
   k.arrow([[verify.cx, verify.bot + 6], [land.cx, land.y - 6]]);
   k.text(verify.cx + 14, verify.bot + 22, 'PASS or PASS+NOTES', 17, k.c.muted, 'start');
-  k.text(verify.x - 14, verify.cy + 6, 'FAIL: nothing lands', 18, k.c.muted, 'end');
+  k.arrow([[verify.x - 6, verify.cy], [fail.r + 6, fail.cy]]);
+  k.text(598, verify.cy - 12, 'FAIL', 17, k.c.muted);
   k.arrow([[land.x - 6, land.cy], [next.cx + 40, land.cy + 8], [next.cx, land.cy + 50], [next.cx, next.y - 6]]);
   k.text(W - 20, H - 24, 'dashed: only when it applies', 18, k.c.muted, 'end');
   return k;
 }
 
 function guideArena(theme) {
-  const W = 820, H = 890;
+  const W = 880, H = 890;
   const k = canvas(theme, W, H);
   const box = (b) => { const r = B({ h: 84, ...b }); k.box(r); return r; };
   const frame = box({ x: 290, y: 20, w: 240, t: 'Frame', s: 'one prompt, one rubric', kind: 'claude' });
-  k.frame(20, 140, 780, 160, 'N candidates in parallel');
-  const cands = ['A', 'B', 'C'].map((n, i) => box({ x: 45 + i * 270, y: 194, w: 190, t: `Candidate ${n}`, s: 'own worktree', kind: 'agent' }));
+  k.frame(20, 140, 780, 160, '2+ candidates in parallel');
+  const cands = ['A', 'B', 'C'].map((n, i) =>
+    box({ x: 45 + i * 270, y: 194, w: 190, t: `Candidate ${n}`, s: n === 'C' ? 'more if needed' : 'own worktree', kind: 'agent', optional: n === 'C' }));
   k.frame(110, 340, 600, 140, 'at the same time');
   box({ x: 130, y: 382, w: 260, t: 'Judge', s: 'read-only, scores all', kind: 'agent' });
   box({ x: 430, y: 382, w: 260, t: 'Claude reads all', s: 'scores them too', kind: 'claude' });
   const pick = box({ x: 290, y: 520, w: 240, t: 'Pick a base', s: 'easiest to extend', kind: 'claude' });
-  const graft = box({ x: 290, y: 650, w: 240, t: 'Graft', s: "the losers' best parts", kind: 'claude' });
+  const graft = box({ x: 290, y: 650, w: 240, t: 'Graft', s: 'into the base', kind: 'claude' });
   const verify = box({ x: 290, y: 780, w: 240, t: 'Verify', s: 'same proof as any change', kind: 'done' });
 
-  cands.forEach((c, i) => k.arrow([[frame.cx + (i - 1) * 60, frame.bot + 6], [c.cx, c.y - 8]]));
+  const ends = [cands[0].r - 15, cands[1].cx, cands[2].x + 15];
+  cands.forEach((c, i) => k.arrow([[frame.cx + (i - 1) * 60, frame.bot + 6], [ends[i], c.y - 8]]));
   const targets = [200, 410, 620];
   cands.forEach((c, i) => k.arrow([[c.cx, c.bot + 6], [targets[i], 334]]));
   k.arrow([[410, 486], [pick.cx, pick.y - 6]]);
   k.arrow([[pick.cx, pick.bot + 6], [graft.cx, graft.y - 6]]);
   k.arrow([[graft.cx, graft.bot + 6], [verify.cx, verify.y - 6]]);
-  const c = cands[2];
-  k.arrow([[c.r + 6, c.cy], [808, 420], [770, 640], [graft.r + 6, graft.cy]], true);
+  k.arrow([[806, 220], [850, 420], [780, 650], [graft.r + 6, graft.cy]], true);
+  k.text(790, 560, '1 or 2 parts', 17, k.c.muted, 'end');
+  k.text(790, 582, 'from each loser', 17, k.c.muted, 'end');
   return k;
 }
 
@@ -203,7 +208,7 @@ function guideShip(theme) {
   const branch = box({ x: 290, y: 205, w: 220, t: 'Keep the branch', s: 'local, unpushed', kind: 'claude' });
   const verifier = box({ x: 570, y: 115, w: 215, t: 'Verifier', s: 'fresh, runs it like a user', kind: 'agent' });
   const lands = box({ x: 830, y: 25, w: 200, t: 'Lands', s: 'PASS or PASS+NOTES', ss: 16, kind: 'done' });
-  const waits = box({ x: 830, y: 205, w: 200, t: 'Waits', s: 'FAIL: it and all above', ss: 16, kind: 'fail' });
+  const waits = box({ x: 830, y: 205, w: 200, t: 'Nothing lands', s: 'FAIL, with a repro', ss: 16, kind: 'fail' });
   k.link(opening, pr);
   k.link(opening, branch);
   k.text(222, 100, 'Land pr', 17, k.c.muted, 'end');
@@ -212,20 +217,18 @@ function guideShip(theme) {
   k.link(branch, verifier);
   k.link(verifier, lands);
   k.link(verifier, waits);
-  k.text(300, 345, "said don't ship? it stops here,", 18, k.c.muted, 'start');
-  k.text(300, 370, 'and /orbit:ship picks it up later', 18, k.c.muted, 'start');
-  k.arrow([[548, 332], [556, 260], [552, 182]]);
+  k.line(540, 15, 540, 305);
+  k.text(540, 335, "don't ship stops here", 17, k.c.muted);
+  k.text(540, 358, '/orbit:ship resumes', 17, k.c.muted);
   return k;
 }
 
 function guideAutopilot(theme) {
-  const W = 1160, H = 430;
+  const W = 1160, H = 500;
   const k = canvas(theme, W, H);
   const box = (b) => { const r = B({ h: 84, ...b }); k.box(r); return r; };
   const queue = box({ x: 20, y: 160, w: 180, t: 'Queue', s: 'your items', kind: 'you' });
   const root = box({ x: 240, y: 160, w: 190, t: 'Root', s: 'writes no code', kind: 'claude' });
-  k.text(root.cx, root.bot + 40, '/loop 1h checks', 17, k.c.muted);
-  k.text(root.cx, root.bot + 62, 'on every owner', 17, k.c.muted);
   const owners = ['A', 'B', 'C'].map((n, i) => box({ x: 475, y: 30 + i * 130, w: 210, t: `Owner ${n}`, s: 'flow, PR, babysit', kind: 'agent' }));
   const ver = box({ x: 730, y: 30, w: 170, h: 344, t: 'Verifiers', kind: 'agent' });
   ['a fresh swarm', 'at each', 'code-ready head'].forEach((l, i) => k.text(ver.cx, ver.cy + 34 + i * 22, l, 17, k.c.muted));
@@ -238,11 +241,53 @@ function guideAutopilot(theme) {
   });
   k.arrow([[ver.r + 6, full.cy], [full.x - 6, full.cy]]);
   k.arrow([[ver.r + 6, stack.cy], [stack.x - 6, stack.cy]]);
+  const c = owners[2];
+  k.arrow([[root.cx, root.bot + 6], [root.cx + 30, c.bot + 50], [c.cx - 40, c.bot + 50], [c.cx - 10, c.bot + 6]], true);
+  k.text(440, c.bot + 84, '/loop 1h reads each trail', 17, k.c.muted);
+  k.arrow([[ver.cx, ver.bot + 6], [ver.cx - 20, ver.bot + 46], [c.r + 20, c.bot + 46], [c.r - 14, c.bot + 6]], true);
+  k.text(770, c.bot + 84, 'findings go back to the owner', 17, k.c.muted);
+  return k;
+}
+
+function guideStack(theme) {
+  const W = 830, H = 580;
+  const k = canvas(theme, W, H);
+  const box = (b) => { const r = B({ x: 230, w: 260, h: 84, ...b }); k.box(r); return r; };
+  k.frame(200, 20, 320, 254, 'waits');
+  const pr4 = box({ y: 60, t: 'PR 4', s: 'PASS', kind: 'agent' });
+  box({ y: 174, t: 'PR 3', s: 'FAIL', kind: 'fail' });
+  k.frame(200, 300, 320, 254, 'the run: lands bottom-up');
+  const pr2 = box({ y: 340, t: 'PR 2', s: 'PASS+NOTES', kind: 'done' });
+  box({ y: 454, t: 'PR 1', s: 'PASS', kind: 'done' });
+  k.text(pr4.r + 50, pr4.cy + 6, 'passed, but needs PR 3 under it', 17, k.c.muted, 'start');
+  k.arrow([[pr2.r + 100, pr2.cy], [pr2.r + 6, pr2.cy]]);
+  k.text(pr2.r + 110, pr2.cy + 6, 'ceiling', 17, k.c.muted, 'start');
+  k.arrow([[120, 520], [120, 380]]);
+  k.text(120, 548, 'merge order', 17, k.c.muted);
+  return k;
+}
+
+function guideArchitect(theme) {
+  const W = 1100, H = 420;
+  const k = canvas(theme, W, H);
+  const box = (b) => { const r = B({ y: 40, w: 210, h: 84, ...b }); k.box(r); return r; };
+  const ground = box({ x: 25, t: 'Ground', s: 'how + why', kind: 'claude' });
+  const sketch = box({ x: 295, t: 'Sketch', s: 'arena, 2 runners', kind: 'claude' });
+  const agree = box({ x: 565, t: 'Agree', s: 'checkpoint if asked', kind: 'you', optional: true });
+  const impl = box({ x: 835, t: 'Implement', s: 'fill in the bodies', kind: 'claude' });
+  const scrap = box({ x: 835, y: 250, t: 'Scrap', s: 'friction pattern', kind: 'fail' });
+  k.link(ground, sketch);
+  k.link(sketch, agree);
+  k.link(agree, impl);
+  k.arrow([[impl.cx, impl.bot + 6], [scrap.cx, scrap.y - 6]], true);
+  k.text(impl.cx - 14, 196, 'same workaround twice', 17, k.c.muted, 'end');
+  k.arrow([[scrap.x - 6, scrap.cy], [620, 340], [420, 300], [sketch.cx, sketch.bot + 6]]);
+  k.text(560, 372, 'smaller sketch', 17, k.c.muted);
   return k;
 }
 
 const font = readFileSync(new URL('./Excalifont-Regular.woff2', import.meta.url)).toString('base64');
-const scenes = { readme, docs, 'guide-arena': guideArena, 'guide-ship': guideShip, 'guide-autopilot': guideAutopilot };
+const scenes = { readme, docs, 'guide-arena': guideArena, 'guide-ship': guideShip, 'guide-autopilot': guideAutopilot, 'guide-stack': guideStack, 'guide-architect': guideArchitect };
 for (const [name, scene] of Object.entries(scenes)) {
   for (const t of ['light', 'dark']) writeFileSync(new URL(`./${name}-${t}.svg`, import.meta.url), scene(t).svg(font));
 }
