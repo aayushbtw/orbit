@@ -8,7 +8,7 @@ export const PR_COMMIT_STATUS_QUERY =
 export const PR_CHECK_ROLLUP_QUERY =
   "\nquery PrCheckRollup($owner: String!, $repo: String!, $pr: Int!, $after: String) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      commits(last: 1) {\n        nodes {\n          commit {\n            statusCheckRollup {\n              contexts(first: 100, after: $after) {\n                pageInfo {\n                  hasNextPage\n                  endCursor\n                }\n                nodes {\n                  __typename\n                  ... on CheckRun {\n                    name\n                    status\n                    conclusion\n                    detailsUrl\n                  }\n                  ... on StatusContext {\n                    context\n                    state\n                    targetUrl\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
 export const PR_RUNS_CHECKS_QUERY =
-  "\nquery PrRunsChecks($owner: String!, $repo: String!, $pr: Int!, $workflows: String!) {\n  repository(owner: $owner, name: $repo) {\n    object(expression: $workflows) {\n      __typename\n    }\n    pullRequest(number: $pr) {\n      baseRef {\n        target {\n          ... on Commit {\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n        branchProtectionRule {\n          requiresStatusChecks\n        }\n        rules(first: 100) {\n          nodes {\n            type\n          }\n        }\n      }\n    }\n  }\n}\n";
+  "\nquery PrRunsChecks($owner: String!, $repo: String!, $pr: Int!, $headWorkflows: String!, $baseWorkflows: String!) {\n  repository(owner: $owner, name: $repo) {\n    headWorkflows: object(expression: $headWorkflows) {\n      __typename\n    }\n    baseWorkflows: object(expression: $baseWorkflows) {\n      __typename\n    }\n    pullRequest(number: $pr) {\n      baseRef {\n        target {\n          ... on Commit {\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n        branchProtectionRule {\n          requiresStatusChecks\n        }\n        rules(first: 100) {\n          nodes {\n            type\n          }\n        }\n      }\n    }\n  }\n}\n";
 
 interface CommandResult {
   readonly code: number;
@@ -309,7 +309,11 @@ export function mapRollupNode(value: unknown): T.Check | null {
 const CHECK_RULES = ["REQUIRED_STATUS_CHECKS", "WORKFLOWS"];
 export function parseRunsChecks(value: unknown): boolean {
   const repository = record(at(value, ["data", "repository"]), "repository");
-  if (at(repository, ["object"]) !== null) return true;
+  if (
+    at(repository, ["headWorkflows"]) !== null ||
+    at(repository, ["baseWorkflows"]) !== null
+  )
+    return true;
   const baseRef = at(repository, ["pullRequest", "baseRef"]);
   // A deleted base branch is no evidence the repository runs no checks.
   if (baseRef === null) return true;
@@ -596,9 +600,12 @@ export class GhGitHubReader implements T.GitHubReader {
   }
   async runsChecks(facts: T.PullRequestFacts): Promise<boolean> {
     const argv = graphqlArgs(PR_RUNS_CHECKS_QUERY, facts.context);
+    // pull_request workflows run from the merge with the base, not the head alone.
     argv.push(
       "-f",
-      `workflows=${facts.headRefOid ?? facts.baseRefName}:.github/workflows`
+      `headWorkflows=${facts.headRefOid ?? facts.baseRefName}:.github/workflows`,
+      "-f",
+      `baseWorkflows=${facts.baseRefName}:.github/workflows`
     );
     return parseRunsChecks(await runJson(argv));
   }

@@ -101,14 +101,20 @@ describe("repository check presence", () => {
     rules: { nodes: [{ type: "COPILOT_CODE_REVIEW" }] },
   };
   const response = ({
-    workflows = null,
+    headWorkflows = null,
+    baseWorkflows = null,
     baseRef: base = baseRef,
   }: {
-    readonly workflows?: unknown;
+    readonly headWorkflows?: unknown;
+    readonly baseWorkflows?: unknown;
     readonly baseRef?: unknown;
   }) => ({
     data: {
-      repository: { object: workflows, pullRequest: { baseRef: base } },
+      repository: {
+        headWorkflows,
+        baseWorkflows,
+        pullRequest: { baseRef: base },
+      },
     },
   });
 
@@ -118,7 +124,8 @@ describe("repository check presence", () => {
 
   it("finds checks from any one source", () => {
     const cases = [
-      { workflows: { __typename: "Tree" } },
+      { headWorkflows: { __typename: "Tree" } },
+      { baseWorkflows: { __typename: "Tree" } },
       {
         baseRef: { ...baseRef, target: { statusCheckRollup: { state: "SUCCESS" } } },
       },
