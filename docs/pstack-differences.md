@@ -2,7 +2,7 @@
 
 Orbit copies pstack (`pstack/` in cursor/plugins) at commit 9580c23, the SHA that most `skills.json` entries pin. The pstack column quotes that commit, not newer upstream. For Claude Code tool and path mappings, orbit follows pstack's adapter, `pstack/docs/harness/claude-code.md`. On a design fork, check pstack first. Record each difference here with its reason.
 
-Orbit paths in the table are relative to `plugin/`, the folder the plugin ships from.
+In the orbit column, paths under `agents/`, `hooks/` and `skills/`, and `rules.md`, are relative to `plugin/`, the folder the plugin ships from. Other paths are relative to the repo root.
 
 | Area | pstack on Claude Code | orbit | Why |
 | --- | --- | --- | --- |

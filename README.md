@@ -106,7 +106,7 @@ More in [docs/usage.md](docs/usage.md):
 
 ## Maintain
 
-- Develop without installing: `claude --plugin-dir ~/Projects/orbit/plugin`. Check with `claude plugin validate .`.
+- Develop without installing: `claude --plugin-dir ~/Projects/orbit/plugin`. Check with `claude plugin validate . && claude plugin validate plugin`.
 - Vendored files are tracked in `skills.json`. Update them with `/update-skills [name]` from this repo.
 - `/orbit:interrogate` may ask once to read the plugin folder for its review rubric. Allow `Read(~/.claude/plugins/**)` to skip the prompt.
 - Release: bump `version` in `plugin/.claude-plugin/plugin.json`.

@@ -1,6 +1,6 @@
 ## Workflow
 
-- Check: `claude plugin validate .`.
+- Check: `claude plugin validate . && claude plugin validate plugin`. The first checks the marketplace, the second the skills.
 
 ## Maintaining orbit
 
