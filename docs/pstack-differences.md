@@ -2,6 +2,8 @@
 
 Orbit copies pstack (`pstack/` in cursor/plugins) at commit 9580c23, the SHA that most `skills.json` entries pin. The pstack column quotes that commit, not newer upstream. For Claude Code tool and path mappings, orbit follows pstack's adapter, `pstack/docs/harness/claude-code.md`. On a design fork, check pstack first. Record each difference here with its reason.
 
+In the orbit column, paths under `agents/`, `hooks/` and `skills/`, and `rules.md`, are relative to `plugin/`, the folder the plugin ships from. Other paths are relative to the repo root.
+
 | Area | pstack on Claude Code | orbit | Why |
 | --- | --- | --- | --- |
 | Loading rules | The user runs `/poteto-mode` per task, typed as `/pstack:poteto-mode` in Claude Code (`README.md`). | Two SessionStart hooks print `rules.md` every session, split at `# Code Quality` (`hooks/hooks.json`). The first line of `rules.md` sends a goal with no named skill through `/orbit:start`. Poteto-mode's Non-negotiables follow it. `agents/poteto-agent.md` reads `rules.md` itself. | Rules hold without the user remembering a command. No per-task command loads, so routing has to live in the rules. Claude Code inlines about 10 KB per hook and shows only a 2 KB preview past that, so one hook would drop the end of `rules.md`. The two parts arrive in the order the hooks finish. Subagents don't get the SessionStart output. |
