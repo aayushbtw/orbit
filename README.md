@@ -26,7 +26,7 @@ Auto-update is off for third-party marketplaces. [Turn it on](docs/usage.md#auto
 - Large or cross-cutting work goes through `/orbit:figure-it-out`, which designs its own steps.
 - Say "don't ship" to stop at the PR.
 
-[Full walkthrough](docs/usage.md#a-task-start-to-finish)
+[Full walkthrough](docs/usage.md#a-task-start-to-finish). New to orbit? Read [the guide](docs/guide/README.md).
 
 ## What do I run?
 

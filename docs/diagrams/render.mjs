@@ -2,8 +2,8 @@ import rough from 'roughjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const themes = {
-  light: { ink: '#1e1e1e', muted: '#5c5f66', you: '#e5dbff', claude: '#d0ebff', agent: '#fff3bf', done: '#d3f9d8' },
-  dark: { ink: '#e3e3e8', muted: '#a6a8ae', you: '#2e2550', claude: '#13304a', agent: '#3b3214', done: '#173d22' },
+  light: { ink: '#1e1e1e', muted: '#5c5f66', you: '#e5dbff', claude: '#d0ebff', agent: '#fff3bf', done: '#d3f9d8', fail: '#ffc9c9' },
+  dark: { ink: '#e3e3e8', muted: '#a6a8ae', you: '#2e2550', claude: '#13304a', agent: '#3b3214', done: '#173d22', fail: '#4a1d1d' },
 };
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -29,8 +29,17 @@ function canvas(theme, W, H) {
     text,
     box(b) {
       draw(g.path(rr(b.x, b.y, b.w, b.h, 16), o({ fill: c[b.kind], fillStyle: 'solid' })), b.optional);
-      text(b.x + b.w / 2, b.y + b.h / 2 - 2, b.t, 24);
-      if (b.s) text(b.x + b.w / 2, b.y + b.h / 2 + 24, b.s, 17, c.muted);
+      const ts = b.ts ?? 24;
+      text(b.x + b.w / 2, b.y + b.h / 2 + (b.s ? -2 : ts / 3), b.t, ts);
+      if (b.s) text(b.x + b.w / 2, b.y + b.h / 2 + 24, b.s, b.ss ?? 17, c.muted);
+    },
+    link(a, b, dashed) {
+      const dy = b.cy - a.cy;
+      const spread = (h) => Math.max(-h / 4, Math.min(h / 4, dy * 0.2));
+      const s = [a.r + 6, a.cy + spread(a.h)], e = [b.x - 6, b.cy - spread(b.h)];
+      if (dy === 0) return api.arrow([s, e], dashed);
+      const dx = e[0] - s[0];
+      api.arrow([s, [s[0] + dx * 0.3, s[1] + dy * 0.1], [e[0] - dx * 0.3, e[1] - dy * 0.1], e], dashed);
     },
     line(x1, y1, x2, y2) {
       draw(g.line(x1, y1, x2, y2, o({ roughness: 0.8, strokeWidth: 1.2, stroke: c.muted })), true);
@@ -153,14 +162,87 @@ function docs(theme) {
   down(pr, baby, true);
   down(baby, verify);
   k.arrow([[verify.cx, verify.bot + 6], [land.cx, land.y - 6]]);
-  k.text(verify.cx + 14, verify.bot + 22, 'PASS', 17, k.c.muted, 'start');
+  k.text(verify.cx + 14, verify.bot + 22, 'PASS or PASS+NOTES', 17, k.c.muted, 'start');
   k.text(verify.x - 14, verify.cy + 6, 'FAIL: nothing lands', 18, k.c.muted, 'end');
   k.arrow([[land.x - 6, land.cy], [next.cx + 40, land.cy + 8], [next.cx, land.cy + 50], [next.cx, next.y - 6]]);
   k.text(W - 20, H - 24, 'dashed: only when it applies', 18, k.c.muted, 'end');
   return k;
 }
 
+function guideArena(theme) {
+  const W = 820, H = 890;
+  const k = canvas(theme, W, H);
+  const box = (b) => { const r = B({ h: 84, ...b }); k.box(r); return r; };
+  const frame = box({ x: 290, y: 20, w: 240, t: 'Frame', s: 'one prompt, one rubric', kind: 'claude' });
+  k.frame(20, 140, 780, 160, 'N candidates in parallel');
+  const cands = ['A', 'B', 'C'].map((n, i) => box({ x: 45 + i * 270, y: 194, w: 190, t: `Candidate ${n}`, s: 'own worktree', kind: 'agent' }));
+  k.frame(110, 340, 600, 140, 'at the same time');
+  box({ x: 130, y: 382, w: 260, t: 'Judge', s: 'read-only, scores all', kind: 'agent' });
+  box({ x: 430, y: 382, w: 260, t: 'Claude reads all', s: 'scores them too', kind: 'claude' });
+  const pick = box({ x: 290, y: 520, w: 240, t: 'Pick a base', s: 'easiest to extend', kind: 'claude' });
+  const graft = box({ x: 290, y: 650, w: 240, t: 'Graft', s: "the losers' best parts", kind: 'claude' });
+  const verify = box({ x: 290, y: 780, w: 240, t: 'Verify', s: 'same proof as any change', kind: 'done' });
+
+  cands.forEach((c, i) => k.arrow([[frame.cx + (i - 1) * 60, frame.bot + 6], [c.cx, c.y - 8]]));
+  const targets = [200, 410, 620];
+  cands.forEach((c, i) => k.arrow([[c.cx, c.bot + 6], [targets[i], 334]]));
+  k.arrow([[410, 486], [pick.cx, pick.y - 6]]);
+  k.arrow([[pick.cx, pick.bot + 6], [graft.cx, graft.y - 6]]);
+  k.arrow([[graft.cx, graft.bot + 6], [verify.cx, verify.y - 6]]);
+  const c = cands[2];
+  k.arrow([[c.r + 6, c.cy], [808, 420], [770, 640], [graft.r + 6, graft.cy]], true);
+  return k;
+}
+
+function guideShip(theme) {
+  const W = 1045, H = 400;
+  const k = canvas(theme, W, H);
+  const box = (b) => { const r = B({ h: 84, ...b }); k.box(r); return r; };
+  const opening = box({ x: 20, y: 115, w: 210, t: 'Opening a PR', s: 'deslop, no-comments', kind: 'claude' });
+  const pr = box({ x: 290, y: 25, w: 220, t: 'Open a PR', s: 'Babysit to merge-ready', kind: 'claude' });
+  const branch = box({ x: 290, y: 205, w: 220, t: 'Keep the branch', s: 'local, unpushed', kind: 'claude' });
+  const verifier = box({ x: 570, y: 115, w: 215, t: 'Verifier', s: 'fresh, runs it like a user', kind: 'agent' });
+  const lands = box({ x: 830, y: 25, w: 200, t: 'Lands', s: 'PASS or PASS+NOTES', ss: 16, kind: 'done' });
+  const waits = box({ x: 830, y: 205, w: 200, t: 'Waits', s: 'FAIL: it and all above', ss: 16, kind: 'fail' });
+  k.link(opening, pr);
+  k.link(opening, branch);
+  k.text(222, 100, 'Land pr', 17, k.c.muted, 'end');
+  k.text(222, 228, 'Land main', 17, k.c.muted, 'end');
+  k.link(pr, verifier);
+  k.link(branch, verifier);
+  k.link(verifier, lands);
+  k.link(verifier, waits);
+  k.text(300, 345, "said don't ship? it stops here,", 18, k.c.muted, 'start');
+  k.text(300, 370, 'and /orbit:ship picks it up later', 18, k.c.muted, 'start');
+  k.arrow([[548, 332], [556, 260], [552, 182]]);
+  return k;
+}
+
+function guideAutopilot(theme) {
+  const W = 1160, H = 430;
+  const k = canvas(theme, W, H);
+  const box = (b) => { const r = B({ h: 84, ...b }); k.box(r); return r; };
+  const queue = box({ x: 20, y: 160, w: 180, t: 'Queue', s: 'your items', kind: 'you' });
+  const root = box({ x: 240, y: 160, w: 190, t: 'Root', s: 'writes no code', kind: 'claude' });
+  k.text(root.cx, root.bot + 40, '/loop 1h checks', 17, k.c.muted);
+  k.text(root.cx, root.bot + 62, 'on every owner', 17, k.c.muted);
+  const owners = ['A', 'B', 'C'].map((n, i) => box({ x: 475, y: 30 + i * 130, w: 210, t: `Owner ${n}`, s: 'flow, PR, babysit', kind: 'agent' }));
+  const ver = box({ x: 730, y: 30, w: 170, h: 344, t: 'Verifiers', kind: 'agent' });
+  ['a fresh swarm', 'at each', 'code-ready head'].forEach((l, i) => k.text(ver.cx, ver.cy + 34 + i * 22, l, 17, k.c.muted));
+  const full = box({ x: 945, y: 70, w: 200, t: 'autopilot-full', s: 'a fresh owner merges', kind: 'done' });
+  const stack = box({ x: 945, y: 250, w: 200, t: 'autopilot-stack', s: 'you land the stack', kind: 'you' });
+  k.link(queue, root);
+  owners.forEach((o) => {
+    k.link(root, o);
+    k.arrow([[o.r + 6, o.cy], [ver.x - 6, o.cy]]);
+  });
+  k.arrow([[ver.r + 6, full.cy], [full.x - 6, full.cy]]);
+  k.arrow([[ver.r + 6, stack.cy], [stack.x - 6, stack.cy]]);
+  return k;
+}
+
 const font = readFileSync(new URL('./Excalifont-Regular.woff2', import.meta.url)).toString('base64');
-for (const [name, scene] of Object.entries({ readme, docs })) {
+const scenes = { readme, docs, 'guide-arena': guideArena, 'guide-ship': guideShip, 'guide-autopilot': guideAutopilot };
+for (const [name, scene] of Object.entries(scenes)) {
   for (const t of ['light', 'dark']) writeFileSync(new URL(`./${name}-${t}.svg`, import.meta.url), scene(t).svg(font));
 }

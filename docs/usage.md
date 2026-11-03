@@ -1,6 +1,6 @@
 # Using orbit
 
-The detail behind the [README](../README.md).
+The detail behind the [README](../README.md). To learn the concepts in order, read [the guide](guide/README.md).
 
 ## A task, start to finish
 
