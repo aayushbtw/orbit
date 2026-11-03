@@ -414,6 +414,63 @@ describe("queued-stack cadence", () => {
   });
 });
 
+describe("pull requests with no checks", () => {
+  const noChecks = { kind: "unusable", exitCode: 1, stderr: "no checks reported" } as const;
+  const clock = (sleeps: number[]) => ({
+    now: () => 0,
+    observedAt: () => "2026-07-26T00:00:00.000Z",
+    async sleep(seconds: number) { sleeps.push(seconds); },
+  });
+
+  it("is READY with zero checks on a repository that runs no CI", async () => {
+    const emitted: ProgressVerdict[] = [];
+    const result = await runSimple({
+      dependencies: {
+        reader: fakeReader({ fastPath: noChecks, runsChecks: false }),
+        clock: clock([]),
+        emit(verdict) { emitted.push(verdict); },
+      },
+      contexts: [context(1)], mode: "single", statusOnly: false, options,
+    });
+    expect(emitted).toEqual([]);
+    expect(result).toMatchObject({
+      kind: "READY",
+      scope: { pr: { proof: { ci: { kind: "ci-clean", source: "no-ci", all: [] } } } },
+    });
+  });
+
+  it("waits for checks that have not registered on a repository that runs CI", async () => {
+    let reads = 0;
+    const emitted: ProgressVerdict[] = [];
+    const sleeps: number[] = [];
+    const empty = fakeReader({ fastPath: noChecks, runsChecks: true });
+    const result = await runSimple({
+      dependencies: {
+        reader: {
+          ...empty,
+          async checksFastPath(pr) {
+            reads += 1;
+            return reads === 1
+              ? empty.checksFastPath(pr)
+              : { kind: "checks", checks: [passingCheck()] };
+          },
+        },
+        clock: clock(sleeps),
+        emit(verdict) { emitted.push(verdict); },
+      },
+      contexts: [context(1)], mode: "single", statusOnly: false, options,
+    });
+    expect(emitted).toMatchObject([
+      { kind: "RETRY", failure: { kind: "checks-unavailable" } },
+    ]);
+    expect(sleeps).toHaveLength(1);
+    expect(result).toMatchObject({
+      kind: "READY",
+      scope: { pr: { proof: { ci: { source: "gh-pr-checks" } } } },
+    });
+  });
+});
+
 it("uses the specified retry floor and cap", () => {
   expect(queryBackoffSeconds(1, 1)).toBe(60);
   expect(queryBackoffSeconds(1, 2)).toBe(120);

@@ -18,6 +18,7 @@ export interface FakeReaderOptions {
   readonly facts?: Partial<Omit<PullRequestFacts, "context">>;
   readonly fastPath?: ChecksFastPath;
   readonly rollupPages?: readonly RollupPage[];
+  readonly runsChecks?: boolean;
   readonly threads?: readonly ReviewThread[];
   readonly threadPages?: readonly ReviewThreadPage[];
   readonly commitRollups?: readonly CommitRollup[];
@@ -113,6 +114,10 @@ export function fakeReader(
     async checkRollupPage(_requested, after) {
       calls.push(`checkRollupPage:${after ?? "null"}`);
       return options.rollupPages?.[page++] ?? { checks: [], endCursor: null };
+    },
+    async runsChecks() {
+      calls.push("runsChecks");
+      return options.runsChecks ?? true;
     },
     async reviewThreadPage(_requested, after) {
       calls.push(`reviewThreadPage:${after ?? "null"}`);
