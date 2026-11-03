@@ -12,7 +12,7 @@ In the Shipping playbook, green CI and an approving bot review are not verdicts,
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../diagrams/guide-ship-dark.svg">
-  <img alt="A built change goes through Opening a PR. Under Land pr, the branch opens as a PR and Babysit drives it to merge-ready. Under Land main, the branch stays local. Both paths reach a fresh verifier. A dashed line before the verifier marks where a task stops when you said don't ship, and /orbit:ship resumes from there. On PASS or PASS+NOTES the change lands. On FAIL nothing lands, and the reply carries a repro." src="../diagrams/guide-ship-light.svg">
+  <img alt="A built change goes through Opening a PR. Under Land pr, the branch opens as a PR. Under Land main, the branch stays local. A dashed line right after that marks where a task stops when you said don't ship, and /orbit:ship resumes from there. Past the line, Babysit drives a PR to merge-ready, and both paths reach a fresh verifier. On PASS or PASS+NOTES the change lands. On FAIL nothing lands, and the reply carries a repro." src="../diagrams/guide-ship-light.svg">
 </picture>
 
 Every change ends in Opening a PR. It runs `/orbit:deslop` over the diff and `/orbit:no-comments` before review, and writes the title and description to a fixed shape. The title is a Conventional Commit such as `feat(export): add a --since flag`. The body is a one-minute briefing with sections such as `## Why`, `## Scope` and `## Verification`. [Build a change](./04-build-a-change.md) covers the commits that come before it.
@@ -57,7 +57,7 @@ Claude reads the repo, asks you only what it can't observe, and writes `.claude/
 - **Cleanup** tears down only what the run started and keeps the evidence.
 - **Helpers** shows how to run any script the skill ships.
 
-A feature map in `features/` has an index plus one file per feature. Each file says how a user reaches the feature, how to drive it, and what end state proves it worked. Claude runs the new skill once end to end before handing it over, so you know it can launch and drive the app before the verifier relies on it. From then on, the verifier uses it on every change.
+A feature map in `features/` has an index plus one file per feature. Each file says how a user reaches the feature, how to drive it, and what end state proves it worked. Claude runs the new skill once end to end before handing it over, so you know it can launch and drive the app before the verifier relies on it. From then on, the verifier uses it on every change and reports where the evidence is.
 
 Apps change, and the map drifts. When it does, run:
 

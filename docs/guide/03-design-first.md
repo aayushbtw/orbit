@@ -20,7 +20,7 @@ Architect works in five phases:
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../diagrams/guide-architect-dark.svg">
-  <img alt="Architect's phases left to right. Ground runs how and why. Sketch runs arena with two runners. Agree is an optional checkpoint you ask for. Implement fills in the bodies. When the same workaround shows up twice, Implement goes to Scrap, and Scrap loops back to Sketch with a smaller sketch." src="../diagrams/guide-architect-light.svg">
+  <img alt="Architect's phases left to right. Ground runs how and why. Sketch runs arena with two runners. Agree is a checkpoint you ask for, and a dashed arc skips it because it is off by default. Implement fills in the bodies. A pattern of friction sends Implement to Scrap, which throws the sketch out and loops back to Sketch with a smaller one." src="../diagrams/guide-architect-light.svg">
 </picture>
 
 To see the design before any code fills it in, say so in the prompt:

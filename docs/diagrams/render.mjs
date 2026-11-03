@@ -200,15 +200,15 @@ function guideArena(theme) {
 }
 
 function guideShip(theme) {
-  const W = 1045, H = 400;
+  const W = 1125, H = 400;
   const k = canvas(theme, W, H);
   const box = (b) => { const r = B({ h: 84, ...b }); k.box(r); return r; };
   const opening = box({ x: 20, y: 115, w: 210, t: 'Opening a PR', s: 'deslop, no-comments', kind: 'claude' });
-  const pr = box({ x: 290, y: 25, w: 220, t: 'Open a PR', s: 'Babysit to merge-ready', kind: 'claude' });
+  const pr = box({ x: 290, y: 25, w: 220, t: 'Open a PR', s: 'ready, not a draft', kind: 'claude' });
   const branch = box({ x: 290, y: 205, w: 220, t: 'Keep the branch', s: 'local, unpushed', kind: 'claude' });
-  const verifier = box({ x: 570, y: 115, w: 215, t: 'Verifier', s: 'fresh, runs it like a user', kind: 'agent' });
-  const lands = box({ x: 830, y: 25, w: 200, t: 'Lands', s: 'PASS or PASS+NOTES', ss: 16, kind: 'done' });
-  const waits = box({ x: 830, y: 205, w: 200, t: 'Nothing lands', s: 'FAIL, with a repro', ss: 16, kind: 'fail' });
+  const verifier = box({ x: 650, y: 115, w: 215, t: 'Verifier', s: 'fresh, runs it like a user', kind: 'agent' });
+  const lands = box({ x: 910, y: 25, w: 200, t: 'Lands', s: 'PASS or PASS+NOTES', ss: 16, kind: 'done' });
+  const waits = box({ x: 910, y: 205, w: 200, t: 'Nothing lands', s: 'FAIL, with a repro', ss: 16, kind: 'fail' });
   k.link(opening, pr);
   k.link(opening, branch);
   k.text(222, 100, 'Land pr', 17, k.c.muted, 'end');
@@ -217,9 +217,10 @@ function guideShip(theme) {
   k.link(branch, verifier);
   k.link(verifier, lands);
   k.link(verifier, waits);
-  k.line(540, 15, 540, 305);
-  k.text(540, 335, "don't ship stops here", 17, k.c.muted);
-  k.text(540, 358, '/orbit:ship resumes', 17, k.c.muted);
+  k.line(545, 15, 545, 305);
+  k.text(545, 335, "don't ship stops here", 17, k.c.muted);
+  k.text(545, 358, '/orbit:ship resumes', 17, k.c.muted);
+  k.text(565, 76, 'Babysit', 17, k.c.muted, 'start');
   return k;
 }
 
@@ -268,21 +269,23 @@ function guideStack(theme) {
 }
 
 function guideArchitect(theme) {
-  const W = 1100, H = 420;
+  const W = 1100, H = 480;
   const k = canvas(theme, W, H);
-  const box = (b) => { const r = B({ y: 40, w: 210, h: 84, ...b }); k.box(r); return r; };
+  const box = (b) => { const r = B({ y: 100, w: 210, h: 84, ...b }); k.box(r); return r; };
   const ground = box({ x: 25, t: 'Ground', s: 'how + why', kind: 'claude' });
   const sketch = box({ x: 295, t: 'Sketch', s: 'arena, 2 runners', kind: 'claude' });
   const agree = box({ x: 565, t: 'Agree', s: 'checkpoint if asked', kind: 'you', optional: true });
   const impl = box({ x: 835, t: 'Implement', s: 'fill in the bodies', kind: 'claude' });
-  const scrap = box({ x: 835, y: 250, t: 'Scrap', s: 'friction pattern', kind: 'fail' });
+  const scrap = box({ x: 835, y: 310, t: 'Scrap', s: 'throw the sketch out', kind: 'fail' });
   k.link(ground, sketch);
   k.link(sketch, agree);
   k.link(agree, impl);
+  k.arrow([[sketch.cx + 40, sketch.y - 6], [sketch.r + 30, 58], [impl.x - 30, 58], [impl.cx - 40, impl.y - 6]], true);
+  k.text(agree.cx, 40, 'Agree is off by default', 17, k.c.muted);
   k.arrow([[impl.cx, impl.bot + 6], [scrap.cx, scrap.y - 6]], true);
-  k.text(impl.cx - 14, 196, 'same workaround twice', 17, k.c.muted, 'end');
-  k.arrow([[scrap.x - 6, scrap.cy], [620, 340], [420, 300], [sketch.cx, sketch.bot + 6]]);
-  k.text(560, 372, 'smaller sketch', 17, k.c.muted);
+  k.text(impl.cx - 14, 256, 'a pattern of friction', 17, k.c.muted, 'end');
+  k.arrow([[scrap.x - 6, scrap.cy], [620, 400], [420, 360], [sketch.cx, sketch.bot + 6]]);
+  k.text(560, 432, 'smaller sketch', 17, k.c.muted);
   return k;
 }
 
