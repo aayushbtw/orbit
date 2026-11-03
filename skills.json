@@ -443,7 +443,8 @@
     "sha": "1ba91fc25c0977741dd0e267849e6234b037ed0a",
     "skip": ["worktree-audit.sh"],
     "edits": [
-      "Add `.gitignore` holding `node_modules/`, so the dependencies `bootstrap.ts` installs stay untracked."
+      "Add `.gitignore` holding `node_modules/`, so the dependencies `bootstrap.ts` installs stay untracked.",
+      "In `watch-pr/`, when both check sources are empty, `resolveChecks` asks GitHub whether the repository runs checks (`runsChecks`, `PR_RUNS_CHECKS_QUERY`: a `.github/workflows` tree on the PR head, a check on the base branch head, or a protection rule or ruleset that requires checks). With none, the read is `source: \"no-ci\"` with zero checks, and the status table shows `✅ no CI`."
     ]
   },
   "ketchup": {
