@@ -1,11 +1,12 @@
 {
   "name": "orbit",
   "displayName": "Orbit",
-  "version": "0.29.3",
+  "version": "0.29.4",
   "description": "Claude Code on steroids. It plans, builds, tests and ships on its own. You just name the goal.",
   "author": {
     "name": "Aayush",
     "url": "https://github.com/aayushbtw"
   },
-  "repository": "https://github.com/aayushbtw/orbit"
+  "repository": "https://github.com/aayushbtw/orbit",
+  "license": "MIT"
 }
