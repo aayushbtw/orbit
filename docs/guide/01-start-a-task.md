@@ -1,10 +1,10 @@
 # Start a task
 
-Almost every piece of work in orbit begins with one command, `/orbit:start`, followed by what you want. Orbit reads the goal, picks a flow for it, writes that flow's steps as a todo list, and works through the list. This chapter shows what to type, what orbit does with it, and how to read the line it leaves you at the end.
+Almost every piece of work in orbit begins with one command, `/orbit:start`, followed by what you want. Claude reads the goal, picks one of orbit's flows for it, writes that flow's steps as a todo list, and works through the list.
 
 ## Give the goal, not the steps
 
-Describe the outcome you want and anything you already know. Leave the order of work to orbit.
+Describe the outcome you want and anything you already know. Leave the order of work to Claude.
 
 ```text
 /orbit:start after login, users land on /home instead of the page they came from. the original URL is in the `next` query param.
@@ -12,24 +12,31 @@ Describe the outcome you want and anything you already know. Leave the order of 
 
 That prompt names a symptom and a clue. It doesn't say "read the auth code, add logging, then patch the redirect". Orbit's flows already hold the order of steps, plus gates such as a fresh worktree and a plan review. A bug fix, for example, reproduces the bug before anyone writes a fix. If you list the steps yourself, you trade that order for one you made up on the spot.
 
-The goal can be short. It only needs to be clear enough to act on. Orbit asks you a question only when the goal itself is unclear.
+The goal can be short. It only needs to be clear enough to act on. Claude asks you a question only when the goal itself is unclear.
 
 ```text
 /orbit:start add a --json flag to the export command so scripts can read its output
 ```
 
-## Orbit picks the flow
+## Claude picks the flow
 
 The first thing `/orbit:start` does is sort the goal by what you ask for. Each kind of ask has its own playbook, because a question, a defect, and a slow endpoint need different work. A question needs evidence and no edits. A defect needs a reproduction before a fix. A slow path needs a baseline number before any change.
 
-- **A question.** `investigate` answers with citations and stops. Nothing changes.
-- **Fix, add or restructure.** `bug` for something broken, `feature` for new or changed behavior, `refactor` for a new structure with the same behavior.
-- **Make it faster.** `perf` fixes measured slowness once, against a baseline. `hillclimb` improves one metric toward a target over many rounds.
-- **Which design?** `prototype` builds a throwaway sketch that settles the call. It ships nothing.
-- **Big, or you're stepping away.** Large or cross-cutting work, work you step away from, and work no flow fits go to `/orbit:figure-it-out`. It designs its own phases and keeps a decision log.
-- **A queue of changes.** "autopilot this queue" goes to `autopilot-full`, where each item gets its own owner and runs to merged. "build the stack, I'll land it" goes to `autopilot-stack`, which builds and verifies the queue as one stack of PRs and leaves the landing to you.
-- **A multi-PR plan.** `multi-phase-plan` writes a plan for work that spans phases or several PRs, and stops for your go.
-- **An open PR.** "babysit this", "get it green" or "check on PR 42" goes to `babysit`. A request to land a green stack goes to `/orbit:ship`.
+| You ask for | Flow | It ends with |
+| --- | --- | --- |
+| An answer to a question | `investigate` | A cited answer. Nothing changes. |
+| A fix for something broken | `bug` | A shipped fix |
+| New or changed behavior | `feature` | A shipped change |
+| A new structure with the same behavior | `refactor` | A shipped change |
+| A measured slowness, fixed once | `perf` | A shipped change, measured against a baseline |
+| One metric moved toward a target over many rounds | `hillclimb` | One commit per accepted win |
+| A call between designs | `prototype` | A recommendation and a throwaway sketch. Nothing ships. |
+| Large or cross-cutting work, work you step away from, or work no flow fits | `/orbit:figure-it-out` | Phases it designs itself, with a decision log |
+| "autopilot this queue" | `autopilot-full` | Each item merged by its own owner |
+| "build the stack, I'll land it" | `autopilot-stack` | One verified stack of PRs that you land |
+| A plan for work across phases or PRs | `multi-phase-plan` | A plan that waits for your go |
+| "babysit this", "get it green" or "check on PR 42" | `babysit` | A merge-ready PR. It never merges. |
+| Landing a green stack | `/orbit:ship` | The verified PRs, landed |
 
 [Work while you're away](./06-hands-off.md) covers the autopilot flows and figure-it-out. [Prove it works, then ship](./05-prove-and-ship.md) covers Babysit and Shipping.
 
@@ -45,9 +52,9 @@ The first is a `refactor`. The second is a `perf` task, because it names a slown
 
 ## The todo list is the playbook
 
-Once the flow is picked, orbit loads its playbook and opens a todo list. The first items are the playbook's steps and gates, copied in word for word. Task-specific items come after them.
+Once the flow is picked, Claude loads its playbook and opens a todo list. The first items are the playbook's steps and gates, copied in word for word. Task-specific items come after them.
 
-The list exists so you can see the whole run before it starts, and so no step disappears quietly. Orbit may decide a step doesn't apply. That step stays in the list with a one-line `skip: <reason>`, where you can read it and disagree. Here is a shortened example for a small bug fix:
+The list exists so you can see the whole run before it starts, and so no step disappears quietly. Claude may decide a step doesn't apply. That step stays in the list with a one-line `skip: <reason>`, where you can read it and disagree. Here is a shortened example for a small bug fix:
 
 ```text
 [x] Worktree gate
@@ -64,6 +71,11 @@ The list exists so you can see the whole run before it starts, and so no step di
 The Plan gate applies only when a change adds a module or touches more than 3 files, so a two-file fix skips it in plain sight. If a skip looks wrong to you, say so.
 
 For a change, the list continues past the flow's own steps. Opening a PR comes next. Then, unless you opted out, Babysit and Shipping. A `prototype` is the exception. It is throwaway, so it ends at its reply.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../diagrams/docs-dark.svg">
+  <img alt="Three swimlanes for you, Claude and subagents. You name the goal with /orbit:start. Claude picks the flow, a question stops at its answer, and a change gets a worktree off origin/main and an advisor check when it touches more than 3 files. For each unit, poteto-agent writes it, Claude reads and runs it, and gitops commits it. Then come interrogate on a contested design, deslop, comment-sicko and the PR or branch. If you said don't ship, the task stops with Next: /orbit:ship. Otherwise Babysit drives a PR to merge-ready under Land pr and a fresh verifier runs the change. On PASS, gitops lands it. On FAIL, nothing lands and the reply carries a repro. Dashed boxes run only when they apply." src="../diagrams/docs-light.svg">
+</picture>
 
 ## A change ships by default
 
@@ -92,7 +104,7 @@ One fixed line means you never have to read a long reply to learn whether someth
 
 ## Steer a task in progress
 
-Orbit stays in the current todo list until it ends. Two short phrases move it:
+Claude stays in the current todo list until it ends. Two short phrases move it:
 
 - "continue" or "do it" resumes the list where it stopped.
 - "new task" drops the current list and starts a fresh one for your next goal.
@@ -101,7 +113,7 @@ Orbit stays in the current todo list until it ends. Two short phrases move it:
 new task. find out why the nightly export job skips accounts created after midnight UTC.
 ```
 
-Without "new task", orbit reads your message against the list it is already running. The phrase makes the switch explicit, so a question about something else doesn't turn into the next step of an unrelated feature.
+Without "new task", Claude reads your message against the list it is already running. The phrase makes the switch explicit, so a question about something else doesn't turn into the next step of an unrelated feature.
 
 For the full command list, see [Every command](../usage.md#every-command) in the usage reference.
 

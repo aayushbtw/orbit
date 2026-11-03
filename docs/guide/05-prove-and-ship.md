@@ -1,18 +1,18 @@
 # Prove it works, then ship
 
-A change isn't done when it compiles or when its tests go green. Before a change lands, orbit hands it to an agent that never saw the code, has it run the change the way a user would, and lands only what that agent passes. This chapter follows a change from its last commit to `main`, and explains why each check sits where it does.
+A change isn't done when it compiles or when its tests go green. Before a change lands, Shipping hands it to an agent that never saw the code, has it run the change the way a user would, and lands only what that agent passes.
 
 ## Passing tests are not a verdict
 
 The agent that wrote a change usually wrote its tests too. Both come from the same idea of what the change should do, so they share the same blind spots. A green suite proves the code agrees with itself. It doesn't prove the save button keeps the record, or that the command prints the rows you asked for.
 
-Orbit's Shipping playbook draws the line plainly. Green CI and an approving bot review are not verdicts, because neither runs the change as a user would. Only a verdict from an agent that did not write the code counts, because an author checks what it meant to build.
+In the Shipping playbook, green CI and an approving bot review are not verdicts, because neither runs the change as a user would. Only a verdict from an agent that did not write the code counts, because an author checks what it meant to build.
 
 ## From a built change to a landed one
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../diagrams/guide-ship-dark.svg">
-  <img alt="A built change goes through Opening a PR. Under Land pr, the branch opens as a PR and Babysit drives it to merge-ready. Under Land main, the branch stays local. Both paths reach a fresh verifier. On PASS the change lands. On FAIL nothing lands." src="../diagrams/guide-ship-light.svg">
+  <img alt="A built change goes through Opening a PR. Under Land pr, the branch opens as a PR and Babysit drives it to merge-ready. Under Land main, the branch stays local. Both paths reach a fresh verifier. A dashed line before the verifier marks where a task stops when you said don't ship, and /orbit:ship resumes from there. On PASS or PASS+NOTES the change lands. On FAIL nothing lands, and the reply carries a repro." src="../diagrams/guide-ship-light.svg">
 </picture>
 
 Every change ends in Opening a PR. It runs `/orbit:deslop` over the diff and `/orbit:no-comments` before review, and writes the title and description to a fixed shape. The title is a Conventional Commit such as `feat(export): add a --since flag`. The body is a one-minute briefing with sections such as `## Why`, `## Scope` and `## Verification`. [Build a change](./04-build-a-change.md) covers the commits that come before it.
@@ -40,7 +40,7 @@ An inconclusive run counts as `FAIL` on purpose. A verifier that couldn't tell s
 
 ## Give the verifier a way to drive your app
 
-A verifier is only as good as its way into the app. With nothing else, it falls back to orbit's `control-ui` skill for browser, Electron and web UIs, or `control-cli` for CLIs and TUIs. Each builds or adapts a local harness on the spot. That works, but each run rediscovers how your app starts, where its ports are, and what to click.
+The verifier needs a way to start and drive your app. With nothing else, it falls back to orbit's `control-ui` skill for browser, Electron and web UIs, or `control-cli` for CLIs and TUIs. Each builds or adapts a local harness on the spot. That works, but each run rediscovers how your app starts, where its ports are, and what to click.
 
 Run this once in a project that users can run or install:
 
@@ -48,7 +48,16 @@ Run this once in a project that users can run or install:
 /orbit:create-verification-skill
 ```
 
-Claude reads the repo, asks you only what it can't observe, and writes `.claude/skills/verify-<app>/`. The skill holds the exact launch command, a read-only health check, real selectors and commands, where evidence goes, and a cleanup that keeps the evidence. A feature map in `features/` lists what the app does and what end state proves each feature works. Claude runs the new skill once end to end before handing it over, because a skill nobody has run is a draft. From then on, the verifier uses it on every change.
+Claude reads the repo, asks you only what it can't observe, and writes `.claude/skills/verify-<app>/`. Its SKILL.md has six sections:
+
+- **Launch** starts the app and says how to tell it's ready.
+- **Doctor** is one read-only health check.
+- **Drive** uses the repo's real selectors and commands.
+- **Evidence** says what to capture and where it goes.
+- **Cleanup** tears down only what the run started and keeps the evidence.
+- **Helpers** shows how to run any script the skill ships.
+
+A feature map in `features/` has an index plus one file per feature. Each file says how a user reaches the feature, how to drive it, and what end state proves it worked. Claude runs the new skill once end to end before handing it over, so you know it can launch and drive the app before the verifier relies on it. From then on, the verifier uses it on every change.
 
 Apps change, and the map drifts. When it does, run:
 
@@ -56,7 +65,7 @@ Apps change, and the map drifts. When it does, run:
 /orbit:maintain-verification-skill
 ```
 
-It reads each feature's source in parallel, drives every feature live, and ends `clean`, `changed` or `blocked`. It edits only the verification skill's own folder. A feature that broke in the app is reported as a bug, never rewritten out of the map. Both commands run only when you type them. [Let Claude prove its work](../usage.md#let-claude-prove-its-work) lists the six sections of the generated skill.
+It reads each feature's source in parallel, drives every feature live, and ends `clean`, `changed` or `blocked`. It edits only the verification skill's own folder. A feature that broke in the app is reported as a bug, never rewritten out of the map. Both commands run only when you type them.
 
 ## Check a number before you report it
 
@@ -70,7 +79,7 @@ The PR body then carries one primary number. The runs and the evidence go in a l
 
 ## Babysit drives a PR to merge-ready
 
-Opening a PR doesn't start a babysit. Orbit posts the URL and keeps building until the whole stack exists, because babysitting each new PR stalls the build and spends checks on commits that later waves will restart. When the task ships by default, Babysit then runs in `drive` mode. You can also ask for it on any open PR.
+Opening a PR doesn't start a babysit. Claude posts the URL and keeps building until the whole stack exists, because babysitting each new PR stalls the build and spends checks on commits that later waves will restart. When the task ships by default, Babysit then runs in `drive` mode. You can also ask for it on any open PR.
 
 Babysit declares a mode before it polls:
 
@@ -91,11 +100,16 @@ It works the lowest unmerged PR first. It clears conflicts first, then review th
 
 ## Read bot reviews with suspicion
 
-Bugbot and the agentic security review catch real bugs, and they also file noise. Orbit triages each comment against the code as `fix`, `dismiss` or `ask`, per the playbook's `references/bugbot-triage.md`. A real finding gets a fix in the lowest PR that owns the code. Noise gets a reply on the thread with the concrete reason it doesn't apply. A finding about security, auth, billing, data or migrations is never dismissed on orbit's own judgment. Orbit fixes it or asks you. Orbit never churns code just to quiet a bot. When a dismissal pattern looks useful to the team, Babysit offers it as a new entry in that rubric, in its own PR.
+Bugbot and the agentic security review catch real bugs, and they also file noise. Babysit triages each comment against the code as `fix`, `dismiss` or `ask`, per the playbook's `references/bugbot-triage.md`. A real finding gets a fix in the lowest PR that owns the code. Noise gets a reply on the thread with the concrete reason it doesn't apply. A finding about security, auth, billing, data or migrations is never dismissed on Claude's own judgment. Claude fixes it or asks you. It never churns code just to quiet a bot. When a dismissal pattern looks useful to the team, Babysit offers it as a new entry in that rubric, in its own PR.
 
 ## Shipping lands only the verified run
 
 Shipping verifies each PR first, then walks up from the lowest unmerged PR and stops at the first one without `PASS` or `PASS+NOTES`. Everything below that point is the run, and the top PR of the run is the ceiling. A verified PR above an unverified one waits, because it can't land without the code underneath it.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../diagrams/guide-stack-dark.svg">
+  <img alt="A stack of four PRs, PR 1 at the bottom. PR 1 passed and PR 2 passed with notes, so they form the run and land bottom-up, with PR 2 as the ceiling. PR 3 failed. PR 4 passed but waits, because it needs PR 3 under it." src="../diagrams/guide-stack-light.svg">
+</picture>
 
 Before it trusts an older verdict, Shipping compares the patch-id at the verdict SHA with the current head. A rebase moves every PR above it to a new SHA without failing a check, so a verdict covers a patch, not a commit. Then it merges bottom-up, one PR at a time, with `--squash` unless your Land line names another method. It reads each PR back afterward, because a merge command can report success when a merge queue only queued the PR. Under Land `main`, it rebases each branch onto `origin/main`, runs the Check line, and pushes it to `main` one branch at a time, with no force-push.
 

@@ -1,6 +1,8 @@
 # The orbit guide
 
-Orbit turns a goal into finished work. You say what you want, and orbit picks a flow, builds the change in its own worktree, has a separate agent prove it, and lands it. This guide explains how that works and why each step is there, so you know what to expect and when to step in.
+Orbit is a Claude Code plugin that turns a goal into finished work. You say what you want, and Claude picks one of orbit's flows, builds the change in its own worktree, has a separate agent prove it, and lands it. This guide explains how that works and why each step is there, so you know what to expect and when to step in.
+
+In this guide, Claude is the session you talk to. Subagents keep their own names, such as the verifier and gitops. Orbit is the plugin, its flows and its rules.
 
 Read it in order the first time. Each page also stands on its own.
 
@@ -17,12 +19,12 @@ For a command lookup, use the [usage reference](../usage.md).
 
 ## The short version
 
-Name the outcome and how you'll know it worked. Leave the steps to orbit.
+Name the outcome and how you'll know it worked. Leave the steps to Claude.
 
 ```text
 /orbit:start the invite email links expire after 1 hour, but the settings page says 24. make them match the page and prove an old link still opens.
 ```
 
-Orbit reads that as a bug, reproduces it, fixes it in a worktree, and has a fresh verifier open an old link before anything lands. You get one `Next:` line at the end.
+Claude reads that as a bug, reproduces it, fixes it in a worktree, and has a fresh verifier open an old link before anything lands. You get one `Next:` line at the end.
 
 Next: [Start a task](./01-start-a-task.md)

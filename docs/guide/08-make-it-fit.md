@@ -1,6 +1,6 @@
 # Make orbit fit your project
 
-Orbit's defaults assume a [Vite+](https://viteplus.dev) project that lands each change straight onto `main`. When your project differs, you write the difference down once, in files that Claude and its subagents read on their own. This chapter covers those files, the commands that turn a mistake into a lasting fix, and the upkeep orbit needs.
+Orbit's defaults assume a [Vite+](https://viteplus.dev) project that lands each change straight onto `main`. When your project differs, you write the difference down once, in files that Claude and its subagents read on their own.
 
 ## Write the differences in a Workflow block
 
@@ -25,10 +25,12 @@ The block lists only what differs. Start from [`templates/workflow-block.md`](..
 
 Each line does one job:
 
-- **Check.** The command that proves a change is sound. The flows' verify steps run it. Under Land `main`, Shipping runs it in place of CI.
-- **Land.** Set `pr` to land through pull requests. Opening a PR opens the PR, Babysit drives it to merge-ready, and Shipping merges it. Add the merge method if it isn't squash. Under either setting, a fresh verifier must pass the change before it lands.
-- **Before code.** Guidance for writing code under a path, as `<path>: <source>` entries separated by `;`. A source is a file to read, or a command that prints a skill or its path. Claude copies the matching entries word for word into each code delegate's brief, and the delegate loads them before it writes. The plan gate reads them, and so does `/orbit:interrogate` when it runs.
-- **Review also checks.** Docs read before planning and at review only. Scope one to a path with `src/server/: <source>`.
+| Line | What it sets | Who reads it |
+| --- | --- | --- |
+| Check | The command that proves a change is sound | The flows' verify steps. Under Land `main`, Shipping runs it in place of CI. |
+| Land | `pr` to land through pull requests, plus the merge method if it isn't squash | Opening a PR opens the PR, Babysit drives it to merge-ready, and Shipping merges it. Under either setting, a fresh verifier passes the change before it lands. |
+| Before code | Guidance for writing code under a path, as `<path>: <source>` entries separated by `;`. A source is a file to read, or a command that prints a skill or its path. | Each code delegate under that path, copied word for word into its brief. Also the plan gate and `/orbit:interrogate`. |
+| Review also checks | Docs to read before planning and at review only. Scope one to a path with `src/server/: <source>`. | The plan gate and `/orbit:interrogate` |
 
 Before code is the line that goes into the brief of the agent writing the code. Put guidance there that code under a path must follow. Put a doc in Review also checks when it matters for the plan and the review but not for each edit.
 
@@ -101,12 +103,6 @@ It pauses on a worktree a session is still using. It also pauses on uncommitted 
 
 ## Keep orbit up to date
 
-Claude Code leaves auto-update off for third-party marketplaces, so orbit stays on the version you installed. To turn auto-update on:
-
-1. Run `/plugin`.
-2. Open the **Marketplaces** tab and select `orbit`.
-3. Choose **Enable auto-update**.
-
-To update once by hand, run `claude plugin update orbit@orbit`.
+Claude Code leaves auto-update off for third-party marketplaces, so orbit stays on the version you installed. [Auto-update](../usage.md#auto-update) lists the steps to turn it on. To update once by hand, run `claude plugin update orbit@orbit`.
 
 Back to the [guide index](./README.md)

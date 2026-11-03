@@ -1,42 +1,6 @@
 # Using orbit
 
-The detail behind the [README](../README.md). To learn the concepts in order, read [the guide](guide/README.md).
-
-## A task, start to finish
-
-Start a task with `/orbit:start`. A change runs through Opening a PR and ships once a fresh verifier passes it. Bulk reading goes to subagents, so the session stays lean across tasks.
-
-```
-/orbit:start fix the login redirect bug
-```
-
-Orbit picks the flow, writes its steps as a todo list, and works through them. A step can only be skipped in plain sight (`skip: <reason>`).
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="diagrams/docs-dark.svg">
-  <img alt="Swimlanes for you, Claude and subagents, following the numbered steps below. Dashed steps run only when they apply: the answer to a question, the advisor's plan check, interrogate, the don't-ship stop and Babysit." src="diagrams/docs-light.svg">
-</picture>
-
-1. **Pick the flow.** `investigate`, `bug`, `feature`, `refactor`, `prototype`, `perf` or `hillclimb`. `investigate` stops after answering. `prototype` stops at a decision and a throwaway sketch, and ships nothing. Large or cross-cutting work, work you step away from, and work no flow fits go to `/orbit:figure-it-out`, which designs its own steps.
-2. **Worktree.** A change gets its own git worktree, so parallel sessions never collide.
-3. **Plan gate.** When a change adds a module or touches more than 3 files, the advisor reviews the plan first.
-4. **Build.** A fresh poteto-agent writes each unit. Claude reviews and verifies it, and gitops commits it.
-5. **Opening a PR.** `/orbit:interrogate` first on a contested design, then deslop and no-comments. Under Land `pr` it opens a ready PR. Under Land `main` the task branch stays committed and unpushed. The worktree stays until `/orbit:worktree-cleanup`.
-6. **Babysit.** Under Land `pr`, Babysit drives the PR, or the whole stack, to merge-ready: conflicts, review threads, CI.
-7. **Shipping.** A fresh verifier runs the change, then Shipping merges the PR or pushes the branch to `main`. Only a verified change lands.
-8. **`Next:` line.** One line telling you what to do next.
-
-Shipping is the default. Say "don't ship" or "I'll land it" in the goal, and the task stops at the PR, or at the branch under Land `main`. Land it later with `/orbit:ship`. `/orbit:playbook babysit` drives any open PR to merge-ready on its own.
-
-A question with no code change also goes through `/orbit:start <question>`. It runs the read-only `investigate` flow and answers with citations.
-
-A queue of independent changes goes through `/orbit:start` too, as "autopilot this queue" with the items. The `autopilot-full` flow writes no code itself. It spawns one owner per item, and each owner runs its own flow, opens its PR and babysits it to merge-ready. A fresh verifier checks each head before a fresh owner merges it. Items you name as yours stop at merge-ready.
-
-Say "build the stack, I'll land it" instead, and the `autopilot-stack` flow builds and verifies the same way, but never merges. It hands you one linear stack of PRs, each based on the one below and carrying its verdict. You land the stack with `/orbit:ship`.
-
-Work that spans phases or several PRs can start as a plan. Ask `/orbit:start` for a multi-PR plan, and the `multi-phase-plan` flow writes a checklist with one section per PR, naming what to build, what you should see, and the checks that prove it. It settles open questions with throwaway prototypes first, lints the plan with `check-plan.mjs`, and stops. On your go, the plan runs under `autopilot-full` when its PRs are independent. It runs under `autopilot-stack` when they are sequenced or coupled, or when you said "don't ship" or "I'll land it".
-
-Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh one.
+A lookup reference for orbit's commands, agents and defaults. To learn how a task runs and why, read [the guide](guide/README.md).
 
 ## Every command
 
@@ -51,20 +15,22 @@ Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh
 | Build and verify a queue as one stack you land yourself | `/orbit:start build the stack, I'll land it: <items>` |
 | Plan work that spans phases or several PRs, to run on your go | `/orbit:start multi-PR plan: <goal>` |
 | Large or cross-cutting work, or work you step away from | `/orbit:figure-it-out <goal>` (`/orbit:start` routes there too) |
-| An open PR: get it green, answer review threads, or check its status | `/orbit:playbook babysit` (`/orbit:start` routes "babysit this" there) |
+| Get an open PR green, answer its review threads, or check its status | `/orbit:playbook babysit` (`/orbit:start` routes "babysit this" there) |
 | Build a change but land it yourself | `/orbit:start <goal>, don't ship` (or "I'll land it") |
 | Change is ready, land it | `/orbit:ship`. A fresh verifier runs the change first. |
-| Stop mid-task, switch model, step away | `/orbit:pause-safely`, then `/orbit:session-pickup` in a new session. See [stopping and resuming](#stopping-and-resuming). |
+| Stop mid-task, switch model, step away | `/orbit:pause-safely`, then `/orbit:session-pickup` in a new session. See [Stop cleanly, pick up later](guide/06-hands-off.md#stop-cleanly-pick-up-later). |
 | A long or unattended run you'll review later | `/orbit:show-me-your-work` |
 | Catch up on what changed since your last message | `/orbit:ketchup` |
 | Disk is tight, or worktrees have piled up | `/orbit:worktree-cleanup` |
+
+Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh one.
 
 ### Understand code
 
 | Situation | Run |
 | --- | --- |
 | How a subsystem works, where new code goes | `/orbit:how <subsystem>` |
-| Why code is the way it is: rationale, regressions, history | `/orbit:why <code or decision>` |
+| Why code is the way it is (rationale, regressions, history) | `/orbit:why <code or decision>` |
 | Design the shape before writing code | `/orbit:architect <what>` |
 | Several attempts at one artifact, then pick a base and graft the best parts | `/orbit:arena <task>` |
 | Adversarial review of a change | `/orbit:interrogate` |
@@ -73,7 +39,7 @@ Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh
 
 ### Improve Claude
 
-See [correct vs reflect](#correct-vs-reflect).
+[Make orbit fit your project](guide/08-make-it-fit.md#fix-a-repeated-mistake-with-orbitcorrect) explains how correct and reflect differ.
 
 | Situation | Run |
 | --- | --- |
@@ -83,55 +49,29 @@ See [correct vs reflect](#correct-vs-reflect).
 
 ### Prove it works
 
-See [let Claude prove its work](#let-claude-prove-its-work).
+[Give the verifier a way to drive your app](guide/05-prove-and-ship.md#give-the-verifier-a-way-to-drive-your-app) explains what these write.
 
 | Situation | Run |
 | --- | --- |
 | First time in a project users can run or install | `/orbit:create-verification-skill` |
 | App changed, verify skill drifted | `/orbit:maintain-verification-skill` |
 
-## Stopping and resuming
-
-To stop in the middle of a task, say so or run `/orbit:pause-safely`. Claude finishes the current step, commits a `wip:` commit, saves a resume note outside the repo, and tells you the first action on resume. Pause before you switch model or close the session. "Keep going" or "don't stop" never pauses.
-
-To resume, start a new session and run `/orbit:session-pickup`. It reads the last session's transcript, the git log and the resume note from that session. It works out what is done and what is left, and carries on through `/orbit:start` or Opening a PR. It doesn't redo finished work.
-
-```
-/orbit:pause-safely
-(new session)
-/orbit:session-pickup
-```
-
-## Correct vs reflect
-
-`/orbit:correct <mistake>` fixes one mistake you name, at the highest level that works. In order: remove the cause, then a type or lint rule, then a test, then a doc line. It also keeps a table of each rule and what enforces it.
-
-`/orbit:reflect` is broader. Three reviewers read the whole session, and you approve which skill edits to make. Items a lint or check would enforce better come back as `/orbit:correct` candidates.
-## Let Claude prove its work
-
-Tests passing isn't the same as the feature working. Run `/orbit:create-verification-skill` once in a project users can run or install. Claude reads the repo and writes `.claude/skills/verify-<app>/`:
-
-- a SKILL.md with six sections. Launch starts the app and says how to tell it's ready. Doctor is one read-only health check. Drive uses the repo's real selectors and commands. Evidence says what to capture and where it goes. Cleanup tears down only what the run started and keeps the evidence. Helpers shows how to run any script the skill ships.
-- a feature map in `features/`: an index plus one file per feature, saying how a user reaches it, how to drive it, and what end state proves it worked
-
-Claude runs the new skill once end to end before handing it over. After that, the `verifier` in `/orbit:ship` uses it on every change before it lands and reports where the evidence is. The verifier is a fresh agent, not the main chat, so the change is never judged by the session that built it.
-
-When the app changes, run `/orbit:maintain-verification-skill`. It reads each feature's source in parallel, drives every feature live, fixes the skill and map where they drifted, and reports real bugs instead of hiding them.
-
 ## What runs in the background
 
 Claude runs these itself. You can also ask for the advisor.
 
-- **poteto-agent** (Opus for the hardest changes, else your session's model): writes the code for each unit of a change, so the code is never reviewed by the agent that wrote it.
-- **gitops** (Sonnet): commits, pushes, PRs and merges.
-- **comment-sicko**: deletes comments outside its keep list and flags the code they excuse, before review.
-- **verifier** (your session's model, no Edit or Write tools, in its own worktree): runs the change the way a user would before it lands and returns PASS, PASS+NOTES or FAIL. A fresh agent, never the one that wrote the change.
-- **advisor** (Opus, read-only): a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time.
+| Agent | Model | Job |
+| --- | --- | --- |
+| poteto-agent | Opus for the hardest changes, else your session's model | Writes the code for each unit of a change, so no code is reviewed by the agent that wrote it. |
+| gitops | Sonnet | Commits, pushes, PRs and merges. |
+| comment-sicko | Your session's model | Deletes comments outside its keep list and flags the code they excuse, before review. |
+| verifier | Your session's model, no Edit or Write tools, in its own worktree | Runs the change the way a user would before it lands, and returns PASS, PASS+NOTES or FAIL. It is never the agent that wrote the change. |
+| advisor | Opus, read-only | Gives a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time. |
 
 When each runs:
 
 - poteto-agent and comment-sicko run only inside the flow you start. The verifier runs only inside Shipping (at task end or `/orbit:ship`), autopilot-full and autopilot-stack.
-- The advisor runs there too, or when you ask for it.
+- The advisor runs at the plan gate, or when you ask for it.
 - As in pstack, the rest is opt-in. `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill` and `/orbit:maintain-verification-skill` run only when you type them.
 - `/orbit:how` and `/orbit:why` run when you type them, when Claude matches a question to them, and inside the investigate and bug flows and `no-comments`.
 - `/orbit:arena` runs when you type it, inside `/orbit:architect`, and in the feature flow on a choice with several valid shapes.
@@ -140,33 +80,26 @@ When each runs:
 
 ## Principles
 
-The playbook holds all 24 of pstack's principles, in pstack's five groups, each with the situation that triggers it:
+The playbook holds all 24 of pstack's principles, in pstack's five groups. [Steer with principles](guide/07-steer-with-principles.md) shows how to use their names.
 
-- Core: laziness protocol, foundational thinking, redesign from first principles, attack the premise, subtract before you add, minimize reader load, outcome-oriented execution, experience first, exhaust the design space, build the lever
-- Architecture: model the domain, boundary discipline, type-system discipline, make operations idempotent, migrate callers then delete legacy APIs, separate before serializing shared state
-- Verification: prove it works, fix root causes, sequence verifiable units, test behavior not implementation, explain the number
-- Delegation: guard the context window, never block on the human
-- Meta: encode lessons in structure
-
-Claude reads a principle only when its trigger fires. The reply names each one that shaped a decision and the choice it changed. Use the names to steer: "apply subtract before you add".
-
-## Stack rules
-
-Stack rules work like principles. Before writing TypeScript, Claude reads the TypeScript rules.
+| Group | Principles |
+| --- | --- |
+| Core | laziness protocol, foundational thinking, redesign from first principles, attack the premise, subtract before you add, minimize reader load, outcome-oriented execution, experience first, exhaust the design space, build the lever |
+| Architecture | model the domain, boundary discipline, type-system discipline, make operations idempotent, migrate callers then delete legacy APIs, separate before serializing shared state |
+| Verification | prove it works, fix root causes, sequence verifiable units, test behavior not implementation, explain the number |
+| Delegation | guard the context window, never block on the human |
+| Meta | encode lessons in structure |
 
 ## Project defaults
 
-Defaults assume [Vite+](https://viteplus.dev). `vpr check` must pass, plus `vpr build` and `vpr test` if those scripts exist. Each change is built in a worktree under `.claude/worktrees/`, and Shipping fast-forwards it onto `main` at task end, unless you said "don't ship". `.git/info/exclude` keeps the worktrees out of `git status`, and `/orbit:worktree-cleanup` removes them when you ask.
+| Setting | Default |
+| --- | --- |
+| Check | `vpr check`, then `vpr build` and `vpr test` if those scripts exist |
+| Land | `main`. Each change is built in a worktree under `.claude/worktrees/`, and Shipping fast-forwards `main` to it. |
+| Review | `/orbit:interrogate` before shipping when the design is contested |
 
-A project that differs adds a `## Workflow` block to its AGENTS.md, listing only what's different. `templates/workflow-block.md` has the template. Its `Before code` line holds the guidance for writing code under a path, one `<path>: <source>` entry per file or skill load command. Claude copies the matching entries into each code delegate's brief. Delegates load them before writing. The plan gate reads them, and so does `/orbit:interrogate` when it runs.
+A project that differs adds a `## Workflow` block to its AGENTS.md, listing only what's different. Start from [`templates/workflow-block.md`](../templates/workflow-block.md). [Make orbit fit your project](guide/08-make-it-fit.md) explains each line and folder rules. [Build a change](guide/04-build-a-change.md#follow-the-stack-rules-for-typescript) covers stack rules.
 
-## Folder rules
-
-Rules for one folder go in an AGENTS.md (or CLAUDE.md) inside it, say `src/server/AGENTS.md` naming a library's guide. The plan gate reads every such file above the files a change touches, plus `.claude/rules/` files whose `paths` match.
-
-## Install notes
-
-The rules load on their own at the start of every session. Your own `CLAUDE.md` and `settings.json` stay yours.
 ## Auto-update
 
 Claude Code leaves auto-update off for third-party marketplaces, so orbit stays on the version you installed. To turn it on:

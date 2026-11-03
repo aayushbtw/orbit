@@ -1,6 +1,6 @@
 # Understand code before you change it
 
-A wrong mental model of the code costs more than a wrong line of code. Orbit gives you read-only tools that build the model first, each for a different kind of question. This chapter covers the investigation flow, `/orbit:how`, `/orbit:why`, `/orbit:recall` and `/orbit:ketchup`, and when to reach for each one.
+Every tool on this page reads and never edits. Pick one by the question you have: how the code works, why it looks the way it does, where you left off, or what happened in this chat while you were away.
 
 ## Ask a question through /orbit:start
 
@@ -10,7 +10,7 @@ You don't need a special command to ask about code. Give `/orbit:start` a questi
 /orbit:start how does a job get from the queue to a worker, and what happens when the worker crashes mid-job?
 ```
 
-The `investigate` flow is read-only. It makes no commit and opens no PR. It routes the question through `/orbit:how`, and also through `/orbit:why` when the question is about motivation. The answer comes back in five sections, and orbit drops any that don't apply:
+The `investigate` flow is read-only. It makes no commit and opens no PR. It routes the question through `/orbit:how`, and also through `/orbit:why` when the question is about motivation. The answer comes back in five sections, and Claude drops any that don't apply:
 
 - Overview
 - Key Concepts
@@ -24,11 +24,11 @@ A question that asks you to choose between options gets a recommendation with a 
 /orbit:start should the rate limiter live in the API gateway or in each service? compare both for this repo.
 ```
 
-Because the flow edits nothing, you can run it on any branch, at any time, even in the middle of other work. If the answer shows that a change is needed, orbit hands back to you instead of starting the change. Start that change as its own task with `/orbit:start <goal>`.
+Because the flow edits nothing, you can run it on any branch, at any time, even in the middle of other work. If the answer shows that a change is needed, Claude hands back to you instead of starting the change. Start that change as its own task with `/orbit:start <goal>`.
 
 ### Ask "are we sure?"
 
-The investigation flow also takes a doubt as its question. For an "are we sure?" question, the reply gives orbit's real judgment with its reasons, and it pushes back when the premise is wrong.
+The investigation flow also takes a doubt as its question. For an "are we sure?" question, the reply gives Claude's real judgment with its reasons, and it pushes back when the premise is wrong.
 
 ```text
 /orbit:start are we sure the session cache is cleared when a user changes their password?
@@ -44,11 +44,11 @@ Ask this kind of question before a risky change, not after. A wrong premise foun
 /orbit:how the plugin loader
 ```
 
-Orbit first sizes the question. A narrow question, such as one function or one small module, gets one explainer that reads and writes the answer in a single pass. A subsystem that spans many files gets split into 2 to 4 angles. A separate explorer reads each angle in parallel, and one explainer then joins their findings into the answer. The explorers don't edit files, and orbit checks `git status` after they return.
+`/orbit:how` first sizes the question. A narrow question, such as one function or one small module, gets one explainer that reads and writes the answer in a single pass. A subsystem that spans many files gets split into 2 to 4 angles. A separate explorer reads each angle in parallel, and one explainer then joins their findings into the answer. The explorers don't edit files, and Claude checks `git status` after they return.
 
-The split keeps the bulk reading in subagents. Each explorer reads only its slice, the explainer works from their findings, and your session gets the finished explanation instead of every file. When the size is in doubt, orbit takes the single-explainer path.
+The split keeps the bulk reading in subagents. Each explorer reads only its slice, the explainer works from their findings, and your session gets the finished explanation instead of every file. When the size is in doubt, it takes the single-explainer path.
 
-You don't always have to type it. Orbit runs `/orbit:how` on its own when your question matches it, inside the `investigate` and `bug` flows, and before a nontrivial change or an architecture decision.
+You don't always have to type it. Claude runs `/orbit:how` on its own when your question matches it, inside the `investigate` and `bug` flows, and before a nontrivial change or an architecture decision.
 
 ## Learn why code is the way it is with /orbit:why
 
@@ -58,9 +58,9 @@ You don't always have to type it. Orbit runs `/orbit:how` on its own when your q
 /orbit:why the 45 second timeout in src/sync/client.ts
 ```
 
-Orbit first builds a code anchor from git. It runs `git blame` and `git log` on the target, finds the PR numbers in the commits, and reads those PR bodies and reviews with `gh`. Then it spawns one investigator per kind of evidence, in parallel. Source control is always one of them. Each other kind gets an investigator when a connected MCP covers it. Those kinds are an issue tracker, long-form docs, team chat, infrastructure observability, error tracking, and a product analytics warehouse. The more of them you connect, the more places `/orbit:why` can look.
+`/orbit:why` first builds a code anchor from git. It runs `git blame` and `git log` on the target, finds the PR numbers in the commits, and reads those PR bodies and reviews with `gh`. Then it spawns one investigator per kind of evidence, in parallel. Source control is always one of them. Each other kind gets an investigator when a connected MCP covers it. Those kinds are an issue tracker, long-form docs, team chat, infrastructure observability, error tracking, and a product analytics warehouse. The more of them you connect, the more places `/orbit:why` can look.
 
-The answer keeps what orbit knows apart from what it guesses. It has separate sections for what was found, what can be reasonably inferred, competing hypotheses, and what is still unknown. Sources Consulted lists every investigator, including the ones that found nothing and the ones skipped with the reason. A search that came back empty is still a result, so you can see where orbit looked.
+The answer keeps what the evidence shows apart from what is a guess. It has separate sections for what was found, what can be reasonably inferred, competing hypotheses, and what is still unknown. Sources Consulted lists every investigator, including the ones that found nothing and the ones skipped with the reason. A search that came back empty is still a result, so you can see where it looked.
 
 The investigators trace back past the latest commit, because the current shape is often many older decisions stacked up. Trusting only the most recent change is the mistake `/orbit:why` is built to avoid. When your question leads into a change, the answer also ends with a Preserve, Change, Avoid and Risk list to plan it with.
 
@@ -84,7 +84,7 @@ You get a short brief. It has a capsule of where things stand, one line per thre
 /orbit:ketchup
 ```
 
-It opens with one sentence that names what waits on you, or says that nothing does. Then it sums up what happened in plain words, with screenshots or small diagrams when a picture explains the change better. Last comes each call only you can make, with orbit's pick, the evidence behind it, and the risk. The turn is read-only, so it changes no code and posts nothing. Like `/orbit:recall`, it runs only when you type it.
+It opens with one sentence that names what waits on you, or says that nothing does. Then it sums up what happened in plain words, with screenshots or small diagrams when a picture explains the change better. Last comes each call only you can make, with Claude's pick, the evidence behind it, and the risk. The turn is read-only, so it changes no code and posts nothing. Like `/orbit:recall`, it runs only when you type it.
 
 ## Pick the right one
 
@@ -95,6 +95,6 @@ Each tool answers a different question:
 - "Where did I leave off on this topic?" Use `/orbit:recall [topic]`.
 - "What happened in this chat while I was away?" Use `/orbit:ketchup`.
 
-To resume one specific paused chat, use `/orbit:session-pickup` instead of `/orbit:recall`. See [Stopping and resuming](../usage.md#stopping-and-resuming) in the usage reference. For the full table, see [Understand code](../usage.md#understand-code) in the usage reference.
+To resume one specific paused chat, use `/orbit:session-pickup` instead of `/orbit:recall`. See [Stop cleanly, pick up later](./06-hands-off.md#stop-cleanly-pick-up-later). For the full table, see [Understand code](../usage.md#understand-code) in the usage reference.
 
 Next: [Design before code](./03-design-first.md)

@@ -1,6 +1,6 @@
 # Steer with principles
 
-Orbit carries 24 principles, short rules for the judgment calls that come up in almost every task. Each one has a name, and that name is the handle you steer with. This chapter covers how Claude uses the principles and how you use their names to change course mid-task.
+Orbit carries 24 principles, short rules for the judgment calls that come up in almost every task. Each one has a name. Claude cites the names in its replies, and you can say a name to change course mid-task.
 
 ## A principle is a named rule with a trigger
 
@@ -13,8 +13,6 @@ The index sorts the principles into five groups:
 - **Verification.** Five principles about debugging, tests, and numbers you measured.
 - **Delegation.** Two principles about what goes to subagents and when Claude stops to ask you.
 - **Meta.** One principle, encode lessons in structure, for an instruction that keeps coming back.
-
-Each name is short enough to say in a sentence, and each one points Claude at exactly one rule.
 
 ## Claude reads a principle when its trigger fires
 
@@ -96,13 +94,9 @@ The trigger is a new interaction or an architecture decision with no precedent i
 exhaust the design space. nothing in the app reorders by drag yet. build two or three versions and show them side by side before you pick.
 ```
 
-## Stack rules work the same way
-
-Stack rules follow the same pattern for a language. Before Claude writes a `.ts` or `.tsx` file, it reads the TypeScript rules index, then opens only the rule files that apply.
-
 ## Find the rest
 
-The other 17 principles are listed by group in [Principles](../usage.md#principles). Each skill file under `plugin/skills/principle-*/` holds the full rule.
+The other 17 principles are listed by group in [Principles](../usage.md#principles). Each skill file under `plugin/skills/principle-*/` holds the full rule. Stack rules apply the same pattern to TypeScript files, as [Build a change](./04-build-a-change.md#follow-the-stack-rules-for-typescript) describes.
 
 You don't have to learn the names in advance. Watch for them in Claude's replies. Each citation shows you a trigger at work, and the next time Claude misses one, you have the word ready.
 

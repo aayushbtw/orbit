@@ -26,7 +26,7 @@ Auto-update is off for third-party marketplaces. [Turn it on](docs/usage.md#auto
 - Large or cross-cutting work goes through `/orbit:figure-it-out`, which designs its own steps.
 - Say "don't ship" to stop at the PR.
 
-[Full walkthrough](docs/usage.md#a-task-start-to-finish). New to orbit? Read [the guide](docs/guide/README.md).
+New to orbit? Read [the guide](docs/guide/README.md), which starts with the [full walkthrough](docs/guide/01-start-a-task.md).
 
 ## What do I run?
 
@@ -54,7 +54,7 @@ Every task ends with one `Next:` line. Do what it says.
 
 ## Correct usage
 
-- Give `/orbit:start` the goal, not the steps. Orbit picks the flow and the steps.
+- Give `/orbit:start` the goal, not the steps. Claude picks the flow and the steps.
 - Don't land a change by hand. A change task ships by default, and only after a fresh verifier passes it. Say "don't ship" or "I'll land it" to stop at the PR, or the unpushed branch under Land `main`, then land it with `/orbit:ship`.
 - Project differences (check command, PR landing, extra review sources) go in the project's `## Workflow` block, not in chat.
 
@@ -70,11 +70,11 @@ Defaults assume [Vite+](https://viteplus.dev), a worktree per change, and fast-f
 - Review also checks: `docs/architecture.md`.
 ```
 
-More in [docs/usage.md](docs/usage.md):
+More:
 
-- [Project defaults](docs/usage.md#project-defaults) and [folder rules](docs/usage.md#folder-rules)
+- [Project defaults](docs/usage.md#project-defaults) and [folder rules](docs/guide/08-make-it-fit.md#put-folder-rules-next-to-the-code)
 - [Background agents](docs/usage.md#what-runs-in-the-background)
-- [Principles](docs/usage.md#principles) and [stack rules](docs/usage.md#stack-rules)
+- [Principles](docs/usage.md#principles) and [stack rules](docs/guide/04-build-a-change.md#follow-the-stack-rules-for-typescript)
 
 ## Maintain
 

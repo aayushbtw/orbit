@@ -1,11 +1,6 @@
 # Build a change
 
-Once the design is settled, orbit builds the change through a fixed set of gates. Each gate exists to catch one kind of mistake at the point where it is cheapest to fix. This chapter walks through them in order and explains what each one protects you from.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="../diagrams/docs-dark.svg">
-  <img alt="Three swimlanes for you, Claude and subagents. You name the goal with /orbit:start. Claude picks the flow, a question stops at its answer, and a change gets a worktree off origin/main and an advisor check when it touches more than 3 files. For each unit, poteto-agent writes it, Claude reads and runs it, and gitops commits it. Then come interrogate on a contested design, deslop, comment-sicko and the PR or branch. If you said don't ship, the task stops with Next: /orbit:ship. Otherwise Babysit drives a PR to merge-ready under Land pr, a fresh verifier runs the change, and gitops lands it on PASS. Nothing lands on FAIL. Dashed boxes run only when they apply." src="../diagrams/docs-light.svg">
-</picture>
+Once the design is settled, Claude builds the change through a fixed set of gates. Each gate catches one kind of mistake at the point where it is cheapest to fix. [Start a task](./01-start-a-task.md#the-todo-list-is-the-playbook) shows the whole run as one diagram.
 
 A typical goal names the behavior and what must not move:
 
@@ -19,7 +14,7 @@ The feature, bug, refactor, perf and hillclimb flows, and `/orbit:figure-it-out`
 
 Before the first edit, Claude calls `EnterWorktree` and moves into a new git worktree under `.claude/worktrees/`. The worktree is named `<type>-<slug>`, and its branch is renamed to `<type>/<slug>`, where `<type>` is the commit type of the change, such as `feat`, `fix`, `refactor` or `perf`. When the project has a lockfile, Claude runs `vp install` so the check can run there.
 
-A worktree exists so that parallel sessions never share a checkout. You can run two tasks at once, or keep working in your main checkout, and neither sees the other's half-finished edits. When git does not already ignore `.claude/worktrees`, Claude adds it to `.git/info/exclude`, so the worktrees stay out of your main checkout's `git status`.
+A worktree exists so that parallel sessions never share a checkout. You can run two tasks at once, or keep working in your main checkout, and neither sees the other's half-finished edits. The worktrees stay out of your main checkout's `git status`.
 
 If the session is already in a clean worktree, Claude reuses it. If that worktree holds unrelated work or is in a bad state, Claude starts a fresh one with a new slug. Worktrees stay after the change lands, until you run `/orbit:worktree-cleanup`.
 
@@ -59,7 +54,7 @@ Before it fans out, the feature flow writes a throughput checkpoint as four todo
 
 The work then goes out in small units that each end in a check. The sequence-verifiable-units principle drives this. Claude builds, verifies and commits each unit before it starts the next, so each step is proven before the next one builds on it.
 
-Because units are committed in order as they pass review, the history needs no reordering at the end. gitops writes each commit as `type(scope): subject`, with a body that says why the change exists. A fix that belongs in an unpushed unit folds into it with `--fixup` and `--autosquash`. A hook refuses any commit that carries a `Co-Authored-By: Claude` trailer.
+Because units are committed in order as they pass review, the history needs no reordering at the end. gitops writes each commit as `type(scope): subject`, with a body that says why the change exists. A fix that belongs in an unpushed unit folds into it with `--fixup` and `--autosquash`.
 
 A bug fix follows the same pattern. When the bug has a cheap local test path, the bug flow points to the `tdd` skill, and the failing reproduction lands as its own commit before the fix.
 

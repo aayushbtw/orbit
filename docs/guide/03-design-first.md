@@ -1,6 +1,6 @@
 # Design before code
 
-The first shape a model reaches for is rarely the best one, and once code grows around it, that shape is expensive to change. Orbit spends some parallel work before the first real line, so you choose a design from several options instead of polishing the only one on the table. This chapter covers the four design commands, the prototype flow, and when each one is worth its cost.
+The first shape a model reaches for is rarely the best one, and once code grows around it, that shape is expensive to change. The commands here run several attempts or reviewers in parallel before the first real line, so you choose a design from several options instead of polishing the only one on the table.
 
 ## Write the shape as types first
 
@@ -15,8 +15,13 @@ Architect works in five phases:
 1. **Ground.** It runs `/orbit:how` over every system the new code touches. When the design moves ownership or layering, it also runs `/orbit:why`, so the reason for the current shape becomes a constraint instead of a guess. Only greenfield work skips this phase.
 2. **Sketch.** It runs `/orbit:arena` with two design runners, one on Opus and one on your session model. Each runner writes the caller's usage and a few real call sites first, then derives the types from them. Architect requires at least two structurally different candidates, even when the first looks good enough.
 3. **Agree.** This phase is off by default, and the synthesized design goes straight to implementation. Ask for a checkpoint to review it first.
-4. **Implement.** The sketch is the contract. Inside a flow, a poteto-agent fills in the bodies against it. If a function needs a parameter the sketch did not plan for, Claude treats that as a question about the sketch, not as friction to absorb.
+4. **Implement.** The code must match the sketch's signatures. Inside a flow, a poteto-agent fills in the bodies against it. If a function needs a parameter the sketch did not plan for, Claude treats that as a question about the sketch, not as friction to absorb.
 5. **Scrap.** A pattern of friction means the design is wrong. The same workaround in unrelated places, types that compile only with `any` or casts, or a lock for state the sketch called unshared all count. Architect throws the sketch out, designs a smaller one, and runs the sketch phase again.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../diagrams/guide-architect-dark.svg">
+  <img alt="Architect's phases left to right. Ground runs how and why. Sketch runs arena with two runners. Agree is an optional checkpoint you ask for. Implement fills in the bodies. When the same workaround shows up twice, Implement goes to Scrap, and Scrap loops back to Sketch with a smaller sketch." src="../diagrams/guide-architect-light.svg">
+</picture>
 
 To see the design before any code fills it in, say so in the prompt:
 
@@ -34,7 +39,7 @@ On a non-trivial artifact, one attempt commits you to whatever shape that attemp
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../diagrams/guide-arena-dark.svg">
-  <img alt="Arena's six phases in order. Frame writes one shared prompt and a rubric of 3 to 6 criteria. Fan out sends that prompt to parallel candidates, each in its own worktree. A read-only judge scores every candidate against the rubric. Claude reads them all and picks a base, grafts one or two strong parts from each losing candidate into it, and verifies the result." src="../diagrams/guide-arena-light.svg">
+  <img alt="Arena's six phases in order. Frame writes one shared prompt and a rubric. Fan out sends that prompt to two or more parallel candidates, each in its own worktree, with a third only when needed. A read-only judge and Claude both score every candidate. Claude picks a base, grafts one or two parts from each losing candidate into it, and verifies the result." src="../diagrams/guide-arena-light.svg">
 </picture>
 
 ```text
@@ -43,11 +48,11 @@ On a non-trivial artifact, one attempt commits you to whatever shape that attemp
 
 Each phase has one job:
 
-- **Frame.** Every candidate gets the same prompt, so the prompt is the contract. Claude also writes a rubric of 3 to 6 gradeable criteria for picking the winner. The candidates see only the task.
+- **Frame.** Every candidate gets the same prompt, so the attempts differ only in how they answer it. Claude also writes a rubric of 3 to 6 gradeable criteria for picking the winner. The candidates see only the task.
 - **Fan out.** By default two `orbit:poteto-agent` runners work in parallel, one on Opus and one on your session model. More runners join when the task covers several design directions. Each writes to its own worktree where possible, else its own scratch directory, so the attempts stay independent.
 - **Cross-judge.** One read-only judge scores every candidate on each criterion and recommends a base. It runs on whichever of Opus and your session model differs from Claude's own model.
 - **Pick.** Claude reads every candidate end to end and scores each one against the rubric itself. It compares its pick with the judge's, since a disagreement means one of them is biased or the rubric was unclear. The base is the one a future maintainer can extend with the least risk of breaking its invariants.
-- **Graft.** Claude walks each losing candidate for the one or two things worth porting. The grafts are folded in by hand, not pasted, so the result still reads as one design. Inside a flow, a fresh poteto-agent does the folding. If the candidates agree on one shape, no graft is needed. If they disagree wildly, the frame was too loose, and arena reframes and runs again.
+- **Graft.** Claude walks each losing candidate for the one or two things worth porting. Claude folds the grafts in by hand instead of pasting them, so the result still reads as one design. Inside a flow, a fresh poteto-agent does the folding. If the candidates agree on one shape, no graft is needed. If they disagree wildly, the frame was too loose, and arena reframes and runs again.
 - **Verify.** The merged result gets the same proof as any other change.
 
 Arena returns one artifact and a short note that names the base, the judge's verdict, each graft and its source, and what was rejected.
@@ -82,7 +87,16 @@ A design that looks sound to the model that wrote it can still hide a flaw that 
 
 Before it spawns the reviewers, Claude writes the change's intent in one paragraph. If the intent is unclear, it asks you. Both reviewers get the same template, rubric and code-quality lens. Findings that both models raised on their own carry the most weight.
 
-Claude then judges as the lead reviewer and sorts every finding into one of four buckets. **Act on** is a real issue that would block a PR. **Consider** is legitimate but maybe not worth fixing now. **Noted** is valid but not actionable at this stage. **Dismissed** is wrong or nitpicky, with a reason. An agreement map shows where the two models agreed and split.
+Claude then judges as the lead reviewer and sorts every finding into one of four buckets:
+
+| Bucket | Means |
+| --- | --- |
+| Act on | A real issue that would block a PR |
+| Consider | Legitimate, but maybe not worth fixing now |
+| Noted | Valid, but not actionable at this stage |
+| Dismissed | Wrong or nitpicky, with a reason |
+
+An agreement map shows where the two models agreed and split.
 
 Interrogate never applies a fix. The verdict is judgment, the Dismissed bucket exists because reviewers are sometimes wrong, and you decide what changes.
 
