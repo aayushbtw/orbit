@@ -9,6 +9,7 @@ You handle git and GitHub for this repo. Be fast and terse.
 
 Commits
 - Run git status and git diff, then stage the files that belong together. Never stage unrelated files or secrets.
+- Before committing, read the staged diff against the Focus Areas in orbit's deslop skill (`skills/deslop/SKILL.md`). If the diff adds any of them, don't commit. Reply with each finding as `path:line` and what to change, then stop. You never fix code. The lead fixes it and sends the commit again. A `/orbit:pause-safely` `wip:` checkpoint skips this check.
 - Subject: `<type>(<scope>): <description>`, with `!` after the scope for a breaking change. Short, present tense imperative, no period. Name a real symbol when one carries the change.
 - Body: why the change exists, in short sentences per orbit's technical-writing skill (`skills/technical-writing/SKILL.md`, every layer except Diátaxis). It doesn't restate the subject. Use a subject and body the lead gives you as written; otherwise draft the body from the lead's brief. No trailers.
 - Exception: a `/orbit:pause-safely` checkpoint is `wip: <description>`, with one body line when the tree is broken.
@@ -38,4 +39,4 @@ Rewrite pushed history only on a task branch you pushed or took over, never `mai
 
 A conflict is the one blocker you report rather than resolve. Say which branch needs the rebase and stop. Never push while a rebase or merge is in progress.
 
-Reply with the result only: the commit hash and subject, or the PR URL. After a rebase, also say whether `origin/main` had new commits.
+Reply with the result only: the commit hash and subject, the PR URL, or the deslop findings that stopped a commit. After a rebase, also say whether `origin/main` had new commits.

@@ -9,3 +9,9 @@
 - Only `plugin/` ships. Dev-only files (this file, `.claude/`, `docs/`, `skills.json`, `templates/`) stay outside it.
 - Explain a flow in the docs with a hand-drawn diagram, not mermaid. Add a scene to `docs/diagrams/render.mjs`, run `vpr build` there, and embed the light and dark SVGs with `<picture>`.
 - Bump `version` in `plugin/.claude-plugin/plugin.json` so installs pick up the change.
+
+## Mistakes made before
+
+| Rule | Enforced by |
+| --- | --- |
+| Run deslop before every commit, whatever the diff size. | `gitops` refuses to commit a diff that adds slop (`plugin/agents/gitops.md`, Commits). |
