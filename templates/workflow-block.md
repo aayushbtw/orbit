@@ -7,3 +7,4 @@ List only what differs from the Workflow Defaults in orbit's rules; delete the l
 - Land: `pr` (default is `main`), plus the merge method if not squash.
 - Before code: <guidance for writing code under a path, which code delegates and `/orbit:interrogate` load and never skip; one `<path>: <source>` entry per source, separated by `;`, where a source is a file to read or a command that prints a skill or its path, eg `src/server/: node_modules/effect/AGENTS.md`; `src/routes/: vpx @tanstack/intent@latest load @tanstack/react-start#react-start --path`>.
 - Review also checks: <docs read before planning and at review only; scope one to a path with `src/server/: <source>`>.
+- Models: <only the keys that differ from `code=inherit; judgment=opus; gitops=sonnet`, eg `code=sonnet; judgment=opus`; a value is `opus`, `sonnet`, `haiku`, `fable` or `inherit`>.

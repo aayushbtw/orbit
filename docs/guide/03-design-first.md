@@ -13,7 +13,7 @@ The first shape a model reaches for is rarely the best one, and once code grows 
 Architect works in five phases:
 
 1. **Ground.** It runs `/orbit:how` over every system the new code touches. When the design moves ownership or layering, it also runs `/orbit:why`, so the reason for the current shape becomes a constraint instead of a guess. Only greenfield work skips this phase.
-2. **Sketch.** It runs `/orbit:arena` with two design runners, one on Opus and one on your session model. Each runner writes the caller's usage and a few real call sites first, then derives the types from them. Architect requires at least two structurally different candidates, even when the first looks good enough.
+2. **Sketch.** It runs `/orbit:arena` with two design runners, one on the `judgment` model and one on the `code` model. By default those are Opus and your session model. Each runner writes the caller's usage and a few real call sites first, then derives the types from them. Architect requires at least two structurally different candidates, even when the first looks good enough.
 3. **Agree.** This phase is off by default, and the synthesized design goes straight to implementation. Ask for a checkpoint to review it first.
 4. **Implement.** The code must match the sketch's signatures. Inside a flow, a poteto-agent fills in the bodies against it. If a function needs a parameter the sketch did not plan for, Claude treats that as a question about the sketch, not as friction to absorb.
 5. **Scrap.** A pattern of friction means the design is wrong. The same workaround in unrelated places, types that compile only with `any` or casts, or a lock for state the sketch called unshared all count. Architect throws the sketch out, designs a smaller one, and runs the sketch phase again.
@@ -49,15 +49,15 @@ On a non-trivial artifact, one attempt commits you to whatever shape that attemp
 Each phase has one job:
 
 - **Frame.** Every candidate gets the same prompt, so the attempts differ only in how they answer it. Claude also writes a rubric of 3 to 6 gradeable criteria for picking the winner. The candidates see only the task.
-- **Fan out.** By default two `orbit:poteto-agent` runners work in parallel, one on Opus and one on your session model. More runners join when the task covers several design directions. Each writes to its own worktree where possible, else its own scratch directory, so the attempts stay independent.
-- **Cross-judge.** One read-only judge scores every candidate on each criterion and recommends a base. It runs on whichever of Opus and your session model differs from Claude's own model.
+- **Fan out.** By default two `orbit:poteto-agent` runners work in parallel, one on the `judgment` model and one on the `code` model. More runners join when the task covers several design directions. Each writes to its own worktree where possible, else its own scratch directory, so the attempts stay independent.
+- **Cross-judge.** One read-only judge scores every candidate on each criterion and recommends a base. It runs on whichever of the `judgment` and `code` models differs from Claude's own model.
 - **Pick.** Claude reads every candidate end to end and scores each one against the rubric itself. It compares its pick with the judge's, since a disagreement means one of them is biased or the rubric was unclear. The base is the one a future maintainer can extend with the least risk of breaking its invariants.
 - **Graft.** Claude walks each losing candidate for the one or two things worth porting. Claude folds the grafts in by hand instead of pasting them, so the result still reads as one design. Inside a flow, a fresh poteto-agent does the folding. If the candidates agree on one shape, no graft is needed. If they disagree wildly, the frame was too loose, and arena reframes and runs again.
 - **Verify.** The merged result gets the same proof as any other change.
 
 Arena returns one artifact and a short note that names the base, the judge's verdict, each graft and its source, and what was rejected.
 
-In an Opus session, both runners and the judge run on Opus, so the panel loses its model diversity. Arena still gives you independent attempts, but they come from one model.
+When the `judgment` and `code` models are the same, as in an Opus session under the defaults, both runners and the judge run on one model, so the panel loses its model diversity. Arena still gives you independent attempts, but they come from one model.
 
 Arena also runs inside architect, and inside the feature flow when the code admits several valid shapes, such as two ways to handle errors or structure the tests.
 
@@ -75,11 +75,11 @@ Before it spawns anything, swarm states what "done" means and picks a shape:
 - **Race.** Several workers get identical briefs. The selection rule is declared before any worker starts, and it is `first pass`, `rank all` or `best-of`.
 - **Mix.** Some workers get slices and some race.
 
-Each worker runs in its own worktree on your session model and reports `PASS`, `ISSUES` or `BLOCKED` with evidence. Claude drops a result that does not record the commits and method its brief names, and respawns that worker once. A second miss is recorded as a gap. A gap never counts as a pass. You get one table in chat, not each worker's raw output.
+Each worker runs in its own worktree on the `code` model and reports `PASS`, `ISSUES` or `BLOCKED` with evidence. Claude drops a result that does not record the commits and method its brief names, and respawns that worker once. A second miss is recorded as a gap. A gap never counts as a pass. You get one table in chat, not each worker's raw output.
 
 ## Invite a hostile review with `/orbit:interrogate`
 
-A design that looks sound to the model that wrote it can still hide a flaw that model is blind to. `/orbit:interrogate` sends the change to two read-only reviewers, one on Opus and one on your session model. The disagreement comes from the models being different, not from assigned personas. In an Opus session, both reviewers run on Opus.
+A design that looks sound to the model that wrote it can still hide a flaw that model is blind to. `/orbit:interrogate` sends the change to two read-only reviewers, one on the `judgment` model and one on the `code` model. The disagreement comes from the models being different, not from assigned personas. When those two models are the same, as in an Opus session under the defaults, both reviewers run on one model.
 
 ```text
 /orbit:interrogate this branch. i think the new cache could serve one user's data to another.

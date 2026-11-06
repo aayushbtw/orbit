@@ -11,6 +11,7 @@ Without a block, orbit uses these defaults:
 - **Check.** `vpr check`, then `vpr build` and `vpr test` if those scripts exist.
 - **Land.** `main`. Each change gets its own worktree off `origin/main`, and Shipping fast-forwards `main` to it.
 - **Review.** `/orbit:interrogate` runs before shipping when the design is contested.
+- **Models.** `code=inherit; judgment=opus; gitops=sonnet`. The `code` model runs delegates, swarm workers, explorers and the verifier, and `inherit` means your session model. The `judgment` model runs the hardest delegates, one side of each two-model panel, autopilot owners and the advisor. The `gitops` model runs gitops.
 
 The block lists only what differs. Start from [`templates/workflow-block.md`](../../templates/workflow-block.md), paste it into AGENTS.md, and delete every line that doesn't apply. The template says not to create a CLAUDE.md for it. Here is a block for a project that opens PRs and has two folders with their own conventions:
 
@@ -21,6 +22,7 @@ The block lists only what differs. Start from [`templates/workflow-block.md`](..
 - Land: `pr`, rebase merge.
 - Before code: `src/db/: docs/migrations.md`; `src/ui/: docs/components.md`
 - Review also checks: `docs/security.md`.
+- Models: `code=sonnet; judgment=opus`
 ```
 
 Each line does one job:
@@ -31,6 +33,7 @@ Each line does one job:
 | Land | `pr` to land through pull requests, plus the merge method if it isn't squash | Opening a PR opens the PR, Babysit drives it to merge-ready, and Shipping merges it. Under either setting, a fresh verifier passes the change before it lands. |
 | Before code | Guidance for writing code under a path, as `<path>: <source>` entries separated by `;`. A source is a file to read, or a command that prints a skill or its path. | Each code delegate under that path, copied word for word into its brief. Also the plan gate and `/orbit:interrogate`. |
 | Review also checks | Docs to read before planning and at review only. Scope one to a path with `src/server/: <source>`. | The plan gate and `/orbit:interrogate` |
+| Models | The model for each role, as `code=<model>; judgment=<model>; gitops=<model>`. A value is `opus`, `sonnet`, `haiku`, `fable` or `inherit`. A key you leave out keeps its default. | Every subagent Claude spawns, except the few that pick their own model, such as `/orbit:recall`. When `code` and `judgment` are the same model, the two-model panels lose their diversity. |
 
 Before code is the line that goes into the brief of the agent writing the code. Put guidance there that code under a path must follow. Put a doc in Review also checks when it matters for the plan and the review but not for each edit.
 

@@ -31,7 +31,7 @@ In the **orbit.** lines, paths under `agents/`, `hooks/` and `skills/`, and `rul
 ### Plan gate
 
 - **pstack.** No plan gate and no advisor. pstack ships only `poteto-agent` and `comment-sicko` (`agents/`).
-- **orbit.** The Plan gate (`skills/playbook/SKILL.md`) runs when a change adds a module or touches more than 3 files. The lead reads the project sources for those paths, briefs `orbit:advisor` (`agents/advisor.md`, Opus, read-only) with the plan and the sources, and acts on its verdict.
+- **orbit.** The Plan gate (`skills/playbook/SKILL.md`) runs when a change adds a module or touches more than 3 files. The lead reads the project sources for those paths, briefs `orbit:advisor` (`agents/advisor.md`, the `judgment` model with Opus as the default, read-only) with the plan and the sources, and acts on its verdict.
 - **Why.** Orbit's choice. A second model checks a multi-file plan against the project's rules before code exists, when a wrong shape costs least to fix.
 
 ### Running another skill
@@ -49,8 +49,8 @@ In the **orbit.** lines, paths under `agents/`, `hooks/` and `skills/`, and `rul
 ### gitops agent
 
 - **pstack.** No git agent. The working agent commits and runs the forge.
-- **orbit.** `agents/gitops.md` runs every commit, push, rebase and forge write, with `model: sonnet` and `effort: medium`.
-- **Why.** Orbit-only agent, so no pstack model applies. Git and `gh` work is routine, so it runs on a cheaper tier than the session.
+- **orbit.** `agents/gitops.md` runs every commit, push, rebase and forge write, with `model: sonnet` and `effort: medium`. A project's `Models` line can set the `gitops` model ([Model per role](#model-per-role)).
+- **Why.** Orbit-only agent, so no pstack model applies. Git and `gh` work is routine, so it runs on a cheaper tier than the session by default.
 
 ### Commit trailers
 
@@ -61,8 +61,8 @@ In the **orbit.** lines, paths under `agents/`, `hooks/` and `skills/`, and `rul
 ### Model per role
 
 - **pstack.** `setup-pstack` writes `~/.claude/rules/pstack-models.md` (`docs/harness/claude-code.md`). Defaults are "`grok-4.7-xhigh-fast` for code, `claude-opus-5-5-xhigh` for prose and judgment", and the hardest changes "go to your strongest judgment model" (`poteto-mode/SKILL.md` Subagents). A grok slug maps to "Omit `model` so the agent runs on the session model". "Verification is the exception and stays on the `swarm workers` model and speed".
-- **orbit.** No setup step. The Delegate gate spawns the hardest changes with `model: "opus"` and every other delegate with no `model`. Swarm workers, interrogate's Reviewer B, arena's second runner, `how` explorers and the verifier run on the session model. Autopilot owners and `orbit:advisor` use Opus, and gitops Sonnet. rules.md's "Match the model to the job" sets each spawn's `effort`, with no speed. The flows keep pstack's line minus speed, as "Pick each subagent's reasoning level for the job, per the Delegation section of rules.md." Verification stays at the verifier's own `effort: xhigh`.
-- **Why.** With only Claude models, the adapter's setup defaults map to `opus xhigh` and to `inherit-parent` for every grok role. A setup step would write what orbit already fixes. Claude Code has no per-spawn speed, so the fast-mode rule is dropped.
+- **orbit.** No setup step and no user-level file. A project's Workflow `Models` line replaces `pstack-models.md`, per project: `- Models: code=<model>; judgment=<model>; gitops=<model>` (rules.md Workflow Defaults, Models). The defaults are `code=inherit; judgment=opus; gitops=sonnet`, and a key left out keeps its default. `judgment` sets every spawn that names `model: "opus"` (the hardest changes in the Delegate gate, interrogate's Reviewer A, arena's first runner, autopilot owners) and `orbit:advisor`. `code` sets every other delegate, swarm workers, interrogate's Reviewer B, arena's second runner, `how` explorers and `orbit:verifier`. `gitops` sets `orbit:gitops`. The lead passes the resolved model as the `Agent` call's `model`, which overrides the agent's frontmatter, and `inherit` omits it, so the spawn gets Claude Code's default subagent model (`CLAUDE_CODE_SUBAGENT_MODEL` when set, else the session model). Spawns that pick their own non-Opus model keep it, such as `recall`'s `haiku` and the trail reviewer. rules.md's "Match the model to the job" sets each spawn's `effort`, with no speed. The flows keep pstack's line minus speed, as "Pick each subagent's reasoning level for the job, per the Delegation section of rules.md." Verification stays at the verifier's own `effort: xhigh`.
+- **Why.** The adapter's setup defaults map to `opus xhigh` and to `inherit-parent` for every grok role, which is orbit's `judgment=opus; code=inherit`. A user-level file gives every project one mapping and needs a setup step. A line in the project's AGENTS.md travels with the repo and sets the mapping where the project's cost and quality tradeoff lives. Claude Code has no per-spawn speed, so the fast-mode rule is dropped.
 
 ### Agent call defaults
 
@@ -79,8 +79,8 @@ In the **orbit.** lines, paths under `agents/`, `hooks/` and `skills/`, and `rul
 ### Opus session
 
 - **pstack.** Defaults pair Opus with Grok for interrogate reviewers and arena runners. The arena judge should "Prefer a different model family from the parent's" (`skills/arena/SKILL.md`).
-- **orbit.** In an Opus session, both interrogate reviewers and both arena runners run on Opus, and the arena judge has no other model to prefer.
-- **Why.** This follows the adapter's grok mapping ([Model per role](#model-per-role)). The panel loses its model diversity in that case, and orbit accepts that to stay on the adapter.
+- **orbit.** When the `Models` line resolves `code` and `judgment` to the same model, as an Opus session does under the defaults, both interrogate reviewers and both arena runners run on that model, and the arena judge has no other model to prefer.
+- **Why.** This follows the adapter's grok mapping ([Model per role](#model-per-role)). The panel loses its model diversity in that case, and orbit accepts that to stay on the adapter. A project that wants diversity sets `code` to a different model.
 
 ### Trail reviewer
 
@@ -91,8 +91,8 @@ In the **orbit.** lines, paths under `agents/`, `hooks/` and `skills/`, and `rul
 ### Review
 
 - **pstack.** `interrogate` spawns one reviewer per configured model, Opus and Grok by default, each with `readonly: true`, and never auto-applies (`skills/interrogate/SKILL.md`).
-- **orbit.** `/orbit:interrogate` spawns two `Explore` reviewers, A with `model: "opus"` and B on the session model. Every brief says "do not edit files", and any change that `git status --short` shows fails that review. Feature step 7 runs it when the design is contested.
-- **Why.** The adapter maps `readonly: true` to `Explore` plus a status check, and a grok slug to the session model.
+- **orbit.** `/orbit:interrogate` spawns two `Explore` reviewers, A with `model: "opus"` (the `judgment` model) and B on the `code` model. Every brief says "do not edit files", and any change that `git status --short` shows fails that review. Feature step 7 runs it when the design is contested.
+- **Why.** The adapter maps `readonly: true` to `Explore` plus a status check, and a grok slug to the `code` model.
 
 ### Explore briefs
 
@@ -223,14 +223,14 @@ In the **orbit.** lines, paths under `agents/`, `hooks/` and `skills/`, and `rul
 ### Swarm
 
 - **pstack.** `skills/swarm/SKILL.md`. Workers run on the `swarm workers` model, `grok-4.7-xhigh-fast` by default, "with `subagent_type: generalPurpose`, `environment: "cloud"`, `run_in_background: true`". `environment: "local"` is for "access to something on the user's computer". It sets `disable-model-invocation: true`.
-- **orbit.** `skills/swarm/SKILL.md`, vendored at 9580c23 (`skills.json`). Workers omit `model` and run on the session model, with `effort` per rules.md. Each is a `general-purpose` `Agent` call with `isolation: "worktree"` on a named branch or commit. `isolation` is omitted only when a worker needs what a fresh worktree lacks. The skill runs through the Skill tool.
-- **Why.** The adapter maps a grok slug to the session model, `cloud` to `isolation: "worktree"`, `local` to omitting it, and `cloud_base_branch` to telling the worker to check out the ref. Every worktree is on the user's machine, so "the user's computer" becomes what a fresh worktree lacks (inferred).
+- **orbit.** `skills/swarm/SKILL.md`, vendored at 9580c23 (`skills.json`). Workers run on the `code` model, with `effort` per rules.md. Each is a `general-purpose` `Agent` call with `isolation: "worktree"` on a named branch or commit. `isolation` is omitted only when a worker needs what a fresh worktree lacks. The skill runs through the Skill tool.
+- **Why.** The adapter maps a grok slug to the `code` model, `cloud` to `isolation: "worktree"`, `local` to omitting it, and `cloud_base_branch` to telling the worker to check out the ref. Every worktree is on the user's machine, so "the user's computer" becomes what a fresh worktree lacks (inferred).
 
 ### Architect runners
 
 - **pstack.** Phase B runs the **arena** skill with runners from the `architect runners` line, `claude-opus-5-5-xhigh` and `grok-4.7-xhigh-fast` by default (`skills/architect/SKILL.md`). Arena spawns "one readonly judge subagent" (`skills/arena/SKILL.md`).
-- **orbit.** Phase B runs `/orbit:arena`. Its runners are `orbit:poteto-agent`, one on `model: "opus"` and one on the session model, each with `isolation: "worktree"` under the Delegate gate's parallel exception. Each brief carries absolute paths to architect's `SKILL.md`, references and principle leaves. The judge is an `Explore` agent on whichever of Opus and the session model differs from the parent's. In a playbook flow, gitops commits the base candidate and cherry-picks it, and a fresh `orbit:poteto-agent` folds in the grafts.
-- **Why.** The adapter maps the grok runner to the session model and `readonly: true` to `Explore`. Arena names no `subagent_type`, so poteto-mode's `poteto-agent` rule applies. The parent writes no code under the Delegate gate. `runner-prompt.md` reads architect's files at the brief's paths.
+- **orbit.** Phase B runs `/orbit:arena`. Its runners are `orbit:poteto-agent`, one on `model: "opus"` (the `judgment` model) and one on the `code` model, each with `isolation: "worktree"` under the Delegate gate's parallel exception. Each brief carries absolute paths to architect's `SKILL.md`, references and principle leaves. The judge is an `Explore` agent on whichever of the `judgment` and `code` models differs from the parent's. In a playbook flow, gitops commits the base candidate and cherry-picks it, and a fresh `orbit:poteto-agent` folds in the grafts.
+- **Why.** The adapter maps the grok runner to the `code` model and `readonly: true` to `Explore`. Arena names no `subagent_type`, so poteto-mode's `poteto-agent` rule applies. The parent writes no code under the Delegate gate. `runner-prompt.md` reads architect's files at the brief's paths.
 
 ### Perf artifacts
 
@@ -253,8 +253,8 @@ In the **orbit.** lines, paths under `agents/`, `hooks/` and `skills/`, and `rul
 ### Autopilot-full
 
 - **pstack.** `playbooks/autopilot-full.md`. Each owner is a Cursor cloud agent that opens its PR early, reports the code-ready head, pushes each unit, and merges once the root's swarm verifies it. "Assume the VM dies." Trails go in "the root agent's store". Each tick re-reads the playbook "from trunk".
-- **orbit.** `skills/playbook/playbooks/autopilot-full.md`. Each owner is a `general-purpose` `Agent` call with `model: "opus"` and `isolation: "worktree"` that runs `/orbit:start <item>` and returns at merge-ready. It reports code-ready as a `code-ready <sha>` trail row, and each tick starts the swarm at a new code-ready SHA. The PR opens in Opening a PR, after `/orbit:deslop` and `/orbit:no-comments`, not early alongside the work. "Assume the owner dies." Owners commit after every unit worth keeping instead of pushing it. Trails and `agents.tsv` go in `$TMPDIR/orbit-autopilot/<slug>/`. Swarm lanes are briefed as shipping step 1 briefs a verifier, with the Check line, and under Land `pr` gitops posts the root's verdict line on the PR. A fresh owner takes each later round, and the merge round runs only shipping steps 3 and 4. Under Land `main`, the merge is gitops pushing `HEAD:main`. Ticks re-read the playbook without "from trunk".
-- **Why.** The adapter maps a cloud agent to `isolation: "worktree"` and `resume` to a fresh agent. A subagent reports once, when it returns, so the code-ready report goes to the trail the root reads. Orbit pushes nothing before Opening a PR, so a dead owner's work stays in its worktree. A subagent returns its verdict as text and gitops runs every forge write ([Independent verifier](#independent-verifier)). Full shipping would spawn a second verifier on a verified head. The playbook ships in the plugin, not the project's trunk. Opus for owners is orbit's choice, since each owner runs a whole flow.
+- **orbit.** `skills/playbook/playbooks/autopilot-full.md`. Each owner is a `general-purpose` `Agent` call with `model: "opus"` (the `judgment` model) and `isolation: "worktree"` that runs `/orbit:start <item>` and returns at merge-ready. It reports code-ready as a `code-ready <sha>` trail row, and each tick starts the swarm at a new code-ready SHA. The PR opens in Opening a PR, after `/orbit:deslop` and `/orbit:no-comments`, not early alongside the work. "Assume the owner dies." Owners commit after every unit worth keeping instead of pushing it. Trails and `agents.tsv` go in `$TMPDIR/orbit-autopilot/<slug>/`. Swarm lanes are briefed as shipping step 1 briefs a verifier, with the Check line, and under Land `pr` gitops posts the root's verdict line on the PR. A fresh owner takes each later round, and the merge round runs only shipping steps 3 and 4. Under Land `main`, the merge is gitops pushing `HEAD:main`. Ticks re-read the playbook without "from trunk".
+- **Why.** The adapter maps a cloud agent to `isolation: "worktree"` and `resume` to a fresh agent. A subagent reports once, when it returns, so the code-ready report goes to the trail the root reads. Orbit pushes nothing before Opening a PR, so a dead owner's work stays in its worktree. A subagent returns its verdict as text and gitops runs every forge write ([Independent verifier](#independent-verifier)). Full shipping would spawn a second verifier on a verified head. The playbook ships in the plugin, not the project's trunk. The `judgment` model (Opus by default) for owners is orbit's choice, since each owner runs a whole flow.
 
 ### Autopilot-stack
 
@@ -265,7 +265,7 @@ In the **orbit.** lines, paths under `agents/`, `hooks/` and `skills/`, and `rul
 ### Multi-phase plan
 
 - **pstack.** `playbooks/multi-phase-plan.md`. Explorers are `poteto-agent` with "an explicit model per the Subagents section". The plan goes under "the agent store's `docs/`" and passes `node pstack/skills/poteto-mode/scripts/check-plan.mjs`. The skeleton reads its files "from trunk", resolves the forge to `gh` or Origin, and boots each live lane "on its own cloud VM". The owner "squash-merges".
-- **orbit.** `skills/playbook/playbooks/multi-phase-plan.md`, with no gates. Explorers are `orbit:poteto-agent`, tiered as in the Delegate gate. The plan goes under `$TMPDIR/orbit-autopilot/<slug>/docs/` and passes the vendored `scripts/check-plan.mjs`, byte-identical with its test. The plan picks `autopilot-full` or `autopilot-stack` by the rule at the end of `autopilot-stack.md`, and per Ship by default the run may merge unless the operator opts out. The `orchestrate.md` sentence is dropped. Skeleton paths start with `<orbit playbook dir>`, and only the control skill reads from trunk. `gh` is the only forge. Each live lane is a swarm worker on the session model in its own worktree, on ports no other lane uses. The gates lane re-runs the Check line. The boot recipe checks out the head SHA without `git fetch origin <head-branch>`. The review gate posts media paths, and the owner merges with the Land line's method.
+- **orbit.** `skills/playbook/playbooks/multi-phase-plan.md`, with no gates. Explorers are `orbit:poteto-agent`, tiered as in the Delegate gate. The plan goes under `$TMPDIR/orbit-autopilot/<slug>/docs/` and passes the vendored `scripts/check-plan.mjs`, byte-identical with its test. The plan picks `autopilot-full` or `autopilot-stack` by the rule at the end of `autopilot-stack.md`, and per Ship by default the run may merge unless the operator opts out. The `orchestrate.md` sentence is dropped. Skeleton paths start with `<orbit playbook dir>`, and only the control skill reads from trunk. `gh` is the only forge. Each live lane is a swarm worker on the `code` model in its own worktree, on ports no other lane uses. The gates lane re-runs the Check line. The boot recipe checks out the head SHA without `git fetch origin <head-branch>`. The review gate posts media paths, and the owner merges with the Land line's method.
 - **Why.** Orchestrate is not vendored, and Origin and cloud VMs are not here. Orbit's playbooks ship in the plugin, not the project's trunk. All lanes share one machine and the repo's objects. The Check line is the Workflow block's name for the repo's gates. Under Land `main` the head branch is never pushed, so the fetch would fail. A Claude Code reply is text, so it can't carry the media. Ship by default grants landing authority unless the operator opts out ([Ship by default](#ship-by-default)).
 
 ### Flow wording

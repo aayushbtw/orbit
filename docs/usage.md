@@ -58,15 +58,15 @@ Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh
 
 ## What runs in the background
 
-Claude runs these itself. You can also ask for the advisor.
+Claude runs these itself. You can also ask for the advisor. A `Models` line in your Workflow block sets the `code`, `judgment` and `gitops` models ([Make orbit fit your project](guide/08-make-it-fit.md#write-the-differences-in-a-workflow-block)).
 
 | Agent | Model | Job |
 | --- | --- | --- |
-| poteto-agent | Opus for the hardest changes, else your session's model | Writes the code for each unit of a change, so no code is reviewed by the agent that wrote it. |
-| gitops | Sonnet | Commits, pushes, PRs and merges. |
+| poteto-agent | The `judgment` model (Opus by default) for the hardest changes, else the `code` model (your session's model by default) | Writes the code for each unit of a change, so no code is reviewed by the agent that wrote it. |
+| gitops | The `gitops` model (Sonnet by default) | Commits, pushes, PRs and merges. |
 | comment-sicko | Your session's model | Deletes comments outside its keep list and flags the code they excuse, before review. |
-| verifier | Your session's model, no Edit or Write tools, in its own worktree | Runs the change the way a user would before it lands, and returns PASS, PASS+NOTES or FAIL. It is never the agent that wrote the change. |
-| advisor | Opus, read-only | Gives a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time. |
+| verifier | The `code` model, no Edit or Write tools, in its own worktree | Runs the change the way a user would before it lands, and returns PASS, PASS+NOTES or FAIL. It is never the agent that wrote the change. |
+| advisor | The `judgment` model (Opus by default), read-only | Gives a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time. |
 
 When each runs:
 
