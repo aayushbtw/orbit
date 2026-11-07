@@ -11,9 +11,9 @@ const PLUGIN_DIR = resolve(HERE, '../../plugin');
 const TIMEOUT_MS = 25 * 60 * 1000;
 const PROMPT = "/orbit:start the camera jitters when you zoom in past 4x, and goblins die way too fast, bump their HP to 40. I'll land it.";
 const ROLES = new Set(['orbit:gitops', 'orbit:verifier', 'orbit:advisor', 'orbit:comment-sicko']);
-const FRONTMATTER_EFFORT = Object.fromEntries(readdirSync(join(PLUGIN_DIR, 'agents')).filter((f) => f.endsWith('.md')).map((f) => {
+const FRONTMATTER = Object.fromEntries(readdirSync(join(PLUGIN_DIR, 'agents')).filter((f) => f.endsWith('.md')).map((f) => {
   const frontmatter = readFileSync(join(PLUGIN_DIR, 'agents', f), 'utf8').split('---')[1] ?? '';
-  return [`orbit:${f.slice(0, -3)}`, frontmatter.match(/^effort:\s*(\S+)/m)?.[1]];
+  return [`orbit:${f.slice(0, -3)}`, { model: frontmatter.match(/^model:\s*(\S+)/m)?.[1], effort: frontmatter.match(/^effort:\s*(\S+)/m)?.[1] }];
 }));
 
 const { values: opts } = parseArgs({
@@ -49,7 +49,7 @@ A small top-down action game. Pure ES modules, no dependencies.
 | \`phase-planning\` | Phase planning and design calls | opus | high |
 | \`cross-file-system\` | A system across files: combat, enemy AI, saving, skill tree | opus | high |
 | \`single-file-feature\` | A feature inside one file: interact key, HUD | sonnet | medium |
-| \`gitops\` | | | low |
+| \`gitops\` | | | medium |
 `,
   'src/camera.js': `export function createCamera({ width, height }) {
   return { x: 0, y: 0, zoom: 1, width, height };
@@ -133,7 +133,26 @@ function scaffold() {
   git(dir, 'init', '-q', '-b', 'main');
   git(dir, 'add', '-A');
   git(dir, 'commit', '-q', '-m', 'Initial skyforge prototype');
+  git(dir, 'init', '-q', '--bare', '-b', 'main', `${dir}-origin.git`);
+  git(dir, 'remote', 'add', 'origin', `${dir}-origin.git`);
+  git(dir, 'push', '-q', '-u', 'origin', 'main');
   return dir;
+}
+
+const removeProject = (project) => {
+  rmSync(project, { recursive: true, force: true });
+  rmSync(`${project}-origin.git`, { recursive: true, force: true });
+};
+
+const live = new Map();
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.on(signal, () => {
+    for (const [pid, project] of live) {
+      try { process.kill(-pid, 'SIGTERM'); } catch {}
+      if (!opts.keep) removeProject(project);
+    }
+    process.exit(1);
+  });
 }
 
 function runLead(outDir) {
@@ -148,9 +167,10 @@ function runLead(outDir) {
   const streamFd = openSync(join(outDir, 'stream.jsonl'), 'w');
   const errFd = openSync(join(outDir, 'stderr.log'), 'w');
   const child = spawn('claude', [
-    '-p', '--model', opts.model, '--plugin-dir', PLUGIN_DIR, '--settings', settings,
+    '-p', '--model', opts.model, '--plugin-dir', PLUGIN_DIR, '--settings', settings, '--setting-sources', 'project,local',
     '--permission-mode', 'bypassPermissions', '--max-turns', '80', '--output-format', 'stream-json', '--verbose',
   ], { cwd: project, detached: true, stdio: ['pipe', streamFd, errFd] });
+  live.set(child.pid, project);
   child.stdin.end(PROMPT);
 
   return new Promise((done) => {
@@ -162,9 +182,10 @@ function runLead(outDir) {
     }, TIMEOUT_MS);
     child.on('exit', (code) => {
       clearTimeout(timer);
+      live.delete(child.pid);
       closeSync(streamFd);
       closeSync(errFd);
-      if (!opts.keep) rmSync(project, { recursive: true, force: true });
+      if (!opts.keep) removeProject(project);
       done({ outDir, project, exit: timedOut ? 'timeout' : `code ${code}` });
     });
   });
@@ -192,8 +213,8 @@ function routed(name, call, model, effort, workType) {
   if (!call) return { id: name, status: 'FAIL', detail: `no orbit:poteto-agent brief names the ${name.split('-')[0]} file` };
   const misses = [
     call.model !== model && `model=${call.model ?? '-'} want ${model}`,
-    call.effective !== effort && `effort=${call.effective ?? '-'} want ${effort}`,
-    !(call.prompt ?? '').includes(`Work type: ${workType}`) && `prompt lacks "Work type: ${workType}"`,
+    call.effort !== effort && `passed effort=${call.effort ?? '-'} want ${effort}`,
+    !new RegExp(`Work type:\\s*\`?${workType}\`?`).test(call.prompt ?? '') && `prompt lacks "Work type: ${workType}"`,
   ].filter(Boolean);
   return { id: name, status: misses.length ? 'FAIL' : 'PASS', detail: `${describe(call)}${misses.length ? `; ${misses.join('; ')}` : ''}` };
 }
@@ -205,7 +226,7 @@ function grade(records) {
       ...r.tool_input,
       n: i + 1,
       unit: unitOf(r.tool_input),
-      effective: r.tool_input.effort ?? FRONTMATTER_EFFORT[r.tool_input.subagent_type],
+      effective: r.tool_input.effort ?? FRONTMATTER[r.tool_input.subagent_type]?.effort,
     }));
   const checks = [];
 
@@ -233,20 +254,20 @@ function grade(records) {
   checks.push(routed('enemies-routing', calls.find((c) => c.unit === 'data'), 'sonnet', 'low', 'data-tuning'));
 
   const gitops = calls.filter((c) => c.subagent_type === 'orbit:gitops');
-  const badGitops = gitops.filter((c) => (c.model ?? 'sonnet') !== 'sonnet' || c.effective !== 'low');
+  const badGitops = gitops.filter((c) => (c.model ?? FRONTMATTER['orbit:gitops'].model) !== 'sonnet' || c.effort !== 'medium');
   checks.push({
-    id: 'gitops-effort',
+    id: 'gitops-routing',
     status: !gitops.length ? 'N/A' : badGitops.length ? 'FAIL' : 'PASS',
     detail: badGitops.length ? badGitops.map(describe).join(', ') : `${gitops.length} calls`,
   });
 
-  const unmatched = calls.filter((c) => c.subagent_type === 'orbit:poteto-agent' && (!c.unit || c.unit === 'both'));
+  const unmatched = calls.filter((c) => c.subagent_type === 'orbit:poteto-agent' && !c.unit);
   const others = calls.filter((c) => c.subagent_type !== 'orbit:poteto-agent' && !ROLES.has(c.subagent_type));
   const childModels = records.filter((r) => r.event === 'PostToolUse' && !r.agent_id).map((r) => r.resolved_model ?? '?');
   const info = [
     `lead spawns: ${calls.map(describe).join(' | ') || 'none'}`,
     `spawns that omitted effort: ${calls.filter((c) => !('effort' in c)).map(describe).join(', ') || 'none'}`,
-    `poteto-agent calls not matched to one unit: ${unmatched.map((c) => `${describe(c)} (${c.unit ?? 'neither file'})`).join(', ') || 'none'}`,
+    `poteto-agent calls naming neither file: ${unmatched.map(describe).join(', ') || 'none'}`,
     `other non-role spawns: ${others.map(describe).join(', ') || 'none'}`,
     `reached gitops: ${gitops.length}, verifier: ${calls.filter((c) => c.subagent_type === 'orbit:verifier').length}, advisor: ${calls.filter((c) => c.subagent_type === 'orbit:advisor').length}`,
     `nested spawns from children: ${records.filter((r) => r.event === 'PreToolUse' && r.agent_id).length}`,
@@ -264,11 +285,17 @@ function leadSummary(outDir) {
 }
 
 const outRoot = opts.grade ? resolve(opts.grade) : join(tmpdir(), `orbit-routing-${new Date().toISOString().replace(/[:.]/g, '-')}`);
+const savedRuns = () => existsSync(join(outRoot, 'spawns.jsonl'))
+  ? [outRoot]
+  : (existsSync(outRoot) ? readdirSync(outRoot) : []).filter((d) => d.startsWith('run-')).sort().map((d) => join(outRoot, d));
 const finished = opts.grade
-  ? (existsSync(join(outRoot, 'spawns.jsonl')) ? [outRoot] : readdirSync(outRoot).filter((d) => d.startsWith('run-')).sort().map((d) => join(outRoot, d)))
-    .map((outDir) => ({ outDir, exit: 'saved' }))
+  ? savedRuns().map((outDir) => ({ outDir, exit: 'saved' }))
   : (console.log(`model=${opts.model} runs=${runs} out=${outRoot}`),
     await Promise.all(Array.from({ length: runs }, (_, i) => runLead(join(outRoot, `run-${i + 1}`)))));
+if (!finished.length) {
+  console.error(`no runs to grade in ${outRoot}: expected spawns.jsonl or run-*/ directories`);
+  process.exit(1);
+}
 
 const graded = finished.map((run, i) => {
   const { checks, info } = grade(readJsonl(join(run.outDir, 'spawns.jsonl')));
