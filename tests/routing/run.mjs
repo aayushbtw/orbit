@@ -10,7 +10,11 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const PLUGIN_DIR = resolve(HERE, '../../plugin');
 const TIMEOUT_MS = 25 * 60 * 1000;
 const PROMPT = "/orbit:start the camera jitters when you zoom in past 4x, and goblins die way too fast, bump their HP to 40. I'll land it.";
-const ROLES = new Set(['orbit:gitops', 'orbit:verifier', 'orbit:advisor']);
+const ROLES = new Set(['orbit:gitops', 'orbit:verifier', 'orbit:advisor', 'orbit:comment-sicko']);
+const FRONTMATTER_EFFORT = Object.fromEntries(readdirSync(join(PLUGIN_DIR, 'agents')).filter((f) => f.endsWith('.md')).map((f) => {
+  const frontmatter = readFileSync(join(PLUGIN_DIR, 'agents', f), 'utf8').split('---')[1] ?? '';
+  return [`orbit:${f.slice(0, -3)}`, frontmatter.match(/^effort:\s*(\S+)/m)?.[1]];
+}));
 
 const { values: opts } = parseArgs({
   options: {
@@ -182,13 +186,13 @@ function unitOf(input) {
   return camera < data ? 'camera' : 'data';
 }
 
-const describe = (c) => `#${c.n} ${c.subagent_type ?? 'general-purpose'} model=${c.model ?? '-'} effort=${c.effort ?? '-'}`;
+const describe = (c) => `#${c.n} ${c.subagent_type ?? 'general-purpose'} model=${c.model ?? '-'} effort=${c.effort ?? (c.effective ? `${c.effective} (frontmatter)` : '-')}`;
 
 function routed(name, call, model, effort, workType) {
   if (!call) return { id: name, status: 'FAIL', detail: `no orbit:poteto-agent brief names the ${name.split('-')[0]} file` };
   const misses = [
     call.model !== model && `model=${call.model ?? '-'} want ${model}`,
-    call.effort !== effort && `effort=${call.effort ?? '-'} want ${effort}`,
+    call.effective !== effort && `effort=${call.effective ?? '-'} want ${effort}`,
     !(call.prompt ?? '').includes(`Work type: ${workType}`) && `prompt lacks "Work type: ${workType}"`,
   ].filter(Boolean);
   return { id: name, status: misses.length ? 'FAIL' : 'PASS', detail: `${describe(call)}${misses.length ? `; ${misses.join('; ')}` : ''}` };
@@ -197,10 +201,15 @@ function routed(name, call, model, effort, workType) {
 function grade(records) {
   const calls = records
     .filter((r) => r.event === 'PreToolUse' && !r.agent_id)
-    .map((r, i) => ({ ...r.tool_input, n: i + 1, unit: unitOf(r.tool_input) }));
+    .map((r, i) => ({
+      ...r.tool_input,
+      n: i + 1,
+      unit: unitOf(r.tool_input),
+      effective: r.tool_input.effort ?? FRONTMATTER_EFFORT[r.tool_input.subagent_type],
+    }));
   const checks = [];
 
-  const missing = calls.filter((c) => !('effort' in c) && !ROLES.has(c.subagent_type));
+  const missing = calls.filter((c) => !c.effective);
   checks.push({
     id: 'effort-present',
     status: !calls.length ? 'N/A' : missing.length ? 'FAIL' : 'PASS',
@@ -210,8 +219,8 @@ function grade(records) {
   let cameraSeen = 0;
   const over = [];
   for (const c of calls) {
-    const stepUp = c.unit === 'camera' && cameraSeen >= 2 && c.effort === 'xhigh';
-    if (['xhigh', 'max'].includes(c.effort) && !stepUp) over.push(c);
+    const stepUp = c.unit === 'camera' && cameraSeen >= 2 && c.effective === 'xhigh';
+    if (['xhigh', 'max'].includes(c.effective) && !stepUp) over.push(c);
     if (c.unit === 'camera') cameraSeen++;
   }
   checks.push({
@@ -224,7 +233,7 @@ function grade(records) {
   checks.push(routed('enemies-routing', calls.find((c) => c.unit === 'data'), 'sonnet', 'low', 'data-tuning'));
 
   const gitops = calls.filter((c) => c.subagent_type === 'orbit:gitops');
-  const badGitops = gitops.filter((c) => 'model' in c || c.effort !== 'low');
+  const badGitops = gitops.filter((c) => (c.model ?? 'sonnet') !== 'sonnet' || c.effective !== 'low');
   checks.push({
     id: 'gitops-effort',
     status: !gitops.length ? 'N/A' : badGitops.length ? 'FAIL' : 'PASS',
@@ -236,6 +245,7 @@ function grade(records) {
   const childModels = records.filter((r) => r.event === 'PostToolUse' && !r.agent_id).map((r) => r.resolved_model ?? '?');
   const info = [
     `lead spawns: ${calls.map(describe).join(' | ') || 'none'}`,
+    `spawns that omitted effort: ${calls.filter((c) => !('effort' in c)).map(describe).join(', ') || 'none'}`,
     `poteto-agent calls not matched to one unit: ${unmatched.map((c) => `${describe(c)} (${c.unit ?? 'neither file'})`).join(', ') || 'none'}`,
     `other non-role spawns: ${others.map(describe).join(', ') || 'none'}`,
     `reached gitops: ${gitops.length}, verifier: ${calls.filter((c) => c.subagent_type === 'orbit:verifier').length}, advisor: ${calls.filter((c) => c.subagent_type === 'orbit:advisor').length}`,
@@ -255,7 +265,8 @@ function leadSummary(outDir) {
 
 const outRoot = opts.grade ? resolve(opts.grade) : join(tmpdir(), `orbit-routing-${new Date().toISOString().replace(/[:.]/g, '-')}`);
 const finished = opts.grade
-  ? readdirSync(outRoot).filter((d) => d.startsWith('run-')).sort().map((d) => ({ outDir: join(outRoot, d), exit: 'saved' }))
+  ? (existsSync(join(outRoot, 'spawns.jsonl')) ? [outRoot] : readdirSync(outRoot).filter((d) => d.startsWith('run-')).sort().map((d) => join(outRoot, d)))
+    .map((outDir) => ({ outDir, exit: 'saved' }))
   : (console.log(`model=${opts.model} runs=${runs} out=${outRoot}`),
     await Promise.all(Array.from({ length: runs }, (_, i) => runLead(join(outRoot, `run-${i + 1}`)))));
 

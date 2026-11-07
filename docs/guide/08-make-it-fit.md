@@ -11,7 +11,7 @@ Without a block, orbit uses these defaults:
 - **Check.** `vpr check`, then `vpr build` and `vpr test` if those scripts exist.
 - **Land.** `main`. Each change gets its own worktree off `origin/main`, and Shipping fast-forwards `main` to it.
 - **Review.** `/orbit:interrogate` runs before shipping when the design is contested.
-- **Models.** No work types. Code delegates tier by difficulty, so the hardest run on the `judgment` model, which is Opus, and the rest on the `code` model, which is your session model. The `judgment` model also runs one side of each two-model panel and autopilot owners. The `code` model also runs the other side, swarm workers and explorers. gitops runs on Sonnet at `medium`, the verifier on your session model at `high`, and the advisor on Opus at `high`, each from its agent file.
+- **Models.** No work types. Code delegates tier by difficulty, so the hardest run on the `judgment` model, which is Opus, and the rest on the `code` model, which is your session model. The `judgment` model also runs one side of each two-model panel and autopilot owners. The `code` model also runs the other side, swarm workers and explorers. gitops runs on Sonnet at `low`, the verifier on your session model at `high`, and the advisor on Opus at `high`, each from its agent file.
 
 The block lists only what differs. Start from [`templates/workflow-block.md`](../../templates/workflow-block.md), paste it into AGENTS.md, and delete every line that doesn't apply. The template says not to create a CLAUDE.md for it. Here is a block for a project that opens PRs, has two folders with their own conventions, and routes two kinds of work to their own models:
 
@@ -62,7 +62,6 @@ Without work types, Claude decides which units are hard, and only those go to th
 | `phase-planning` | Phase planning and design calls | opus | high |
 | `cross-file-system` | A system across files: combat, enemy AI, saving, skill tree, collision layers | opus | high |
 | `single-file-feature` | A feature inside one file: interact key, dummy, HUD | sonnet | medium |
-| `gitops` | | | low |
 ```
 
 Each column does one job:
@@ -72,7 +71,7 @@ Each column does one job:
 - **Model** is `opus`, `sonnet`, `haiku`, `fable` or `inherit`. `inherit` passes no model, so the spawn runs on `CLAUDE_CODE_SUBAGENT_MODEL` when it is set, else on your session model. On the `gitops` and `advisor` rows, `inherit` keeps the model in the agent file.
 - **Effort** is `low`, `medium`, `high`, `xhigh` or `max`.
 
-An empty cell keeps the default. The game's `gitops` row leaves Model empty, so gitops stays on Sonnet from its agent file and drops from `medium` to `low` effort. The game has no `verifier`, `advisor`, `judgment` or `code` row, so those keep orbit's defaults.
+An empty cell keeps the default. The game has no role rows, so its roles keep orbit's defaults. Commits already run on Sonnet at `low` from gitops's agent file. A role row changes only the cells it fills, as the `code` row in [Give the panels a second model](#give-the-panels-a-second-model) shows.
 
 ### See which row a spawn takes
 
@@ -100,7 +99,7 @@ Row order breaks any tie that is left, so the first row that fits wins. Put narr
 
 ### Set an exact effort, with a step up
 
-An Effort cell is the level Claude passes, as written. Claude adds no judgment of its own on top. With no Effort cell, gitops, the verifier and the advisor keep the level in their agent files. For any other spawn, Claude picks `high` for hard and judgment work, and `medium` or `low` for routine work. It passes `xhigh` or `max` only when a row or you name them.
+An Effort cell is the level Claude passes, as written. Claude adds no judgment of its own on top. With no Effort cell, gitops, the verifier, the advisor and Comment Sicko keep the level in their agent files. For any other spawn, Claude picks `high` for hard and judgment work, and `medium` or `low` for routine work. It passes `xhigh` or `max` only when a row or you name them.
 
 A cell can add a step with `after <n> failed tries`. A failed try is a delegate whose work on the unit fails Claude's review or the check. In the game, a `shader-math` unit runs at `high` for its first two delegates. If both fail, the third runs at `xhigh`. The unit's todo item carries its try count. The step works in a Model cell too, such as `sonnet, opus after 2 failed tries`.
 

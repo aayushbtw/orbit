@@ -1,6 +1,7 @@
 ---
 name: poteto-agent
 description: Delegate subagent for code-writing and helper tasks spawned during an /orbit:start flow. Use for delegates, not as the runner for the flow itself. Spawn a fresh poteto-agent for each new unit of work. Reads orbit's playbook SKILL.md and rules.md in full before any work, including the playbook's Principles index. Substituting general-purpose skips that read and drifts.
+effort: high
 ---
 
 # Poteto subagent

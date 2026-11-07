@@ -9,15 +9,17 @@ Proves that a real `/orbit:start` run routes each delegate through the project's
 3. Records the original input of every `Agent` call through a PreToolUse hook (`hook.mjs`). The hook allows each call but rewrites it to `model: "haiku"`, `effort: "low"`, so children run cheaply while the lead's choices stay on record. A PostToolUse record of each child's `resolvedModel` shows the rewrite took effect.
 4. Grades the lead's own calls (calls from children are counted, not graded) and prints PASS, FAIL or N/A per check.
 
+Each check grades a spawn's effective effort. That is the `effort` the call passes, else the `effort` in the frontmatter of the orbit agent it spawns (`plugin/agents/*.md`).
+
 | Check | Passes when |
 | --- | --- |
-| `effort-present` | Every spawn passes `effort`, except `orbit:gitops`, `orbit:verifier` and `orbit:advisor`, which may omit it |
-| `effort-ceiling` | No spawn asks for `xhigh` or `max`, except an `xhigh` camera delegate after 2 earlier camera delegates |
+| `effort-present` | Every spawn has an effective effort |
+| `effort-ceiling` | No spawn runs at `xhigh` or `max`, except an `xhigh` camera delegate after 2 earlier camera delegates |
 | `camera-routing` | The first `orbit:poteto-agent` brief naming `camera.js` uses `opus`, `high` and `Work type: shader-math` |
 | `enemies-routing` | The first `orbit:poteto-agent` brief naming `enemies.json` uses `sonnet`, `low` and `Work type: data-tuning` |
-| `gitops-effort` | Every `orbit:gitops` call passes no `model` and `effort: "low"` |
+| `gitops-effort` | Every `orbit:gitops` call runs on Sonnet at `low`, whether passed or from its frontmatter |
 
-N/A means the run never reached the calls the check covers. INFO lines list every lead spawn, briefs that name neither file or both, and whether gitops and the verifier were reached.
+N/A means the run never reached the calls the check covers. INFO lines list every lead spawn, the spawns that passed no `effort`, briefs that name neither file or both, and whether gitops and the verifier were reached.
 
 ## Run it
 
