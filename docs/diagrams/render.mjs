@@ -300,7 +300,7 @@ function guideModels(theme) {
     ask(310, 'A work type fits?', 'any other poteto-agent unit'),
   ];
   const picks = [
-    pick(30, 'Keep it', "recall's haiku, live lanes at xhigh"),
+    pick(30, 'Keep it', "recall's haiku, live lanes at high"),
     pick(170, "The role's row", 'an empty cell keeps the default'),
     pick(310, "The work type's row", 'after <n> failed tries steps up'),
   ];

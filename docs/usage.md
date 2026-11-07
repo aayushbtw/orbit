@@ -65,7 +65,7 @@ Claude runs these itself. You can also ask for the advisor. A Models table in yo
 | poteto-agent | The row of the unit's work type. With no work type that fits, the `judgment` model (Opus by default) for the hardest changes, else the `code` model (your session's model by default). | Writes the code for each unit of a change, so no code is reviewed by the agent that wrote it. |
 | gitops | Sonnet at `medium` effort, or the `gitops` row | Commits, pushes, PRs and merges. |
 | comment-sicko | Your session's model | Deletes comments outside its keep list and flags the code they excuse, before review. |
-| verifier | Your session's model at `xhigh` effort, or the `verifier` row. No Edit or Write tools, in its own worktree. | Runs the change the way a user would before it lands, and returns PASS, PASS+NOTES or FAIL. It is never the agent that wrote the change. |
+| verifier | Your session's model at `high` effort, or the `verifier` row. No Edit or Write tools, in its own worktree. | Runs the change the way a user would before it lands, and returns PASS, PASS+NOTES or FAIL. It is never the agent that wrote the change. |
 | advisor | Opus at `high` effort, or the `advisor` row. Read-only. | Gives a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time. |
 
 When each runs:
