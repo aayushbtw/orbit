@@ -9,7 +9,7 @@ Source: cursor/plugins, pstack (MIT).
 
 Investigate the motivation and intent behind code. The companion `how` skill answers what the code does and how it works. `why` answers what forces led to its shape.
 
-Every spawn is an `Agent` call with `subagent_type: "general-purpose"`, so investigators keep MCP access and the synthesizer can spot-check citations. Investigators still shouldn't write anything.
+Every spawn is an `Agent` call with `subagent_type: "general-purpose"`, so investigators keep MCP access and the synthesizer can spot-check citations. Investigators still shouldn't write anything. Investigators run on the `code` model and the synthesizer on the `judgment` model (rules.md Workflow Defaults, Models).
 
 ## Operating Posture
 

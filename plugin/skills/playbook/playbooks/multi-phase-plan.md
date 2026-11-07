@@ -6,7 +6,7 @@ Under Land `main`, a PR in the plan is a task branch, as `playbooks/autopilot-fu
 
 1. When the change is one or two files with an obvious approach, skip the plan. Say so and stop.
 2. Settle open questions by prototype before you write. Run `playbooks/prototype.md` for each. Keep the branch, the SHA, and the screenshots for Appendix A. Ask the operator only about a product or preference call that no run can settle. Give options (the **never-block-on-the-human** principle skill).
-3. Explore in subagents with `subagent_type: "orbit:poteto-agent"`, each on the work type or role the Delegate gate would pick for its question (the **guard-the-context-window** principle skill). Pick each subagent's reasoning level for the job, per the Delegation section of rules.md. Each returns file pointers, conventions, test commands, and entry points. No inlined dumps.
+3. Explore in subagents with `subagent_type: "orbit:poteto-agent"` on the `code` model (the **guard-the-context-window** principle skill). Pick each subagent's reasoning level for the job, per the Delegation section of rules.md. Each returns file pointers, conventions, test commands, and entry points. No inlined dumps.
 4. Copy the skeleton below into the plan file and fill every placeholder. Unless the operator names a path, write the file under `$TMPDIR/orbit-autopilot/<slug>/docs/`, in the execution flow's store. Keep every heading and every sub-block in the order shown. One section per PR. One PR is one change with its own evidence (the **sequence-verifiable-units** principle skill). Name the execution flow in **How to read this**. Pick between `playbooks/autopilot-full.md` and `playbooks/autopilot-stack.md` per the rule at the end of `playbooks/autopilot-stack.md`. Per **Ship by default** in `playbooks/opening-a-pr.md`, the run may merge unless the operator said "don't ship" or "I'll land it". Write each `<orbit playbook dir>` as the absolute `${CLAUDE_SKILL_DIR}` path that `SKILL.md` gives.
 5. Write under `/orbit:technical-writing` in full, then `/orbit:unslop`. The body is one Diátaxis mode, how-to. Appendices hold explanation and reference. Each heading states the task or the finding. No long dashes. No mid-sentence colons.
 6. Run `node scripts/check-plan.mjs <plan.md>` and fix every line it prints (the **encode-lessons-in-structure** principle skill).
@@ -99,7 +99,7 @@ Each live lane runs in its own worktree at the PR head, as a swarm worker spawne
 
 - [ ] <Test file and the case it gains.> Run `<command>`.
 
-**Verify, live.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked. Ten lanes on `<swarm worker model>` at the PR head, per the boot recipe.
+**Verify, live.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked. Ten lanes on `<code model>` at the PR head, per the boot recipe.
 
 - [ ] Lane 1. Regression lane against trunk. Run <the same load-bearing scenario> at trunk and head. If trunk lacks the feature, record that and gate <the behavior the diff adds plus the end state the user waits for>. Save `<slug>.png`. Pass when <predicate>.
 - [ ] Lane 2. <Scenario.> Save `<slug>.png`. Pass when <predicate>.

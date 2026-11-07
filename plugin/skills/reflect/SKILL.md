@@ -24,19 +24,19 @@ That covers the session (`<id>.jsonl`) and its subagents (`<id>/subagents/<child
 
 ## 2. Spawn three reviewers in parallel
 
-One message, three `Agent` calls, `subagent_type: general-purpose`. Reviewers need MCP access to look up the tickets, chat threads, and observability traces the transcript references.
+One message, three `Agent` calls, `subagent_type: general-purpose`. Reviewers need MCP access to look up the tickets, chat threads, and observability traces the transcript references. Each runs on the model the table names (rules.md Workflow Defaults, Models).
 
-| Lens | Prompt template |
-|---|---|
-| Judgment | `${CLAUDE_SKILL_DIR}/references/judgment-reviewer.md` |
-| Tooling | `${CLAUDE_SKILL_DIR}/references/tooling-reviewer.md` |
-| Divergent | `${CLAUDE_SKILL_DIR}/references/divergent-reviewer.md` |
+| Lens | Model | Prompt template |
+|---|---|---|
+| Judgment | `judgment` | `${CLAUDE_SKILL_DIR}/references/judgment-reviewer.md` |
+| Tooling | `code` | `${CLAUDE_SKILL_DIR}/references/tooling-reviewer.md` |
+| Divergent | `judgment` | `${CLAUDE_SKILL_DIR}/references/divergent-reviewer.md` |
 
 Pass each template verbatim, substituting the transcript path or digest where marked. Reviewers return findings in the `Agent` response body.
 
 ## 3. Synthesize
 
-One `Agent` call, `subagent_type: general-purpose`. It spot-verifies citations through MCP. Pass `${CLAUDE_SKILL_DIR}/references/synthesizer.md` verbatim, with each reviewer's full output inlined where marked. It returns an Accepted / Rejected / Backlog list.
+One `Agent` call, `subagent_type: general-purpose`, on the `judgment` model. It spot-verifies citations through MCP. Pass `${CLAUDE_SKILL_DIR}/references/synthesizer.md` verbatim, with each reviewer's full output inlined where marked. It returns an Accepted / Rejected / Backlog list.
 
 ## 4. Structural enforcement check
 
