@@ -32,15 +32,16 @@
   "interrogate": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/interrogate",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "6b0300214a09fd6029cfb7077043125758cd1fd2",
     "edits": [
-      "Set the frontmatter description to: Adversarial multi-model review of a change. One reviewer per model, merged into a lead verdict. Never auto-applies. Use for /orbit:interrogate.",
+      "Set the frontmatter description to: Adversaries try to break a change or design, and only findings a run proves survive. Never applies fixes. Use for /orbit:interrogate.",
       "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook can invoke it.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "In the intro, `Spawn one reviewer per configured model to adversarially review code changes.` becomes `Spawn two reviewers, one on the `judgment` model (Opus by default) and one on the `code` model, to adversarially review code changes.`",
-      "In step 1, the feature-branch scope becomes `git diff origin/main...HEAD` (or the appropriate base branch) plus the uncommitted files from `git status --short`.",
-      "In step 3, replace the pstack-models line, the model table, the subagent_type / readonly / model paragraph and the rejected-slug / family-fallback paragraph with: Spawn two reviewers in a single message, Reviewer A and Reviewer B, as `Agent` calls with `subagent_type: \"Explore\"` and `model: \"opus\"` for A (the `judgment` model). B runs on the `code` model (rules.md Workflow Defaults, Models). Explore keeps `Bash`, so every brief says \"do not edit files\". After the reviewers return, run `git status --short`. Any change it shows fails that review: revert it and report it. Keep the reviewer-prompt / rubric / code-quality fill-in sentence and drop the poteto-mode Subagents sentence.",
-      "Prefix each `references/` path in SKILL.md with `${CLAUDE_SKILL_DIR}/`. Leave the reference files as upstream: the variable only expands in SKILL.md."
+      "In Frame, `State the intent with the **in-your-own-words** skill, from` becomes `State the intent by restating in your own words what you think the user's goals are and what problem they're trying to solve, from`. Orbit doesn't ship in-your-own-words, so its one sentence is inlined.",
+      "In Frame, after `through the working tree` add `, untracked files included (`git status --short`)`.",
+      "In Fan out, `Run Phase A steps 3 and 4 and Phase B of the **arena** skill` becomes `Read `${CLAUDE_PLUGIN_ROOT}/skills/arena/SKILL.md` and run its Phase A steps 3 and 4 and Phase B`. The `interrogate reviewers` sentence becomes `Run arena's default seats as the adversaries, one with `model: \"opus\"` (the `judgment` model) and one on the `code` model (rules.md Workflow Defaults, Models), each with `effort: \"high\"`.` The copy sentence becomes `Name the commit each adversary checks out, and save the scope's uncommitted changes, untracked files included, as a patch in a fresh `mktemp` file that the adversary applies first.` because Claude Code creates an `isolation: \"worktree\"` worktree only at spawn. `Spawn each adversary as `generalPurpose`.` becomes `Spawn each adversary with `subagent_type: \"general-purpose\"` in place of arena's `orbit:poteto-agent`.`",
+      "In Fan out, `the scope, the intent, and this brief` becomes `the scope, the intent, the Workflow block's \"Review also checks\" sources and the `Before code` entries for the changed paths, and this brief`.",
+      "In Verify, after `by rerunning its command` add ` in that adversary's own worktree, where its repro files live. The `Agent` result returns the worktree's path`. Append `Then remove every adversary worktree with `git worktree remove --force <path>`, delete its branch with `git branch -D <branch>`, and delete the patch file.` to that paragraph."
     ]
   },
   "swarm": {
