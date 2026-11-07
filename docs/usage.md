@@ -58,14 +58,14 @@ Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh
 
 ## What runs in the background
 
-Claude runs these itself. You can also ask for the advisor. A Models table in your Workflow block routes each unit to one of your work types and can change any agent's model and effort with a row named after its role ([Route work by work type](guide/08-make-it-fit.md#route-work-by-work-type)).
+Claude runs these itself. You can also ask for the advisor. A Models table in your Workflow block routes each unit to one of your work types. A row named after a role (`gitops`, `verifier`, `advisor`, `judgment` or `code`) changes that role's model and effort. No row changes comment-sicko ([Route work by work type](guide/08-make-it-fit.md#route-work-by-work-type)).
 
 | Agent | Model | Job |
 | --- | --- | --- |
-| poteto-agent | The row of the unit's work type. With no work type that fits, the `judgment` model (Opus by default) for the hardest changes, else the `code` model (your session's model by default). Runs at `high` effort when Claude passes no effort. | Writes the code for each unit of a change, so no code is reviewed by the agent that wrote it. |
+| poteto-agent | The row of the unit's work type. With no work type that fits, the `judgment` model (Opus by default) for prose and the hardest changes, else the `code` model (by default your session's model, or `CLAUDE_CODE_SUBAGENT_MODEL` when set). Runs at `high` effort when Claude passes no effort. | Writes the code for each unit of a change, so no code is reviewed by the agent that wrote it. |
 | gitops | Sonnet at `low` effort, or the `gitops` row | Commits, pushes, PRs and merges. |
-| comment-sicko | Your session's model at `medium` effort | Deletes comments outside its keep list and flags the code they excuse, before review. |
-| verifier | Your session's model at `high` effort, or the `verifier` row. No Edit or Write tools, in its own worktree. | Runs the change the way a user would before it lands, and returns PASS, PASS+NOTES or FAIL. It is never the agent that wrote the change. |
+| comment-sicko | Your session's model, or `CLAUDE_CODE_SUBAGENT_MODEL` when set, at `medium` effort | Deletes comments outside its keep list and flags the code they excuse, before review. |
+| verifier | Your session's model, or `CLAUDE_CODE_SUBAGENT_MODEL` when set, at `high` effort, or the `verifier` row. No Edit or Write tools, in its own worktree. | Runs the change the way a user would before it lands, and returns PASS, PASS+NOTES or FAIL. It is never the agent that wrote the change. |
 | advisor | Opus at `high` effort, or the `advisor` row. Read-only. | Gives a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time. |
 
 When each runs:

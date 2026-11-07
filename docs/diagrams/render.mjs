@@ -304,7 +304,7 @@ function guideModels(theme) {
     pick(170, "The role's row", 'an empty cell keeps the default'),
     pick(310, "The work type's row", 'after <n> failed tries steps up'),
   ];
-  const tier = B({ x: 30, y: 450, w: 420, h: 84, t: 'Tier by difficulty', s: 'hardest: judgment, the rest: code', kind: 'agent' });
+  const tier = B({ x: 30, y: 450, w: 420, h: 84, t: 'Tier by difficulty', s: 'hardest or prose: judgment, the rest: code', kind: 'agent' });
   k.box(tier);
   qs.forEach((q, i) => {
     k.arrow([[q.r + 6, q.cy], [picks[i].x - 6, picks[i].cy]]);
