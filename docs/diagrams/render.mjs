@@ -180,7 +180,7 @@ function guideArena(theme) {
   const cands = ['A', 'B', 'C'].map((n, i) =>
     box({ x: 45 + i * 270, y: 194, w: 190, t: `Candidate ${n}`, s: n === 'C' ? 'more if needed' : 'own worktree', kind: 'agent', optional: n === 'C' }));
   k.frame(110, 340, 600, 140, 'at the same time');
-  box({ x: 130, y: 382, w: 260, t: 'Judge', s: 'read-only, scores all', kind: 'agent' });
+  box({ x: 130, y: 382, w: 260, t: 'Judge', s: 'skipped if no other model', kind: 'agent', optional: true });
   box({ x: 430, y: 382, w: 260, t: 'Claude reads all', s: 'scores them too', kind: 'claude' });
   const pick = box({ x: 290, y: 520, w: 240, t: 'Pick a base', s: 'easiest to extend', kind: 'claude' });
   const graft = box({ x: 290, y: 650, w: 240, t: 'Graft', s: 'into the base', kind: 'claude' });

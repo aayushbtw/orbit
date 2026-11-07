@@ -39,7 +39,7 @@ On a non-trivial artifact, one attempt commits you to whatever shape that attemp
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../diagrams/guide-arena-dark.svg">
-  <img alt="Arena's six phases in order. Frame writes one shared prompt and a rubric. Fan out sends that prompt to two or more parallel candidates, each in its own worktree, with a third only when needed. A read-only judge and Claude both score every candidate. Claude picks a base, grafts one or two parts from each losing candidate into it, and verifies the result." src="../diagrams/guide-arena-light.svg">
+  <img alt="Arena's six phases in order. Frame writes one shared prompt and a rubric. Fan out sends that prompt to two or more parallel candidates, each in its own worktree, with a third only when needed. Claude scores every candidate, and a read-only judge on a different model scores them too when one is available. Claude picks a base, grafts one or two parts from each losing candidate into it, and verifies the result." src="../diagrams/guide-arena-light.svg">
 </picture>
 
 ```text
@@ -50,14 +50,14 @@ Each phase has one job:
 
 - **Frame.** Every candidate gets the same prompt, so the attempts differ only in how they answer it. Claude also writes a rubric of 3 to 6 gradeable criteria for picking the winner. The candidates see only the task.
 - **Fan out.** By default two `orbit:poteto-agent` runners work in parallel, one on the `judgment` model and one on the `code` model. More runners join when the task covers several design directions. Each writes to its own worktree where possible, else its own scratch directory, so the attempts stay independent.
-- **Cross-judge.** One read-only judge scores every candidate on each criterion and recommends a base. It runs on whichever of the `judgment` and `code` models differs from Claude's own model.
-- **Pick.** Claude reads every candidate end to end and scores each one against the rubric itself. It compares its pick with the judge's, since a disagreement means one of them is biased or the rubric was unclear. The base is the one a future maintainer can extend with the least risk of breaking its invariants.
+- **Cross-judge.** One read-only judge scores every candidate on each criterion and recommends a base. It never runs on Claude's own model, so it takes the first of the `judgment` and `code` models that differs. When both are Claude's model, arena skips the judge and says so.
+- **Pick.** Claude reads every candidate end to end and scores each one against the rubric itself. When a judge ran, Claude compares its pick with the judge's, since a disagreement means one of them is biased or the rubric was unclear. The base is the one a future maintainer can extend with the least risk of breaking its invariants.
 - **Graft.** Claude walks each losing candidate for the one or two things worth porting. Claude folds the grafts in by hand instead of pasting them, so the result still reads as one design. Inside a flow, a fresh poteto-agent does the folding. If the candidates agree on one shape, no graft is needed. If they disagree wildly, the frame was too loose, and arena reframes and runs again.
 - **Verify.** The merged result gets the same proof as any other change.
 
-Arena returns one artifact and a short note that names the base, the judge's verdict, each graft and its source, and what was rejected.
+Arena returns one artifact and a short note that names the base, the judge's verdict or that arena skipped the judge, each graft and its source, and what was rejected.
 
-When the `judgment` and `code` models are the same, as in an Opus session under the defaults, both runners and the judge run on one model, so the panel loses its model diversity. Arena still gives you independent attempts, but they come from one model.
+When the `judgment` and `code` models are the same, as in an Opus session under the defaults, both runners run on one model and arena skips the judge, so the panel loses its model diversity. Arena still gives you independent attempts, but they come from one model, and Claude picks the base alone.
 
 Arena also runs inside architect, and inside the feature flow when the code admits several valid shapes, such as two ways to handle errors or structure the tests.
 
@@ -79,26 +79,25 @@ Each worker runs in its own worktree on the `code` model and reports `PASS`, `IS
 
 ## Invite a hostile review with `/orbit:interrogate`
 
-A design that looks sound to the model that wrote it can still hide a flaw that model is blind to. `/orbit:interrogate` sends the change to two read-only reviewers, one on the `judgment` model and one on the `code` model. The disagreement comes from the models being different, not from assigned personas. When those two models are the same, as in an Opus session under the defaults, both reviewers run on one model.
+A design that looks sound to the model that wrote it can still hide a flaw that model is blind to. `/orbit:interrogate` sends two adversaries to break the change, one on the `judgment` model and one on the `code` model, each in its own worktree. When those two models are the same, as in an Opus session under the defaults, both adversaries run on one model.
 
 ```text
 /orbit:interrogate this branch. i think the new cache could serve one user's data to another.
 ```
 
-Before it spawns the reviewers, Claude writes the change's intent in one paragraph. If the intent is unclear, it asks you. Both reviewers get the same template, rubric and code-quality lens. Findings that both models raised on their own carry the most weight.
+Before it spawns the adversaries, Claude restates the change's intent in its own words, from your message, the commits and the PR description. If the intent is unclear, it asks you. Each adversary gets the scope, the intent and the project's review sources, and must prove every finding with a run against the real code. A run is a failing test, a repro script, or command output that shows the wrong behavior. A finding about style or naming, or a risk that needs a future change to matter, doesn't count, because no run can show it.
 
-Claude then judges as the lead reviewer and sorts every finding into one of four buckets:
+Claude then reruns each finding's command in that adversary's worktree. A finding survives when the output shows the failure and the failure breaks the intent. Findings with one root cause merge into one. Claude removes the adversary worktrees once every finding is checked.
 
-| Bucket | Means |
+The report has three parts:
+
+| Part | Holds |
 | --- | --- |
-| Act on | A real issue that would block a PR |
-| Consider | Legitimate, but maybe not worth fixing now |
-| Noted | Valid, but not actionable at this stage |
-| Dismissed | Wrong or nitpicky, with a reason |
+| Intent | Claude's restatement of what the change is for |
+| Findings | Each verified finding, with its command, its output, how it breaks the intent and the adversaries that found it, or "no verified findings" |
+| Dropped | For each adversary, how many findings Claude dropped and why |
 
-An agreement map shows where the two models agreed and split.
-
-Interrogate never applies a fix. The verdict is judgment, the Dismissed bucket exists because reviewers are sometimes wrong, and you decide what changes.
+Interrogate never applies a fix. The two adversaries find different failures, so the report keeps every verified finding from both, and you decide what changes.
 
 The feature flow runs interrogate before shipping when a design is contested. You can also point it at an architect sketch before any body is filled in, which is the cheapest time to change the design.
 

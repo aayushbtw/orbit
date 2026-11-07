@@ -83,7 +83,7 @@ Before each spawn, Claude asks three questions in order. The first yes decides t
 </picture>
 
 1. A step that names its own model or effort keeps it. `/orbit:recall` runs on Haiku, the trail reviewer in `show-me-your-work` picks its own tier, and multi-phase-plan's live lanes run at `high`.
-2. A spawn that names a role takes that role's row. gitops, the verifier and the advisor each take their own row. Interrogate's reviewers, arena's runners, swarm workers, autopilot owners, multi-phase-plan explorers, and the subagents of `/orbit:how`, `/orbit:why` and `/orbit:reflect` each name `judgment` or `code`. A skill that spawns with `model: "opus"` names the `judgment` role, so a `judgment` row reaches it. A two-model panel never takes a work type, so its sides follow only the `judgment` and `code` rows. Comment Sicko takes no row, so it keeps its agent file's effort and runs on the default subagent model.
+2. A spawn that names a role takes that role's row. gitops, the verifier and the advisor each take their own row. Interrogate's adversaries, arena's runners, swarm workers, autopilot owners, multi-phase-plan explorers, and the subagents of `/orbit:how`, `/orbit:why` and `/orbit:reflect` each name `judgment` or `code`. A skill that spawns with `model: "opus"` names the `judgment` role, so a `judgment` row reaches it. A two-model panel never takes a work type, so its sides follow only the `judgment` and `code` rows. Comment Sicko takes no row, so it keeps its agent file's effort and runs on the default subagent model.
 3. Any other `orbit:poteto-agent` spawn takes the work type whose Use for fits its unit. That covers code delegates and their fix rounds.
 4. A unit that no work type fits runs as it does with no table. A prose unit, such as docs or a written explanation, runs on the `judgment` model. A code unit tiers by difficulty. The hardest change, such as a cross-cutting design or a subtle algorithm, runs on the `judgment` model, and the rest run on the `code` model. When the project has work types, Claude's reply names each unit that none of them fit, so you can add a row.
 
@@ -109,7 +109,7 @@ If `CLAUDE_CODE_EFFORT_LEVEL` is set in your environment, Claude Code applies it
 
 ### Give the panels a second model
 
-In an Opus session under the defaults, the `judgment` and `code` models are both Opus. Interrogate's two reviewers and arena's two runners then run on one model, and a panel loses its second opinion. Work types don't help here, because panels never take one. One row fixes it:
+In an Opus session under the defaults, the `judgment` and `code` models are both Opus. Interrogate's two adversaries and arena's two runners then run on one model, arena skips its judge, and a panel loses its second opinion. Work types don't help here, because panels never take one. One row fixes it:
 
 ```md
 | `code` | | sonnet | |
