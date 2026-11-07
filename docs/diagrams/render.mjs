@@ -289,8 +289,37 @@ function guideArchitect(theme) {
   return k;
 }
 
+function guideModels(theme) {
+  const W = 1060, H = 560;
+  const k = canvas(theme, W, H);
+  const ask = (y, t, s) => { const r = B({ x: 30, y, w: 420, h: 84, t, s, kind: 'claude' }); k.box(r); return r; };
+  const pick = (y, t, s) => { const r = B({ x: 620, y, w: 410, h: 84, t, s, kind: 'agent' }); k.box(r); return r; };
+  const qs = [
+    ask(30, 'Step picks its own?', 'model or effort, such as recall'),
+    ask(170, 'Spawn names a role?', 'gitops, verifier, advisor, judgment, code'),
+    ask(310, 'A work type fits?', 'any other poteto-agent unit'),
+  ];
+  const picks = [
+    pick(30, 'Keep it', "recall's haiku, live lanes at xhigh"),
+    pick(170, "The role's row", 'an empty cell keeps the default'),
+    pick(310, "The work type's row", 'after <n> failed tries steps up'),
+  ];
+  const tier = B({ x: 30, y: 450, w: 420, h: 84, t: 'Tier by difficulty', s: 'hardest: judgment, the rest: code', kind: 'agent' });
+  k.box(tier);
+  qs.forEach((q, i) => {
+    k.arrow([[q.r + 6, q.cy], [picks[i].x - 6, picks[i].cy]]);
+    k.text((q.r + picks[i].x) / 2, q.cy - 12, 'yes', 17, k.c.muted);
+    const next = qs[i + 1] ?? tier;
+    k.arrow([[q.cx, q.bot + 6], [next.cx, next.y - 6]]);
+    k.text(q.cx + 14, (q.bot + next.y) / 2 + 6, 'no', 17, k.c.muted, 'start');
+  });
+  k.text(tier.r + 30, tier.cy - 4, 'with work types, the reply', 17, k.c.muted, 'start');
+  k.text(tier.r + 30, tier.cy + 18, 'names the unit so you add a row', 17, k.c.muted, 'start');
+  return k;
+}
+
 const font = readFileSync(new URL('./Excalifont-Regular.woff2', import.meta.url)).toString('base64');
-const scenes = { readme, docs, 'guide-arena': guideArena, 'guide-ship': guideShip, 'guide-autopilot': guideAutopilot, 'guide-stack': guideStack, 'guide-architect': guideArchitect };
+const scenes = { readme, docs, 'guide-arena': guideArena, 'guide-ship': guideShip, 'guide-autopilot': guideAutopilot, 'guide-stack': guideStack, 'guide-architect': guideArchitect, 'guide-models': guideModels };
 for (const [name, scene] of Object.entries(scenes)) {
   for (const t of ['light', 'dark']) writeFileSync(new URL(`./${name}-${t}.svg`, import.meta.url), scene(t).svg(font));
 }

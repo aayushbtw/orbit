@@ -26,7 +26,7 @@ A plan that adds a module or touches more than 3 files goes through the plan gat
 - every AGENTS.md or CLAUDE.md in those folders and the folders above them
 - each `.claude/rules/` file whose `paths` match
 
-Then it briefs the advisor with the plan and those sources. The advisor runs on the `judgment` model (Opus by default), reads the repository itself, and edits nothing. It returns a verdict of `proceed`, `proceed with changes` or `stop`, with concrete recommendations, and Claude acts on it.
+Then it briefs the advisor with the plan and those sources. The advisor runs on Opus at `high` effort unless an `advisor` row in your Models table changes it, reads the repository itself, and edits nothing. It returns a verdict of `proceed`, `proceed with changes` or `stop`, with concrete recommendations, and Claude acts on it.
 
 The gate exists because a wrong shape is cheapest to fix before any code depends on it. A second model checks a multi-file plan against the project's own rules at that point, not after review. You can also ask for the advisor at any other time:
 
@@ -44,7 +44,7 @@ Claude then reviews the diff, confirms the changed paths match the brief, and ru
 
 No code is reviewed by the agent that wrote it. The gate holds for a one-line change too, because the gain is the separate review, not fewer lines in the main session. A fix round goes to a fresh delegate with the original brief, every later instruction, Claude's findings and the current diff. Claude does not ask the first delegate to patch its own work.
 
-Delegates for the hardest changes run on the `judgment` model, which is Opus by default. Those are cross-cutting design, tricky concurrency and subtle algorithms. Every other delegate runs on the `code` model, which is your session model by default. Your Workflow block's `Models` line changes both ([Make orbit fit your project](./08-make-it-fit.md#write-the-differences-in-a-workflow-block)).
+Each delegate runs on its unit's work type, the row of your Workflow block's Models table whose Use for fits the unit, at that row's model and effort ([Route work by work type](./08-make-it-fit.md#route-work-by-work-type)). With no work types, or none that fits the unit, delegates tier by difficulty. Delegates for the hardest changes run on the `judgment` model, which is Opus by default. Those are cross-cutting design, tricky concurrency and subtle algorithms. Every other delegate runs on the `code` model, which is your session model by default.
 
 Arena runners and parallel hillclimb or figure-it-out attempts are the one exception to one delegate at a time. Each works in its own worktree. For each attempt worth keeping, gitops commits it there and cherry-picks it onto the task branch.
 

@@ -13,7 +13,7 @@ Read it in order the first time. Each page also stands on its own.
 5. [Prove it works, then ship](./05-prove-and-ship.md). The verifier, verification skills, Babysit and Shipping.
 6. [Work while you're away](./06-hands-off.md). Autopilot queues, multi-PR plans, decision trails, and pausing.
 7. [Steer with principles](./07-steer-with-principles.md). Use a principle's name to change course mid-task.
-8. [Make orbit fit your project](./08-make-it-fit.md). The Workflow block, folder rules, and turning a repeated mistake into a guard.
+8. [Make orbit fit your project](./08-make-it-fit.md). The Workflow block, routing work by work type, folder rules, and turning a repeated mistake into a guard.
 
 For a command lookup, use the [usage reference](../usage.md).
 

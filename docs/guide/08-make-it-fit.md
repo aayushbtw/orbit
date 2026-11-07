@@ -11,9 +11,9 @@ Without a block, orbit uses these defaults:
 - **Check.** `vpr check`, then `vpr build` and `vpr test` if those scripts exist.
 - **Land.** `main`. Each change gets its own worktree off `origin/main`, and Shipping fast-forwards `main` to it.
 - **Review.** `/orbit:interrogate` runs before shipping when the design is contested.
-- **Models.** `code=inherit; judgment=opus; gitops=sonnet`. The `code` model runs delegates, swarm workers, explorers and the verifier, and `inherit` means your session model. The `judgment` model runs the hardest delegates, one side of each two-model panel, autopilot owners and the advisor. The `gitops` model runs gitops.
+- **Models.** No work types. Code delegates tier by difficulty, so the hardest run on the `judgment` model, which is Opus, and the rest on the `code` model, which is your session model. The `judgment` model also runs one side of each two-model panel and autopilot owners. The `code` model also runs the other side, swarm workers and explorers. gitops runs on Sonnet at `medium`, the verifier on your session model at `xhigh`, and the advisor on Opus at `high`, each from its agent file.
 
-The block lists only what differs. Start from [`templates/workflow-block.md`](../../templates/workflow-block.md), paste it into AGENTS.md, and delete every line that doesn't apply. The template says not to create a CLAUDE.md for it. Here is a block for a project that opens PRs and has two folders with their own conventions:
+The block lists only what differs. Start from [`templates/workflow-block.md`](../../templates/workflow-block.md), paste it into AGENTS.md, and delete every line that doesn't apply. The template says not to create a CLAUDE.md for it. Here is a block for a project that opens PRs, has two folders with their own conventions, and routes two kinds of work to their own models:
 
 ```md
 ## Workflow
@@ -22,7 +22,14 @@ The block lists only what differs. Start from [`templates/workflow-block.md`](..
 - Land: `pr`, rebase merge.
 - Before code: `src/db/: docs/migrations.md`; `src/ui/: docs/components.md`
 - Review also checks: `docs/security.md`.
-- Models: `code=sonnet; judgment=opus`
+
+### Models
+
+| Task | Use for | Model | Effort |
+| --- | --- | --- | --- |
+| `migrations` | Schema changes and data migrations under `src/db/` | opus | high |
+| `ui-copy` | Text and style edits inside one component | sonnet | low |
+| `code` | | sonnet | |
 ```
 
 Each line does one job:
@@ -33,11 +40,83 @@ Each line does one job:
 | Land | `pr` to land through pull requests, plus the merge method if it isn't squash | Opening a PR opens the PR, Babysit drives it to merge-ready, and Shipping merges it. Under either setting, a fresh verifier passes the change before it lands. |
 | Before code | Guidance for writing code under a path, as `<path>: <source>` entries separated by `;`. A source is a file to read, or a command that prints a skill or its path. | Each code delegate under that path, copied word for word into its brief. Also the plan gate and `/orbit:interrogate`. |
 | Review also checks | Docs to read before planning and at review only. Scope one to a path with `src/server/: <source>`. | The plan gate and `/orbit:interrogate` |
-| Models | The model for each role, as `code=<model>; judgment=<model>; gitops=<model>`. A value is `opus`, `sonnet`, `haiku`, `fable` or `inherit`. A key you leave out keeps its default. | Every subagent Claude spawns, except the few that pick their own model, such as `/orbit:recall`. When `code` and `judgment` are the same model, the two-model panels lose their diversity. |
+| Models | A `### Models` table with Task, Use for, Model and Effort columns. Each row is a work type of your own, or one of orbit's roles: `gitops`, `verifier`, `advisor`, `judgment` and `code`. An empty cell keeps the default. | Every subagent Claude spawns, except a step that names its own model or effort, such as `/orbit:recall`. [Route work by work type](#route-work-by-work-type) explains how Claude picks a row. |
 
 Before code is the line that goes into the brief of the agent writing the code. Put guidance there that code under a path must follow. Put a doc in Review also checks when it matters for the plan and the review but not for each edit.
 
 Your own CLAUDE.md and `settings.json` stay yours. Orbit's rules load on their own at the start of every session, and the Workflow block adjusts them for one project.
+
+## Route work by work type
+
+Without work types, Claude decides which units are hard, and only those go to the `judgment` model. A Models table lets the project name its own kinds of work, called work types, and give each one a model and an effort. Here is the table from a game project, which sends shader math to Opus and number tuning to Sonnet at a low effort:
+
+```md
+### Models
+
+| Task | Use for | Model | Effort |
+| --- | --- | --- | --- |
+| `shader-math` | Shader and camera math, render bugs | opus | high, xhigh after 2 failed tries |
+| `look-review` | Reviewing screenshots and judging the look | opus | medium |
+| `data-tuning` | Skill, item and enemy Resources, numbers, the input map | sonnet | low |
+| `docs` | Docs and plan edits | sonnet | low |
+| `phase-planning` | Phase planning and design calls | opus | high |
+| `cross-file-system` | A system across files: combat, enemy AI, saving, skill tree, collision layers | opus | high |
+| `single-file-feature` | A feature inside one file: interact key, dummy, HUD | sonnet | medium |
+| `gitops` | | | low |
+```
+
+Each column does one job:
+
+- **Task** names the row in kebab case. Five names belong to orbit's roles: `gitops`, `verifier`, `advisor`, `judgment` and `code`. A row with one of those names changes only that role. Every other row is a work type.
+- **Use for** names the work the row covers. Claude reads it to match a unit to a row.
+- **Model** is `opus`, `sonnet`, `haiku`, `fable` or `inherit`. `inherit` passes no model, so the spawn runs on `CLAUDE_CODE_SUBAGENT_MODEL` when it is set, else on your session model. On the `gitops` and `advisor` rows, `inherit` keeps the model in the agent file.
+- **Effort** is `low`, `medium`, `high`, `xhigh` or `max`.
+
+An empty cell keeps the default. The game's `gitops` row leaves Model empty, so gitops stays on Sonnet from its agent file and drops from `medium` to `low` effort. The game has no `verifier`, `advisor`, `judgment` or `code` row, so those keep orbit's defaults.
+
+### See which row a spawn takes
+
+Before each spawn, Claude asks three questions in order. The first yes decides the spawn's model and effort, and with no yes the unit tiers by difficulty.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../diagrams/guide-models-dark.svg">
+  <img alt="Claude asks four questions before each spawn. If the step picks its own model or effort, such as recall's haiku or multi-phase-plan's live lanes at xhigh, the spawn keeps it. Else, if the spawn names a role (gitops, verifier, advisor, judgment or code), it takes that role's row, where an empty cell keeps the default. Else, if a work type fits the poteto-agent unit, it takes that work type's row, which can step up after n failed tries. Else Claude tiers by difficulty, with the hardest change on judgment and the rest on code, and when the project has work types the reply names the unit so you can add a row." src="../diagrams/guide-models-light.svg">
+</picture>
+
+1. A step that names its own model or effort keeps it. `/orbit:recall` runs on Haiku, the trail reviewer in `show-me-your-work` picks its own tier, and multi-phase-plan's live lanes run at `xhigh`.
+2. A spawn that names a role takes that role's row. gitops, the verifier and the advisor each take their own row. Interrogate's reviewers, arena's runners, swarm workers, `how` explorers and autopilot owners each name `judgment` or `code`. A two-model panel never takes a work type, so its sides follow only the `judgment` and `code` rows.
+3. Any other `orbit:poteto-agent` spawn takes the work type whose Use for fits its unit. That covers code delegates, their fix rounds and the multi-phase-plan explorers.
+4. A unit that no work type fits tiers by difficulty, as it does with no table. The hardest change, such as a cross-cutting design or a subtle algorithm, runs on the `judgment` model. The rest run on the `code` model. When the project has work types, Claude's reply names each unit that none of them fit, so you can add a row.
+
+A row reaches subagents only. Claude plans in your session, on the model you picked with `/model`. The game's `phase-planning` row reaches the subagents Claude spawns for planning work, not the planning in your chat.
+
+Each brief and each todo item names the row it ran on, as `Work type: shader-math`, or as `Role: judgment` or `Role: code` for a tiered unit.
+
+### Split a unit that fits two rows
+
+A unit can fit two work types. In the game, a HUD feature that also adds an item Resource fits both `single-file-feature` and `data-tuning`. If each part can be checked on its own, Claude splits the unit in two, and each part runs on its own row. If not, the unit runs as the type of its hardest part, here `single-file-feature`.
+
+Row order breaks any tie that is left, so the first row that fits wins. Put narrow rows above broad ones. A unit that turns out to fit another type mid-work is briefed again under that type, and its try count starts over.
+
+### Set an exact effort, with a step up
+
+An Effort cell is the level Claude passes, as written. Claude adds no judgment of its own on top. With no Effort cell, gitops, the verifier and the advisor keep the level in their agent files. For any other spawn, Claude picks the level for the job, starting at `xhigh`.
+
+A cell can add a step with `after <n> failed tries`. A failed try is a delegate whose work on the unit fails Claude's review or the check. In the game, a `shader-math` unit runs at `high` for its first two delegates. If both fail, the third runs at `xhigh`. The unit's todo item carries its try count. The step works in a Model cell too, such as `sonnet, opus after 2 failed tries`.
+
+If the `Agent` tool rejects a row's model, Claude passes no model and says so. If it rejects a level, Claude uses the nearest level it accepts and says so.
+
+If `CLAUDE_CODE_EFFORT_LEVEL` is set in your environment, Claude Code applies it to every spawn, over every Effort cell in the table.
+
+### Give the panels a second model
+
+In an Opus session under the defaults, the `judgment` and `code` models are both Opus. Interrogate's two reviewers and arena's two runners then run on one model, and a panel loses its second opinion. Work types don't help here, because panels never take one. One row fixes it:
+
+```md
+| `code` | | sonnet | |
+```
+
+The row moves every spawn on the `code` role to Sonnet. That covers one side of each panel, swarm workers, `how` explorers and every delegate that no work type fits and isn't the hardest. In an Opus session, the same row makes all of those spawns cheaper. The verifier keeps its own `verifier` row.
 
 ## Put folder rules next to the code
 
