@@ -311,9 +311,23 @@ const anyChecked = (commits: unknown): boolean =>
   list(commits, "commits.nodes").some(
     (node) => at(node, ["commit", "statusCheckRollup"]) !== null
   );
-const PR_TRIGGERS = new Set<unknown>(["pull_request", "pull_request_target"]);
+// A push counts unless its filters prove it fires only on the base branch or only on tags.
+function pushReachesPrBranch(config: unknown, baseRefName: string): boolean {
+  if (!isRecord(config)) return true;
+  const { branches } = config;
+  if (Array.isArray(branches))
+    return !(
+      branches.length > 0 &&
+      branches.every((branch) => branch === baseRefName && !/[*?+![\]]/.test(branch))
+    );
+  return !(
+    branches === undefined &&
+    !("branches-ignore" in config) &&
+    ("tags" in config || "tags-ignore" in config)
+  );
+}
 // A workflow whose triggers can't be read counts, so it never ends a wait early.
-function runsOnPullRequests(text: string | null): boolean {
+function runsOnPullRequests(text: string | null, baseRefName: string): boolean {
   if (text === null) return true;
   let workflow: unknown;
   try {
@@ -322,32 +336,53 @@ function runsOnPullRequests(text: string | null): boolean {
     return true;
   }
   const on = isRecord(workflow) ? workflow.on : undefined;
-  const triggers =
+  const triggers: readonly (readonly [unknown, unknown])[] | null =
     typeof on === "string"
-      ? [on]
+      ? [[on, null]]
       : Array.isArray(on)
-        ? on
+        ? on.map((name): readonly [unknown, null] => [name, null])
         : isRecord(on)
-          ? Object.keys(on)
+          ? Object.entries(on)
           : null;
-  return triggers === null || triggers.some((name) => PR_TRIGGERS.has(name));
+  return (
+    triggers === null ||
+    triggers.some(
+      ([name, config]) =>
+        typeof name !== "string" ||
+        name.startsWith("pull_request") ||
+        (name === "push" && pushReachesPrBranch(config, baseRefName))
+    )
+  );
 }
-function workflowsRunOnPullRequests(tree: unknown, path: string): boolean {
+function workflowsRunOnPullRequests(
+  tree: unknown,
+  path: string,
+  baseRefName: string
+): boolean {
   if (tree === null || at(tree, ["__typename"]) !== "Tree") return false;
   return list(at(tree, ["entries"]), `${path}.entries`).some(
     (entry) =>
       at(entry, ["type"]) === "blob" &&
       /\.ya?ml$/.test(string(at(entry, ["name"]), `${path}.entries.name`)) &&
       runsOnPullRequests(
-        optionalString(at(entry, ["object", "text"]), `${path}.entries.text`)
+        optionalString(at(entry, ["object", "text"]), `${path}.entries.text`),
+        baseRefName
       )
   );
 }
-export function parseRunsChecks(value: unknown): boolean {
+export function parseRunsChecks(value: unknown, baseRefName: string): boolean {
   const repository = record(at(value, ["data", "repository"]), "repository");
   if (
-    workflowsRunOnPullRequests(at(repository, ["headWorkflows"]), "headWorkflows") ||
-    workflowsRunOnPullRequests(at(repository, ["baseWorkflows"]), "baseWorkflows")
+    workflowsRunOnPullRequests(
+      at(repository, ["headWorkflows"]),
+      "headWorkflows",
+      baseRefName
+    ) ||
+    workflowsRunOnPullRequests(
+      at(repository, ["baseWorkflows"]),
+      "baseWorkflows",
+      baseRefName
+    )
   )
     return true;
   const baseRef = at(repository, ["pullRequest", "baseRef"]);
@@ -647,7 +682,7 @@ export class GhGitHubReader implements T.GitHubReader {
       "-f",
       `baseWorkflows=${facts.baseRefName}:.github/workflows`
     );
-    return parseRunsChecks(await runJson(argv));
+    return parseRunsChecks(await runJson(argv), facts.baseRefName);
   }
   async reviewThreadPage(
     context: T.PrContext,
