@@ -8,7 +8,7 @@ export const PR_COMMIT_STATUS_QUERY =
 export const PR_CHECK_ROLLUP_QUERY =
   "\nquery PrCheckRollup($owner: String!, $repo: String!, $pr: Int!, $after: String) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      commits(last: 1) {\n        nodes {\n          commit {\n            statusCheckRollup {\n              contexts(first: 100, after: $after) {\n                pageInfo {\n                  hasNextPage\n                  endCursor\n                }\n                nodes {\n                  __typename\n                  ... on CheckRun {\n                    name\n                    status\n                    conclusion\n                    detailsUrl\n                  }\n                  ... on StatusContext {\n                    context\n                    state\n                    targetUrl\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
 export const PR_RUNS_CHECKS_QUERY =
-  "\nquery PrRunsChecks($owner: String!, $repo: String!, $pr: Int!, $headWorkflows: String!, $baseWorkflows: String!) {\n  repository(owner: $owner, name: $repo) {\n    headWorkflows: object(expression: $headWorkflows) {\n      __typename\n    }\n    baseWorkflows: object(expression: $baseWorkflows) {\n      __typename\n    }\n    pullRequest(number: $pr) {\n      baseRef {\n        target {\n          ... on Commit {\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n        branchProtectionRule {\n          requiresStatusChecks\n        }\n        rules(first: 100) {\n          nodes {\n            type\n          }\n        }\n      }\n      commits(last: 50) {\n        nodes {\n          commit {\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n      }\n    }\n    recentPullRequests: pullRequests(first: 10, states: [OPEN, MERGED, CLOSED], orderBy: {field: UPDATED_AT, direction: DESC}) {\n      nodes {\n        commits(last: 1) {\n          nodes {\n            commit {\n              statusCheckRollup {\n                state\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
+  "\nquery PrRunsChecks($owner: String!, $repo: String!, $pr: Int!, $headWorkflows: String!, $baseWorkflows: String!) {\n  repository(owner: $owner, name: $repo) {\n    headWorkflows: object(expression: $headWorkflows) {\n      ...WorkflowFiles\n    }\n    baseWorkflows: object(expression: $baseWorkflows) {\n      ...WorkflowFiles\n    }\n    pullRequest(number: $pr) {\n      baseRef {\n        branchProtectionRule {\n          requiresStatusChecks\n        }\n        rules(first: 100) {\n          nodes {\n            type\n          }\n        }\n      }\n      commits(last: 50) {\n        nodes {\n          commit {\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n      }\n    }\n    recentPullRequests: pullRequests(first: 10, states: [OPEN, MERGED, CLOSED], orderBy: {field: UPDATED_AT, direction: DESC}) {\n      nodes {\n        commits(last: 1) {\n          nodes {\n            commit {\n              statusCheckRollup {\n                state\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\nfragment WorkflowFiles on GitObject {\n  __typename\n  ... on Tree {\n    entries {\n      name\n      type\n      object {\n        ... on Blob {\n          text\n        }\n      }\n    }\n  }\n}\n";
 
 interface CommandResult {
   readonly code: number;
@@ -311,11 +311,43 @@ const anyChecked = (commits: unknown): boolean =>
   list(commits, "commits.nodes").some(
     (node) => at(node, ["commit", "statusCheckRollup"]) !== null
   );
+const PR_TRIGGERS = new Set<unknown>(["pull_request", "pull_request_target"]);
+// A workflow whose triggers can't be read counts, so it never ends a wait early.
+function runsOnPullRequests(text: string | null): boolean {
+  if (text === null) return true;
+  let workflow: unknown;
+  try {
+    workflow = Bun.YAML.parse(text);
+  } catch {
+    return true;
+  }
+  const on = isRecord(workflow) ? workflow.on : undefined;
+  const triggers =
+    typeof on === "string"
+      ? [on]
+      : Array.isArray(on)
+        ? on
+        : isRecord(on)
+          ? Object.keys(on)
+          : null;
+  return triggers === null || triggers.some((name) => PR_TRIGGERS.has(name));
+}
+function workflowsRunOnPullRequests(tree: unknown, path: string): boolean {
+  if (tree === null || at(tree, ["__typename"]) !== "Tree") return false;
+  return list(at(tree, ["entries"]), `${path}.entries`).some(
+    (entry) =>
+      at(entry, ["type"]) === "blob" &&
+      /\.ya?ml$/.test(string(at(entry, ["name"]), `${path}.entries.name`)) &&
+      runsOnPullRequests(
+        optionalString(at(entry, ["object", "text"]), `${path}.entries.text`)
+      )
+  );
+}
 export function parseRunsChecks(value: unknown): boolean {
   const repository = record(at(value, ["data", "repository"]), "repository");
   if (
-    at(repository, ["headWorkflows"]) !== null ||
-    at(repository, ["baseWorkflows"]) !== null
+    workflowsRunOnPullRequests(at(repository, ["headWorkflows"]), "headWorkflows") ||
+    workflowsRunOnPullRequests(at(repository, ["baseWorkflows"]), "baseWorkflows")
   )
     return true;
   const baseRef = at(repository, ["pullRequest", "baseRef"]);
@@ -323,7 +355,6 @@ export function parseRunsChecks(value: unknown): boolean {
   if (baseRef === null) return true;
   const protection = at(baseRef, ["branchProtectionRule"]);
   return (
-    at(baseRef, ["target", "statusCheckRollup"]) !== null ||
     (protection !== null && at(protection, ["requiresStatusChecks"]) === true) ||
     list(at(baseRef, ["rules", "nodes"]), "baseRef.rules.nodes").some((rule) =>
       CHECK_RULES.includes(string(at(rule, ["type"]), "baseRef.rules.type"))

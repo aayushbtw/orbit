@@ -96,7 +96,6 @@ describe("checks fallback chain", () => {
 
 describe("repository check presence", () => {
   const baseRef = {
-    target: { statusCheckRollup: null },
     branchProtectionRule: null,
     rules: { nodes: [{ type: "COPILOT_CODE_REVIEW" }] },
   };
@@ -126,17 +125,71 @@ describe("repository check presence", () => {
     },
   });
 
+  const workflows = (...files: readonly (readonly [string, string | null])[]) => ({
+    __typename: "Tree",
+    entries: files.map(([name, text]) => ({
+      name,
+      type: "blob",
+      object: { __typename: "Blob", text },
+    })),
+  });
+  const pushOnly = `name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      ref:
+        required: false
+`;
+
   it("finds no checks when no source of checks exists", () => {
     expect(parseRunsChecks(response({}))).toBe(false);
   });
 
+  it("finds no checks when the only workflow runs on push to the base branch", () => {
+    const deploy = workflows(["deploy.yml", pushOnly]);
+    expect(
+      parseRunsChecks(
+        response({
+          headWorkflows: deploy,
+          baseWorkflows: deploy,
+          baseRef: { ...baseRef, target: { statusCheckRollup: { state: "SUCCESS" } } },
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("finds checks from a workflow that runs on pull requests", () => {
+    const triggers = [
+      "on: pull_request\n",
+      "on: [push, pull_request]\n",
+      "on:\n  pull_request:\n    branches: [main]\n  push:\n",
+      "on:\n  pull_request_target:\n",
+      "'on': pull_request\n",
+    ];
+    for (const text of triggers) {
+      const tree = workflows(["deploy.yml", pushOnly], ["ci.yaml", text]);
+      expect(parseRunsChecks(response({ headWorkflows: tree }))).toBe(true);
+      expect(parseRunsChecks(response({ baseWorkflows: tree }))).toBe(true);
+    }
+  });
+
+  it("ignores files in the workflows tree that GitHub does not run", () => {
+    const tree = workflows(["deploy.yml", pushOnly], ["README.md", "on: pull_request\n"]);
+    expect(parseRunsChecks(response({ headWorkflows: tree }))).toBe(false);
+  });
+
+  it("finds checks from a workflow whose triggers it cannot read", () => {
+    for (const text of [null, "on: [pull_request\n", "name: no triggers\n"])
+      expect(
+        parseRunsChecks(response({ headWorkflows: workflows(["ci.yml", text]) }))
+      ).toBe(true);
+  });
+
   it("finds checks from any one source", () => {
     const cases = [
-      { headWorkflows: { __typename: "Tree" } },
-      { baseWorkflows: { __typename: "Tree" } },
-      {
-        baseRef: { ...baseRef, target: { statusCheckRollup: { state: "SUCCESS" } } },
-      },
       {
         baseRef: { ...baseRef, branchProtectionRule: { requiresStatusChecks: true } },
       },
