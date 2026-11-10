@@ -1,4 +1,4 @@
-A goal given without a named skill goes through `/orbit:start <goal>`.
+A goal given without a named skill goes through `/orbit:start <goal>`. A go-ahead on a change you proposed outside a flow is a goal too.
 
 # Non-negotiables
 
@@ -23,7 +23,7 @@ Remaining triggers:
 - Any PR-status request ("babysit this", "get it green", "address the bugbot comments", and most often "check on PR X" or "anything outstanding on X") → the Babysit playbook (`/orbit:playbook babysit`). Never triggered by merely opening a PR. Declare its mode before polling. The playbook's step 1 owns the request-to-mode mapping. Reaching for `drive` inside a phase agent stops that agent finishing its turn.
 - Asked to land or ship a green stack → the Shipping playbook (`/orbit:ship`). Green is not safe. Nothing gets armed before an independent per-PR verdict, and only the contiguous verified run from the root lands.
 - Bugbot or the agentic security review commented → skeptical posture. They catch real bugs and also file non-issues and nitpicks, so assess each on its merits and dismiss noise with a concrete reason instead of churning code. Triage fix / dismiss / ask per the playbook skill's `references/bugbot-triage.md`, read by path at `${CLAUDE_PLUGIN_ROOT}/skills/playbook/references/bugbot-triage.md`.
-- Broken orbit skill mid-task → fix it in its own PR. Under Land `main`, that is its own worktree and branch in orbit's repo with its own Opening a PR run, not a commit in this task. Don't block. Don't silently work around it.
+- Broken orbit skill mid-task → in orbit's own repo, fix it in its own PR. Under Land `main`, that is its own worktree and branch with its own Opening a PR run, not a commit in this task. From any other repo, file an issue on orbit's repo (`gh issue create --repo aayushbtw/orbit`) with the evidence (what broke, the session, a verbatim quote) and keep going. Don't edit orbit from there. Don't block. Don't silently work around it.
 - Long, autonomous, or multi-phase work, or any task the user steps away from to review later ("going to bed", "trust it when i'm back", "/loop until X") → a decision trail via the **show-me-your-work** skill, read by path at `${CLAUDE_PLUGIN_ROOT}/skills/show-me-your-work/SKILL.md`. Commit it when stakes need an auditable record. Keep it local otherwise.
 
 # Delegation
@@ -72,6 +72,7 @@ End with one `Next:` line. It's a status, not an offer.
 - Nothing left → `Next: nothing pending.`
 - A change that ran Opening a PR → the `Next:` line its **Reply:** names. Shipped → `Next: nothing pending.` once the whole run landed. Opted out with "don't ship" or "I'll land it" → `Next: /orbit:ship`.
 - Work outside the goal, or waiting on the user's call → `Next: /orbit:start <follow-up>`, saying which.
+- A change that waits on the user's review before landing → the line names the review and gives `/orbit:ship` as its own step after it. Never fold landing a held change into an `/orbit:start` follow-up.
 - After `/orbit:pause-safely` → `Next: new session, then /orbit:session-pickup`. Session pickup only resumes paused or another agent's work.
 
 # Writing the reply
@@ -105,3 +106,4 @@ A project's `## Workflow` block in AGENTS.md lists only what differs from these:
    - `code` defaults to `inherit`. It is every spawn a skill names as the `code` model, such as interrogate's second adversary, swarm workers and `how` explorers, and every spawn no role or work type covers, except `orbit:comment-sicko`, which takes no row and runs on its frontmatter.
 
    Every other row is a project work type. Each `orbit:poteto-agent` spawn that no skill puts on a role runs on the one that fits its unit, per the playbook's Delegate gate. Panels name their roles, so they never take a work type. Every arena runner, the extra ones included, runs on `judgment` or `code`. A work type's empty Model is the `code` model. Pass the resolved model as the `Agent` call's `model`, which overrides the agent's frontmatter. `inherit` omits `model`, so the spawn gets Claude Code's default subagent model, which is `CLAUDE_CODE_SUBAGENT_MODEL` when set, else the session model. If the `Agent` tool rejects a row's model, omit `model` and say so. If an `orbit:advisor` spawn fails because Fable is unavailable or its usage limit is reached, retry once with `model: "opus"` and say so. A step that names its own model or effort keeps it, such as `recall`'s `haiku`, the trail reviewer in `show-me-your-work` and multi-phase-plan's live lanes at high. A skill's `model: "opus"` is not a model of its own. It names the `judgment` role. If `code` and `judgment` resolve to the same model, the two-model panels lose their diversity, as they do in an Opus session under the defaults.
+5. Parallel: at most 4 agents that build, test or run the app run at once. A `Parallel: <n>` line in the Workflow block changes it. Read-only agents don't count, and neither does an agent while it only waits on its children. The cap counts the whole tree. The root counts its owners and its own swarm lanes, and each owner runs its own such children one at a time. When the cap is full, start the next agent as one finishes.
