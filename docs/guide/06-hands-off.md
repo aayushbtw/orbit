@@ -57,6 +57,20 @@ The plan is a checklist with one section per PR. Each section names the files, w
 
 The flow lints the plan with `check-plan.mjs`, posts the plan's path, and stops. On your explicit go, it runs under `autopilot-full` or `autopilot-stack`. It picks `autopilot-full` when the run may merge, and `autopilot-stack` when you said "don't ship" or "I'll land it".
 
+## Run a whole program from one chat
+
+A project that runs for days across many stacked PRs goes to one coordinator chat instead of several sessions you keep in sync by hand.
+
+```text
+/orbit:start own this migration until it lands: move every service from the v1 auth client to v2
+```
+
+"run this whole project" or "own this migration until it lands" routes to the `orchestrate` flow. Work one agent could finish in a single session stays with its normal flow, however big the phrasing sounds.
+
+The coordinator writes no code. It decides which agent does each piece of work and checks what each one produces. Each PR gets one owner, spawned and replaced the way `autopilot-full` handles its owners, and the owner is the only agent that writes its branch. Each PR also gets a fresh verifier that never wrote it, and the owner merges only on that verifier's pass at the current head. Workers run in their own worktrees, up to the Parallel cap at once. The coordinator starts the next as one finishes. It takes the first unit all the way to merge before it fans out, so a flaw in the kickoff costs one agent.
+
+The program's state lives in `notes.md` in a store under the repo's git directory, which every worktree can reach and the OS never clears. The coordinator asks you only for a real decision or a blocker, such as an irreversible action or a product call. Rebases, retries, CI flakes and review triage never reach you.
+
 ## When no flow fits, Claude designs one
 
 A large migration or a run you plan to leave alone goes to `/orbit:figure-it-out`. `/orbit:start` routes it there too.

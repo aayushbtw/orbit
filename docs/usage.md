@@ -9,10 +9,11 @@ A lookup reference for orbit's commands, agents and defaults. To learn how a tas
 | Situation | Run |
 | --- | --- |
 | Any new task (a bug, a feature, a refactor, a slow path), or a question with no code change | `/orbit:start <goal>` |
-| A specific flow, or only its step list | `/orbit:playbook <investigate\|bug\|feature\|refactor\|prototype\|perf\|hillclimb\|autopilot-full\|autopilot-stack\|multi-phase-plan>` |
+| A specific flow, or only its step list | `/orbit:playbook <investigate\|bug\|feature\|refactor\|prototype\|perf\|hillclimb\|orchestrate\|autopilot-full\|autopilot-stack\|multi-phase-plan>` |
 | Improve one metric over many rounds, toward a target | `/orbit:playbook hillclimb`, or `/orbit:start` with a metric goal |
 | Run a queue of independent changes to merged, one owner each | `/orbit:start autopilot this queue: <items>` |
 | Build and verify a queue of PRs you land yourself | `/orbit:start build the stack, I'll land it: <items>` |
+| Hand a multi-day program of many stacked PRs to one coordinator chat | `/orbit:start own this migration until it lands: <goal>` |
 | Plan work that spans phases or several PRs, to run on your go | `/orbit:start multi-PR plan: <goal>` |
 | Large or cross-cutting work, or work you step away from | `/orbit:figure-it-out <goal>` (`/orbit:start` routes there too) |
 | Get an open PR green, answer its review threads, or check its status | `/orbit:playbook babysit` (`/orbit:start` routes "babysit this" there) |
@@ -70,7 +71,7 @@ Claude runs these itself. You can also ask for the advisor. A Models table in yo
 
 When each runs:
 
-- poteto-agent and comment-sicko run only inside the flow you start. The verifier runs only inside Shipping (at task end or `/orbit:ship`), autopilot-full and autopilot-stack.
+- poteto-agent and comment-sicko run only inside the flow you start. The verifier runs only inside Shipping (at task end or `/orbit:ship`), orchestrate, autopilot-full and autopilot-stack.
 - The advisor runs at the plan gate, or when you ask for it.
 - As in pstack, the rest is opt-in. `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill` and `/orbit:maintain-verification-skill` run only when you type them.
 - `/orbit:how` and `/orbit:why` run when you type them, when Claude matches a question to them, and inside the investigate and bug flows and `no-comments`.
