@@ -2,7 +2,7 @@
   "typescript-best-practices": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/typescript-best-practices",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Set the frontmatter description to: TypeScript rules for the /orbit:start flow. Not for direct use.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1 of SKILL.md.",
@@ -12,7 +12,7 @@
   "unslop": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/unslop",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Set the frontmatter description to: Cut AI tells from written content: docs pages, READMEs, PR descriptions, blog and site copy, and chat replies. Not for code.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
@@ -22,7 +22,7 @@
   "technical-writing": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/technical-writing",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Set the frontmatter description's `Use for /technical-writing` to `Use for /orbit:technical-writing`.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
@@ -32,7 +32,7 @@
   "interrogate": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/interrogate",
-    "sha": "6b0300214a09fd6029cfb7077043125758cd1fd2",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Set the frontmatter description to: Adversaries try to break a change or design, and only findings a run proves survive. Never applies fixes. Use for /orbit:interrogate.",
       "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook can invoke it.",
@@ -47,7 +47,7 @@
   "swarm": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/swarm",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Set the frontmatter description to: Fan out N parallel workers, drain them, and return one report. Use for /orbit:swarm, 'swarm this', or parallel coverage, races, gauntlets, and exploration.",
       "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook flows can run it through the Skill tool.",
@@ -60,7 +60,7 @@
   "architect": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/architect",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Set the frontmatter description to: Sketch types, signatures and module structure before code, from two parallel design runners, then implement against the chosen sketch. Use for /orbit:architect, or the architect step of an /orbit:playbook flow.",
       "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook can invoke it.",
@@ -78,7 +78,7 @@
   "arena": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/arena",
-    "sha": "6b0300214a09fd6029cfb7077043125758cd1fd2",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Set the frontmatter description to: Spawn N parallel candidates at the same task, pick a base, graft the strongest parts of the losers into it. Use for /orbit:arena, 'arena this', 'throw it in the arena', the arena step of /orbit:architect, or when one attempt at a non-trivial artifact would lock in the wrong shape.",
       "Remove the `disable-model-invocation` frontmatter key so /orbit:architect and the feature flow can invoke it with the Skill tool.",
@@ -94,7 +94,7 @@
   "figure-it-out": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/figure-it-out",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Set the frontmatter description to: Design an auditable playbook when no narrower one fits: a large migration, an ambitious multi-part change, or work a human reviews after stepping away. Scales rigor to the task, runs a hypothesis loop, and logs decisions. Use for /orbit:figure-it-out, or when /orbit:start routes here.",
       "Remove the `disable-model-invocation` frontmatter key so /orbit:start can invoke it.",
@@ -107,7 +107,7 @@
   "deslop": {
     "repo": "cursor/plugins",
     "path": "cursor-team-kit/skills/deslop",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Set the frontmatter description to: Remove AI-generated code slop from the current diff. Run by the opening-a-pr playbook before commit.",
       "Add the line `Source: cursor/plugins, cursor-team-kit (MIT).` under the H1.",
@@ -117,7 +117,7 @@
   "control-ui": {
     "repo": "cursor/plugins",
     "path": "cursor-team-kit/skills/control-ui",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Add the line `Source: cursor/plugins, cursor-team-kit (MIT).` under the H1.",
       "In What It Is Used For, `verify-this` becomes the `orbit:verifier` agent, since orbit does not vendor cursor-team-kit's verify-this."
@@ -126,7 +126,7 @@
   "control-cli": {
     "repo": "cursor/plugins",
     "path": "cursor-team-kit/skills/control-cli",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Add the line `Source: cursor/plugins, cursor-team-kit (MIT).` under the H1."
     ]
@@ -134,7 +134,7 @@
   "reflect": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/reflect",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Set the frontmatter description to: Mine this session's transcript for durable learnings and route each to an edit on a skill it used. Use for /orbit:reflect.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
@@ -149,7 +149,7 @@
     "repo": "cursor/plugins",
     "path": "pstack/agents/poteto-agent.md",
     "dest": "agents/poteto-agent.md",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "Set the frontmatter description to orbit's flow: a delegate spawned during an /orbit:start flow, fresh per unit of work, that reads orbit's playbook SKILL.md and rules.md first; drop `is_background`.",
@@ -163,7 +163,7 @@
     "repo": "cursor/plugins",
     "path": "pstack/agents/comment-sicko.md",
     "dest": "agents/comment-sicko.md",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "Replace the sentence that runs the how and why skills with: I read the named symbol's callers and its history with `git log -L` or `git blame`. (Comment Sicko runs as a subagent and can't spawn the agents how and why need; no-comments runs them from the parent.)",
@@ -173,7 +173,7 @@
   "how": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/how",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Set the frontmatter description to: Explain how a subsystem works (architecture, runtime flow, where things live, where new code belongs) from parallel read-only explorers. Use for /orbit:how; use /orbit:why for motivation.",
       "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook and no-comments can invoke it.",
@@ -185,7 +185,7 @@
   "why": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/why",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Set the frontmatter description to: Explain why code is the way it is (design rationale, regressions, postmortems, thresholds) from git, PRs and every connected MCP, with cited, confidence-tiered findings. Use for /orbit:why; use /orbit:how for runtime behavior.",
       "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook, /orbit:recall and no-comments can invoke it.",
@@ -199,7 +199,7 @@
   "no-comments": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/no-comments",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Set the frontmatter description to: Spawn Comment Sicko over a diff, fix its accepted findings, and offer encodings for claimed constraints. Run by the opening-a-pr playbook before review.",
       "Remove the `disable-model-invocation` frontmatter key; the opening-a-pr playbook invokes it.",
@@ -212,73 +212,73 @@
   "principle-laziness-protocol": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-laziness-protocol",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-subtract-before-you-add": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-subtract-before-you-add",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-minimize-reader-load": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-minimize-reader-load",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-model-the-domain": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-model-the-domain",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-boundary-discipline": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-boundary-discipline",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-type-system-discipline": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-type-system-discipline",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-attack-the-premise": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-attack-the-premise",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-prove-it-works": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-prove-it-works",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-fix-root-causes": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-fix-root-causes",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-test-behavior-not-implementation": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-test-behavior-not-implementation",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-explain-the-number": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-explain-the-number",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "benchmark-checklist": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/benchmark-checklist",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "Rename the pstack playbooks to orbit's: `, per the **Opening a PR** playbook` is dropped (orbit has no one-primary-number rule to point at); `the **Perf issue** playbook's baseline` becomes `the perf flow's baseline (`/orbit:playbook perf`)`; `the **Hillclimb** playbook's harness` becomes `the hillclimb flow's harness (`/orbit:playbook hillclimb`)`."
@@ -287,91 +287,91 @@
   "tdd": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/tdd",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-never-block-on-the-human": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-never-block-on-the-human",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-guard-the-context-window": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-guard-the-context-window",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-build-the-lever": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-build-the-lever",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-encode-lessons-in-structure": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-encode-lessons-in-structure",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-exhaust-the-design-space": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-exhaust-the-design-space",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-experience-first": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-experience-first",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-foundational-thinking": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-foundational-thinking",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-make-operations-idempotent": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-make-operations-idempotent",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-migrate-callers-then-delete-legacy-apis": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-migrate-callers-then-delete-legacy-apis",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-outcome-oriented-execution": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-outcome-oriented-execution",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-redesign-from-first-principles": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-redesign-from-first-principles",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-separate-before-serializing-shared-state": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-separate-before-serializing-shared-state",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "principle-sequence-verifiable-units": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-sequence-verifiable-units",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
   },
   "show-me-your-work": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/show-me-your-work",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "Prefix the `references/decision-log-template.tsv` and `scripts/log.sh` paths with `${CLAUDE_SKILL_DIR}/`.",
@@ -382,7 +382,7 @@
   "recall": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/recall",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "In the shared-record sentence, name the **why** skill as the `/orbit:why` skill.",
@@ -395,7 +395,7 @@
   "automate-me": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/automate-me",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "Replace Cursor's `create-skill` with the `skill-creator` skill (or direct authoring if it isn't installed); `AskQuestion` with `AskUserQuestion` and `allow_multiple` with `multiSelect`; `.cursor/skills` and `~/.cursor/skills` with `.claude/skills` and `~/.claude/skills`.",
@@ -406,7 +406,7 @@
   "create-verification-skill": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/create-verification-skill",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "In the frontmatter description, `/create-verification-skill` becomes `/orbit:create-verification-skill`.",
@@ -418,7 +418,7 @@
   "maintain-verification-skill": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/maintain-verification-skill",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "`/create-verification-skill` becomes `/orbit:create-verification-skill` (intro, step 0), and `/maintain-verification-skill` in the frontmatter description becomes `/orbit:maintain-verification-skill`.",
@@ -434,7 +434,7 @@
     "repo": "cursor/plugins",
     "path": "pstack/skills/poteto-mode/references/bugbot-triage.md",
     "dest": "skills/playbook/references/bugbot-triage.md",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1, above the intro paragraph."
     ]
@@ -443,7 +443,7 @@
     "repo": "cursor/plugins",
     "path": "harness/pstack/claude-code/skills/poteto-mode/scripts",
     "dest": "skills/playbook/scripts",
-    "sha": "1ba91fc25c0977741dd0e267849e6234b037ed0a",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "skip": ["worktree-audit.sh"],
     "edits": [
       "Add `.gitignore` holding `node_modules/`, so the dependencies `bootstrap.ts` installs stay untracked.",
@@ -455,7 +455,7 @@
   "ketchup": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/ketchup",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Set the frontmatter description's `Use for /ketchup.` to `Use for /orbit:ketchup.` Keep `disable-model-invocation`: the autopilot playbooks read it by path.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
@@ -467,7 +467,7 @@
     "repo": "cursor/plugins",
     "path": "pstack/skills/poteto-mode/playbooks/pause-safely.md",
     "dest": "skills/pause-safely/SKILL.md",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Replace the `### Pause safely` heading with frontmatter (`name: pause-safely`, description: Stop cleanly and leave a resume note a fresh session can pick up. Use when the user asks to pause, stop for now or go offline, before switching model, or before imminent context compaction. Not on \"keep going\" or \"don't stop\".), then `# Pause safely` and the line `Source: cursor/plugins, pstack (MIT).` above the intro paragraph.",
       "In step 3, `Commit uncommitted edits` becomes `Have gitops commit uncommitted edits`, and append `Leave a task worktree in place.`",
@@ -479,7 +479,7 @@
     "repo": "cursor/plugins",
     "path": "pstack/skills/poteto-mode/playbooks/session-pickup.md",
     "dest": "skills/session-pickup/SKILL.md",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Replace the `### Session pickup` heading with frontmatter (`name: session-pickup`, description: Resume a prior session's work in this project from its transcript, branch or resume note., `disable-model-invocation: true`), then `# Session pickup`, the line `Source: cursor/plugins, pstack (MIT).`, and the line !`git status --short` above the intro.",
       "In step 1, replace the `agent-transcripts/` / cloud-agent locate sentence with: find this project's transcript folder with `ls ~/.claude/projects/*/${CLAUDE_SESSION_ID}.jsonl`, take its newest other top-level `*.jsonl` by `ls -t`, never read another project's transcripts, also use a pushed branch the user names and the `resume.md` memory note when its `originSessionId` matches; add `If that session was trivial (only a pickup), step back to the one before.`; drop the guard-the-context-window skill reference and the Subagents sentence.",
@@ -492,7 +492,7 @@
     "repo": "cursor/plugins",
     "path": "pstack/skills/poteto-mode/playbooks/worktree-cleanup.md",
     "dest": "skills/worktree-cleanup/SKILL.md",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Replace the `### Worktree and simulator cleanup` heading with frontmatter (`name: worktree-cleanup`, description: Reclaim local disk by pruning merged or abandoned git worktrees and stale iOS simulators. Use on \"what's using my disk\", \"clean up worktrees\", \"prune safe-to-prune worktrees\", \"free up space\" or \"delete old simulators\".), then `# Worktree and simulator cleanup` and the line `Source: cursor/plugins, pstack (MIT).`",
       "In step 1, prefix `scripts/worktree-audit.sh` with `${CLAUDE_SKILL_DIR}/`, and `.cursor/worktrees/myrepo/x` becomes `.claude/worktrees/x`.",
@@ -508,7 +508,7 @@
     "repo": "cursor/plugins",
     "path": "pstack/skills/poteto-mode/scripts/worktree-audit.sh",
     "dest": "skills/worktree-cleanup/scripts/worktree-audit.sh",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "edits": [
       "Drop the Origin CLI branch of the PR lookup; PR state comes from `gh pr list` only, and the comment says so.",
       "Replace the `~/.cursor/projects/<slug>/agent-transcripts` lookup with Claude Code's `~/.claude/projects/<slug>/**/*.jsonl`, where `slugify` replaces every non-alphanumeric char with `-`; scan the main worktree's slug as a prefix (`repo_transcripts`) so sibling-worktree sessions count, and per worktree take the newest of its own slug dir's `*.jsonl` and any repo transcript naming its path.",
@@ -519,7 +519,7 @@
     "repo": "cursor/plugins",
     "path": "pstack/skills/poteto-mode/playbooks",
     "dest": "skills/playbook/playbooks",
-    "sha": "9580c23696ac8d7abed0c166f2f9918800afb819",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
     "skip": ["authoring-a-skill.md", "autonomous-run.md", "eval.md", "orchestrate.md", "pause-safely.md", "runtime-forensics.md", "session-pickup.md", "trace-forensics.md", "visual-parity.md", "worktree-cleanup.md"],
     "edits": [
       "All files: skill references become orbit commands (`how`/**how** -> `/orbit:how`, **why** -> `/orbit:why`, `architect` -> `/orbit:architect`, `interrogate` -> `/orbit:interrogate`, **arena** -> `/orbit:arena`, **swarm** -> `/orbit:swarm`, **figure-it-out** -> `/orbit:figure-it-out`, **unslop** -> `/orbit:unslop`, `/deslop` -> `/orbit:deslop`, `/no-comments` -> `/orbit:no-comments`, `/technical-writing` -> `/orbit:technical-writing`), and read-by-path skills become relative paths (**tdd** -> `../tdd/SKILL.md`, **benchmark-checklist** -> `../benchmark-checklist/SKILL.md`, **show-me-your-work** -> `../show-me-your-work/SKILL.md`, **ketchup** -> `../ketchup/SKILL.md`). Playbook names in prose become orbit flow names (Feature -> feature, Bug fix -> bug, Hillclimb -> `playbooks/hillclimb.md`), the word `playbook` becomes `flow` in `This playbook` (refactoring.md), `this playbook` (babysit.md), `every other playbook` (opening-a-pr.md line 3) and `execution playbook` (multi-phase-plan.md), and `../references/bugbot-triage.md` becomes `references/bugbot-triage.md`.",
@@ -532,18 +532,15 @@
       "perf-issue.md: step 5 cites the measurement in the PR body when Land is `pr`, else in the reply; the hillclimb pointer adds `(`/orbit:playbook hillclimb`)`.",
       "prototype.md: feature routes via `/orbit:start <goal>`; step 5 screenshots via `verify-*` else `/orbit:control-ui`.",
       "hillclimb.md: merge the intro and core-discipline paragraphs and cite prove-it-works, guard-the-context-window and laziness-protocol by name; parallel hypotheses go to delegates per the Delegate gate's parallel exception; `One commit per accepted fix, staging only ...` becomes `One gitops commit per accepted fix, by path. A rejected attempt is reverted in full and only logged.`; replace the autonomous-run wake pointer with the inline wake rule (`/loop`, a `Monitor` watcher on events with a long heartbeat fallback, else a fixed-interval heartbeat).",
-      "opening-a-pr.md: add a **Land** paragraph (Workflow block Land line, default `main`; `pr` pushes `<type>/<slug>` and opens the PR via gitops; `main` pushes nothing and leaves reviewed units on the task branch until `/orbit:ship`); **Worktree** points at the Worktree and Delegate gates; **Commits** becomes gitops committing each reviewed unit by path, with fixup/autosquash for unpushed units; `: ` lead-ins in Descriptions bullets become `. ` and `–` ranges become `to`, the squash note is conditional on a squash merge, and perf links the arena directory only; drop **Built-in PR tool**; **Size and stacks** uses `gh` only and adds the Land `main` stack form; **Readiness** uses `gh` only; **Babysit** also starts under Ship by default; in the subagent paragraph, `starts the loop after its code-ready report` becomes `writes its `code-ready` trail row, starts the loop once its PR is open`; add **Ship by default** (babysit `drive` then Shipping, opt-outs, a multi-phase plan picking its flow by the rule at the end of autopilot-stack.md, and the opt-out picking autopilot-stack) and a **Reply:** line.",
-      "opening-a-pr.md: in the subagent paragraph, `runs `/orbit:interrogate`, `/orbit:deslop`, and `/orbit:no-comments`` becomes `runs `/orbit:deslop` and `/orbit:no-comments``, ported early from upstream 6b03002, which drops interrogate there. Keep `or STACK-READY per its playbook`, which 6b03002 also drops, until the file's next `/update-skills`.",
+      "opening-a-pr.md: add a **Land** paragraph (Workflow block Land line, default `main`; `pr` pushes `<type>/<slug>` and opens the PR via gitops; `main` pushes nothing and leaves reviewed units on the task branch until `/orbit:ship`); **Worktree** points at the Worktree and Delegate gates; **Commits** becomes gitops committing each reviewed unit by path, with fixup/autosquash for unpushed units; `: ` lead-ins in Descriptions bullets become `. ` and `–` ranges become `to`, the squash note is conditional on a squash merge, and perf links the arena directory only; drop **Built-in PR tool**; **Size and stacks** uses `gh` only and adds the Land `main` stack form; **Readiness** uses `gh` only; **Babysit** also starts under Ship by default; in the subagent paragraph, `starts the loop after its code-ready report` becomes `writes its `code-ready` trail row, starts the loop once its PR is open`; add **Ship by default** (babysit `drive` then Shipping, opt-outs, a multi-phase plan running autopilot-full, and the opt-out picking autopilot-stack) and a **Reply:** line.",
       "babysit.md: drop the Cursor built-in babysit sentence; shipping is `/orbit:ship`; add Ship by default starting `drive`, the Land `main` stop, and fixes through the Delegate gate; step 1 drops forge resolution and `bugbot` from `threads-only`, and Ship by default always runs `drive`; step 4 drops `stack-wide submit`, has gitops rebase and push with `--force-with-lease=<branch>:<sha>`; steps 6-7 drop the Origin paths and say `/loop` with no interval; step 8 replies through gitops, writing the payload with the Write tool; step 9 adds orbit's standing ship default; add a **Reply:** line.",
       "babysit.md: in step 6, after the bare-command sentence, add the host-watcher rule (run the bare command first, never only `--status-only`; `--timeout 120` where the host bans loops; act on `READY`, `BLOCKER`, `COMPLETE` or a `WAITING`/`merge-queue` stop and arm nothing; arm the host watcher only on `TIMEOUT` with reason `pending-checks`, or `queued-stack` in queued mode; report a `status-unavailable` timeout as a query failure); the **Reply:** names what a wait waits on and what is armed to wake on it.",
       "shipping.md: add the Ship-by-default intro line and a Land `main` paragraph (verify unpushed branches in worktrees, rebase, Check, patch-id, gitops pushes `HEAD:main` bottom-up); step 1 spawns a fresh `orbit:verifier` with the `verifier` row's model and effort (rules.md Workflow Defaults, Models) and `isolation: \"worktree\"`, spells out its brief, and has gitops post a one-line verdict with SHA and patch-id via `gh pr comment`; step 3 `lane` becomes `verifier run`; step 4 merges through gitops with the Land line's method and rebases the next PR with `git rebase --onto origin/<trunk> <tip>` before a pinned `--force-with-lease`; step 5 drops Origin; Reply says `verdict line`.",
       "shipping.md: in step 5, the queued watcher runs `under /loop, or per the host-watcher rule in playbooks/babysit.md step 6,`.",
-      "autopilot-full.md: map PRs to task branches under Land `main`; owners are `Agent` calls (`general-purpose`, `model: \"opus\"` (the `judgment` model), `isolation: \"worktree\"`) running `/orbit:start <item>` with a spelled-out brief and a fresh-agent replacement rule; owners report `code-ready <sha>` and `head <sha>` as trail rows in `$TMPDIR/orbit-autopilot/<slug>/`, and `push after every unit worth keeping` becomes `commit after every unit worth keeping`; step 4 lanes are each a swarm worker on the `code` model (rules.md Workflow Defaults, Models), briefed as shipping step 1 briefs one, re-run the Check line, and under Land `pr` gitops posts the verdict line on the PR; step 5 spawns a fresh merge-round owner running shipping steps 3-4; the loop tick reads trails and starts swarms, and an owner that has neither committed nor written a trail row is stuck.",
-      "autopilot-stack.md: `**Autopilot-full** holds` becomes `` `playbooks/autopilot-full.md` holds ``, and `re-reads both playbooks from trunk` drops `from trunk`.",
-      "autopilot-stack.md: in step 1, owners report STACK-READY `as a `stack-ready <sha> <parent-branch>` row in their trail, the way they report code-ready`.",
-      "autopilot-stack.md: in step 1, after the branch-from sentence add: Its brief names that branch and its exact tip SHA as the base, in place of `origin/main`, and the owner starts its own branch at that SHA before any work.",
-      "autopilot-stack.md: in step 2, owners report each tip and its intended parent `as trail rows`; after the two-writers sentence add: gitops runs each of your rebases, retargets and pushes in the worktree that holds the link's branch, and publishes a rebase with `git push --force-with-lease=<branch>:<sha>`, pinned to the SHA you last pushed or took over.",
-      "multi-phase-plan.md: map PRs under Land `main`; explorers are `orbit:poteto-agent` on the `code` model; the plan file goes under `$TMPDIR/orbit-autopilot/<slug>/docs/`; after the pick-between sentence add `Per **Ship by default** in `playbooks/opening-a-pr.md`, the run may merge unless the operator said \"don't ship\" or \"I'll land it\".` and drop the `playbooks/orchestrate.md` sentence, since orchestrate.md is not vendored; run `node scripts/check-plan.mjs`; pstack trunk paths (`pstack/skills/poteto-mode/...`, `git show origin/main:...`) and `playbooks/shipping.md` become `<orbit playbook dir>/...` resolved from `${CLAUDE_SKILL_DIR}`; swarm workers run on the `code` model at high, and the Verify, live template's `<swarm workers model>` becomes `<code model>`; lanes run as swarm workers in worktrees, not cloud VMs, on distinct ports, and the boot recipe drops `git fetch origin <head-branch> &&`; `gh` only; `One gates lane.` becomes `One gates lane re-runs the Check line.`."
+      "autopilot-full.md: map PRs to task branches under Land `main`; owners are `Agent` calls (`general-purpose`, `model: \"opus\"` (the `judgment` model), `isolation: \"worktree\"`) running `/orbit:start <item>` with a spelled-out brief and a fresh-agent replacement rule; owners report `code-ready <sha>` and `head <sha>` as trail rows in `$TMPDIR/orbit-autopilot/<slug>/`, and `push each finished unit before you start the next` becomes `commit each finished unit before you start the next`; step 4 lanes are each a swarm worker on the `code` model (rules.md Workflow Defaults, Models), briefed as shipping step 1 briefs one, re-run the Check line, and under Land `pr` gitops posts the verdict line on the PR; step 5 spawns a fresh merge-round owner running shipping steps 3-4; the loop tick reads trails and starts swarms, and an owner that has neither committed nor written a trail row is stuck.",
+      "autopilot-stack.md: `Run the Autopilot-full playbook` becomes ``Run `playbooks/autopilot-full.md` ``.",
+      "autopilot-stack.md: in step 2, after the `Base the PR on the other PR's branch` sentence add: Its owner's brief names that branch and its exact tip SHA as the base, in place of `origin/main`, and the owner starts its own branch at that SHA before any work.",
+      "multi-phase-plan.md: map PRs under Land `main`; explorers are `orbit:poteto-agent` on the `code` model; the plan file goes under `$TMPDIR/orbit-autopilot/<slug>/docs/`; after the two pick sentences add `Per **Ship by default** in `playbooks/opening-a-pr.md`, the run may merge unless the operator said \"don't ship\" or \"I'll land it\".` and drop the `playbooks/orchestrate.md` sentence, since orchestrate.md is not vendored; run `node scripts/check-plan.mjs`; pstack trunk paths (`pstack/skills/poteto-mode/...`, `git show origin/main:...`) and `playbooks/shipping.md` become `<orbit playbook dir>/...` resolved from `${CLAUDE_SKILL_DIR}`; swarm workers run on the `code` model at high, and the Verify, live template's `<swarm workers model>` becomes `<code model>`; lanes run as swarm workers in worktrees, not cloud VMs, on distinct ports, and the boot recipe drops `git fetch origin <head-branch> &&`; `gh` only; `One gates lane.` becomes `One gates lane re-runs the Check line.`."
     ]
   }
 }
