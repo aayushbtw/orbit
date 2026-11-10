@@ -85,8 +85,8 @@ In the **orbit.** lines, paths under `agents/`, `hooks/` and `skills/`, and `rul
 ### Parallel cap
 
 - **pstack.** No cap. Swarm says "Spawn all N workers in one message" with `environment: "cloud"` (`skills/swarm/SKILL.md`), and autopilot-full says "Run owners in parallel off trunk" (`playbooks/autopilot-full.md` step 3).
-- **orbit.** rules.md Workflow Defaults item 5. At most 4 agents that build, test or run the app run at once, and a `Parallel: <n>` line in the Workflow block changes it. Read-only agents don't count, and neither does an agent that only waits on its children. The cap counts the whole tree, so the root counts its owners and its own swarm lanes, and each owner runs its own such children one at a time. Swarm spawns up to the cap in one message and starts the next as one finishes. Autopilot owners, parallel delegate units and hillclimb, figure-it-out and arena fan-out run under it.
-- **Why.** pstack's workers run on cloud VMs, so their count costs the user's machine nothing. Here every agent runs on the user's laptop. The user said "too many parallel agents i told u laptop is heating up bro" and "use 4-5 max" (transcript audit, 2026-11-10). The default takes the low end of that range. Owners run their children one at a time so a tree of owners can't multiply past the cap.
+- **orbit.** rules.md Workflow Defaults item 5. At most 4 agents that build, test or run the app run at once, and read-only agents don't count. Swarm spawns up to the cap in one message and starts the next as one finishes. Autopilot owners, parallel delegate units and hillclimb, figure-it-out and arena fan-out run under it.
+- **Why.** pstack's workers run on cloud VMs, so their count costs the user's machine nothing. Here every agent runs on the user's laptop. The user said "too many parallel agents i told u laptop is heating up bro" and "use 4-5 max" (transcript audit, 2026-11-10). The default takes the low end of that range. A configurable `Parallel:` key and rules for counting nested agents were tried and dropped on 2026-11-10, because pstack has no such machinery. A project that needs fewer agents says so in its own AGENTS.md.
 
 ### Machine line
 

@@ -11,7 +11,7 @@ Without a block, orbit uses these defaults:
 - **Check.** `vpr check`, then `vpr build` and `vpr test` if those scripts exist.
 - **Land.** `main`. Each change gets its own worktree off `origin/main`, and Shipping fast-forwards `main` to it.
 - **Review.** `/orbit:interrogate` runs before shipping when the design is contested.
-- **Parallel.** 4. At most 4 agents that build, test or run the app run at once, counted across the whole tree of subagents. Read-only agents don't count.
+- **Parallel.** At most 4 agents that build, test or run the app run at once. Read-only agents don't count.
 - **Models.** No work types. Prose delegates, such as a docs unit, run on the `judgment` model, which is Opus. Code delegates tier by difficulty, so the hardest also run on the `judgment` model and the rest on the `code` model, which is your session model or `CLAUDE_CODE_SUBAGENT_MODEL` when it is set. The `judgment` model also runs one side of each two-model panel, autopilot owners, the `how` explainer and the `why` synthesizer. The `code` model also runs the other side, swarm workers and explorers. gitops runs on Sonnet at `low`, the verifier on your session model at `high`, and the advisor on Fable at `high`, each from its agent file.
 
 The block lists only what differs. Start from [`templates/workflow-block.md`](../../templates/workflow-block.md), paste it into AGENTS.md, and delete every line that doesn't apply. The template says not to create a CLAUDE.md for it. Here is a block for a project that opens PRs, has two folders with their own conventions, and routes two kinds of work to their own models:
@@ -41,7 +41,6 @@ Each line does one job:
 | Land | `pr` to land through pull requests, plus the merge method if it isn't squash | Opening a PR opens the PR, Babysit drives it to merge-ready, and Shipping merges it. Under either setting, a fresh verifier passes the change before it lands. |
 | Before code | Guidance for writing code under a path, as `<path>: <source>` entries separated by `;`. A source is a file to read, or a command that prints a skill or its path. | Each code delegate under that path, copied word for word into its brief. Also the plan gate and `/orbit:interrogate`. |
 | Review also checks | Docs to read before planning and at review only. Scope one to a path with `src/server/: <source>`. | The plan gate and `/orbit:interrogate` |
-| Parallel | How many agents that build, test or run the app run at once, 4 by default. Read-only agents and an agent that only waits on its children don't count. Write `Parallel: 1` for a light machine. | Every fan-out, such as parallel delegate units, swarm workers, arena runners, hillclimb attempts and autopilot owners |
 | Models | A `### Models` table with Task, Use for, Model and Effort columns. Each row is a work type of your own, or one of orbit's roles: `gitops`, `verifier`, `advisor`, `judgment` and `code`. An empty cell keeps the default. | Every subagent Claude spawns, except Comment Sicko and a step that names its own model or effort, such as `/orbit:recall`. [Route work by work type](#route-work-by-work-type) explains how Claude picks a row. |
 
 Before code is the line that goes into the brief of the agent writing the code. Put guidance there that code under a path must follow. Put a doc in Review also checks when it matters for the plan and the review but not for each edit.
