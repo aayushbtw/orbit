@@ -111,7 +111,7 @@ Shipping verifies each PR first, then walks up from the lowest unmerged PR and s
   <img alt="A stack of four PRs, PR 1 at the bottom. PR 1 passed and PR 2 passed with notes, so they form the run and land bottom-up, with PR 2 as the ceiling. PR 3 failed. PR 4 passed but waits, because it needs PR 3 under it." src="../diagrams/guide-stack-light.svg">
 </picture>
 
-Before it trusts an older verdict, Shipping compares the patch-id at the verdict SHA with the current head. A rebase moves every PR above it to a new SHA without failing a check, so a verdict covers a patch, not a commit. Then it merges bottom-up, one PR at a time, with `--squash` unless your Land line names another method. It reads each PR back afterward, because a merge command can report success when a merge queue only queued the PR. Under Land `main`, it rebases each branch onto `origin/main`, runs the Check line, and pushes it to `main` one branch at a time, with no force-push.
+Before it trusts an older verdict, Shipping compares the patch-id at the verdict SHA with the current head. A rebase moves every PR above it to a new SHA without failing a check, so a verdict covers a patch, not a commit. Then it merges bottom-up, one PR at a time, with `--squash` unless your Land line names another method. It reads each PR back afterward, because a merge command can report success when a merge queue only queued the PR. Under Land `main`, it rebases each branch onto `origin/main`, runs the Check line, and pushes it to `main` one branch at a time, with no force-push. Once a branch lands, Shipping removes its worktree, the verifier's and owners' worktrees, and the branch. A worktree with uncommitted changes stays, and the reply names it.
 
 ## Land later with /orbit:ship
 

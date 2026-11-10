@@ -7,6 +7,7 @@ List only what differs from the Workflow Defaults in orbit's rules; delete the l
 - Land: `pr` (default is `main`), plus the merge method if not squash.
 - Before code: <guidance for writing code under a path, which code delegates and `/orbit:interrogate` load and never skip; one `<path>: <source>` entry per source, separated by `;`, where a source is a file to read or a command that prints a skill or its path, eg `src/server/: node_modules/effect/AGENTS.md`; `src/routes/: vpx @tanstack/intent@latest load @tanstack/react-start#react-start --path`>.
 - Review also checks: <docs read before planning and at review only; scope one to a path with `src/server/: <source>`>.
+- Parallel: <only if not 4; how many agents that build, test or run the app run at once, eg `1` on a light machine>.
 
 ### Models
 

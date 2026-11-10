@@ -12,11 +12,11 @@ The feature, bug, refactor, perf and hillclimb flows, and `/orbit:figure-it-out`
 
 ## Give each change its own worktree
 
-Before the first edit, Claude calls `EnterWorktree` and moves into a new git worktree under `.claude/worktrees/`. The worktree is named `<type>-<slug>`, and its branch is renamed to `<type>/<slug>`, where `<type>` is the commit type of the change, such as `feat`, `fix`, `refactor` or `perf`. When the project has a lockfile, Claude runs `vp install` so the check can run there.
+Before the first edit, Claude calls `EnterWorktree` and moves into a new git worktree under `.claude/worktrees/`. The worktree is named `<type>-<slug>`, and its branch is renamed to `<type>/<slug>`, where `<type>` is the commit type of the change, such as `feat`, `fix`, `refactor` or `perf`. When the project has a lockfile, Claude runs `vp install` so the check can run there. Gitignored files the check needs, such as `.env.local`, come in through the project's `.worktreeinclude` ([Copy gitignored files into each worktree](./08-make-it-fit.md#copy-gitignored-files-into-each-worktree)).
 
 A worktree exists so that parallel sessions never share a checkout. You can run two tasks at once, or keep working in your main checkout, and neither sees the other's half-finished edits. The worktrees stay out of your main checkout's `git status`.
 
-If the session is already in a clean worktree, Claude reuses it. If that worktree holds unrelated work or is in a bad state, Claude starts a fresh one with a new slug. Worktrees stay after the change lands, until you run `/orbit:worktree-cleanup`.
+If the session is already in a clean worktree, Claude reuses it. If that worktree holds unrelated work or is in a bad state, Claude starts a fresh one with a new slug. When the change lands, Shipping removes its worktree and branch. `/orbit:worktree-cleanup` removes worktrees from tasks that never landed.
 
 ## Check a large plan before writing it
 
@@ -36,17 +36,19 @@ before you touch anything, get the advisor's read on this migration plan.
 
 ## Keep the author and the reviewer apart
 
-The delegate gate splits the work in two. Claude plans, reviews and verifies. A fresh `orbit:poteto-agent` writes the code, one verifiable unit at a time.
+The delegate gate splits the work in two. Claude plans, reviews and verifies. A fresh `orbit:poteto-agent` writes the code, one verifiable unit per delegate.
 
 Each delegate's brief holds the worktree path, the file paths, the named data shape, the behavior to reach or hold, the check that proves it, and every `Before code` entry from your Workflow block for those paths, copied word for word. The delegate reads orbit's playbook and rules in full, loads those entries, writes the unit, and reports its changed paths and the check it ran. It never commits.
 
-Claude then reviews the diff, confirms the changed paths match the brief, and runs the check itself. Only then does gitops commit that unit by path. The next delegate starts after that commit.
+Claude then reviews the diff, confirms the changed paths match the brief, and runs the check itself. Only then does gitops commit that unit by path. Units that share a file run one after another, and the next delegate starts after that commit.
 
 No code is reviewed by the agent that wrote it. The gate holds for a one-line change too, because the gain is the separate review, not fewer lines in the main session. A fix round goes to a fresh delegate with the original brief, every later instruction, Claude's findings and the current diff. Claude does not ask the first delegate to patch its own work.
 
-Each delegate runs on its unit's work type, the row of your Workflow block's Models table whose Use for fits the unit, at that row's model and effort ([Route work by work type](./08-make-it-fit.md#route-work-by-work-type)). With no work types, or none that fits the unit, a prose delegate, such as a docs unit, runs on the `judgment` model, which is Opus by default. Code delegates tier by difficulty. Delegates for the hardest changes also run on the `judgment` model. Those are cross-cutting design, tricky concurrency and subtle algorithms. Every other delegate runs on the `code` model, which is your session model by default.
+Each delegate runs on its unit's work type, the row of your Workflow block's Models table whose Use for fits the unit, at that row's model and effort ([Route work by work type](./08-make-it-fit.md#route-work-by-work-type)). With no work types, or none that fits the unit, a prose delegate, such as a docs unit, runs on the `judgment` model, which is Opus by default. Code delegates tier by difficulty. Delegates for the hardest changes also run on the `judgment` model. Those are cross-cutting design, tricky concurrency and subtle algorithms. Trivial mechanical edits run on the `code` model, which is your session model by default. So does every other delegate, unless a `code` row makes that model cheaper than your session model. Then those delegates run on your session model.
 
-Arena runners and parallel hillclimb or figure-it-out attempts are the one exception to one delegate at a time. Each works in its own worktree. For each attempt worth keeping, gitops commits it there and cherry-picks it onto the task branch.
+Two kinds of delegates run in parallel. Units the feature flow's throughput checkpoint marks independent, with disjoint files, run side by side. So do arena runners and parallel hillclimb or figure-it-out attempts. Each works in its own worktree, and all of them stay under the Parallel cap, 4 agents by default ([Make orbit fit your project](./08-make-it-fit.md#write-the-differences-in-a-workflow-block)). For each unit or attempt worth keeping, gitops commits it there and cherry-picks it onto the task branch.
+
+Every delegate's brief also says it runs on your machine, not a VM. It runs the app headless or windowless when the project allows it, and never opens a window that takes focus or plays sound unless you agreed.
 
 ## Build in small units with ordered commits
 
@@ -54,7 +56,7 @@ Before it fans out, the feature flow writes a throughput checkpoint as four todo
 
 The work then goes out in small units that each end in a check. The sequence-verifiable-units principle drives this. Claude builds, verifies and commits each unit before it starts the next, so each step is proven before the next one builds on it.
 
-Because units are committed in order as they pass review, the history needs no reordering at the end. gitops writes each commit as `type(scope): subject`, with a body that says why the change exists. A fix that belongs in an unpushed unit folds into it with `--fixup` and `--autosquash`.
+gitops writes each commit as `type(scope): subject`, with a body that says why the change exists. A fix that belongs in an unpushed unit folds into it with `--fixup` and `--autosquash`. Before Shipping, gitops rebases the unpushed units into small, ordered commits, so fix rounds don't clutter the history. It never rewrites a pushed commit.
 
 A bug fix follows the same pattern. When the bug has a cheap local test path, the bug flow points to the `tdd` skill, and the failing reproduction lands as its own commit before the fix.
 

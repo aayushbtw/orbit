@@ -93,7 +93,7 @@ When you need to stop mid-task, switch model, or close the session, say so or ru
 /orbit:pause-safely
 ```
 
-Claude finishes or backs out of the current step and starts nothing new. It commits uncommitted edits as one `wip:` commit, leaves the worktree in place, and writes a resume note to its memory folder, not the repo. The reply names the first action to take on resume. Pausing takes no irreversible step, so it opens no PR and pushes nothing unless a PR was already out. "keep going" or "don't stop" never pauses.
+Claude finishes or backs out of the current step and starts nothing new. It commits uncommitted edits as one `wip:` commit, leaves the worktree in place, and writes a resume note to its memory folder, not the repo. Each paused task gets its own note, named after the task's slug, so a pause in another session never overwrites it. The reply names the first action to take on resume. Pausing takes no irreversible step, so it opens no PR and pushes nothing unless a PR was already out. "keep going" or "don't stop" never pauses.
 
 In a new session, run `/orbit:session-pickup`. It reads the last session's transcript, the git log and the resume note, works out what is done and what is left, and routes the rest through `/orbit:start` or Opening a PR. It treats the earlier trail as true and doesn't redo finished work. It does check the inherited claims on the real artifact, because a passing self-report is not proof.
 

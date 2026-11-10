@@ -11,6 +11,7 @@ Without a block, orbit uses these defaults:
 - **Check.** `vpr check`, then `vpr build` and `vpr test` if those scripts exist.
 - **Land.** `main`. Each change gets its own worktree off `origin/main`, and Shipping fast-forwards `main` to it.
 - **Review.** `/orbit:interrogate` runs before shipping when the design is contested.
+- **Parallel.** 4. At most 4 agents that build, test or run the app run at once, counted across the whole tree of subagents. Read-only agents don't count.
 - **Models.** No work types. Prose delegates, such as a docs unit, run on the `judgment` model, which is Opus. Code delegates tier by difficulty, so the hardest also run on the `judgment` model and the rest on the `code` model, which is your session model or `CLAUDE_CODE_SUBAGENT_MODEL` when it is set. The `judgment` model also runs one side of each two-model panel, autopilot owners, the `how` explainer and the `why` synthesizer. The `code` model also runs the other side, swarm workers and explorers. gitops runs on Sonnet at `low`, the verifier on your session model at `high`, and the advisor on Fable at `high`, each from its agent file.
 
 The block lists only what differs. Start from [`templates/workflow-block.md`](../../templates/workflow-block.md), paste it into AGENTS.md, and delete every line that doesn't apply. The template says not to create a CLAUDE.md for it. Here is a block for a project that opens PRs, has two folders with their own conventions, and routes two kinds of work to their own models:
@@ -40,6 +41,7 @@ Each line does one job:
 | Land | `pr` to land through pull requests, plus the merge method if it isn't squash | Opening a PR opens the PR, Babysit drives it to merge-ready, and Shipping merges it. Under either setting, a fresh verifier passes the change before it lands. |
 | Before code | Guidance for writing code under a path, as `<path>: <source>` entries separated by `;`. A source is a file to read, or a command that prints a skill or its path. | Each code delegate under that path, copied word for word into its brief. Also the plan gate and `/orbit:interrogate`. |
 | Review also checks | Docs to read before planning and at review only. Scope one to a path with `src/server/: <source>`. | The plan gate and `/orbit:interrogate` |
+| Parallel | How many agents that build, test or run the app run at once, 4 by default. Read-only agents and an agent that only waits on its children don't count. Write `Parallel: 1` for a light machine. | Every fan-out, such as parallel delegate units, swarm workers, arena runners, hillclimb attempts and autopilot owners |
 | Models | A `### Models` table with Task, Use for, Model and Effort columns. Each row is a work type of your own, or one of orbit's roles: `gitops`, `verifier`, `advisor`, `judgment` and `code`. An empty cell keeps the default. | Every subagent Claude spawns, except Comment Sicko and a step that names its own model or effort, such as `/orbit:recall`. [Route work by work type](#route-work-by-work-type) explains how Claude picks a row. |
 
 Before code is the line that goes into the brief of the agent writing the code. Put guidance there that code under a path must follow. Put a doc in Review also checks when it matters for the plan and the review but not for each edit.
@@ -85,7 +87,7 @@ Before each spawn, Claude asks three questions in order. The first yes decides t
 1. A step that names its own model or effort keeps it. `/orbit:recall` runs on Haiku, the trail reviewer in `show-me-your-work` picks its own tier, and multi-phase-plan's live lanes run at `high`.
 2. A spawn that names a role takes that role's row. gitops, the verifier and the advisor each take their own row. Interrogate's adversaries, arena's runners, swarm workers, autopilot owners, multi-phase-plan explorers, and the subagents of `/orbit:how`, `/orbit:why` and `/orbit:reflect` each name `judgment` or `code`. A skill that spawns with `model: "opus"` names the `judgment` role, so a `judgment` row reaches it. A two-model panel never takes a work type, so its sides follow only the `judgment` and `code` rows. Comment Sicko takes no row, so it keeps its agent file's effort and runs on the default subagent model.
 3. Any other `orbit:poteto-agent` spawn takes the work type whose Use for fits its unit. That covers code delegates and their fix rounds.
-4. A unit that no work type fits runs as it does with no table. A prose unit, such as docs or a written explanation, runs on the `judgment` model. A code unit tiers by difficulty. The hardest change, such as a cross-cutting design or a subtle algorithm, runs on the `judgment` model, and the rest run on the `code` model. When the project has work types, Claude's reply names each unit that none of them fit, so you can add a row.
+4. A unit that no work type fits runs as it does with no table. A prose unit, such as docs or a written explanation, runs on the `judgment` model. A code unit tiers by difficulty. The hardest change, such as a cross-cutting design or a subtle algorithm, runs on the `judgment` model, and the rest run on the `code` model. When a `code` row makes that model cheaper than your session model, only trivial mechanical edits go to it, and the rest run on your session model. When the project has work types, Claude's reply names each unit that none of them fit, so you can add a row.
 
 A row reaches subagents only. Claude plans in your session, on the model you picked with `/model`. The game's `phase-planning` row reaches the subagents Claude spawns for planning work, not the planning in your chat.
 
@@ -115,7 +117,9 @@ In an Opus session under the defaults, the `judgment` and `code` models are both
 | `code` | | sonnet | |
 ```
 
-The row moves every spawn on the `code` role to Sonnet. That covers one side of each panel, swarm workers, `how` explorers and every code delegate that no work type fits and isn't the hardest. In an Opus session, the same row makes all of those spawns cheaper. The row doesn't move gitops, the verifier, the advisor or Comment Sicko.
+The row moves every spawn on the `code` role to Sonnet. That covers one side of each panel, swarm workers and `how` explorers. In an Opus session, the same row makes all of those spawns cheaper. The row doesn't move gitops, the verifier, the advisor or Comment Sicko.
+
+Code delegates are the catch. Without a guard, a Sonnet `code` row would also move every code delegate that no work type fits and isn't the hardest, so most of your code would be written on Sonnet. Orbit guards it. When the `code` row is cheaper than your session model, only trivial mechanical edits go to it, and every other code delegate runs on your session model. To put more code on Sonnet on purpose, add a work type for that kind of work.
 
 ## Put folder rules next to the code
 
@@ -170,9 +174,18 @@ It mines your recent transcripts in the current workspace only, split into slice
 
 The new skill goes in `.claude/skills/<handle>-mode/SKILL.md`, or in `~/.claude/skills/<handle>-mode/` if you want it personal. It runs when you type `/<handle>-mode`, not on every turn, unless you ask otherwise. It lands from a worktree through a PR, never by a push to `main`. On a later run, it reads only the history since the skill last changed and keeps every section you haven't contradicted.
 
+## Copy gitignored files into each worktree
+
+A new worktree holds only tracked files. If your Check needs a gitignored file, such as `.env.local`, list its pattern in a `.worktreeinclude` file at the repo root, one pattern per line. Claude Code copies matching files into each new worktree. When Claude finds the Check needs a file the list lacks, it adds the pattern and copies the file in once.
+
+```text
+.env.local
+.claude/settings.local.json
+```
+
 ## Clean up old worktrees
 
-Every change gets its own worktree under `.claude/worktrees/`, so parallel sessions never share a checkout. Worktrees stay after their change lands, and they add up on disk. `/orbit:worktree-cleanup` removes them, and it also runs when you ask Claude to clean up worktrees or free up space.
+Every change gets its own worktree under `.claude/worktrees/`, so parallel sessions never share a checkout. When a change lands, Shipping removes its worktree, the verifier's and owners' worktrees, and its branch. A worktree with uncommitted changes stays, and the reply names it. Worktrees from abandoned or unshipped tasks still add up on disk. `/orbit:worktree-cleanup` removes them, and it also runs when you ask Claude to clean up worktrees or free up space.
 
 ```text
 /orbit:worktree-cleanup

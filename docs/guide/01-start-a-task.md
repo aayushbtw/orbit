@@ -70,6 +70,8 @@ The list exists so you can see the whole run before it starts, and so no step di
 
 The Plan gate applies only when a change adds a module or touches more than 3 files, so a two-file fix skips it in plain sight. If a skip looks wrong to you, say so.
 
+You can waive steps yourself. A step you rule out, such as "no subagents", "skip e2e" or "no commit", stays in the list as `skip: user waived`. "Just testing" or "quick check" waives the commit, the PR and shipping. Brainstorming or iterating on UI you may not keep routes to `prototype`, so it skips the full build.
+
 For a change, the list continues past the flow's own steps. Opening a PR comes next. Then, unless you opted out, Babysit and Shipping. A `prototype` is the exception. It is throwaway, so it ends at its reply.
 
 <picture>
