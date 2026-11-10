@@ -26,7 +26,7 @@ A plan that adds a module or touches more than 3 files goes through the plan gat
 - every AGENTS.md or CLAUDE.md in those folders and the folders above them
 - each `.claude/rules/` file whose `paths` match
 
-Then it briefs the advisor with the plan and those sources. The advisor runs on Opus at `high` effort unless an `advisor` row in your Models table changes it, reads the repository itself, and edits nothing. It returns a verdict of `proceed`, `proceed with changes` or `stop`, with concrete recommendations, and Claude acts on it.
+Then it briefs the advisor with the plan and those sources. The advisor runs on Fable at `high` effort unless an `advisor` row in your Models table changes it, reads the repository itself, and edits nothing. It returns a verdict of `proceed`, `proceed with changes` or `stop`, with concrete recommendations, and Claude acts on it.
 
 The gate exists because a wrong shape is cheapest to fix before any code depends on it. A second model checks a multi-file plan against the project's own rules at that point, not after review. You can also ask for the advisor at any other time:
 

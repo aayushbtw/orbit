@@ -66,7 +66,7 @@ Claude runs these itself. You can also ask for the advisor. A Models table in yo
 | gitops | Sonnet at `low` effort, or the `gitops` row | Commits, pushes, PRs and merges. |
 | comment-sicko | Your session's model, or `CLAUDE_CODE_SUBAGENT_MODEL` when set, at `medium` effort | Deletes comments outside its keep list and flags the code they excuse, before review. |
 | verifier | Your session's model, or `CLAUDE_CODE_SUBAGENT_MODEL` when set, at `high` effort, or the `verifier` row. No Edit or Write tools, in its own worktree. | Runs the change the way a user would before it lands, and returns PASS, PASS+NOTES or FAIL. It is never the agent that wrote the change. |
-| advisor | Opus at `high` effort, or the `advisor` row. Read-only. | Gives a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time. |
+| advisor | Fable at `high` effort, or the `advisor` row. Read-only. | Gives a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time. |
 
 When each runs:
 

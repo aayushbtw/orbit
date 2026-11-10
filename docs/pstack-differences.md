@@ -31,8 +31,8 @@ In the **orbit.** lines, paths under `agents/`, `hooks/` and `skills/`, and `rul
 ### Plan gate
 
 - **pstack.** No plan gate and no advisor. pstack ships only `poteto-agent` and `comment-sicko` (`agents/`).
-- **orbit.** The Plan gate (`skills/playbook/SKILL.md`) runs when a change adds a module or touches more than 3 files. The lead reads the project sources for those paths, briefs `orbit:advisor` (`agents/advisor.md`, Opus at `high` unless the project's `advisor` row changes it, read-only) with the plan and the sources, and acts on its verdict.
-- **Why.** Orbit's choice. A second model checks a multi-file plan against the project's rules before code exists, when a wrong shape costs least to fix.
+- **orbit.** The Plan gate (`skills/playbook/SKILL.md`) runs when a change adds a module or touches more than 3 files. The lead reads the project sources for those paths, briefs `orbit:advisor` (`agents/advisor.md`, Fable at `high` unless the project's `advisor` row changes it, read-only) with the plan and the sources, and acts on its verdict. If the spawn fails because Fable is unavailable or its usage limit is reached, the lead retries once on Opus (rules.md Workflow Defaults, Models).
+- **Why.** Orbit's choice. A second model checks a multi-file plan against the project's rules before code exists, when a wrong shape costs least to fix. The advisor moved from Opus to Fable on 2026-11-10. Anthropic's Fable 5.2 launch page (https://www.anthropic.com/claude-fable-and-mythos-5-2) names Fable for the advisor role, where "Haiku, Sonnet, or Opus models consult it". The same page recommends Opus as the daily driver, so under the defaults the lead runs on Opus and a Fable advisor is a second model.
 
 ### Running another skill
 

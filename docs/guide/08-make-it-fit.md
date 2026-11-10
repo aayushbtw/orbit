@@ -11,7 +11,7 @@ Without a block, orbit uses these defaults:
 - **Check.** `vpr check`, then `vpr build` and `vpr test` if those scripts exist.
 - **Land.** `main`. Each change gets its own worktree off `origin/main`, and Shipping fast-forwards `main` to it.
 - **Review.** `/orbit:interrogate` runs before shipping when the design is contested.
-- **Models.** No work types. Prose delegates, such as a docs unit, run on the `judgment` model, which is Opus. Code delegates tier by difficulty, so the hardest also run on the `judgment` model and the rest on the `code` model, which is your session model or `CLAUDE_CODE_SUBAGENT_MODEL` when it is set. The `judgment` model also runs one side of each two-model panel, autopilot owners, the `how` explainer and the `why` synthesizer. The `code` model also runs the other side, swarm workers and explorers. gitops runs on Sonnet at `low`, the verifier on your session model at `high`, and the advisor on Opus at `high`, each from its agent file.
+- **Models.** No work types. Prose delegates, such as a docs unit, run on the `judgment` model, which is Opus. Code delegates tier by difficulty, so the hardest also run on the `judgment` model and the rest on the `code` model, which is your session model or `CLAUDE_CODE_SUBAGENT_MODEL` when it is set. The `judgment` model also runs one side of each two-model panel, autopilot owners, the `how` explainer and the `why` synthesizer. The `code` model also runs the other side, swarm workers and explorers. gitops runs on Sonnet at `low`, the verifier on your session model at `high`, and the advisor on Fable at `high`, each from its agent file.
 
 The block lists only what differs. Start from [`templates/workflow-block.md`](../../templates/workflow-block.md), paste it into AGENTS.md, and delete every line that doesn't apply. The template says not to create a CLAUDE.md for it. Here is a block for a project that opens PRs, has two folders with their own conventions, and routes two kinds of work to their own models:
 
@@ -68,7 +68,7 @@ Each column does one job:
 
 - **Task** names the row in kebab case. Five names belong to orbit's roles: `gitops`, `verifier`, `advisor`, `judgment` and `code`. A row with one of those names changes only that role. Every other row is a work type.
 - **Use for** names the work the row covers. Claude reads it to match a unit to a row.
-- **Model** is `opus`, `sonnet`, `haiku`, `fable` or `inherit`. `inherit` passes no model, so the spawn runs on `CLAUDE_CODE_SUBAGENT_MODEL` when it is set, else on your session model. On the `gitops` and `advisor` rows, `inherit` keeps the model in the agent file.
+- **Model** is `opus`, `sonnet`, `haiku`, `fable` or `inherit`. `inherit` passes no model, so the spawn runs on `CLAUDE_CODE_SUBAGENT_MODEL` when it is set, else on your session model. On the `gitops` and `advisor` rows, `inherit` keeps the model in the agent file. `fable` is Fable 5.2 from Claude Code 2.1.321 on, and Fable 5.1 before it. Fable's safeguards block most cybersecurity work, such as penetration testing and exploit generation, and an older Opus answers in its place. On a security project, set the `advisor` row's Model to `opus` and keep `fable` off rows whose work is security.
 - **Effort** is `low`, `medium`, `high`, `xhigh` or `max`.
 
 An empty cell keeps the default. The game has no role rows, so its roles keep orbit's defaults. Commits already run on Sonnet at `low` from gitops's agent file. A role row changes only the cells it fills, as the `code` row in [Give the panels a second model](#give-the-panels-a-second-model) shows.
@@ -101,9 +101,9 @@ Row order breaks any tie that is left, so the first row that fits wins. Put narr
 
 An Effort cell is the level Claude passes, as written. Claude adds no judgment of its own on top. With no Effort cell, gitops, the verifier, the advisor and Comment Sicko keep the level in their agent files. For any other spawn, Claude picks `high` for hard and judgment work, and `medium` or `low` for routine work. It passes `xhigh` or `max` only when a step, a row or you name them.
 
-A work type's cell can add a step with `after <n> failed tries`. A failed try is a delegate whose work on the unit fails Claude's review or the check, or that crashes or returns nothing. Parallel attempts, such as arena runners, count no tries, and each part of a split unit starts at zero. In the game, a `shader-math` unit runs at `high` for its first two delegates. If both fail, the third runs at `xhigh`. The unit's todo item carries its try count. The step works in a Model cell too, such as `sonnet, opus after 2 failed tries`.
+A work type's cell can add a step with `after <n> failed tries`. A failed try is a delegate whose work on the unit fails Claude's review or the check, or that crashes or returns nothing. Parallel attempts, such as arena runners, count no tries, and each part of a split unit starts at zero. In the game, a `shader-math` unit runs at `high` for its first two delegates. If both fail, the third runs at `xhigh`. The unit's todo item carries its try count. The step works in a Model cell too, such as `sonnet, opus after 2 failed tries`. A cell of `opus, fable after 2 failed tries` keeps a work type on Opus and moves a unit to Fable once Opus has failed it twice.
 
-If the `Agent` tool rejects a row's model, Claude passes no model and says so. If it rejects a level, Claude tries no other level. It uses the row's level or the one in the agent file, and says so.
+If the `Agent` tool rejects a row's model, Claude passes no model and says so. If the advisor can't run on Fable, because your account lacks it or its usage limit is reached, Claude retries it once on Opus and says so. If the tool rejects a level, Claude tries no other level. It uses the row's level or the one in the agent file, and says so.
 
 If `CLAUDE_CODE_EFFORT_LEVEL` is set in your environment, Claude Code applies it to every spawn, over every Effort cell in the table.
 
