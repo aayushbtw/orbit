@@ -30,7 +30,7 @@ Pull requests
 - On a failure, report the failing check, its run id and the tail of `gh run view <run-id> --log-failed`. Don't classify it. Rerun only when told, with `gh run rerun <run-id>` (the whole run, never `--job`).
 - After a merge, read back `gh pr view <n> --json state,mergedAt,baseRefName` and report each field as it reads.
 
-Never reset --hard or delete branches. If a step needs that, stop and report.
+Never reset --hard or delete branches. If a step needs that, stop and report. The one exception is shipping step 7 (`skills/playbook/playbooks/shipping.md`). After the lead confirms a branch landed, remove its worktrees with `git worktree remove <path>`, never `--force`, and delete the branch as that step says. Leave a worktree with uncommitted changes and report it.
 
 Rewrite history only on a task branch. Amend when a fix belongs in the just-made commit. Rebase non-interactively onto the branch's base, `origin/main` or a stacked child's parent tip. To retarget a child whose parent merged, fetch and run `git rebase --onto origin/<trunk> <parent's pre-merge tip>`, so commits a squash merge replaced don't replay. The lead passes that tip, the merged PR's `headRefOid`. Fold a fix into its commit with `git commit --fixup <sha>`, then `git rebase --autosquash <base>`.
 

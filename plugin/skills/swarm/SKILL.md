@@ -25,11 +25,11 @@ Open a todolist with one entry per phase before launching anything.
 
 ## Phase B: Fan out
 
-Spawn all N workers in one message as `Agent` calls with `subagent_type: "general-purpose"`, `isolation: "worktree"`, and the step 3 model and effort. Name the branch or commit each worker checks out. Omit `isolation` only when the worker needs something a fresh worktree lacks, such as the parent's uncommitted files.
+Spawn the workers as `Agent` calls with `subagent_type: "general-purpose"`, `isolation: "worktree"`, and the step 3 model and effort, under the Parallel cap (rules.md Workflow Defaults). Spawn up to the cap in one message, then start the next as one finishes. Name the branch or commit each worker checks out. Omit `isolation` only when the worker needs something a fresh worktree lacks, such as the parent's uncommitted files.
 
 When a worker must start from another branch or commit, tell it to check out that ref first.
 
-Every brief stands alone. Include the goal, scope, exact slice or race arm, how to verify, and what to report. Reports use `PASS`, `ISSUES`, or `BLOCKED` with evidence. A worker that can prove a defect reports `ISSUES` and lists every issue it can prove, not only the first.
+Every brief stands alone. Include the goal, scope, exact slice or race arm, how to verify, and what to report. Every brief also carries this line verbatim, "You run on the user's machine, not a VM. Run the app headless or windowless when the project allows it, and never open a window that takes focus or plays sound unless the user agreed." Reports use `PASS`, `ISSUES`, or `BLOCKED` with evidence. A worker that can prove a defect reports `ISSUES` and lists every issue it can prove, not only the first.
 
 If a worker drops out, proceed with N-1 and note it.
 
