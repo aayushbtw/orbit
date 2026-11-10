@@ -198,6 +198,9 @@ const readJsonl = (path) => existsSync(path)
 function unitOf(input) {
   if (input.subagent_type !== 'orbit:poteto-agent') return null;
   const prompt = input.prompt ?? '';
+  const fileLines = prompt.match(/^[ \t*_>-]*files?\s*:.*$/gim)?.join('\n') ?? '';
+  const named = ['camera.js', 'enemies.json'].filter((f) => fileLines.includes(f));
+  if (named.length === 1) return named[0] === 'camera.js' ? 'camera' : 'data';
   const camera = prompt.indexOf('camera.js');
   const data = prompt.indexOf('enemies.json');
   if (camera < 0 && data < 0) return null;

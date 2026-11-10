@@ -11,7 +11,7 @@ Proves that a real `/orbit:start` run routes each delegate through the project's
 
 A spawn's effective effort is the `effort` the call passes, else the `effort` in the frontmatter of the orbit agent it spawns (`plugin/agents/*.md`). `effort-present` and `effort-ceiling` grade effective effort. The routing checks grade only the `effort` the call passes, because each table row differs from the agent's frontmatter.
 
-An `orbit:poteto-agent` brief belongs to the unit whose file it names first, `camera.js` or `enemies.json`, since a brief names its own file before any it is told to leave alone.
+An `orbit:poteto-agent` brief belongs to the unit whose file, `camera.js` or `enemies.json`, appears on its `File:` or `Files:` lines, when only one of the two does. Otherwise it belongs to the file the brief names first, since a brief usually names its own file before any it is told to leave alone.
 
 | Check | Passes when |
 | --- | --- |
