@@ -5,4 +5,4 @@ argument-hint: [notes]
 ---
 Land the current change. Notes: $ARGUMENTS
 
-Run `/orbit:playbook shipping` with the Skill tool and follow it.
+If this session's todolist has no finished **Opening a PR** for this branch, run `/orbit:playbook opening-a-pr` with the Skill tool first. Then run `/orbit:playbook shipping` with the Skill tool and follow it.
