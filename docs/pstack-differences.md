@@ -157,8 +157,8 @@ In the **orbit.** lines, paths under `agents/`, `hooks/` and `skills/`, and `rul
 ### Goal restatement
 
 - **pstack.** Interrogate's Frame says "State the intent with the **in-your-own-words** skill". That skill is one sentence, "Restate in your own words what you think the user's goals are and what problem they're trying to solve." (`skills/in-your-own-words/SKILL.md`) poteto-mode's Non-negotiables also open with "Your first message on a task → tell the user, in your own words, their goal" (`poteto-mode/SKILL.md`), added in upstream commit ab1f702.
-- **orbit.** Interrogate's Frame inlines the sentence, as "State the intent by restating in your own words what you think the user's goals are and what problem they're trying to solve". poteto-mode's rule is not ported.
-- **Why.** Orbit doesn't ship in-your-own-words, and one sentence carries it, as [ketchup](#ketchup) inlines `bro`'s tone. poteto-mode's rule was left for an upstream bump (`docs/trails/pstack-parity.tsv`). The pin is now de8ee15, which has it, and rules.md has not taken it yet.
+- **orbit.** Interrogate's Frame inlines the sentence, as "State the intent by restating in your own words what you think the user's goals are and what problem they're trying to solve". rules.md's Remaining triggers open with poteto-mode's rule, copied as pstack words it.
+- **Why.** Orbit doesn't ship in-your-own-words, and one sentence carries it, as [ketchup](#ketchup) inlines `bro`'s tone. poteto-mode's rule says "in your own words" in plain text and names no skill, so it needs no inlining. It was left for an upstream bump (`docs/trails/pstack-parity.tsv`), and the de8ee15 pin brought it in.
 
 ### Land default
 

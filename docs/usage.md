@@ -12,7 +12,7 @@ A lookup reference for orbit's commands, agents and defaults. To learn how a tas
 | A specific flow, or only its step list | `/orbit:playbook <investigate\|bug\|feature\|refactor\|prototype\|perf\|hillclimb\|autopilot-full\|autopilot-stack\|multi-phase-plan>` |
 | Improve one metric over many rounds, toward a target | `/orbit:playbook hillclimb`, or `/orbit:start` with a metric goal |
 | Run a queue of independent changes to merged, one owner each | `/orbit:start autopilot this queue: <items>` |
-| Build and verify a queue as one stack you land yourself | `/orbit:start build the stack, I'll land it: <items>` |
+| Build and verify a queue of PRs you land yourself | `/orbit:start build the stack, I'll land it: <items>` |
 | Plan work that spans phases or several PRs, to run on your go | `/orbit:start multi-PR plan: <goal>` |
 | Large or cross-cutting work, or work you step away from | `/orbit:figure-it-out <goal>` (`/orbit:start` routes there too) |
 | Get an open PR green, answer its review threads, or check its status | `/orbit:playbook babysit` (`/orbit:start` routes "babysit this" there) |

@@ -47,7 +47,7 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
 - **Fix Root Causes.** Debugging. Trace each symptom back to the first place the system went wrong and fix it there. A guard is a fix only when the state it handles is legitimate.
 - **Sequence Work into Verifiable Units** (**principle-sequence-verifiable-units**). Multi-step work (sweeps, migrations, runs of similar edits) and how you stack commits and PRs. Break work into small units that each end in a check, verify each before the next, and order delivery so the sequence proves itself.
 - **Test Behavior, Not Implementation.** Writing, changing, or keeping a test. Assert what the code's users can observe, so the test fails when that behavior breaks and keeps passing when only the internals change.
-- **Explain the Number.** Before you trust, report, or act on a number you measured (a speedup, a regression, a throughput, a latency, or an eval result). Find what limits it, and rule out that it measured something other than the work you think.
+- **Explain the Number.** Apply before you measure, and before you trust, report, or act on a number you measured (a speedup, a regression, a throughput, a latency, or an eval result). Find what limits it, and rule out that it measured something other than the work you think.
 
 **Delegation**
 
@@ -73,7 +73,7 @@ Before writing code that matches a line below, read its index, then open only th
 - `perf`, `playbooks/perf-issue.md`. A measured slowness to trace and improve against a baseline.
 - `hillclimb`, `playbooks/hillclimb.md`. Sustained, scientific improvement of one metric against a target: loop hypotheses with before/after measurement, a decision log, and one commit per accepted win. Distinct from `perf`, which is a one-off fix.
 - `autopilot-full`, `playbooks/autopilot-full.md`. A queue of independent PRs run to merged with full autonomy. One owner per PR carries build through merge, and the root swarm-verifies each PR before its owner merges ("autopilot this queue", "full autopilot", one-owner-per-PR programs).
-- `autopilot-stack`, `playbooks/autopilot-stack.md`. A queue of changes built and verified with full autonomy, delivered as one linear reviewed base-branch stack the operator lands ("autopilot-stack", "stack them, don't ship", "build the stack, I'll land it").
+- `autopilot-stack`, `playbooks/autopilot-stack.md`. `autopilot-full` without the merge. A queue of PRs built and verified with full autonomy, then handed to the operator to land. A PR stacks only on a PR it builds on ("autopilot-stack", "autopilot, don't merge", "stack them, don't ship", "build the stack, I'll land it").
 - `multi-phase-plan`, `playbooks/multi-phase-plan.md`. Work that spans phases or stacked PRs.
 - `opening-a-pr`, `playbooks/opening-a-pr.md`. Invoked at the end of every other playbook.
 - `babysit`, `playbooks/babysit.md`. Driving a PR or a stack to merge-ready: conflicts, review threads, CI.

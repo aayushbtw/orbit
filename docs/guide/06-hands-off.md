@@ -14,7 +14,7 @@ That routes to the `autopilot-full` flow. Its root agent writes no code. It spaw
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../diagrams/guide-autopilot-dark.svg">
-  <img alt="A queue goes to a root that writes no code. The root fans out to one owner per item, and each owner runs its flow, opens a PR and babysits it. Every hour the root reads each owner's trail. A fresh swarm of verifiers checks each code-ready head and sends findings back to the owner, the only writer on its branch. Then autopilot-full merges the PRs, while autopilot-stack hands you one stack to land." src="../diagrams/guide-autopilot-light.svg">
+  <img alt="A queue goes to a root that writes no code. The root fans out to one owner per item, and each owner runs its flow, opens a PR and babysits it. Every hour the root reads each owner's trail. A fresh swarm of verifiers checks each code-ready head and sends findings back to the owner, the only writer on its branch. Then autopilot-full merges the PRs, while autopilot-stack hands you the verified PRs to land." src="../diagrams/guide-autopilot-light.svg">
 </picture>
 
 **Each branch has one writer.** The root never pushes a fix to an owner's branch. It sends findings back, and the owner fixes them. Two agents writing one branch undo each other's work.
@@ -35,11 +35,13 @@ Sometimes you want to read the work before it merges, or the items build on each
 /orbit:start build the stack, I'll land it: split the settings page into tabs, add a notifications tab, move billing into its own tab
 ```
 
-That routes to `autopilot-stack`. It runs the same owners and the same verification, minus the landing. Owners never merge, retarget, close a PR or arm auto-merge. An item that depends on another branches from that item's branch, not from trunk. Only the root rebases or retargets a link in the chain, because two writers on one chain undo each other.
+That routes to `autopilot-stack`. It runs the same owners and the same verification as `autopilot-full`, but it stops at verified. Each owner stops once its PR is verified and green at its current head, and the root hands the PRs to you. After the handoff, nothing is pushed without your go.
 
-You get one linear stack of PRs, each based on the one below and carrying its own verdict. Land it with `/orbit:ship`, which walks the stack from the bottom as [Prove it works, then ship](./05-prove-and-ship.md) describes.
+Most PRs still branch from trunk. A PR stacks only on a PR it builds on. Its owner starts from the parent's branch and rebases onto it, not onto trunk. When the parent gets a new head, the owner restacks its PR onto the parent's branch. If the restack leaves the PR's patch-id unchanged, the PR keeps its verdict.
 
-Pick `autopilot-full` when the items are independent and you're happy for them to merge. Pick `autopilot-stack` when you want to review first, when the work is sequenced or coupled, or when you're keeping merge authority.
+You get a list of PRs, each with its verdict. Land them with `/orbit:ship`, which lands a stacked PR after its parent, as [Prove it works, then ship](./05-prove-and-ship.md) describes.
+
+Pick `autopilot-full` when you're happy for the PRs to merge. Pick `autopilot-stack` when you land them yourself.
 
 ## Plan work that spans many PRs
 
@@ -53,7 +55,7 @@ The `multi-phase-plan` flow writes the plan and does not implement it. If the ch
 
 The plan is a checklist with one section per PR. Each section names the files, what to build, what you should see, and the boxes that prove it. A PR counts as verified only when its unit, live and perf boxes are all checked, because tests alone are not sufficient verification. A PR that changes an interaction is review-gated, so you see screenshots and a video in chat before it merges.
 
-The flow lints the plan with `check-plan.mjs`, posts the plan's path, and stops. On your explicit go, it runs under `autopilot-full` or `autopilot-stack`. It picks `autopilot-stack` when the PRs are sequenced or coupled, or when you said "don't ship" or "I'll land it".
+The flow lints the plan with `check-plan.mjs`, posts the plan's path, and stops. On your explicit go, it runs under `autopilot-full` or `autopilot-stack`. It picks `autopilot-full` when the run may merge, and `autopilot-stack` when you said "don't ship" or "I'll land it".
 
 ## When no flow fits, Claude designs one
 

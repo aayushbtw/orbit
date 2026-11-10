@@ -33,7 +33,7 @@ The first thing `/orbit:start` does is sort the goal by what you ask for. Each k
 | A call between designs | `prototype` | A recommendation and a throwaway sketch. Nothing ships. |
 | Large or cross-cutting work, work you step away from, or work no flow fits | `/orbit:figure-it-out` | Phases it designs itself, with a decision log |
 | "autopilot this queue" | `autopilot-full` | Each item merged by its own owner |
-| "build the stack, I'll land it" | `autopilot-stack` | One verified stack of PRs that you land |
+| "build the stack, I'll land it" | `autopilot-stack` | Verified PRs that you land |
 | A plan for work across phases or PRs | `multi-phase-plan` | A plan that waits for your go |
 | "babysit this", "get it green" or "check on PR 42" | `babysit` | A merge-ready PR. It never merges. |
 | Landing a green stack | `/orbit:ship` | The verified PRs, landed |
