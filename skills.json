@@ -158,7 +158,7 @@
       "After the playbook read, add that it reads orbit's `rules.md` (`${CLAUDE_PLUGIN_ROOT}/rules.md`, the plugin folder's root) in full alongside it, that rules.md's routing, shipping and delegation rules are for the lead, and that it never runs the playbook itself or ships.",
       "Point the read at orbit's playbook: `poteto-mode's full agent style` becomes `orbit's full agent style`, `receives `/poteto-mode`` becomes `runs `/orbit:start``, `Task` becomes `Agent`, the `poteto-mode` skill becomes orbit's playbook, `inline Principles index` becomes `Principles index`, `generalPurpose` becomes `general-purpose`, the search is `~/.claude/plugins/` for `skills/playbook/SKILL.md` under a folder whose `.claude-plugin/plugin.json` has name `orbit`, highest version wins, and drop the hidden-catalog sentence.",
       "Append a paragraph: work only in the worktree path and unit the parent scoped; before writing, load every entry the brief lists under Before code (Read each file whole with the Read tool, run each command on its own then Read whole any file path it prints, output that is cut, filtered or saved to a file counts as unread) and follow any \"read X first\" an AGENTS.md you open gives; don't commit or push, since the parent reviews and gitops commits; before returning, run `git status --short` and report changed paths, what was built, and the check run with its result.",
-      "Add `effort: high` to the frontmatter."
+      "Add `effort: medium` to the frontmatter."
     ]
   },
   "comment-sicko": {

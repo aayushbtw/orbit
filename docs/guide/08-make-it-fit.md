@@ -86,7 +86,7 @@ Before each spawn, Claude asks three questions in order. The first yes decides t
 1. A step that names its own model or effort keeps it. `/orbit:recall` runs on Haiku, the trail reviewer in `show-me-your-work` picks its own tier, and multi-phase-plan's live lanes run at `high`.
 2. A spawn that names a role takes that role's row. gitops, the verifier and the advisor each take their own row. Interrogate's adversaries, arena's runners, swarm workers, autopilot owners, multi-phase-plan explorers, and the subagents of `/orbit:how`, `/orbit:why` and `/orbit:reflect` each name `judgment` or `code`. A skill that spawns with `model: "opus"` names the `judgment` role, so a `judgment` row reaches it. A two-model panel never takes a work type, so its sides follow only the `judgment` and `code` rows. Comment Sicko takes no row, so it keeps its agent file's effort and runs on the default subagent model.
 3. Any other `orbit:poteto-agent` spawn takes the work type whose Use for fits its unit. That covers code delegates and their fix rounds.
-4. A unit that no work type fits runs as it does with no table. A prose unit, such as docs or a written explanation, runs on the `judgment` model. A code unit tiers by difficulty. The hardest change, such as a cross-cutting design or a subtle algorithm, runs on the `judgment` model, and the rest run on the `code` model. When a `code` row makes that model cheaper than your session model, only trivial mechanical edits go to it, and the rest run on your session model. When the project has work types, Claude's reply names each unit that none of them fit, so you can add a row.
+4. A unit that no work type fits runs as it does with no table. A prose unit, such as docs or a written explanation, runs on the `judgment` model. A code unit tiers by difficulty. The hardest change, such as a cross-cutting design or a subtle algorithm, runs on the `judgment` model, and the rest run on the `code` model. When a `code` row sets that model to `sonnet` or `haiku`, only trivial mechanical edits go to it, and the rest run on your session model. When the project has work types, Claude's reply names each unit that none of them fit, so you can add a row.
 
 A row reaches subagents only. Claude plans in your session, on the model you picked with `/model`. The game's `phase-planning` row reaches the subagents Claude spawns for planning work, not the planning in your chat.
 
@@ -100,7 +100,7 @@ Row order breaks any tie that is left, so the first row that fits wins. Put narr
 
 ### Set an exact effort, with a step up
 
-An Effort cell is the level Claude passes, as written. Claude adds no judgment of its own on top. With no Effort cell, gitops, the verifier, the advisor and Comment Sicko keep the level in their agent files. For any other spawn, Claude picks `high` for hard and judgment work, and `medium` or `low` for routine work. It passes `xhigh` or `max` only when a step, a row or you name them.
+An Effort cell is the level Claude passes, as written. Claude adds no judgment of its own on top. With no Effort cell, gitops, the verifier, the advisor and Comment Sicko keep the level in their agent files. For any other spawn, Claude picks `high` for hard and judgment work, and `medium` or `low` for routine work. A spawn on Fable gets `medium` or `high`, never `low`. Claude passes `xhigh` or `max` only when a step, a row or you name them.
 
 A work type's cell can add a step with `after <n> failed tries`. A failed try is a delegate whose work on the unit fails Claude's review or the check, or that crashes or returns nothing. Parallel attempts, such as arena runners, count no tries, and each part of a split unit starts at zero. In the game, a `shader-math` unit runs at `high` for its first two delegates. If both fail, the third runs at `xhigh`. The unit's todo item carries its try count. The step works in a Model cell too, such as `sonnet, opus after 2 failed tries`. A cell of `opus, fable after 2 failed tries` keeps a work type on Opus and moves a unit to Fable once Opus has failed it twice.
 
@@ -118,7 +118,35 @@ In an Opus session under the defaults, the `judgment` and `code` models are both
 
 The row moves every spawn on the `code` role to Sonnet. That covers one side of each panel, swarm workers and `how` explorers. In an Opus session, the same row makes all of those spawns cheaper. The row doesn't move gitops, the verifier, the advisor or Comment Sicko.
 
-Code delegates are the catch. Without a guard, a Sonnet `code` row would also move every code delegate that no work type fits and isn't the hardest, so most of your code would be written on Sonnet. Orbit guards it. When the `code` row is cheaper than your session model, only trivial mechanical edits go to it, and every other code delegate runs on your session model. To put more code on Sonnet on purpose, add a work type for that kind of work.
+Code delegates are the catch. Without a guard, a Sonnet `code` row would also move every code delegate that no work type fits and isn't the hardest, so most of your code would be written on Sonnet. Orbit guards it. When the `code` row is `sonnet` or `haiku`, only trivial mechanical edits go to it, and every other code delegate runs on your session model. To put more code on Sonnet on purpose, add a work type for that kind of work.
+
+### Run the lead on Fable
+
+Fable 5.2 costs $8 per million input tokens and $40 per million output tokens, and Opus 5.5 costs $4 and $20 (Anthropic's model table, cached 2026-11-03). Anthropic's Fable 5.2 guidance says early testers had good results with Fable as the planner and orchestrator for other models. The same guidance says subagents can be a large part of a session's cost. A Fable lead therefore plans and reviews on Fable, and its subagents write the code on Opus at half the price.
+
+Pick Fable for the session with `/model fable`, at `high` or `medium` effort. Don't run it at `low`. Then add three rows, so that spawns don't inherit Fable from the session:
+
+```md
+| `code` | | opus | |
+| `judgment` | | opus | |
+| `verifier` | | opus | |
+```
+
+The `judgment` row repeats its default, so the variant below is a one-cell change. The `code` row is neither `sonnet` nor `haiku`, so the guard above leaves every code delegate on Opus, and none falls back to the Fable session. Leave each Effort cell empty on purpose. A row's effort is exact, so a filled cell would stop Claude from raising a hard unit to `high`.
+
+Two spawns stay on Fable. The advisor keeps Fable from its agent file. Comment Sicko takes no row, so it runs on the session model at `medium`, unless `CLAUDE_CODE_SUBAGENT_MODEL` is set. gitops keeps Sonnet from its agent file.
+
+With `code` and `judgment` both on Opus, interrogate's two adversaries and arena's two runners run on one model. To keep a second model in the panels, put `judgment` on Fable instead:
+
+```md
+| `judgment` | | fable | high |
+```
+
+That row also moves prose delegates, the hardest code delegates, autopilot owners and the `how` explainer back to Fable, so it costs more.
+
+Fable's safeguards block most cybersecurity work. Keep the lead off Fable on a security project. The Model bullet in [Route work by work type](#route-work-by-work-type) explains what to set there instead.
+
+A smoke run of the routing eval (`tests/routing/run.mjs`, one run per lead, 2026-11-11) passed all 5 checks with either lead. The Opus lead's session cost $1.05 over 40 turns, and the Fable lead's cost $1.56 over 36 turns. The Fable lead skipped Comment Sicko, which the Opus lead ran. One run per lead cannot separate a flake from a real difference, so treat these numbers as a smoke check.
 
 ## Put folder rules next to the code
 
