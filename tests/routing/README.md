@@ -28,6 +28,7 @@ N/A means the run never reached the calls the check covers. INFO lines list ever
 ```sh
 node tests/routing/run.mjs                      # opus lead, 1 run
 node tests/routing/run.mjs --model sonnet --runs 3
+node tests/routing/run.mjs --model fable        # fable lead, to compare with opus
 node tests/routing/run.mjs --keep               # keep the scratch projects
 node tests/routing/run.mjs --grade <out-dir>    # regrade saved runs, no new session
 ```

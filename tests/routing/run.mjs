@@ -24,7 +24,7 @@ const { values: opts } = parseArgs({
     grade: { type: 'string' },
   },
 });
-if (!['opus', 'sonnet'].includes(opts.model)) throw new Error(`--model must be opus or sonnet, got ${opts.model}`);
+if (!['opus', 'sonnet', 'fable'].includes(opts.model)) throw new Error(`--model must be opus, sonnet or fable, got ${opts.model}`);
 const runs = Number(opts.runs);
 if (!Number.isInteger(runs) || runs < 1) throw new Error(`--runs must be a positive integer, got ${opts.runs}`);
 
