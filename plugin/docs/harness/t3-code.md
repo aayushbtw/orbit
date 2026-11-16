@@ -5,7 +5,7 @@ This is orbit's T3 Code adapter, at the path pstack uses for a host adapter. Orb
 ## Probe
 
 T3 Code serves its tools as MCP tools named `mcp__t3-code__<name>`, and most of them are deferred. Before calling a T3 tool, check that tool itself. It is present when it is already in your tool list, or when `ToolSearch` with `select:mcp__t3-code__<name>` loads it. With no `ToolSearch`, a tool not in your list is absent. A tool that is not present takes the absent column. Never key on an environment variable, a path, or another tool of the same family, because T3 can turn one tool off and leave the rest. Each subagent checks for itself. A lead on another provider probes as Lead on another provider says.
-Under a Codex lead, look for a tool under both `t3-code` and `t3-code-direct` before you call it absent, as Lead on another provider says.
+Under a Codex lead, look for a tool under both `t3-code` and `t3-code-direct` before you call it absent, as Lead on another provider says. A session connected to T3 from outside, such as one added with `claude mcp add t3`, still lists the tools that act as the calling thread, so the list alone does not make them present. When a call returns an error that the tool needs an agent running inside T3 Code, take the absent column for it and for the rest of those tools, which cover subagents, secret requests, rendered HTML, the browser preview, devices and worktree handoff. Never call `t3_thread_launch` in their place unless the user asked for a new thread.
 
 ## Lead on another provider
 
