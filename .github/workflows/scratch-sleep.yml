@@ -1,0 +1,7 @@
+name: scratch-sleep
+on: pull_request
+jobs:
+  sleep:
+    runs-on: ubuntu-latest
+    steps:
+      - run: sleep 60
