@@ -40,7 +40,7 @@ Only Claude is assumed present. Every other provider comes from the roster at ru
 
 A lead on another provider runs orbit agents with its native subagent tool, such as Grok's `spawn_subagent`. T3 shows each one as a nested node in the same thread, not as a new thread. Grok ignores an agent's `model` field, so a native subagent runs on the lead's own model.
 
-`delegate_task` has two uses. A child that writes code runs on the roster's Claude provider, with `role: "implementation"` and `mode: "async"`, because only a child on Claude gets the role's model and orbit's rules. It runs native, and the reply says so, when a T3 tool is absent, the roster has no Claude provider, or the spawn errors or returns nothing. A panel seat runs on another family. The lead reads each child's result with `task_status` and settles its thread. Each brief names orbit's plugin folder as an absolute path, because the agent's own paths may arrive unexpanded.
+`delegate_task` has two uses. A child that writes code runs on the roster's Claude provider, with `role: "implementation"` and `mode: "async"`, never `mode: "wait"`, because only a child on Claude gets the role's model and orbit's rules. The lead ends its turn after the spawn, and the child's completion wakes it. It runs native, and the reply says so, when a T3 tool is absent, the roster has no Claude provider, or the spawn errors or returns nothing. A panel seat runs on another family. The lead reads each child's result with `task_status` and settles its thread. Each brief names orbit's plugin folder as an absolute path, because the agent's own paths may arrive unexpanded.
 
 ## Resolve paths
 
