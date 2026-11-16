@@ -21,13 +21,19 @@ Orbit runs in Claude Code and in T3 Code. In T3 Code, it links PRs to the thread
 
 ## Other providers in T3
 
-A T3 thread led by another provider, such as Grok, runs orbit too. Start a task with `/orbit:start <goal>`. The lead loads orbit's `rules` skill once per session, when the provider drops orbit's SessionStart hook. To load the rules in every session, even without `/orbit:start`, add this line to the provider's own instruction file, such as `~/.grok/AGENTS.md`. Orbit never writes that file.
+To set up orbit for every provider in T3, send this in any T3 thread. The lead installs orbit for each provider it has a tested setup for and checks that it loads.
+
+```
+Set up orbit by following https://github.com/aayushbtw/orbit/blob/main/docs/setup.md
+```
+
+A T3 thread led by another provider, such as Grok, runs orbit too. Start a task with `/orbit:start <goal>`. The lead loads orbit's `rules` skill once per session, when the provider drops orbit's SessionStart hook. To load the rules in every session, even without `/orbit:start`, add this line to the provider's own instruction file, such as `~/.grok/AGENTS.md`. Orbit writes that file only when you say yes during setup.
 
 ```
 If Non-negotiables is not in your context, load the orbit `rules` skill before your first reply.
 ```
 
-Grok loads orbit from Claude Code's install record when orbit is enabled in Claude Code's user settings, so `claude plugin update orbit@orbit` updates Grok's copy too. Until that command runs, Grok keeps the version in that record, even when Claude Code already loads a newer one. [How orbit runs in T3](docs/t3-code.md) explains the design.
+Grok loads orbit from Claude Code's install record when orbit is enabled in Claude Code's user settings, so `claude plugin update orbit@orbit` updates Grok's copy too. Until that command runs, Grok keeps the version in that record, even when Claude Code already loads a newer one. A Grok install of its own, `grok plugin install aayushbtw/orbit#plugin --trust`, wins over that record, and `grok plugin update orbit` updates it. [How orbit runs in T3](docs/t3-code.md) explains the design.
 
 Tested on: Claude and Grok leads verified, others untested. Under a Grok lead, the wake after a code child on Claude has not run live yet.
 
