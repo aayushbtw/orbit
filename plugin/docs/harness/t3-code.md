@@ -31,7 +31,7 @@ Claude models map as rules.md Workflow Defaults, Models says.
 
 ### Seats on another family
 
-A skill may name a seat on another family, such as arena's cross-judge, interrogate's second adversary, the second `how` explorer, reflect's Tooling reviewer, the show-me-your-work trail reviewer or autopilot-full's audit seat. Fill one such seat per panel. Seats that write code, such as arena and architect runners, delegates, swarm workers and live lanes, stay on Claude.
+A skill may name a seat on another family, such as arena's cross-judge, interrogate's second adversary, the second `how` explorer, reflect's Tooling reviewer, the show-me-your-work trail reviewer or autopilot-full's audit seat. Fill one such seat per panel. Seats that write the change's code, such as arena and architect runners, delegates, swarm workers and live lanes, stay on Claude.
 
 Probe `orchestrator_capabilities`, `delegate_task`, `task_status` and `t3_thread_organize` as Probe says. If any is absent, the absent column applies.
 
@@ -43,7 +43,7 @@ The `other-family` row of the Models table picks the seat. An empty Model cell o
 
 When the row's Effort names a value that one of the model's `options` lists in `values`, pass `target.options` as `[{id, value}]` with that option's `id`. Otherwise pass no `options`, so the provider default runs.
 
-Spawn the seat with `delegate_task`, `target: {providerInstanceId, model, options}`, `role: "review"`, `mode: "async"`, a `title` naming the skill and the seat, and no `runtimeMode`. A seat that only reads keeps the default `isolation`. A child on another provider loads no orbit rules, so the brief stands alone. It holds the user's goal in one line, the absolute path of each file to read, the seat's prompt, and "Do not edit any file. Return your findings as text." It never holds a secret.
+Spawn the seat with `delegate_task`, `target: {providerInstanceId, model, options}`, `role: "review"`, `mode: "async"`, a `title` naming the skill and the seat, and no `runtimeMode`. A seat that only reads keeps the default `isolation`. Interrogate's adversary runs repros, so its skill gives it a worktree and its own brief line. A child on another provider loads no orbit rules, so the brief stands alone. It holds the user's goal in one line, the absolute path of each file to read, the seat's prompt, and "Do not edit any file. Return your findings as text." It never holds a secret.
 
 Start the panel's Claude seats too, then end the turn or keep working. The child's completion wakes you. `t3_background_wait` does not take a `delegate_task` id. Read the result with `task_status`. Then check `git status --short` for edits, and settle the child thread with `t3_thread_organize` action `settle`, or `archive` when it waits on a question.
 

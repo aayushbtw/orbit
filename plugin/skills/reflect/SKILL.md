@@ -29,8 +29,10 @@ One message, three `Agent` calls, `subagent_type: general-purpose`. Reviewers ne
 | Lens | Model | Prompt template |
 |---|---|---|
 | Judgment | `judgment` | `${CLAUDE_SKILL_DIR}/references/judgment-reviewer.md` |
-| Tooling | `code` | `${CLAUDE_SKILL_DIR}/references/tooling-reviewer.md` |
+| Tooling | seat on another family, else `code` | `${CLAUDE_SKILL_DIR}/references/tooling-reviewer.md` |
 | Divergent | `judgment` | `${CLAUDE_SKILL_DIR}/references/divergent-reviewer.md` |
+
+The seat on another family comes from the host adapter's Models section (rules.md Delegation, **Host tools.**) when it has a roster. It runs with its own provider's MCP tools, since a child on another provider has its own MCP config.
 
 Pass each template verbatim, substituting the transcript path or digest where marked. Reviewers return findings in the `Agent` response body.
 
