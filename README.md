@@ -42,7 +42,8 @@ A T3 thread led by Claude or another provider, such as Grok or Codex, runs orbit
 | Claude | Verified |
 | Grok | Verified |
 | Grok, code child on Claude | The wake after the child has not run live yet |
-| Codex | Pending live lanes |
+| Codex | Verified |
+| Codex, code child on Claude | Verified |
 | Other providers | Untested |
 
 To load orbit's rules in every session, even without `/orbit:start`, add this line to the provider's own instruction file, such as `~/.grok/AGENTS.md` or `~/.codex/AGENTS.md`. Setup adds it only when you say yes.
