@@ -22,7 +22,7 @@ When in doubt, take the simple path.
 
 ## 2. Explore (complex only)
 
-Decompose the question into 2 to 4 angles, each a distinct slice of the subsystem. Spawn all explorers in a single message, each with `${CLAUDE_SKILL_DIR}/references/explorer-prompt.md` and its angle filled in.
+Decompose the question into 2 to 4 angles, each a distinct slice of the subsystem. Spawn all explorers in a single message, each with `${CLAUDE_SKILL_DIR}/references/explorer-prompt.md` and its angle filled in. When the host adapter's Models section (rules.md Delegation, **Host tools.**) has a roster, the second explorer, and only it, is its seat on another family with the same prompt.
 
 ## 3. Synthesize (complex only)
 

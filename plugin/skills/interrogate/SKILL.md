@@ -19,9 +19,11 @@ Read `${CLAUDE_PLUGIN_ROOT}/skills/arena/SKILL.md` and run its Phase A steps 3 a
 
 > Break this change. Prove each finding with a run against the real code, such as a failing test, a repro script, or command output that shows the wrong behavior. For a design or plan, run a prototype or probe the current tree. Keep repros in your own worktree. Report each finding with a title, the exact command, the output it printed, and the output the intent requires. Leave out anything you did not run. That covers style, naming, structure, and risks that need a future change to matter. No findings is a valid result.
 
+When the host adapter's Models section (rules.md Delegation, **Host tools.**) has a roster, its seat on another family replaces the `code` adversary. It is the one roster seat that runs code, so spawn it with `delegate_task` `isolation: "worktree"`, which starts from the parent commit without uncommitted edits. In place of the adapter's no-edit line, its brief holds the commit to check out and the patch file's absolute path to apply first, and asks it to keep repros in its own worktree, edit nothing else, and report that worktree's absolute path (`pwd`) and its starting branch (`git branch --show-current`, run before any checkout) with each finding. Its effort follows the adapter's effort rule, not `effort: "high"`.
+
 ## Verify
 
-Verify each finding per arena Phase F by rerunning its command in that adversary's own worktree, where its repro files live. The `Agent` result returns the worktree's path. Keep a finding when the output shows the failure and the failure breaks the intent. Drop the rest. Merge findings that share a root cause. Then remove every adversary worktree with `git worktree remove --force <path>`, delete its branch with `git branch -D <branch>`, and delete the patch file.
+Verify each finding per arena Phase F by rerunning its command in that adversary's own worktree, where its repro files live. The `Agent` result returns the worktree's path, and the roster seat reports its own. Keep a finding when the output shows the failure and the failure breaks the intent. Drop the rest. Merge findings that share a root cause. Then settle the roster seat's thread, remove every adversary worktree with `git worktree remove --force <path>`, delete its branch with `git branch -D <branch>`, for the roster seat the starting branch it reported, and delete the patch file.
 
 Skip arena Phases C, D, and E. Adversaries find different failures, so the verdict keeps every verified finding, not one adversary's list.
 

@@ -78,7 +78,7 @@ Pick where each lane runs before writing it. Every lane is driven by a subagent,
 | --- | --- | --- |
 | Behavior that calls no T3 tool | Driven by the subagent through the control skill, or for a plugin or prompt change a headless `claude -p --plugin-dir <worktree>/<plugin dir>`. No T3 thread. | The transcript or screenshot and the subagent's report, in this thread |
 | A PR's claim that the change calls a T3 tool on its own | One T3 thread per claim, not per lane, through `<project's T3 thread command>`, settled as soon as it returns. The brief names the claim as the reason. Only when T3's tools are present. | The thread's receipt, checked and tabled in this thread |
-| A panel seat on another provider | `delegate_task` child, read-only, settled on return, when `delegate_task` is present | Its summary, in this thread |
+| A panel seat on another family | `delegate_task` child, settled on return, when `delegate_task` is present | Its summary, in this thread |
 
 No other case starts a T3 thread, including throwaway probes, which run headless.
 
