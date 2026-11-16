@@ -32,7 +32,7 @@ Auto-update is off for third-party marketplaces. [Turn it on](docs/usage.md#auto
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/t3-lead-dark.svg">
-  <img alt="You run /orbit:start. The lead checks whether Non-negotiables is already in its context. Yes for a Claude lead, because the SessionStart hook printed the rules. No for another provider, so the lead loads the rules skill, which reads rules.md. Both paths then run the playbook. The lead spawns three kinds of child. An orbit agent runs as a native subagent, nested in the same thread. A code child runs on Claude through delegate_task. A panel seat runs on another family through delegate_task. A Claude lead runs code children as Agent spawns." src="docs/diagrams/t3-lead-light.svg">
+  <img alt="You run /orbit:start. The lead checks whether Non-negotiables is already in its context. Yes for a Claude lead, because the SessionStart hook printed the rules. No for another provider, so the lead loads the rules skill, which reads rules.md. Both paths then run the playbook. The lead spawns three kinds of child. An orbit agent runs as a native subagent, nested in the same thread. A code child runs the same way, on the lead's provider. A panel seat runs on another family through delegate_task. Under a Codex lead, code children run on gpt-6.1-sol." src="docs/diagrams/t3-lead-light.svg">
 </picture>
 
 A T3 thread led by Claude or another provider, such as Grok or Codex, runs orbit. Each review panel fills a second seat from your other T3 providers, so a second model family checks the work. [Orbit in T3 Code](plugin/docs/harness/t3-code.md) maps each step to T3's tools.
@@ -41,9 +41,9 @@ A T3 thread led by Claude or another provider, such as Grok or Codex, runs orbit
 | --- | --- |
 | Claude | Verified |
 | Grok | Verified |
-| Grok, code child on Claude | The wake after the child has not run live yet |
+| Grok, code child | Not run live yet |
 | Codex | Verified |
-| Codex, code child on Claude | Verified |
+| Codex, code child on gpt-6.1-sol | Not run live yet |
 | Other providers | Untested |
 
 To load orbit's rules in every session, even without `/orbit:start`, add this line to the provider's own instruction file, such as `~/.grok/AGENTS.md` or `~/.codex/AGENTS.md`. Setup adds it only when you say yes.

@@ -4,7 +4,7 @@ T3 Code runs orbit under a Claude lead and under a lead on another provider, suc
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="diagrams/t3-lead-dark.svg">
-  <img alt="You run /orbit:start. The lead checks whether Non-negotiables is already in its context. Yes for a Claude lead, because the SessionStart hook printed the rules. No for another provider, so the lead loads the rules skill, which reads rules.md. Both paths then run the playbook. The lead spawns three kinds of child. An orbit agent runs as a native subagent, nested in the same thread. A code child runs on Claude through delegate_task. A panel seat runs on another family through delegate_task. A Claude lead runs code children as Agent spawns." src="diagrams/t3-lead-light.svg">
+  <img alt="You run /orbit:start. The lead checks whether Non-negotiables is already in its context. Yes for a Claude lead, because the SessionStart hook printed the rules. No for another provider, so the lead loads the rules skill, which reads rules.md. Both paths then run the playbook. The lead spawns three kinds of child. An orbit agent runs as a native subagent, nested in the same thread. A code child runs the same way, on the lead's provider. A panel seat runs on another family through delegate_task. Under a Codex lead, code children run on gpt-6.1-sol." src="diagrams/t3-lead-light.svg">
 </picture>
 
 ## How orbit loads
@@ -37,17 +37,19 @@ A review panel fills one seat on a model family other than the session's.
 - An explicit model pick is checked with `search` before it is called unavailable.
 - An unavailable entry goes in the reply with its reason.
 - The seat runs through `delegate_task`, reads only, and its child thread is settled when it returns.
-- Seats that write code stay on Claude.
+- Seats that write code never take a roster seat. They run native on the lead's provider.
 
-Only Claude is assumed present. Every other provider comes from the roster at run time.
+Orbit assumes no provider beyond the lead's own. Each seat on another family comes from the roster at run time.
 
 ## Spawn subagents under another lead
 
-A lead on another provider runs orbit agents with its native subagent tool, such as Grok's `spawn_subagent`. T3 shows each one as a nested node in the same thread, not as a new thread. Grok ignores an agent's `model` field, so a native subagent runs on the lead's own model.
+A lead on another provider runs every orbit agent with its native subagent tool, such as Grok's `spawn_subagent`. Children that write code run this way too, so they stay on the lead's provider. T3 shows each one as a nested node in the same thread, not as a new thread. Grok ignores an agent's `model` field, so a native subagent runs on the lead's own model. A Models cell that names a Claude model is skipped under such a lead, so that spawn runs on the lead's model too.
 
 Codex's subagent tool, `spawn_agent`, takes no agent type, so it cannot select an orbit agent. The lead passes `fork_turns: "none"` and a brief that names the agent file, `agents/<name>.md` in the plugin folder, for the child to follow. The brief says that `${CLAUDE_PLUGIN_ROOT}` in that file is the plugin folder, because Codex leaves it literal in a file read by hand. It states the agent's `tools` limit, such as read-only for the advisor, because a hand-read file enforces none. The lead waits with `wait_agent`, then calls `close_agent`, because a finished agent stays open and counts toward a limit (inferred from the Codex binary). Codex reported these tools and `request_user_input` in `codex exec` on 2026-11-16. Two T3 lanes then ran `orbit:gitops` as a `spawn_agent` child, and the child read `agents/gitops.md` and called `list_thread_pull_requests` itself. In one of them the lead passed `fork_turns: "all"` instead of `"none"`.
 
-`delegate_task` has two uses. A child that writes code runs on the roster's Claude provider, with `role: "implementation"` and `mode: "async"`, never `mode: "wait"`, because only a child on Claude gets the role's model and orbit's rules. The lead ends its turn after the spawn, and the child's completion wakes it. It runs native, and the reply says so, when a T3 tool is absent, the roster has no Claude provider, or the spawn errors or returns nothing. A panel seat runs on another family. The lead reads each child's result with `task_status` and settles its thread. Each brief names orbit's plugin folder as an absolute path, because the agent's own paths may arrive unexpanded.
+Under a Codex lead, a spawn on the `code` role passes `model: "gpt-6.1-sol"` to `spawn_agent`, and its effort as `reasoning_effort`. If `spawn_agent` rejects the model, the lead omits it and says so. Every other role runs on the lead's model. `spawn_agent` has no worktree option, so a parallel child's brief tells it to create its own worktree with `git worktree add` and report its path and branch.
+
+`delegate_task` fills a panel seat on another family and the verifier seat. The lead reads each child's result with `task_status` and settles its thread. Each brief names orbit's plugin folder as an absolute path, because the agent's own paths may arrive unexpanded.
 
 ## Resolve paths
 
@@ -63,9 +65,11 @@ Codex's subagent tool, `spawn_agent`, takes no agent type, so it cannot select a
 | Claude lead | Verified headless. Routing matches trunk, the hook prints the same rules, and the lead never loads the `rules` skill. With hooks off, the lead loads it before the playbook, and not again on a second `/orbit:start`. |
 | Grok lead, headless | Verified. The lead loads the `rules` skill first, reads `rules.md` through the relative path, quotes a Non-negotiable, and runs `orbit:gitops` with `spawn_subagent`. |
 | Grok lead in T3 | Verified. Over two turns the lead loads the `rules` skill once, calls `t3-code__list_thread_pull_requests` by its bare name, and runs `orbit:gitops` as a nested subagent with no new thread. |
-| Grok lead, code child on Claude | Partly verified. The lead read the roster, spawned one `delegate_task` child on the Claude provider with a subagent brief, and settled it by `childThreadId`, with no grandchild. That run passed `mode: "wait"`, so the adapter now requires `async` and ending the turn. The wake that then reopens a Grok lead's turn has not run live. T3's orchestrator sends that wake for any parent provider. |
+| Grok lead, code child on Claude | Retired path. The lead read the roster, spawned one `delegate_task` child on the Claude provider with a subagent brief, and settled it by `childThreadId`, with no grandchild. That run passed `mode: "wait"`. The adapter no longer sends code children to Claude. |
+| Grok lead, native code child | Not run live. |
 | Codex lead in T3 | Verified on gpt-6.1-sol, twice. The lead loads the `rules` skill and reads `rules.md` and the adapter, calls `mcp__t3-code__list_thread_pull_requests`, and runs `orbit:gitops` as a native `spawn_agent` child with no new thread. On gpt-6-luna the lead never read `rules.md`, so it missed the adapter and ran gitops through `delegate_task` as a child thread. |
-| Codex lead, code child on Claude | Verified. The lead sent one edit to a Claude child through `delegate_task` with `mode: "async"`, a per-round `clientRequestId` and an agent-file brief, then ended its turn. T3's completion wake reopened the lead, which read `task_status`, checked the file and both plugin checks, and settled the child. This is the first live wake under a lead not on Claude. |
+| Codex lead, code child on Claude | Verified. The lead sent one edit to a Claude child through `delegate_task` with `mode: "async"`, a per-round `clientRequestId` and an agent-file brief, then ended its turn. T3's completion wake reopened the lead, which read `task_status`, checked the file and both plugin checks, and settled the child. This is the first live wake under a lead not on Claude. The adapter has since retired this path. |
+| Codex lead, native code child on gpt-6.1-sol | Pending a lane. |
 | Other providers | Untested. |
 
 Each Grok run used Grok's fast model at low effort, on 2026-11-16, at the commit that added the `rules` skill. Each Codex run used gpt-6.1-sol, plus one gpt-6-luna run, on 2026-11-16, with orbit loaded from the `feat/codex-lead` branch head.

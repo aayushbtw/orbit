@@ -330,7 +330,7 @@ function t3Lead(theme) {
   k.frame(15, 570, 970, 160, 'what the lead spawns');
   const spawns = [
     box({ x: 35, y: 620, w: 290, t: 'orbit agent', s: 'native subagent, nested', kind: 'agent' }),
-    box({ x: 355, y: 620, w: 290, t: 'Code child', s: 'on Claude, delegate_task', kind: 'agent' }),
+    box({ x: 355, y: 620, w: 290, t: 'Code child', s: "native, lead's provider", kind: 'agent' }),
     box({ x: 675, y: 620, w: 290, t: 'Panel seat', s: 'other family, delegate_task', kind: 'agent' }),
   ];
   k.arrow([[start.cx, start.bot + 6], [ask.cx, ask.y - 6]]);
@@ -342,7 +342,7 @@ function t3Lead(theme) {
   k.arrow([[skill.cx - 40, skill.bot + 6], [play.r - 30, play.y - 6]]);
   const ends = [spawns[0].cx + 40, spawns[1].cx, spawns[2].cx - 40];
   ends.forEach((x, i) => k.arrow([[play.cx + (i - 1) * 60, play.bot + 6], [x, spawns[i].y - 8]]));
-  k.text(W - 20, H - 24, 'a Claude lead runs code children as Agent spawns', 17, k.c.muted, 'end');
+  k.text(W - 20, H - 24, 'under a Codex lead, code children run on gpt-6.1-sol', 17, k.c.muted, 'end');
   return k;
 }
 
