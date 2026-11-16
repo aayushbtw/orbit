@@ -45,7 +45,7 @@ The CLI is `T3CODE_CLI_PATH`, else `t3` on `PATH`. stdout is the output path. Th
   exit, status: "completed" | "failed" | "waiting" | "timeout" | "error", reply, error,
   pendingQuestion: [{ name, input }] | null,
   thread: { threadId, link, providerInstanceId, model, runtimeMode, branch, worktreePath } | null,
-  threads: [{ threadId, link, waiting }],
+  threads: [{ threadId, link | null, waiting }],
   messages: [{ role, text }], session, firstTurnInputTokens, toolCalls: [{ name, input, sidechain }] }
 ```
 

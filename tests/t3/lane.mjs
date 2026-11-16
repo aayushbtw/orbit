@@ -277,11 +277,13 @@ async function lane() {
   result.reply = reply?.reply ?? null;
   result.error = reply?.error ?? (result.status === 'timeout' ? `no reply within ${opts.timeout} minutes` : result.status === 'failed' ? stderr.trim() || `t3 exited ${code}` : null);
   if (!threadId) return;
+  const listed = { threadId, link: null, waiting: result.status === 'waiting' };
+  result.threads.push(listed);
 
   const shown = JSON.parse(run(cli, ['thread', 'show', '--json', '--messages', '1000', threadId]));
   const { link, providerInstanceId, model, runtimeMode, branch: threadBranch, worktreePath } = shown.thread;
   result.thread = { threadId, link, providerInstanceId, model, runtimeMode, branch: threadBranch, worktreePath };
-  result.threads.push({ threadId, link, waiting: result.status === 'waiting' });
+  listed.link = link;
   result.messages = shown.messages.map(({ role, text }) => ({ role, text }));
   if (timedOut) console.error(`timed out; the thread keeps running in T3: ${link}`);
   if (worktreePath) readSession(worktreePath);
