@@ -6,18 +6,14 @@ Orbit is mostly [pstack](https://github.com/cursor/plugins/tree/main/pstack) by 
 
 ## Install
 
-Send this in any T3 thread. The lead installs orbit for each provider it has a tested setup for and checks that it loads.
-
-```
-Set up orbit by following https://github.com/aayushbtw/orbit/blob/main/docs/setup.md
-```
-
-To install in Claude Code without T3, run:
+Install orbit once, in Claude Code:
 
 ```
 /plugin marketplace add aayushbtw/orbit
 /plugin install orbit@orbit
 ```
+
+Then run `/orbit:setup` in a T3 thread led by Claude. It lists your T3 providers, asks which ones fill each panel's seat on another family, and saves your choice for every project in `~/.claude/rules/orbit-models.md`. A project's AGENTS.md Models rows still win. Run it from a Claude thread, because a Grok thread may load an older copy of orbit that lacks the skill.
 
 Auto-update is off for third-party marketplaces. [Turn it on](docs/usage.md#auto-update) or run `claude plugin update orbit@orbit`.
 

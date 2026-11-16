@@ -11,9 +11,9 @@ T3 Code runs orbit under a Claude lead and under a lead on another provider, suc
 
 A Claude lead loads orbit as a Claude Code plugin. Its SessionStart hook prints `plugin/rules.md` into the context, so Non-negotiables is there before the first reply.
 
-A lead on another provider gets orbit from Claude Code's install record, `~/.claude/plugins/installed_plugins.json`. Grok reads the plugin's `installPath` from that record when orbit is enabled in Claude Code's user settings. Grok ignores a project's `.claude/settings.json`. A copy in `~/.grok/plugins/`, or one from `grok plugin install`, wins over the record, and Grok still loads orbit once. [Set up orbit](setup.md) installs it one way per provider. `claude plugin update orbit@orbit` moves the record to a fresh copy of the new version, so it also updates what Grok loads. A directory marketplace updates Claude Code's copy on `git pull`, but Grok's copy only on `claude plugin update`.
+A lead on another provider gets orbit from Claude Code's install record, `~/.claude/plugins/installed_plugins.json`. Grok reads the plugin's `installPath` from that record when orbit is enabled in Claude Code's user settings. Grok ignores a project's `.claude/settings.json`. A copy in `~/.grok/plugins/`, or one from `grok plugin install`, wins over the record, and Grok still loads orbit once. Orbit has no per-provider install. `/orbit:setup` finds a Grok install of its own and prints `grok plugin uninstall orbit` for the user to run, so Grok falls back to Claude Code's copy. `claude plugin update orbit@orbit` moves the record to a fresh copy of the new version, so it also updates what Grok loads. A directory marketplace updates Claude Code's copy on `git pull`, but Grok's copy only on `claude plugin update`.
 
-Grok drops the SessionStart hook output. `/orbit:start` therefore loads the `rules` skill when Non-negotiables is not in context, and the skill reads `../../rules.md`. A Claude lead skips that step, because the hook already printed the rules. A user who wants the rules in every session, even without `/orbit:start`, adds one line to the provider's own instruction file, as the README shows. Orbit writes that file only when the user says yes during [setup](setup.md).
+Grok drops the SessionStart hook output. `/orbit:start` therefore loads the `rules` skill when Non-negotiables is not in context, and the skill reads `../../rules.md`. A Claude lead skips that step, because the hook already printed the rules. A user who wants the rules in every session, even without `/orbit:start`, adds one line to the provider's own instruction file, as the README shows. Orbit writes that file only when the user says yes during `/orbit:setup`.
 
 ## Find T3's tools
 
@@ -29,8 +29,9 @@ A review panel fills one seat on a model family other than the session's.
 - The lead calls `orchestrator_capabilities` once per session and reuses the result.
 - The roster is every enabled provider that can run a cross-provider child task and has a family other than the session's.
 - The empty-cell default takes the first roster provider's first model, and skips a model of the session's own family that another provider hosts.
-- An explicit pick in the project's `other-family` row is checked with `search` before it is called unavailable.
-- An unavailable pick goes in the reply with its reason.
+- The `other-family` row comes from the project's AGENTS.md, else from `~/.claude/rules/orbit-models.md`, which `/orbit:setup` writes. Its Model cell can list providers in order. The seat tries only listed providers outside the session's family, then the session-family seat, never a provider the list leaves out.
+- An explicit model pick is checked with `search` before it is called unavailable.
+- An unavailable entry goes in the reply with its reason.
 - The seat runs through `delegate_task`, reads only, and its child thread is settled when it returns.
 - Seats that write code stay on Claude.
 

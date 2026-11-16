@@ -8,3 +8,5 @@ A subagent stops here. These rules are for the lead.
 Read `../../rules.md` in full now, before you reply. It sits in orbit's plugin folder, two folders above this skill's base directory. `<orbit-plugin>` in that file is that folder.
 
 A lead that is not Claude Code then reads `../../docs/harness/t3-code.md`, section "Lead on another provider". Orbit's text uses Claude Code's tool names, and that section maps them.
+
+Then read `~/.claude/rules/orbit-models.md` if it exists. It holds the user-wide Models rows that `/orbit:setup` writes. Claude Code loads it natively, and other leads read it here.

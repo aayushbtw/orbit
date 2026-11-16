@@ -23,6 +23,7 @@ A lookup reference for orbit's commands, agents and defaults. To learn how a tas
 | A long or unattended run you'll review later | `/orbit:show-me-your-work` |
 | Catch up on what changed since your last message | `/orbit:ketchup` |
 | Disk is tight, or worktrees have piled up | `/orbit:worktree-cleanup` |
+| Choose which T3 providers fill each panel's seat on another family, for every project | `/orbit:setup`, in a T3 thread led by Claude |
 
 Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh one.
 
@@ -73,7 +74,7 @@ When each runs:
 
 - poteto-agent and comment-sicko run only inside the flow you start. The verifier runs only inside Shipping (at task end or `/orbit:ship`), orchestrate, autopilot-full and autopilot-stack.
 - The advisor runs at the plan gate, or when you ask for it.
-- As in pstack, the rest is opt-in. `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill` and `/orbit:maintain-verification-skill` run only when you type them.
+- As in pstack, the rest is opt-in. `/orbit:setup`, `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill` and `/orbit:maintain-verification-skill` run only when you type them.
 - `/orbit:how` and `/orbit:why` run when you type them, when Claude matches a question to them, and inside the investigate and bug flows and `no-comments`.
 - `/orbit:arena` runs when you type it, inside `/orbit:architect`, and in the feature flow on a choice with several valid shapes.
 - `show-me-your-work` also runs when Claude sees long or unattended work.
