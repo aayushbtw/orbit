@@ -11,7 +11,7 @@ T3 Code runs orbit under a Claude lead and under a lead on another provider, suc
 
 A Claude lead loads orbit as a Claude Code plugin. Its SessionStart hook prints `plugin/rules.md` into the context, so Non-negotiables is there before the first reply.
 
-A lead on another provider gets orbit from Claude Code's install record, `~/.claude/plugins/installed_plugins.json`. Grok reads the plugin's `installPath` from that record when orbit is enabled in Claude Code's user settings. Grok ignores a project's `.claude/settings.json`. A copy in `~/.grok/plugins/` wins over the record. `claude plugin update orbit@orbit` moves the record to a fresh copy of the new version, so it also updates what Grok loads.
+A lead on another provider gets orbit from Claude Code's install record, `~/.claude/plugins/installed_plugins.json`. Grok reads the plugin's `installPath` from that record when orbit is enabled in Claude Code's user settings. Grok ignores a project's `.claude/settings.json`. A copy in `~/.grok/plugins/` wins over the record. `claude plugin update orbit@orbit` moves the record to a fresh copy of the new version, so it also updates what Grok loads. A directory marketplace updates Claude Code's copy on `git pull`, but Grok's copy only on `claude plugin update`.
 
 Grok drops the SessionStart hook output. `/orbit:start` therefore loads the `rules` skill when Non-negotiables is not in context, and the skill reads `../../rules.md`. A Claude lead skips that step, because the hook already printed the rules. A user who wants the rules in every session, even without `/orbit:start`, adds one line to the provider's own instruction file, as the README shows. Orbit never writes that file.
 
@@ -28,7 +28,7 @@ A review panel fills one seat on a model family other than the session's.
 
 - The lead calls `orchestrator_capabilities` once per session and reuses the result.
 - The roster is every enabled provider that can run a cross-provider child task and has a family other than the session's.
-- The default pick takes the first roster provider's first model, and skips a model of the session's own family that another provider hosts.
+- The empty-cell default takes the first roster provider's first model, and skips a model of the session's own family that another provider hosts.
 - An explicit pick in the project's `other-family` row is checked with `search` before it is called unavailable.
 - An unavailable pick goes in the reply with its reason.
 - The seat runs through `delegate_task`, reads only, and its child thread is settled when it returns.
@@ -40,7 +40,7 @@ Only Claude is assumed present. Every other provider comes from the roster at ru
 
 A lead on another provider runs orbit agents with its native subagent tool, such as Grok's `spawn_subagent`. T3 shows each one as a nested node in the same thread, not as a new thread. Grok ignores an agent's `model` field, so a native subagent runs on the lead's own model.
 
-`delegate_task` has two uses. A child that writes code runs on the roster's Claude provider. A panel seat runs on another family. Each brief names orbit's plugin folder as an absolute path, because the agent's own paths may arrive unexpanded.
+`delegate_task` has two uses. A child that writes code runs on the roster's Claude provider, with `role: "implementation"` and `mode: "async"`, because only a child on Claude gets the role's model and orbit's rules. It runs native, and the reply says so, when a T3 tool is absent, the roster has no Claude provider, or the spawn errors or returns nothing. A panel seat runs on another family. The lead reads each child's result with `task_status` and settles its thread. Each brief names orbit's plugin folder as an absolute path, because the agent's own paths may arrive unexpanded.
 
 ## Resolve paths
 
