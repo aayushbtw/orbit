@@ -6,7 +6,7 @@ Proves that a real `/orbit:start` run routes each delegate through the project's
 
 1. Builds a scratch game project at `$TMPDIR/skyforge-<random>`: a camera bug past 4x zoom, a goblin HP change, and an AGENTS.md with a Models table. A bare sibling repo, `skyforge-<random>-origin.git`, is its `origin` with `main` pushed, so the Worktree gate finds `origin/main`.
 2. Runs `claude -p` there on this worktree's `plugin/`, with an ordinary user request and nothing that names the experiment. `--setting-sources project,local` keeps your user settings out (your plugins, hooks, permissions and model defaults). The `--settings` file and `--plugin-dir` still load, since they are their own sources. Your `~/.claude/CLAUDE.md`, auto memory and user MCP servers may still reach the lead, so a run on a machine with routing advice in those files is confounded.
-3. Records the original input of every `Agent` call through a PreToolUse hook (`hook.mjs`). The hook allows each call but rewrites it to `model: "haiku"`, `effort: "low"`, so children run cheaply while the lead's choices stay on record. A PostToolUse record of each child's `resolvedModel` shows the rewrite took effect. The hook also records each T3 `delegate_task` call, without rewriting it.
+3. Records the original input of every `Agent` call through a PreToolUse hook (`hook.mjs`). The matcher is anchored, `^(Agent|Task|.*delegate_task)$`, so tools such as `TaskStop` and `ListAgents` never reach the hook. The hook allows every call it matches, so a session without bypass permissions never stalls on one. It rewrites only `Agent` and `Task` calls, to `model: "haiku"`, `effort: "low"`, so children run cheaply while the lead's choices stay on record. A PostToolUse record of each child's `resolvedModel` shows the rewrite took effect. The hook also records each T3 `delegate_task` call, without rewriting it. The hook command runs the same `node` binary as `run.mjs`, so a T3 app launched without `node` on `PATH` still runs it.
 4. Grades the lead's own calls (calls from children are counted, not graded) and prints PASS, FAIL or N/A per check.
 
 A record belongs to the lead when it has no `agent_id` and its `session_id` matches the first record's. A T3 child runs as its own session in the same project, so its hook records carry no `agent_id` but a different `session_id`. Records without a `session_id`, from runs saved before the hook logged it, count as the lead's.
@@ -49,18 +49,18 @@ It exits non-zero on any FAIL, and when `--grade` finds no `spawns.jsonl` or `ru
 
 1. The scratch project commits the hook as `.claude/settings.json`, since the lane builds its worktree from the project's `HEAD`.
 2. `t3 project add <scratch>` registers the project. The CLI is `T3CODE_CLI_PATH`, else `t3` on `PATH`.
-3. `node tests/t3/lane.mjs --head HEAD --scenario routing --message <prompt> --project <scratch> --out <run>/lane.json` runs the lead, with stdout and stderr in `stdout.log` and `stderr.log`.
+3. `node tests/t3/lane.mjs --head HEAD --scenario routing --message <prompt> --project <scratch> --out <run>/lane.json --timeout 23` runs the lead, with stdout and stderr in `stdout.log` and `stderr.log`.
 4. On exit, Ctrl-C included, `t3 project remove --force <scratch>` removes the project and its threads. It removes only the project this run added, even with `--keep`.
-5. When the removal fails, stderr logs `t3 project remove ...`. Then the agent running the eval settles each thread in that run's `lane.json` `threads` with the T3 tool `t3_thread_organize`, action `settle`. A thread whose `waiting` is true gets action `archive`, since settle refuses a thread that waits on a question.
+5. The lane writes `lane.json` on completion, on its own timeout and on Ctrl-C. When the removal fails, stderr logs `t3 project remove ...`. Then the agent running the eval settles each thread in that run's `lane.json` `threads`, `delegate_task` children included, with the T3 tool `t3_thread_organize`, action `settle`. A thread whose `waiting` is true gets action `archive`, since settle refuses a thread that waits on a question.
 
-`--provider` and `--model` reach the lane only when given. Otherwise the T3 project default runs. `--model` takes any value T3 accepts, since the `opus`, `sonnet` and `fable` check applies to `--host claude` only. The INFO line for the lead prints the lane's status, exit code and thread link from `lane.json`. On timeout or Ctrl-C, the lane gets 60 seconds to restore user settings before SIGKILL.
+`--provider` and `--model` reach the lane only when given. Otherwise the T3 project default runs. `--model` takes any value T3 accepts, since the `opus`, `sonnet` and `fable` check applies to `--host claude` only. The INFO line for the lead prints the lane's status, exit code and thread link from `lane.json`. The lane's `--timeout` is 2 minutes below the 25-minute kill, so the lane times out first and records the thread itself. On the kill or Ctrl-C, the lane gets 60 seconds to restore user settings and write `lane.json` before SIGKILL.
 
 A T3 run differs from a `claude -p` run in four ways, so compare the two with care:
 
 - No `--setting-sources`. Your user plugins, hooks and settings reach the lead.
-- No `--max-turns`. Only the 25-minute timeout bounds the lead.
+- No `--max-turns`. Only the lane's 23-minute timeout bounds the lead.
 - Orbit loads from this repo's committed `HEAD`. Uncommitted edits under `plugin/` do not reach the lead.
-- `delegate_task` children run on the target the lead chose. The hook records them but does not force them to a cheap model.
+- `delegate_task` children run on the target the lead chose. The hook records and allows them but does not force them to a cheap model.
 
 ## Cost
 

@@ -140,7 +140,12 @@ function buildLaneCommit() {
   try {
     const existing = tryRun('git', ['-C', project, 'show', `${base}:.claude/settings.json`]);
     const settings = existing ? JSON.parse(existing) : {};
-    settings.enabledPlugins = { ...settings.enabledPlugins, 'orbit@orbit': false, [`orbit@${marketplace}`]: true };
+    const user = JSON.parse(tryRead(join(CLAUDE_DIR, 'settings.json')) ?? '{}');
+    const enabledOrbits = [user, settings]
+      .flatMap((s) => Object.entries(s.enabledPlugins ?? {}))
+      .filter(([key, on]) => key.startsWith('orbit@') && on)
+      .map(([key]) => [key, false]);
+    settings.enabledPlugins = { ...settings.enabledPlugins, ...Object.fromEntries(enabledOrbits), [`orbit@${marketplace}`]: true };
     run('git', ['-C', project, 'read-tree', base], { env });
     const blob = run('git', ['-C', project, 'hash-object', '-w', '--stdin'], { input: JSON.stringify(settings, null, 2) + '\n' });
     run('git', ['-C', project, 'update-index', '--add', '--cacheinfo', `100644,${blob},.claude/settings.json`], { env });
@@ -163,8 +168,9 @@ let live = null;
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, async () => {
     live?.kill('SIGTERM');
+    Object.assign(result, { status: 'interrupted', exit: 1, error: `interrupted by ${signal}` });
     await cleanup();
-    process.exit(1);
+    finish();
   });
 }
 
@@ -209,17 +215,65 @@ function startThread(args) {
   });
 }
 
+const sessionDir = (worktreePath) => join(CLAUDE_DIR, 'projects', worktreePath.replace(/[^a-zA-Z0-9]/g, '-'));
+const sessionFiles = (dir, recursive = false) => existsSync(dir)
+  ? readdirSync(dir, { recursive }).filter((f) => f.endsWith('.jsonl')).map((f) => join(dir, f))
+  : [];
+
+function childThreadIds(dir) {
+  return new Set(sessionFiles(dir, true)
+    .flatMap(readJsonl)
+    .filter((e) => e.type === 'user' && Array.isArray(e.message?.content))
+    .flatMap((e) => e.message.content.filter((c) => c.type === 'tool_result'))
+    .flatMap((c) => {
+      try { return [JSON.parse(typeof c.content === 'string' ? c.content : c.content?.[0]?.text).childThreadId]; } catch { return []; }
+    })
+    .filter((id) => typeof id === 'string'));
+}
+
+function recordThreads(threadId) {
+  threadId ??= JSON.parse(tryRun(cli, ['thread', 'list', '--project', project, '--json']) ?? '[]').find((t) => t.title === title)?.threadId;
+  if (!threadId) return;
+  const lead = { threadId, link: null, waiting: result.status === 'waiting', parentThreadId: null };
+  result.threads = [lead];
+
+  const shown = JSON.parse(run(cli, ['thread', 'show', '--json', '--messages', '1000', threadId]));
+  const { link, providerInstanceId, model, runtimeMode, branch: threadBranch, worktreePath, pendingRequestCount } = shown.thread;
+  result.thread = { threadId, link, providerInstanceId, model, runtimeMode, branch: threadBranch, worktreePath };
+  result.messages = shown.messages.map(({ role, text }) => ({ role, text }));
+  lead.link = link;
+  lead.waiting ||= pendingRequestCount > 0;
+  if (!worktreePath) return;
+
+  const children = [...childThreadIds(sessionDir(worktreePath))].flatMap((id) => {
+    const child = JSON.parse(tryRun(cli, ['thread', 'show', '--json', id]) ?? 'null')?.thread;
+    return child ? [{ threadId: id, link: child.link ?? null, waiting: child.pendingRequestCount > 0, parentThreadId: child.parentThreadId ?? null }] : [];
+  });
+  for (let grew = true; grew;) {
+    const listed = new Set(result.threads.map((t) => t.threadId));
+    const next = children.filter((c) => !listed.has(c.threadId) && listed.has(c.parentThreadId));
+    result.threads.push(...next);
+    grew = next.length > 0;
+  }
+}
+
 function readSession(worktreePath) {
-  const dir = join(CLAUDE_DIR, 'projects', worktreePath.replace(/[^a-zA-Z0-9]/g, '-'));
-  const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.jsonl')).map((f) => join(dir, f)) : [];
-  if (!files.length) {
-    console.error(`warning: no Claude session found in ${dir}, so toolCalls and firstTurnInputTokens are null`);
+  const dir = sessionDir(worktreePath);
+  const [, command, args] = message.match(/^\/(\S+)\s*([\s\S]*)$/) ?? [];
+  // Claude records a slash command message in this form, not as typed.
+  const opening = command ? `<command-message>${command}</command-message>\n<command-name>/${command}</command-name>\n<command-args>${args}</command-args>` : message;
+  const [main, mainEntries] = sessionFiles(dir)
+    .map((f) => [f, readJsonl(f)])
+    .find(([, entries]) => {
+      const first = entries.find((e) => e.type === 'user')?.message?.content;
+      return first === message || first === opening;
+    }) ?? [];
+  if (!main) {
+    console.error(`warning: no Claude session in ${dir} opens with the scenario message, so session, toolCalls and firstTurnInputTokens are null`);
     return;
   }
-  const main = files.sort((a, b) => statSync(a).mtimeMs - statSync(b).mtimeMs).at(-1);
   const subDir = join(main.slice(0, -'.jsonl'.length), 'subagents');
-  const subs = existsSync(subDir) ? readdirSync(subDir).filter((f) => f.endsWith('.jsonl')).map((f) => join(subDir, f)) : [];
-  const mainEntries = readJsonl(main);
+  const subs = sessionFiles(subDir);
   const usage = mainEntries.find((e) => e.type === 'assistant' && e.message?.usage)?.message.usage;
 
   const seen = new Set();
@@ -250,43 +304,42 @@ async function lane() {
     result.laneCommit = buildLaneCommit();
   }
 
+  const preexisting = new Set(run('git', ['-C', project, 'for-each-ref', '--format=%(refname)', 'refs/heads']).split('\n'));
   undo.push(() => {
+    if (!result.thread) {
+      try { recordThreads(); } catch (e) { console.error(`cleanup: ${gitError(e)}`); }
+    }
     const worktrees = (tryRun('git', ['-C', project, 'worktree', 'list', '--porcelain']) ?? '').split('\n\n').map((b) => b.split('\n'));
     const path = result.thread?.worktreePath
       ?? worktrees.find((lines) => lines.includes(`branch refs/heads/${branch}`))?.[0].replace(/^worktree /, '');
-    const checkedOut = worktrees.find((lines) => lines[0] === `worktree ${path}`)?.find((l) => l.startsWith('branch refs/heads/'))?.slice('branch refs/heads/'.length);
+    const checkedOut = worktrees.find((lines) => lines[0] === `worktree ${path}`)?.find((l) => l.startsWith('branch '))?.slice('branch '.length);
     if (path) {
       tryRun('git', ['-C', project, 'worktree', 'remove', '--force', path]);
       // T3 keeps one folder per project for its worktrees and never removes it.
       try { rmdirSync(dirname(path)); } catch {}
     }
-    for (const b of new Set([branch, checkedOut].filter(Boolean))) tryRun('git', ['-C', project, 'branch', '-D', b]);
+    for (const ref of new Set([`refs/heads/${branch}`, checkedOut])) {
+      if (ref && !preexisting.has(ref)) tryRun('git', ['-C', project, 'branch', '-D', ref.slice('refs/heads/'.length)]);
+    }
     tryRun('git', ['-C', project, 'worktree', 'prune']);
   });
+  if (result.status === 'interrupted') return;
   const args = ['thread', 'start', project, '-', '--worktree', result.laneCommit, '--branch', branch, '--title', title, '--wait', '--json'];
   if (opts.provider) args.push('--provider', opts.provider);
   if (opts.model) args.push('--model', opts.model);
   const { code, stdout, stderr, timedOut } = await startThread(args);
+  if (result.status === 'interrupted') return;
 
   let reply = null;
   try { reply = JSON.parse(stdout); } catch {}
-  const threadId = reply?.threadId
-    ?? JSON.parse(tryRun(cli, ['thread', 'list', '--project', project, '--json']) ?? '[]').find((t) => t.title === title)?.threadId;
   result.status = timedOut ? 'timeout' : code === 2 ? 'waiting' : code === 0 ? 'completed' : 'failed';
   result.exit = { completed: 0, waiting: 2 }[result.status] ?? 1;
   result.reply = reply?.reply ?? null;
   result.error = reply?.error ?? (result.status === 'timeout' ? `no reply within ${opts.timeout} minutes` : result.status === 'failed' ? stderr.trim() || `t3 exited ${code}` : null);
-  if (!threadId) return;
-  const listed = { threadId, link: null, waiting: result.status === 'waiting' };
-  result.threads.push(listed);
-
-  const shown = JSON.parse(run(cli, ['thread', 'show', '--json', '--messages', '1000', threadId]));
-  const { link, providerInstanceId, model, runtimeMode, branch: threadBranch, worktreePath } = shown.thread;
-  result.thread = { threadId, link, providerInstanceId, model, runtimeMode, branch: threadBranch, worktreePath };
-  listed.link = link;
-  result.messages = shown.messages.map(({ role, text }) => ({ role, text }));
-  if (timedOut) console.error(`timed out; the thread keeps running in T3: ${link}`);
-  if (worktreePath) readSession(worktreePath);
+  recordThreads(reply?.threadId);
+  if (!result.thread) return;
+  if (timedOut) console.error(`timed out; the thread keeps running in T3: ${result.thread.link}`);
+  if (result.thread.worktreePath) readSession(result.thread.worktreePath);
 }
 
 started = true;

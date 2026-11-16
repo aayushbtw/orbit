@@ -15,14 +15,12 @@ if (input.hook_event_name === 'PostToolUse') {
   appendFileSync(log, JSON.stringify({ ...record, resolved_model: input.tool_response?.resolvedModel ?? null }) + '\n');
 } else {
   appendFileSync(log, JSON.stringify({ ...record, tool_input: input.tool_input }) + '\n');
-  const targetHasNoPortableCheapModel = /(^|__)delegate_task$/.test(input.tool_name ?? '');
-  if (!targetHasNoPortableCheapModel) {
-    process.stdout.write(JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: 'PreToolUse',
-        permissionDecision: 'allow',
-        updatedInput: { ...input.tool_input, model: 'haiku', effort: 'low' },
-      },
-    }));
-  }
+  const rewrite = input.tool_name === 'Agent' || input.tool_name === 'Task';
+  process.stdout.write(JSON.stringify({
+    hookSpecificOutput: {
+      hookEventName: 'PreToolUse',
+      permissionDecision: 'allow',
+      ...(rewrite && { updatedInput: { ...input.tool_input, model: 'haiku', effort: 'low' } }),
+    },
+  }));
 }

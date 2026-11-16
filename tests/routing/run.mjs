@@ -206,7 +206,7 @@ function startLead(outDir, hooks) {
     throw new Error(`t3 project add ${project}: ${e.stderr?.toString().trim() || e.message}`);
   }
   const outFd = openSync(join(outDir, 'stdout.log'), 'w');
-  const args = [LANE, '--head', 'HEAD', '--scenario', 'routing', '--message', PROMPT, '--project', project, '--out', join(outDir, 'lane.json')];
+  const args = [LANE, '--head', 'HEAD', '--scenario', 'routing', '--message', PROMPT, '--project', project, '--out', join(outDir, 'lane.json'), '--timeout', String(TIMEOUT_MS / 60_000 - 2)];
   if (opts.provider) args.push('--provider', opts.provider);
   if (opts.model) args.push('--model', opts.model);
   const child = spawn(process.execPath, args, { detached: true, stdio: ['ignore', outFd, errFd] });
@@ -217,7 +217,7 @@ function runLead(outDir) {
   mkdirSync(outDir, { recursive: true });
   const log = join(outDir, 'spawns.jsonl');
   writeFileSync(log, '');
-  const hook = [{ matcher: 'Agent|Task|.*delegate_task', hooks: [{ type: 'command', command: `node ${JSON.stringify(join(HERE, 'hook.mjs'))} ${JSON.stringify(log)}` }] }];
+  const hook = [{ matcher: '^(Agent|Task|.*delegate_task)$', hooks: [{ type: 'command', command: `${JSON.stringify(process.execPath)} ${JSON.stringify(join(HERE, 'hook.mjs'))} ${JSON.stringify(log)}` }] }];
   const { project, child, fds } = startLead(outDir, { PreToolUse: hook, PostToolUse: hook });
 
   const exited = new Promise((done) => {
