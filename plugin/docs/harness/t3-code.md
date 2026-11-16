@@ -4,7 +4,24 @@ This is orbit's T3 Code adapter, at the path pstack uses for a host adapter. Orb
 
 ## Probe
 
-T3 Code serves its tools as MCP tools named `mcp__t3-code__<name>`, and most of them are deferred. Before calling a T3 tool, check that tool itself. It is present when it is already in your tool list, or when `ToolSearch` with `select:mcp__t3-code__<name>` loads it. With no `ToolSearch`, a tool not in your list is absent. A tool that is not present takes the absent column. Never key on an environment variable, a path, or another tool of the same family, because T3 can turn one tool off and leave the rest. Each subagent checks for itself.
+T3 Code serves its tools as MCP tools named `mcp__t3-code__<name>`, and most of them are deferred. Before calling a T3 tool, check that tool itself. It is present when it is already in your tool list, or when `ToolSearch` with `select:mcp__t3-code__<name>` loads it. With no `ToolSearch`, a tool not in your list is absent. A tool that is not present takes the absent column. Never key on an environment variable, a path, or another tool of the same family, because T3 can turn one tool off and leave the rest. Each subagent checks for itself. A lead on another provider probes as Lead on another provider says.
+
+## Lead on another provider
+
+Orbit's text uses Claude Code's names. A lead that is not Claude Code maps them with this table. Read it once, before the first spawn or T3 tool call.
+
+| Claude Code | Lead on another provider |
+| --- | --- |
+| `Agent` with an `orbit:` `subagent_type` | Your native subagent tool with that agent, such as Grok's `spawn_subagent`, so no new top-level thread starts. With no native subagent tool, `delegate_task`. A child that writes code, such as a `poteto-agent` delegate, an arena or architect runner or a swarm worker, runs on Claude through `delegate_task` with `role: "implementation"` when the roster has a Claude provider (Models, below). That is `delegate_task`'s one use beside a panel seat. With no Claude provider on the roster, it runs native, and the reply says so. |
+| A brief to an orbit agent | Name orbit's plugin folder as an absolute path, two folders above the `rules` skill's base directory, because the agent's own paths may arrive unexpanded. A `delegate_task` brief also names the agent file to follow, `agents/<name>.md` in that folder, because a child thread loads no agent. |
+| `mcp__t3-code__<name>` | The bare name as your tool list shows it, such as `t3-code__<name>`. Orbit's text names T3 tools bare. |
+| The `ToolSearch` probe | No `ToolSearch`. A T3 tool is present when its name is in your tool list. Otherwise the first real call is the probe, and an error means absent. Never call a tool with dummy arguments, because a dummy `delegate_task` starts a thread. |
+| A model per role (`opus`, `sonnet`, `haiku`, `fable`, `inherit`) | The agent file's `model` field does not apply. A spawn that writes code runs on the roster's Claude provider through `delegate_task`, on its listed model whose `id` holds the role's model name, or its first listed model for `inherit`. Its effort maps as Seats on another family says. Every other spawn runs native on your own model. The reply names the model each spawn ran on. |
+| `run_in_background`, `TaskStop`, `Monitor`, `t3_background_wait` | The native equivalent. Under `delegate_task`, `mode: "async"`, then `task_status` and `task_cancel`. With none, skip with the line from Cursor-only features. |
+| `AskUserQuestion` | A numbered question in the reply, recommended option first. |
+| `EnterWorktree`, `isolation: "worktree"` | The native subagent's worktree option, or `isolation: "worktree"` under `delegate_task`. With neither, name the branch in the brief. |
+| The SessionStart rules | The `rules` skill, which `/orbit:start` loads once per session. |
+| Any other Claude-only tool a step names | Its native equivalent, else skip with the line from Cursor-only features. |
 
 ## Tools
 
@@ -23,31 +40,31 @@ Every other field maps as in pstack's Claude Code adapter, in both hosts.
 
 ## Models
 
-Claude models map as rules.md Workflow Defaults, Models says.
+Claude models map as rules.md Workflow Defaults, Models says, and under a lead on another provider as Lead on another provider says.
 
 | pstack | T3 Code | T3 tool absent |
 | --- | --- | --- |
-| A non-Claude model slug, a panel seat on another family | The roster seat, below. | The skill's own Claude seat. The reply names each seat's model. |
+| A non-Claude model slug, a panel seat on another family | The roster seat, below. | The session-family seat, below. The reply names each seat's model. |
 
 ### Seats on another family
 
-A skill may name a seat on another family, such as arena's cross-judge, interrogate's second adversary, the second `how` explorer, reflect's Tooling reviewer, the show-me-your-work trail reviewer or autopilot-full's audit seat. Fill one such seat per panel. Only the agent whose turn end returns to the user fills a roster seat. A subagent takes the absent column, because its turn end returns to its parent and the child's wake lands on the lead's thread. Seats that write the change's code, such as arena and architect runners, delegates, swarm workers and live lanes, stay on Claude.
+A skill may name a seat on another family, such as arena's cross-judge, interrogate's second adversary, the second `how` explorer, reflect's Tooling reviewer, the show-me-your-work trail reviewer or autopilot-full's audit seat. The session-family seat is the seat the skill names, run on the session's own family. It is an `Agent` spawn under a Claude lead and the native subagent under another lead. Fill one such seat per panel. Only the agent whose turn end returns to the user fills a roster seat. A subagent takes the absent column, because its turn end returns to its parent and the child's wake lands on the lead's thread. Seats that write the change's code, such as arena and architect runners, delegates, swarm workers and live lanes, stay on Claude. Under a lead on another provider, Lead on another provider says where they run.
 
 Probe `orchestrator_capabilities`, `delegate_task`, `task_status` and `t3_thread_organize` as Probe says. If any is absent, the absent column applies.
 
-Call `orchestrator_capabilities` once per session, before the first such seat, and reuse the result. It holds `inheritedProviderInstanceId` and `providers`, in listed order. Each provider has `providerInstanceId`, `driverKind`, `canRunCrossProviderChildTask`, `constraints` and `models`. Each model has an `id` and may list `options`, each an `id` with its `values`. The effort option's `id` differs per provider.
+Call `orchestrator_capabilities` once per session, before the first such seat, and reuse the result. It holds `inheritedProviderInstanceId`, `inheritedModel` and `providers`, in listed order. Each provider has `providerInstanceId`, `driverKind`, `canRunCrossProviderChildTask`, `constraints` and `models`. Each model has an `id` and may list `options`, each an `id` with its `values`. The effort option's `id` differs per provider.
 
-The session's family is the `driverKind` of the provider whose `providerInstanceId` equals `inheritedProviderInstanceId`. The roster is every provider, in listed order, with `canRunCrossProviderChildTask` true, a non-empty `models` list and a `driverKind` other than the session's family.
+The session's family is the `driverKind` of the provider whose `providerInstanceId` equals `inheritedProviderInstanceId`. The roster is every provider, in listed order, with `canRunCrossProviderChildTask` true, a non-empty `models` list and a `driverKind` other than the session's family. Never put the session's own provider on the roster. When no provider's `providerInstanceId` equals `inheritedProviderInstanceId`, say so in the reply and use the session-family seat.
 
-The `other-family` row of the Models table picks the seat. An empty Model cell or no row takes the first roster provider and its first listed model. `inherit` keeps the skill's own Claude seat. `<providerInstanceId>/<model>` is an explicit pick, split at the first `/` because a model id can hold one. It holds when that provider is on the roster and lists that model. Otherwise put `<pick> unavailable: <reason>` in the reply and use the empty-cell default. The reason quotes the provider's `constraints` verbatim or names the check that failed. Never replace a pick without saying so.
+The `other-family` row of the Models table picks the seat. An empty Model cell or no row takes the first roster provider and its first listed model whose `id` does not start with the first word of `inheritedModel`, its text before the first `-`. That skips a model of the session's own family that another provider hosts. When a provider has no such model, go to the next roster provider. A model whose `id` is `auto` or `default` stays eligible, and the reply names it. `inherit` keeps the session-family seat. `<providerInstanceId>/<model>` is an explicit pick, split at the first `/` because a model id can hold one. It holds when that provider is on the roster and lists that model. The first result is a short list, so before you call a pick unavailable because its model is not listed, call `orchestrator_capabilities` with `search` set to the model id. Otherwise put `<pick> unavailable: <reason>` in the reply and use the empty-cell default. The reason quotes the provider's `constraints` verbatim or names the check that failed. Never replace a pick without saying so.
 
 When the row's Effort names a value that one of the model's `options` lists in `values`, pass `target.options` as `[{id, value}]` with that option's `id`. Otherwise pass `options: []`, which clears the inherited options, so the provider default runs.
 
 Spawn the seat with `delegate_task`, `target: {providerInstanceId, model, options}`, `role: "review"`, `mode: "async"`, a `title` naming the skill and the seat, and no `runtimeMode`. A seat that only reads keeps the default `isolation`. Interrogate's adversary runs repros, so its skill gives it a worktree and its own brief line. A child on another provider loads no orbit rules, so the brief stands alone. It holds the user's goal in one line, the absolute path of each file to read, the seat's prompt, and "Do not edit any file. Return your findings as text." It never holds a secret.
 
-Start the panel's Claude seats too, then end the turn or keep working. The child's completion wakes you. `t3_background_wait` does not take a `delegate_task` id. Read the result with `task_status`. Then check `git status --short` for edits, and settle the child thread with `t3_thread_organize` action `settle`, with `threadId` set to the `childThreadId` that `delegate_task` returned, or `archive` when it waits on a question.
+Start the panel's other seats too, then end the turn or keep working. The child's completion wakes you. `t3_background_wait` does not take a `delegate_task` id. Read the result with `task_status`. Then check `git status --short` for edits, and settle the child thread with `t3_thread_organize` action `settle`, with `threadId` set to the `childThreadId` that `delegate_task` returned, or `archive` when it waits on a question.
 
-When the child errors, hits a limit or returns nothing, try the next roster provider, then the skill's own Claude seat, and say which ran. When the roster is empty or every roster seat failed, use the skill's own Claude seat and say in the reply that the panel lacked a second family. That line never goes in a trail's Attention header. The reply names each seat's provider and model.
+When the child errors, hits a limit or returns nothing, try the next roster provider, then the session-family seat, and say which ran. When the roster is empty or every roster seat failed, use the session-family seat and say in the reply that the panel lacked a second family. That line never goes in a trail's Attention header. The reply names each seat's provider and model.
 
 ## Paths
 
