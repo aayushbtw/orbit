@@ -318,8 +318,36 @@ function guideModels(theme) {
   return k;
 }
 
+function t3Lead(theme) {
+  const W = 1000, H = 790;
+  const k = canvas(theme, W, H);
+  const box = (b) => { const r = B({ h: 84, kind: 'claude', ...b }); k.box(r); return r; };
+  const start = box({ x: 400, y: 20, w: 200, t: '/orbit:start', s: 'you name the goal', kind: 'you' });
+  const ask = box({ x: 330, y: 150, w: 340, t: 'Non-negotiables?', s: 'already in the lead\'s context' });
+  const hook = box({ x: 60, y: 300, w: 340, t: 'Claude lead', s: 'SessionStart hook printed them' });
+  const skill = box({ x: 600, y: 300, w: 340, t: 'Other provider', s: 'rules skill reads rules.md' });
+  const play = box({ x: 380, y: 440, w: 240, t: 'Playbook', s: 'runs the flow' });
+  k.frame(15, 570, 970, 160, 'what the lead spawns');
+  const spawns = [
+    box({ x: 35, y: 620, w: 290, t: 'orbit agent', s: 'native subagent, nested', kind: 'agent' }),
+    box({ x: 355, y: 620, w: 290, t: 'Code child', s: 'on Claude, delegate_task', kind: 'agent' }),
+    box({ x: 675, y: 620, w: 290, t: 'Panel seat', s: 'other family, delegate_task', kind: 'agent' }),
+  ];
+  k.arrow([[start.cx, start.bot + 6], [ask.cx, ask.y - 6]]);
+  k.arrow([[ask.cx - 80, ask.bot + 6], [hook.cx + 20, hook.y - 6]]);
+  k.arrow([[ask.cx + 80, ask.bot + 6], [skill.cx - 20, skill.y - 6]]);
+  k.text(ask.cx - 190, ask.bot + 22, 'yes', 18, k.c.muted, 'end');
+  k.text(ask.cx + 190, ask.bot + 22, 'no', 18, k.c.muted, 'start');
+  k.arrow([[hook.cx + 40, hook.bot + 6], [play.x + 30, play.y - 6]]);
+  k.arrow([[skill.cx - 40, skill.bot + 6], [play.r - 30, play.y - 6]]);
+  const ends = [spawns[0].cx + 40, spawns[1].cx, spawns[2].cx - 40];
+  ends.forEach((x, i) => k.arrow([[play.cx + (i - 1) * 60, play.bot + 6], [x, spawns[i].y - 8]]));
+  k.text(W - 20, H - 24, 'a Claude lead runs code children as Agent spawns', 17, k.c.muted, 'end');
+  return k;
+}
+
 const font = readFileSync(new URL('./Excalifont-Regular.woff2', import.meta.url)).toString('base64');
-const scenes = { readme, docs, 'guide-arena': guideArena, 'guide-ship': guideShip, 'guide-autopilot': guideAutopilot, 'guide-stack': guideStack, 'guide-architect': guideArchitect, 'guide-models': guideModels };
+const scenes = { readme, docs, 'guide-arena': guideArena, 'guide-ship': guideShip, 'guide-autopilot': guideAutopilot, 'guide-stack': guideStack, 'guide-architect': guideArchitect, 'guide-models': guideModels, 't3-lead': t3Lead };
 for (const [name, scene] of Object.entries(scenes)) {
   for (const t of ['light', 'dark']) writeFileSync(new URL(`./${name}-${t}.svg`, import.meta.url), scene(t).svg(font));
 }

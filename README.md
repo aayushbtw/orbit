@@ -19,6 +19,18 @@ Auto-update is off for third-party marketplaces. [Turn it on](docs/usage.md#auto
 
 Orbit runs in Claude Code and in T3 Code. In T3 Code, it links PRs to the thread, waits on PRs, schedules wakes and asks for secrets with T3's tools. It also fills each review panel's second seat from your other T3 providers, so a second model family checks the work. Where a T3 tool is absent, it does what it does in Claude Code. [Orbit in T3 Code](plugin/docs/harness/t3-code.md) maps each step.
 
+## Other providers in T3
+
+A T3 thread led by another provider, such as Grok, runs orbit too. Start a task with `/orbit:start <goal>`. The lead loads orbit's `rules` skill once per session, when the provider drops orbit's SessionStart hook. To load the rules in every session, even without `/orbit:start`, add this line to the provider's own instruction file, such as `~/.grok/AGENTS.md`. Orbit never writes that file.
+
+```
+If Non-negotiables is not in your context, load the orbit `rules` skill before your first reply.
+```
+
+Grok loads orbit from Claude Code's install record when orbit is enabled in Claude Code's user settings, so `claude plugin update orbit@orbit` updates Grok's copy too. Until that command runs, Grok keeps the version in that record, even when Claude Code already loads a newer one. [How orbit runs in T3](docs/t3-code.md) explains the design.
+
+Tested on: Claude and Grok leads verified, others untested. Under a Grok lead, the wake after a code child on Claude has not run live yet.
+
 ## A task, start to finish
 
 <picture>

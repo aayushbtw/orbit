@@ -7,7 +7,7 @@ Task type: $ARGUMENTS
 
 Find the task type in **Playbooks** below, read `${CLAUDE_SKILL_DIR}/playbooks/<file>.md` whole and follow only it, with Principles and Stack rules. Paths in `playbooks/*.md` are relative to this skill's directory, `${CLAUDE_SKILL_DIR}`. Check and Land come from the Workflow block in the project's AGENTS.md (or CLAUDE.md). Each playbook opens with its stance and ends with its **Reply:**, the content the final reply must hold.
 
-Bundled skills live at `../<name>/SKILL.md` from this file (`${CLAUDE_PLUGIN_ROOT}/skills/<name>/SKILL.md`), so put this file's absolute path in every `orbit:poteto-agent` prompt.
+Bundled skills live at `../<name>/SKILL.md` from this file, so put this file's absolute path in every `orbit:poteto-agent` prompt.
 
 Every flow except `investigate`, `prototype`, `multi-phase-plan`, `opening-a-pr`, `babysit` and `shipping` has these gates. In `orchestrate`, `autopilot-full` and `autopilot-stack` the root writes no code, so only its owners run them, each through its own flow:
 - **Worktree gate**, before the first edit: call `EnterWorktree` named `<type>-<slug>`, so parallel sessions never share a checkout. `<type>` is the commit type of the change (`feat`, `fix`, `refactor`, `perf`), and Opening a PR pushes a PR branch as `<type>/<slug>`. hillclimb and figure-it-out runs take the commit type of what they change (`perf` for a perf metric, else `feat`, `fix` or `refactor`). Skip the gate when the session is already in a worktree, unless it is dirty with unrelated work or snarled. Dirty branch with unrelated work: patch out, fresh worktree, apply. Snarled worktree: fresh worktree, redo minimally. For either, `ExitWorktree` with `keep` first, then run the gate again with a new slug. Shipping step 7 removes a task's worktree and branch once it lands, and `/orbit:worktree-cleanup` prunes abandoned ones. If `<type>/<slug>` already exists locally or on `origin`, pick a new slug. Before entering, if `git check-ignore -q .claude/worktrees` fails, append `.claude/worktrees` to `.git/info/exclude`. After entering, run `git branch -m <type>/<slug>`. `EnterWorktree` names the branch `worktree-<type>-<slug>`. Then install dependencies when the project has a lockfile (`vp install`). Gitignored files the Check needs, such as `.env*` or `.claude/settings.local.json`, come in through the project's `.worktreeinclude`, which Claude Code copies into each new worktree. When one is missing, add its pattern there and copy the file in once.
@@ -61,7 +61,7 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
 ## Stack rules
 
 Before writing code that matches a line below, read its index, then open only the rule files that apply:
-- `.ts` or `.tsx`: `${CLAUDE_PLUGIN_ROOT}/skills/typescript-best-practices/SKILL.md`.
+- `.ts` or `.tsx`: `../typescript-best-practices/SKILL.md`.
 
 ## Playbooks
 

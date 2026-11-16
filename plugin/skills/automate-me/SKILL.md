@@ -62,7 +62,7 @@ Group the combined signals into sections. Common ones (use only what applies):
 - **Process**: git worktrees, commits, PRs, review/merge tooling.
 - **Skills**: skill-authoring habits, fix-the-skill-first, proposing new skills.
 
-Orbit's `${CLAUDE_PLUGIN_ROOT}/rules.md` and `${CLAUDE_PLUGIN_ROOT}/skills/playbook/SKILL.md` show the shape. Read them for granularity. Don't copy their content. The user's rules are not the same as orbit's.
+Orbit's `../../rules.md` and `../playbook/SKILL.md` show the shape. Read them for granularity. Don't copy their content. The user's rules are not the same as orbit's.
 
 ### 4. Draft the skill
 

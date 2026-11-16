@@ -11,7 +11,7 @@ When the task matches no playbook, design one. The deliverable before any code i
 
 ## Start
 
-Open a todolist whose first item is to read the Principles, Stack rules and gates (Worktree, Plan, Delegate, Opening a PR) in `${CLAUDE_PLUGIN_ROOT}/skills/playbook/SKILL.md`. Those gates hold for this run, and the last todo is **Opening a PR** when the run changes code. Then add the phases below as todos.
+Open a todolist whose first item is to read the Principles, Stack rules and gates (Worktree, Plan, Delegate, Opening a PR) in `../playbook/SKILL.md`. Those gates hold for this run, and the last todo is **Opening a PR** when the run changes code. Then add the phases below as todos.
 
 ## Phase A: Frame
 
@@ -44,7 +44,7 @@ Each unit is an experiment. State the hypothesis, make the smallest change, meas
 
 ## Phase D: Keep the audit trail
 
-Log the run via `/orbit:show-me-your-work` (read `${CLAUDE_PLUGIN_ROOT}/skills/show-me-your-work/SKILL.md`). figure-it-out's work is usually ambitious enough to commit the trail so the reviewer can read it in the PR. The trail plus the diff is what lets the human come back and trust the work.
+Log the run via `/orbit:show-me-your-work` (read `../show-me-your-work/SKILL.md`). figure-it-out's work is usually ambitious enough to commit the trail so the reviewer can read it in the PR. The trail plus the diff is what lets the human come back and trust the work.
 
 ## Phase E: Verify and hand back
 
