@@ -49,7 +49,7 @@ const result = {
   head: { ref: opts.head ?? null, sha: null }, project: null, laneCommit: null,
   orbit: opts.installed ? 'installed' : 'head', marketplace: null,
   exit: 1, status: 'error', reply: null, error: null,
-  pendingQuestion: null, thread: null, messages: [],
+  pendingQuestion: null, thread: null, threads: [], messages: [],
   session: null, firstTurnInputTokens: null, toolCalls: null,
 };
 
@@ -281,6 +281,7 @@ async function lane() {
   const shown = JSON.parse(run(cli, ['thread', 'show', '--json', '--messages', '1000', threadId]));
   const { link, providerInstanceId, model, runtimeMode, branch: threadBranch, worktreePath } = shown.thread;
   result.thread = { threadId, link, providerInstanceId, model, runtimeMode, branch: threadBranch, worktreePath };
+  result.threads.push({ threadId, link, waiting: result.status === 'waiting' });
   result.messages = shown.messages.map(({ role, text }) => ({ role, text }));
   if (timedOut) console.error(`timed out; the thread keeps running in T3: ${link}`);
   if (worktreePath) readSession(worktreePath);

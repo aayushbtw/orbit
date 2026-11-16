@@ -51,6 +51,7 @@ It exits non-zero on any FAIL, and when `--grade` finds no `spawns.jsonl` or `ru
 2. `t3 project add <scratch>` registers the project. The CLI is `T3CODE_CLI_PATH`, else `t3` on `PATH`.
 3. `node tests/t3/lane.mjs --head HEAD --scenario routing --message <prompt> --project <scratch> --out <run>/lane.json` runs the lead, with stdout and stderr in `stdout.log` and `stderr.log`.
 4. On exit, Ctrl-C included, `t3 project remove --force <scratch>` removes the project and its threads. It removes only the project this run added, even with `--keep`.
+5. When the removal fails, stderr logs `t3 project remove ...`. Then the agent running the eval settles each thread in that run's `lane.json` `threads` with the T3 tool `t3_thread_organize`, action `settle`. A thread whose `waiting` is true gets action `archive`, since settle refuses a thread that waits on a question.
 
 `--provider` and `--model` reach the lane only when given. Otherwise the T3 project default runs. `--model` takes any value T3 accepts, since the `opus`, `sonnet` and `fable` check applies to `--host claude` only. The INFO line for the lead prints the lane's status, exit code and thread link from `lane.json`. On timeout or Ctrl-C, the lane gets 60 seconds to restore user settings before SIGKILL.
 

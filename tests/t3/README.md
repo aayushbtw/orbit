@@ -45,6 +45,7 @@ The CLI is `T3CODE_CLI_PATH`, else `t3` on `PATH`. stdout is the output path. Th
   exit, status: "completed" | "failed" | "waiting" | "timeout" | "error", reply, error,
   pendingQuestion: [{ name, input }] | null,
   thread: { threadId, link, providerInstanceId, model, runtimeMode, branch, worktreePath } | null,
+  threads: [{ threadId, link, waiting }],
   messages: [{ role, text }], session, firstTurnInputTokens, toolCalls: [{ name, input, sidechain }] }
 ```
 
@@ -57,6 +58,8 @@ Each step pushes its undo before it runs, and every undo ignores a step that nev
 `claude plugin` edits user settings by read, modify and write, so register and unregister run under a lock directory, `$TMPDIR/orbit-lane.lock`. A lock whose pid is dead is taken over. Before it registers, a run reaps leftovers. It removes each `orbit-head-*` marketplace whose `lane.pid` is missing or names a dead process. It never touches a marketplace with any other name.
 
 The thread outlives the lane. A follow-up message after exit runs without the head orbit, because the worktree, branch and marketplace are gone. A thread that times out or is interrupted keeps running in T3. On timeout, stderr prints its link.
+
+The `t3` CLI has no settle command. `t3 thread` has only `list`, `start`, `send` and `show`. So the agent that ran the lane settles each thread in `threads` with the T3 tool `t3_thread_organize`, action `settle`. Settle refuses a thread that waits on a question, so a thread whose `waiting` is true gets action `archive` instead. Test threads never stay in the operator's sidebar.
 
 ## Cost
 
