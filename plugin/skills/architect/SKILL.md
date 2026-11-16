@@ -27,7 +27,7 @@ Skip Phase A only when the work is genuinely greenfield with no surrounding syst
 
 ## Phase B: Sketch
 
-Run `/orbit:arena` with the design-sketch task and the Phase A grounding artifacts. Pass `${CLAUDE_SKILL_DIR}/references/runner-prompt.md` as each runner's prompt. Each runner's brief also gives the absolute paths `${CLAUDE_SKILL_DIR}/SKILL.md`, `${CLAUDE_SKILL_DIR}/references/rationale-template.md` and the principle leaves under `${CLAUDE_PLUGIN_ROOT}/skills/principle-<name>/SKILL.md`.
+Run `/orbit:arena` with the design-sketch task and the Phase A grounding artifacts. Pass `${CLAUDE_SKILL_DIR}/references/runner-prompt.md` as each runner's prompt. Each runner's brief also gives the absolute paths `${CLAUDE_SKILL_DIR}/SKILL.md`, `${CLAUDE_SKILL_DIR}/references/rationale-template.md` and the principle leaves under `${CLAUDE_SKILL_DIR}/../principle-<name>/SKILL.md`.
 
 Use arena's default runners, one on `model: "opus"` (the `judgment` model) and one on the `code` model.
 
