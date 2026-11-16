@@ -72,7 +72,7 @@ const B = (b) => ({ ...b, cx: b.x + b.w / 2, cy: b.y + b.h / 2, r: b.x + b.w, bo
 function readme(theme) {
   const W = 1210, H = 440;
   const k = canvas(theme, W, H);
-  const lanes = [['You', 20, 140], ['Claude', 140, 260], ['Subagents', 260, 440]];
+  const lanes = [['You', 20, 140], ['Lead', 140, 260], ['Subagents', 260, 440]];
   for (const [name, y0, y1] of lanes) k.text(16, (y0 + y1) / 2 + 8 - (name === 'Subagents' ? 20 : 0), name, 24, k.c.ink, 'start');
   k.line(10, 140, W - 10, 140);
   k.line(10, 260, W - 10, 260);
@@ -81,13 +81,13 @@ function readme(theme) {
   const seq = [
     ['you', '/orbit:start', 'you name the goal'],
     ['claude', 'Pick the flow', 'steps + worktree'],
-    ['agent', 'Write a unit', 'poteto-agent'],
-    ['claude', 'Review it', 'reads and runs it'],
+    ['agent', 'Write a unit', 'poteto-agent on Claude'],
+    ['claude', 'Review it', 'lead reads and runs it'],
     ['agent', 'Commit', 'gitops'],
     ['claude', 'Clean up', 'deslop, no-comments'],
     ['agent', 'Verify', 'fresh verifier'],
     ['you', 'Next: line', 'after it lands'],
-  ].map(([lane, t, s], i) => B({ x: 135 + i * 125, y: laneY[lane], w: 180, h: 84, t, s, kind: i === 7 ? 'done' : lane }));
+  ].map(([lane, t, s], i) => B({ x: 135 + i * 125, y: laneY[lane], w: 180, h: 84, t, s, ss: s.length > 20 ? 15 : 17, kind: i === 7 ? 'done' : lane }));
   seq.forEach((b) => k.box(b));
   for (let i = 0; i < seq.length - 1; i++) {
     const a = seq[i], b = seq[i + 1];
