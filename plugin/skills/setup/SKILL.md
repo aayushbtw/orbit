@@ -28,7 +28,7 @@ Show every provider in `providers`, in listed order, with its `providerInstanceI
 - A disabled provider, marked disabled.
 - The session's family, marked as the session's.
 
-Then ask one question: which providers, in order, fill the `other-family` seat. Offer each enabled provider with `canRunCrossProviderChildTask` true. The recommended answer is all of them, in listed order. Name the current choice when step 2 found one. Use your host's question tool, else a numbered question with the recommended option first.
+Then ask one question: which providers, in order, fill the `other-family` seat. Say in the question that the chosen providers also run the pre-land verifier, and that `inherit` in the file's `verifier` row keeps it native. Offer each enabled provider with `canRunCrossProviderChildTask` true. The recommended answer is all of them, in listed order. Name the current choice when step 2 found one. Use your host's question tool, else a numbered question with the recommended option first.
 
 The answer is an ordered list. A seat tries only values from a family other than the parent's, in list order, so the session's own family may stay on the list for a thread that another family leads. An entry is a bare `<providerInstanceId>`, which takes that provider's first eligible model, or `<providerInstanceId>/<model>` when the user names a model. Ask nothing about the lead or about other roles.
 
@@ -46,9 +46,10 @@ Orbit's user-wide Models table, written by /orbit:setup. A cell in a project's A
 | Task | Use for | Model | Effort |
 | --- | --- | --- | --- |
 | other-family | Panel seat on another family under T3 Code | <entry>, <entry> | |
+| verifier | Pre-land verifier on another family under T3 Code | other-family | |
 ```
 
-No frontmatter. The Model cell holds the entries in order, separated by `, `. The Effort cell stays empty unless the user named an effort. The rows step 2 kept follow the `other-family` row. Ask for a yes. Write nothing without it.
+No frontmatter. The Model cell holds the entries in order, separated by `, `. The Effort cell stays empty unless the user named an effort. Write the `verifier` row only when the list is not empty and step 2 found no `verifier` row. The rows step 2 kept follow the `other-family` row, verbatim. Ask for a yes. Write nothing without it.
 
 ### 6. Write the file
 

@@ -13,7 +13,7 @@ Install orbit once, in Claude Code:
 /plugin install orbit@orbit
 ```
 
-Then run `/orbit:setup` in a T3 thread led by Claude. It lists your T3 providers, asks which ones fill each panel's seat on another family, and saves your choice for every project in `~/.claude/rules/orbit-models.md`. A project's AGENTS.md Models rows still win. When Codex is on the list, setup links Codex to the folder Claude Code installs orbit from, so Codex needs no install of its own. Run it from a Claude thread, because a Grok thread may load an older copy of orbit that lacks the skill.
+Then run `/orbit:setup` in a T3 thread led by Claude. It lists your T3 providers, asks which ones fill each panel's seat on another family, and saves your choice for every project in `~/.claude/rules/orbit-models.md`. A project's AGENTS.md Models rows still win. Setup also sends the verifier that runs each change before it lands to those providers. When Codex is on the list, setup links Codex to the folder Claude Code installs orbit from, so Codex needs no install of its own. Run it from a Claude thread, because a Grok thread may load an older copy of orbit that lacks the skill.
 
 Auto-update is off for third-party marketplaces. [Turn it on](docs/usage.md#auto-update) or run `claude plugin update orbit@orbit`.
 
