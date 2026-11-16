@@ -1,7 +1,8 @@
 ## Workflow
 
 - Check: `claude plugin validate . && claude plugin validate plugin`. The first checks the marketplace, the second the skills.
-- Routing eval: `node tests/routing/run.mjs` (costs a real session; not part of Check).
+- Routing eval: `node tests/routing/run.mjs`, or `--host t3` to run the lead in T3 Code (costs a real session; not part of Check).
+- T3 lane: `node tests/t3/lane.mjs --head <ref> --scenario <slug>` runs one T3 thread with orbit loaded from `<ref>` (see `tests/t3/README.md`; costs a real session; not part of Check).
 
 ## Maintaining orbit
 

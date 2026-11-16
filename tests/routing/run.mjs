@@ -1,6 +1,6 @@
 import { spawn, execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,7 +8,9 @@ import { parseArgs } from 'node:util';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PLUGIN_DIR = resolve(HERE, '../../plugin');
+const LANE = resolve(HERE, '../t3/lane.mjs');
 const TIMEOUT_MS = 25 * 60 * 1000;
+const DELEGATE = /(^|__)delegate_task$/;
 const PROMPT = "/orbit:start the camera jitters when you zoom in past 4x, and goblins die way too fast, bump their HP to 40. I'll land it.";
 const ROLES = new Set(['orbit:gitops', 'orbit:verifier', 'orbit:advisor', 'orbit:comment-sicko']);
 const FRONTMATTER = Object.fromEntries(readdirSync(join(PLUGIN_DIR, 'agents')).filter((f) => f.endsWith('.md')).map((f) => {
@@ -18,15 +20,31 @@ const FRONTMATTER = Object.fromEntries(readdirSync(join(PLUGIN_DIR, 'agents')).f
 
 const { values: opts } = parseArgs({
   options: {
-    model: { type: 'string', default: 'opus' },
+    host: { type: 'string', default: 'claude' },
+    model: { type: 'string' },
+    provider: { type: 'string' },
     runs: { type: 'string', default: '1' },
     keep: { type: 'boolean', default: false },
     grade: { type: 'string' },
   },
 });
-if (!['opus', 'sonnet', 'fable'].includes(opts.model)) throw new Error(`--model must be opus, sonnet or fable, got ${opts.model}`);
+if (!['claude', 't3'].includes(opts.host)) throw new Error(`--host must be claude or t3, got ${opts.host}`);
+if (opts.host === 'claude') {
+  opts.model ??= 'opus';
+  if (!['opus', 'sonnet', 'fable'].includes(opts.model)) throw new Error(`--model must be opus, sonnet or fable, got ${opts.model}`);
+  if (opts.provider) throw new Error('--provider needs --host t3');
+}
 const runs = Number(opts.runs);
 if (!Number.isInteger(runs) || runs < 1) throw new Error(`--runs must be a positive integer, got ${opts.runs}`);
+const GRACE_MS = opts.host === 't3' ? 60_000 : 10_000;
+
+let t3;
+if (opts.host === 't3' && !opts.grade) {
+  t3 = [process.env.T3CODE_CLI_PATH, 't3'].filter(Boolean).find((c) => {
+    try { execFileSync(c, ['--version'], { stdio: 'ignore' }); return true; } catch { return false; }
+  });
+  if (!t3) throw new Error(`no T3 CLI runs: tried T3CODE_CLI_PATH (${process.env.T3CODE_CLI_PATH ?? 'unset'}) and t3 on PATH`);
+}
 
 const PROJECT = {
   'package.json': JSON.stringify({ name: 'skyforge', version: '0.1.0', private: true, type: 'module', scripts: { test: 'node --test' } }, null, 2) + '\n',
@@ -124,9 +142,11 @@ function git(cwd, ...args) {
   execFileSync('git', ['-c', 'user.name=Skyforge', '-c', 'user.email=dev@skyforge.local', ...args], { cwd, stdio: 'ignore' });
 }
 
-function scaffold() {
-  const dir = join(tmpdir(), `skyforge-${randomBytes(3).toString('hex')}`);
-  for (const [path, body] of Object.entries(PROJECT)) {
+function scaffold(settings) {
+  // T3 keys projects by their real path, and macOS tmpdir is a symlink.
+  const dir = join(settings ? realpathSync(tmpdir()) : tmpdir(), `skyforge-${randomBytes(3).toString('hex')}`);
+  const files = settings ? { ...PROJECT, '.claude/settings.json': JSON.stringify(settings, null, 2) + '\n' } : PROJECT;
+  for (const [path, body] of Object.entries(files)) {
     mkdirSync(dirname(join(dir, path)), { recursive: true });
     writeFileSync(join(dir, path), body);
   }
@@ -139,56 +159,84 @@ function scaffold() {
   return dir;
 }
 
-const removeProject = (project) => {
+const t3Projects = new Set();
+const release = (project) => {
+  if (t3Projects.delete(project)) {
+    try { execFileSync(t3, ['project', 'remove', '--force', project], { stdio: 'ignore' }); } catch (e) { console.error(`t3 project remove ${project}: ${e.message}`); }
+  }
+  if (opts.keep) return;
   rmSync(project, { recursive: true, force: true });
   rmSync(`${project}-origin.git`, { recursive: true, force: true });
 };
 
+const stop = (pid) => {
+  try { process.kill(-pid, 'SIGTERM'); } catch {}
+  setTimeout(() => { try { process.kill(-pid, 'SIGKILL'); } catch {} }, GRACE_MS).unref();
+};
+
 const live = new Map();
 for (const signal of ['SIGINT', 'SIGTERM']) {
-  process.on(signal, () => {
-    for (const [pid, project] of live) {
-      try { process.kill(-pid, 'SIGTERM'); } catch {}
-      if (!opts.keep) removeProject(project);
-    }
+  process.on(signal, async () => {
+    const exits = [...live.values()];
+    for (const pid of live.keys()) stop(pid);
+    await Promise.all(exits);
     process.exit(1);
   });
 }
 
+function startLead(outDir, hooks) {
+  const errFd = openSync(join(outDir, 'stderr.log'), 'w');
+  if (opts.host === 'claude') {
+    const project = scaffold();
+    const settings = join(outDir, 'settings.json');
+    writeFileSync(settings, JSON.stringify({ enabledPlugins: { 'orbit@orbit': false }, hooks }, null, 2));
+    const outFd = openSync(join(outDir, 'stream.jsonl'), 'w');
+    const child = spawn('claude', [
+      '-p', '--model', opts.model, '--plugin-dir', PLUGIN_DIR, '--settings', settings, '--setting-sources', 'project,local',
+      '--permission-mode', 'bypassPermissions', '--max-turns', '80', '--output-format', 'stream-json', '--verbose',
+    ], { cwd: project, detached: true, stdio: ['pipe', outFd, errFd] });
+    child.stdin.end(PROMPT);
+    return { project, child, fds: [outFd, errFd] };
+  }
+  const project = scaffold({ hooks });
+  t3Projects.add(project);
+  try {
+    execFileSync(t3, ['project', 'add', project], { stdio: ['ignore', 'ignore', 'pipe'] });
+  } catch (e) {
+    release(project);
+    throw new Error(`t3 project add ${project}: ${e.stderr?.toString().trim() || e.message}`);
+  }
+  const outFd = openSync(join(outDir, 'stdout.log'), 'w');
+  const args = [LANE, '--head', 'HEAD', '--scenario', 'routing', '--message', PROMPT, '--project', project, '--out', join(outDir, 'lane.json')];
+  if (opts.provider) args.push('--provider', opts.provider);
+  if (opts.model) args.push('--model', opts.model);
+  const child = spawn(process.execPath, args, { detached: true, stdio: ['ignore', outFd, errFd] });
+  return { project, child, fds: [outFd, errFd] };
+}
+
 function runLead(outDir) {
-  const project = scaffold();
   mkdirSync(outDir, { recursive: true });
   const log = join(outDir, 'spawns.jsonl');
   writeFileSync(log, '');
-  const hook = [{ matcher: 'Agent|Task', hooks: [{ type: 'command', command: `node ${JSON.stringify(join(HERE, 'hook.mjs'))} ${JSON.stringify(log)}` }] }];
-  const settings = join(outDir, 'settings.json');
-  writeFileSync(settings, JSON.stringify({ enabledPlugins: { 'orbit@orbit': false }, hooks: { PreToolUse: hook, PostToolUse: hook } }, null, 2));
+  const hook = [{ matcher: 'Agent|Task|.*delegate_task', hooks: [{ type: 'command', command: `node ${JSON.stringify(join(HERE, 'hook.mjs'))} ${JSON.stringify(log)}` }] }];
+  const { project, child, fds } = startLead(outDir, { PreToolUse: hook, PostToolUse: hook });
 
-  const streamFd = openSync(join(outDir, 'stream.jsonl'), 'w');
-  const errFd = openSync(join(outDir, 'stderr.log'), 'w');
-  const child = spawn('claude', [
-    '-p', '--model', opts.model, '--plugin-dir', PLUGIN_DIR, '--settings', settings, '--setting-sources', 'project,local',
-    '--permission-mode', 'bypassPermissions', '--max-turns', '80', '--output-format', 'stream-json', '--verbose',
-  ], { cwd: project, detached: true, stdio: ['pipe', streamFd, errFd] });
-  live.set(child.pid, project);
-  child.stdin.end(PROMPT);
-
-  return new Promise((done) => {
+  const exited = new Promise((done) => {
     let timedOut = false;
     const timer = setTimeout(() => {
       timedOut = true;
-      process.kill(-child.pid, 'SIGTERM');
-      setTimeout(() => { try { process.kill(-child.pid, 'SIGKILL'); } catch {} }, 10_000).unref();
+      stop(child.pid);
     }, TIMEOUT_MS);
     child.on('exit', (code) => {
       clearTimeout(timer);
       live.delete(child.pid);
-      closeSync(streamFd);
-      closeSync(errFd);
-      if (!opts.keep) removeProject(project);
+      for (const fd of fds) closeSync(fd);
+      release(project);
       done({ outDir, project, exit: timedOut ? 'timeout' : `code ${code}` });
     });
   });
+  live.set(child.pid, exited);
+  return exited;
 }
 
 const readJsonl = (path) => existsSync(path)
@@ -222,9 +270,16 @@ function routed(name, call, model, effort, workType) {
   return { id: name, status: misses.length ? 'FAIL' : 'PASS', detail: `${describe(call)}${misses.length ? `; ${misses.join('; ')}` : ''}` };
 }
 
+const isAgent = (r) => r.tool_name === 'Agent' || r.tool_name === 'Task';
+const isDelegate = (r) => DELEGATE.test(r.tool_name ?? '');
+
 function grade(records) {
-  const calls = records
-    .filter((r) => r.event === 'PreToolUse' && !r.agent_id)
+  const leadSession = records[0]?.session_id;
+  const isLead = (r) => !r.agent_id && (!r.session_id || !leadSession || r.session_id === leadSession);
+  const spawns = records.filter((r) => r.event === 'PreToolUse' && (isAgent(r) || isDelegate(r)));
+  const delegates = spawns.filter((r) => isLead(r) && isDelegate(r));
+  const calls = spawns
+    .filter((r) => isLead(r) && isAgent(r))
     .map((r, i) => ({
       ...r.tool_input,
       n: i + 1,
@@ -266,20 +321,27 @@ function grade(records) {
 
   const unmatched = calls.filter((c) => c.subagent_type === 'orbit:poteto-agent' && !c.unit);
   const others = calls.filter((c) => c.subagent_type !== 'orbit:poteto-agent' && !ROLES.has(c.subagent_type));
-  const childModels = records.filter((r) => r.event === 'PostToolUse' && !r.agent_id).map((r) => r.resolved_model ?? '?');
+  const childModels = records.filter((r) => r.event === 'PostToolUse' && isLead(r) && isAgent(r)).map((r) => r.resolved_model ?? '?');
   const info = [
+    `spawns: ${calls.length + delegates.length} (Agent ${calls.length}, delegate_task ${delegates.length})`,
     `lead spawns: ${calls.map(describe).join(' | ') || 'none'}`,
+    `delegate_task spawns: ${delegates.map((r, i) => `#${i + 1} target=${r.tool_input?.target ? JSON.stringify(r.tool_input.target) : 'inherit'}`).join(' | ') || 'none'}`,
     `spawns that omitted effort: ${calls.filter((c) => !('effort' in c)).map(describe).join(', ') || 'none'}`,
     `poteto-agent calls naming neither file: ${unmatched.map(describe).join(', ') || 'none'}`,
     `other non-role spawns: ${others.map(describe).join(', ') || 'none'}`,
     `reached gitops: ${gitops.length}, verifier: ${calls.filter((c) => c.subagent_type === 'orbit:verifier').length}, advisor: ${calls.filter((c) => c.subagent_type === 'orbit:advisor').length}`,
-    `nested spawns from children: ${records.filter((r) => r.event === 'PreToolUse' && r.agent_id).length}`,
+    `nested spawns from children: ${spawns.filter((r) => !isLead(r)).length}`,
     `children ran on: ${childModels.join(', ') || 'none returned'}`,
   ];
   return { checks, info };
 }
 
 function leadSummary(outDir) {
+  if (existsSync(join(outDir, 'lane.json'))) {
+    const lane = JSON.parse(readFileSync(join(outDir, 'lane.json'), 'utf8'));
+    return `lead result: lane ${lane.status}, exit ${lane.exit}, ${lane.thread?.link ?? 'no thread'}${lane.error ? `, error: ${lane.error}` : ''}`;
+  }
+  if (existsSync(join(outDir, 'stdout.log'))) return 'lead result: lane.mjs wrote no lane.json, see stderr.log';
   const results = readJsonl(join(outDir, 'stream.jsonl')).filter((e) => e.type === 'result');
   const last = results.at(-1);
   if (!last) return 'lead result: no result event in stream';
@@ -293,7 +355,9 @@ const savedRuns = () => existsSync(join(outRoot, 'spawns.jsonl'))
   : (existsSync(outRoot) ? readdirSync(outRoot) : []).filter((d) => d.startsWith('run-')).sort().map((d) => join(outRoot, d));
 const finished = opts.grade
   ? savedRuns().map((outDir) => ({ outDir, exit: 'saved' }))
-  : (console.log(`model=${opts.model} runs=${runs} out=${outRoot}`),
+  : (console.log(opts.host === 'claude'
+      ? `model=${opts.model} runs=${runs} out=${outRoot}`
+      : `host=t3 provider=${opts.provider ?? 'default'} model=${opts.model ?? 'default'} runs=${runs} out=${outRoot}`),
     await Promise.all(Array.from({ length: runs }, (_, i) => runLead(join(outRoot, `run-${i + 1}`)))));
 if (!finished.length) {
   console.error(`no runs to grade in ${outRoot}: expected spawns.jsonl or run-*/ directories`);
