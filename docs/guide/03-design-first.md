@@ -89,15 +89,16 @@ Before it spawns the adversaries, Claude restates the change's intent in its own
 
 Claude then reruns each finding's command in that adversary's worktree. A finding survives when the output shows the failure and the failure breaks the intent. Findings with one root cause merge into one. Claude removes the adversary worktrees once every finding is checked.
 
-The report has three parts:
+The report has four parts:
 
 | Part | Holds |
 | --- | --- |
 | Intent | Claude's restatement of what the change is for |
+| Fixed first | Each known issue fixed before the audit, with its commit, or why that step was skipped |
 | Findings | Each verified finding, with its command, its output, how it breaks the intent and the adversaries that found it, or "no verified findings" |
 | Dropped | For each adversary, how many findings Claude dropped and why |
 
-Interrogate never applies a fix. The two adversaries find different failures, so the report keeps every verified finding from both, and you decide what changes.
+Interrogate never fixes its own findings. Known issues, such as review comments that hold up or a failing Check, get fixed first by a code delegate, so the adversaries audit the fixed code. The two adversaries find different failures, so the report keeps every verified finding from both, and you decide what changes.
 
 The feature flow runs interrogate before shipping when a design is contested. You can also point it at an architect sketch before any body is filled in, which is the cheapest time to change the design.
 

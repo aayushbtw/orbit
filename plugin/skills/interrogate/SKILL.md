@@ -1,17 +1,21 @@
 ---
 name: interrogate
-description: "Adversaries try to break a change or design, and only findings a run proves survive. Never applies fixes. Use for /orbit:interrogate."
+description: "Adversaries try to break a change or design, and only findings a run proves survive. Never fixes its findings. Use for /orbit:interrogate."
 ---
 
 # Interrogate
 
 Source: cursor/plugins, pstack (MIT).
 
-Adversaries try to break a change or a design. A finding survives only when a run proves it. Report the findings. Do not apply fixes.
+Adversaries try to break a change or a design. A finding survives only when a run proves it. Report the findings. Do not fix them.
 
 ## Frame
 
 The scope is what the user names. Otherwise it is the branch diff from its merge base with the base branch, through the working tree, untracked files included (`git status --short`). State the intent by restating in your own words what you think the user's goals are and what problem they're trying to solve, from the user's message, the commits, and the PR description. Ask the user when the intent is unclear.
+
+## Fix first
+
+Before the audit, fix what is already known in the scope: open review comments on its PR that hold up against the code, bugs the user or an earlier step has confirmed, and failures of the project's Check. A suspicion the user wants tested is the audit's job, not a known issue. A fresh `orbit:poteto-agent` makes each fix under `../playbook/SKILL.md`'s Delegate gate, in the worktree that holds the scope's branch, and gitops commits it, so no adversary writes code. Then run the Check, and Fan out names the commit after the fixes. Skip fixes to code the user plans to replace. Skip the step for a design or plan with no code, for a branch this session does not write, and when the scope has uncommitted changes. With nothing known, go to Fan out.
 
 ## Fan out
 
@@ -30,5 +34,6 @@ Skip arena Phases C, D, and E. Adversaries find different failures, so the verdi
 ## Output
 
 - **Intent**: the restatement.
+- **Fixed first**: each known issue fixed before the audit with its commit, or why the step was skipped.
 - **Findings**: for each verified finding, the command, its output, how it breaks the intent, and the adversaries that found it. Say "no verified findings" when none survive.
 - **Dropped**: for each adversary, the count of dropped findings and why.
