@@ -4,6 +4,12 @@
 - Routing eval: `node tests/routing/run.mjs`, or `--host t3` to run the lead in T3 Code (costs a real session; not part of Check).
 - T3 lane: `node tests/t3/lane.mjs --head <ref> --scenario <slug>` runs one T3 thread with orbit loaded from `<ref>` (see `tests/t3/README.md`; costs a real session; not part of Check).
 
+### Models
+
+| Task | Use for | Model | Effort |
+| --- | --- | --- | --- |
+| other-family | panel seat on another family | inherit | |
+
 ## Maintaining orbit
 
 - pstack (`cursor/plugins` at the `sha` in `skills.json`) is the reference. Copy its wording and names. Record each divergence in `docs/pstack-differences.md`.
