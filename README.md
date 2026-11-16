@@ -15,6 +15,10 @@ Orbit is mostly [pstack](https://github.com/cursor/plugins/tree/main/pstack) by 
 
 Auto-update is off for third-party marketplaces. [Turn it on](docs/usage.md#auto-update) or run `claude plugin update orbit@orbit`.
 
+## T3 Code
+
+Orbit runs in Claude Code and in T3 Code. In T3 Code, it links PRs to the thread, waits on PRs, schedules wakes and asks for secrets with T3's tools. Where a T3 tool is absent, it does what it does in Claude Code. [Orbit in T3 Code](plugin/docs/harness/t3-code.md) maps each step.
+
 ## A task, start to finish
 
 <picture>

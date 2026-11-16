@@ -23,7 +23,7 @@ Invoked at the end of every other flow.
 
 After the sections, attach videos or screenshots when they prove a claim. Full SHAs, swarm or arena lane recitals, lever-correction essays, file-by-file checklists, and "CLEAN" verdicts go in a linked artifact, not the body.
 
-**Forge.** GitHub CLI (`gh`) is the forge.
+**Forge.** GitHub CLI (`gh`) is the forge. After `gh pr create`, gitops links the PR to this session's thread per the host adapter's built-in PR tool row (rules.md Delegation, **Host tools.**), and skips the link where `link_pull_request` is absent.
 
 **Size and stacks.** Prefer five narrow PRs to one large PR. A stack is a base-branch chain. The root PR targets trunk. Each child branch rebases onto its parent's exact tip and its PR targets the parent branch. As a parent merges, move its child onto trunk per `playbooks/shipping.md` step 4. Create a child with `gh pr create --base <parent-branch>`, and retarget one with `gh pr edit <pr> --base <parent-branch>`. Branch from trunk only for independent work. Rebase on trunk before substantial stack work. Under Land `main` no PR opens, so a stack is a chain of unpushed task branches, each child on its parent's exact tip.
 
