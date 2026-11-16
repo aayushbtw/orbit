@@ -29,7 +29,7 @@ If Non-negotiables is not in your context, load the orbit `rules` skill before y
 
 Grok loads orbit from Claude Code's install record when orbit is enabled in Claude Code's user settings, so `claude plugin update orbit@orbit` updates Grok's copy too. Until that command runs, Grok keeps the version in that record, even when Claude Code already loads a newer one. [How orbit runs in T3](docs/t3-code.md) explains the design.
 
-Tested on: Claude and Grok leads verified, others untested.
+Tested on: Claude and Grok leads verified, others untested. Under a Grok lead, the wake after a code child on Claude has not run live yet.
 
 ## A task, start to finish
 

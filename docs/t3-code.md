@@ -55,6 +55,7 @@ A lead on another provider runs orbit agents with its native subagent tool, such
 | Claude lead | Verified headless. Routing matches trunk, the hook prints the same rules, and the lead never loads the `rules` skill. With hooks off, the lead loads it before the playbook, and not again on a second `/orbit:start`. |
 | Grok lead, headless | Verified. The lead loads the `rules` skill first, reads `rules.md` through the relative path, quotes a Non-negotiable, and runs `orbit:gitops` with `spawn_subagent`. |
 | Grok lead in T3 | Verified. Over two turns the lead loads the `rules` skill once, calls `t3-code__list_thread_pull_requests` by its bare name, and runs `orbit:gitops` as a nested subagent with no new thread. |
+| Grok lead, code child on Claude | Partly verified. The lead read the roster, spawned one `delegate_task` child on the Claude provider with a subagent brief, and settled it by `childThreadId`, with no grandchild. That run passed `mode: "wait"`, so the adapter now requires `async` and ending the turn. The wake that then reopens a Grok lead's turn has not run live. T3's orchestrator sends that wake for any parent provider. |
 | Other providers | Untested. |
 
 Each Grok run used Grok's fast model at low effort, on 2026-11-16, at the commit that added the `rules` skill.
