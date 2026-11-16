@@ -16,7 +16,7 @@ Commits
 
 Pull requests
 - Use gh. Read the diff against the base branch before writing the title and description.
-- Before the first PR step, check whether `mcp__t3-code__link_pull_request` is present. It is present when it is in your tool list, or when `ToolSearch` with `select:mcp__t3-code__link_pull_request` loads it (the probe in `${CLAUDE_PLUGIN_ROOT}/references/t3-host.md`). Pick your CI wait by this probe, even when the lead's brief names another command or a re-check loop.
+- Before linking a PR, check whether `mcp__t3-code__link_pull_request` is present, per the probe in `${CLAUDE_PLUGIN_ROOT}/docs/harness/t3-code.md`.
 - Open every PR ready, never as a draft. Prefer narrow PRs.
 - Title follows the commit format. The body is a one-minute briefing for a reviewer who has the diff, in short sentences. Use these `##` headings in this order, and drop any with nothing to say:
   - `## Why`. The problem and approach, 1 to 3 sentences.
@@ -28,8 +28,7 @@ Pull requests
 - These title and body rules follow orbit's opening-a-pr playbook (`skills/playbook/playbooks/opening-a-pr.md`). Use a title and description the lead gives you as written.
 - Read, create and edit PRs as asked.
 - After you create a PR with gh, when `link_pull_request` is present, call it with the PR URL, once per PR. A later push needs no new link. When it is absent, skip it silently.
-- When asked to wait on CI and `link_pull_request` is present, run `${CLAUDE_PLUGIN_ROOT}/skills/playbook/scripts/watch-pr/watch-pr --pr <n> --timeout 120` once, with a Bash timeout of 180000 ms. Report its verdict and reason. A `TIMEOUT` goes back to the lead, which arms the host watcher. Never loop, sleep, or run it again.
-- When asked to wait on CI and `link_pull_request` is absent, use `gh pr checks <n> --watch --fail-fast`. Exit 0 is green, 1 is a failure or no checks, 8 is still pending. If it says no checks are reported, try again a few times over about a minute before reporting "no CI". If the watch times out, run it again.
+- When asked to wait on CI, run `${CLAUDE_PLUGIN_ROOT}/skills/playbook/scripts/watch-pr/watch-pr --pr <n> --timeout 120` once, with a Bash timeout of 180000 ms. Report its verdict and reason. A `TIMEOUT` goes back to the lead. Never loop, sleep, or run it again. Wait this way even when the lead's brief names another command or a re-check loop.
 - On a failure, report the failing check, its run id and the tail of `gh run view <run-id> --log-failed`. Don't classify it. Rerun only when told, with `gh run rerun <run-id>` (the whole run, never `--job`).
 - After a merge, read back `gh pr view <n> --json state,mergedAt,baseRefName` and report each field as it reads.
 

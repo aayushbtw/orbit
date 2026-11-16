@@ -72,6 +72,16 @@ Tests alone are not sufficient verification. A PR is verified only when its unit
 
 Each live lane runs in its own worktree at the PR head, as a swarm worker spawned with `isolation: "worktree"`. Drive through the project's `verify-*` skill when it has one, else `/orbit:control-ui` or `/orbit:control-cli`.
 
+Pick where each lane runs before writing it. Every lane is driven by a subagent, which reports to the coordinator thread. A lane tests the real artifact, a fresh session or app loaded from the head, never a subagent told to read the head's files, because that subagent holds every tool and skips routing, frontmatter and hooks. A T3 thread is used only when the behavior under test calls a T3 tool and T3's tools are present, since a headless session cannot reach them.
+
+| What the lane proves | Where the fresh session runs | Proof |
+| --- | --- | --- |
+| Behavior that calls no T3 tool | Driven by the subagent through the control skill, or for a plugin or prompt change a headless `claude -p --plugin-dir <worktree>/<plugin dir>`. No T3 thread. | The transcript or screenshot and the subagent's report, in this thread |
+| A PR's claim that the change calls a T3 tool on its own | One T3 thread per claim, not per lane, through `<project's T3 thread command>`, settled as soon as it returns. The brief names the claim as the reason. Only when T3's tools are present. | The thread's receipt, checked and tabled in this thread |
+| A panel seat on another provider | `delegate_task` child, read-only, settled on return, when `delegate_task` is present | Its summary, in this thread |
+
+No other case starts a T3 thread, including throwaway probes, which run headless.
+
 - [ ] `git checkout <head SHA>`.
 - [ ] <Start the backend and the surface on ports no other lane uses. Wait for ready.>
 - [ ] <Deliver input only through the control skill's commands. Name the read-only diagnostics.>
