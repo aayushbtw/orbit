@@ -13,6 +13,15 @@ T3 honored every step. In probe thread `mcp:5e8c67e4-fc75-4904-925f-7a9ebe2f3eed
 
 The project must be the main checkout, the parent of `git rev-parse --git-common-dir`. `t3 thread start .` fails from a T3 worktree with "No T3 Code project matches '.'".
 
+## How a Codex lane loads orbit
+
+Codex loads orbit's skills, as `orbit:<name>`, from a folder named `orbit` in a skills root that is or links to orbit's whole plugin folder. It reads two roots: `.agents/skills` in the session's working directory and `$CODEX_HOME/skills` (default `.codex/skills` in the home directory). It lists a skill from both roots twice. With `--provider codex`, and without `--installed`, a lane adds two steps to the four above:
+
+1. The lane commit also adds `.agents/skills/orbit`, a symlink (git mode `120000`) to the run directory's `plugin` folder by absolute path. The Claude marketplace install stays, so code children that run on Claude load the head orbit too.
+2. If `$CODEX_HOME/skills/orbit` exists, the lane moves it into the run directory as `codex-skills-orbit` before it starts the thread. It first writes `codex-skills.json` there with the original path and, for a symlink, its target.
+
+The provider kind comes from the start of the provider instance id, so `codex` and `codex-work` are both Codex.
+
 ## Why each run gets its own marketplace
 
 The plan named one marketplace, `orbit-head`, whose run directory each run refreshes. Live lanes run in parallel at different SHAs, so a shared directory would be overwritten under a running lane. A marketplace per run also lets each run restore user settings on exit without counting how many lanes still use it.
@@ -23,6 +32,8 @@ The plan named one marketplace, `orbit-head`, whose run directory each run refre
 node tests/t3/lane.mjs --head HEAD --scenario probe
 node tests/t3/lane.mjs --head <sha> --scenario probe --out head-marker.json
 node tests/t3/lane.mjs --head HEAD --scenario docs-goal --message "/orbit:start fix the typo in README"
+node tests/t3/lane.mjs --head HEAD --scenario probe --provider codex --model gpt-6-luna
+node tests/t3/lane.mjs --head HEAD --scenario codex-child --provider codex --message "<task that delegates a child>" --wake 15
 ```
 
 | Flag | Meaning |
@@ -33,8 +44,9 @@ node tests/t3/lane.mjs --head HEAD --scenario docs-goal --message "/orbit:start 
 | `--out <file>` | Output JSON. Default `$TMPDIR/orbit-lane-<slug>-<id>.json` |
 | `--project <dir>` | Run in another repo that is already a T3 project. The worktree base is that repo's `HEAD`. Default is orbit's main checkout, based on the head |
 | `--installed` | Skip head loading, so orbit comes from the installed plugin |
-| `--provider <id>`, `--model <slug>` | Passed to `t3` only when given. Otherwise the project default runs |
+| `--provider <id>`, `--model <slug>` | Passed to `t3` only when given. Otherwise the project default runs. A Codex id also links the head orbit into `.agents/skills` (see How a Codex lane loads orbit) |
 | `--timeout <minutes>` | Default 30 |
+| `--wake <minutes>` | After the lead completes, keep polling `t3 thread show` until a later run of the lead posts a reply, such as the wake after an async `delegate_task` child finishes, or until this many minutes pass. Off by default |
 
 The CLI is `T3CODE_CLI_PATH`, else `t3` on `PATH`. stdout is the output path. The exit code is 0 when the agent completed, 2 when it asked a question back, and 1 otherwise. If no T3 CLI runs or the ref does not resolve, the harness prints the cause, writes the JSON when `--out` is given, and exits 1 before it starts a thread or touches settings. On SIGINT or SIGTERM, it runs cleanup, writes the JSON with status `interrupted` and `threads` filled in, and exits 1.
 
@@ -43,21 +55,31 @@ The CLI is `T3CODE_CLI_PATH`, else `t3` on `PATH`. stdout is the output path. Th
 ```
 { scenario, message, head: { ref, sha }, project, laneCommit, orbit: "head" | "installed", marketplace,
   exit, status: "completed" | "failed" | "waiting" | "timeout" | "interrupted" | "error", reply, error,
+  wake: null | "arrived" | "none", wakes: [{ at, text }],
   pendingQuestion: [{ name, input }] | null,
   thread: { threadId, link, providerInstanceId, model, runtimeMode, branch, worktreePath } | null,
   threads: [{ threadId, link | null, waiting, parentThreadId | null }],
   messages: [{ role, text }], session, firstTurnInputTokens, toolCalls: [{ name, input, sidechain }] }
 ```
 
-`t3 thread show` returns message text only. Tool calls, token usage and a pending question come from the Claude session file under `$CLAUDE_CONFIG_DIR/projects/` (default `.claude/projects/` in the home directory), in a folder named after the worktree path. Children that share the checkout write their sessions to the same folder, so the lead's session is the file whose first `user` entry is the scenario message. A message that starts with a slash command matches in the `<command-message>` form Claude records it in. Subagent calls carry `sidechain: true`. `firstTurnInputTokens` sums the input, cache creation and cache read tokens of the first assistant entry. On another provider, or when no file opens with the message, `session`, `toolCalls` and `firstTurnInputTokens` are `null`, and stderr names the folder it tried.
+`t3 thread show` returns message text only. Tool calls, token usage and a pending question come from the lead's session file. A table in `lane.mjs`, `SESSIONS`, holds one reader per provider kind, and the thread's `providerInstanceId` picks the reader.
 
-`threads` lists the lead first, with `parentThreadId` null. `t3 thread list` does not list `delegate_task` children, so the harness reads each `childThreadId` from the `delegate_task` tool results in every session file in that folder. It adds a child once `t3 thread show` gives a `parentThreadId` already in `threads`, and repeats until nothing is added, so grandchildren in the folder are found too. A child's `waiting` is true when it has pending requests. A child isolated in its own worktree writes its session elsewhere, so its own children are found only when their ids appear in a tool result in the lead's folder.
+- **Claude.** The session file is under `$CLAUDE_CONFIG_DIR/projects/` (default `.claude/projects/` in the home directory), in a folder named after the worktree path. Children that share the checkout write their sessions to the same folder, so the lead's session is the file whose first `user` entry is the scenario message. A message that starts with a slash command matches in the `<command-message>` form Claude records it in. Subagent calls carry `sidechain: true`. `firstTurnInputTokens` sums the input, cache creation and cache read tokens of the first assistant entry.
+- **Codex.** The session file is a rollout, `$CODEX_HOME/sessions/YYYY/MM/DD/rollout-*.jsonl`, whose first line, `session_meta`, has `payload.cwd` equal to the worktree path. The harness reads only rollouts changed since the lane started. The lead's rollout is the one with the earliest `session_meta` timestamp. Each tool call is an `item_completed` event. An MCP call is named `mcp__<server>__<tool>` with its arguments as `input`. A shell command is named `exec_command` with `{ command, cwd }`. Another item type keeps its type as the name and the whole item as `input`. An item from another Codex thread carries `sidechain: true`. `firstTurnInputTokens` is `input_tokens` of the first `token_usage_record`, which already counts cached input. `pendingQuestion` stays `null`.
+
+With no reader for the provider, or no session file for the lead, `session`, `toolCalls` and `firstTurnInputTokens` are `null`, and stderr names the place it tried.
+
+`threads` lists the lead first, with `parentThreadId` null. `t3 thread list` does not list `delegate_task` children, so the harness reads each `childThreadId` from the tool results of every reader's session files for the worktree: Claude's `tool_result` entries and Codex's `McpToolCall` results. A Codex lead's children that run on Claude are found this way too. It adds a child once `t3 thread show` gives a `parentThreadId` already in `threads`, and repeats until nothing is added, so grandchildren in the folder are found too. A child's `waiting` is true when it has pending requests. A child isolated in its own worktree writes its session elsewhere, so its own children are found only when their ids appear in a tool result in a session file for the lead's worktree.
+
+`wake` is `null` without `--wake`. With it, and once the lead completes, the harness notes the `runId` of every message, then polls `t3 thread show` every 10 seconds. A wake is an `assistant` message from a new `runId`, read once the thread has no `activeRunId`. When one arrives, `wake` is `"arrived"` and `wakes` holds the last message of each new run, with `at` set to the time the harness saw it. When none arrives in time, `wake` is `"none"`, `wakes` is empty and `status` stays `completed`. The harness then reads `threads`, `messages` and the session again, so they include the wake.
 
 ## Cleanup
 
-Each step pushes its undo before it runs, and every undo ignores a step that never happened. One cleanup function runs the undos in reverse from `finally` and on SIGINT or SIGTERM. When the thread is not yet known, it finds the thread by title with `t3 thread list --project <project> --json` and reads its `worktreePath` with `t3 thread show --json`. It removes that worktree with `git worktree remove --force`, or the worktree on `orbit-lane/<slug>-<id>` when no thread was found. It deletes that branch and whatever branch the worktree had checked out, since orbit's Worktree gate renames it to `<type>/<slug>`. It deletes only branches that did not exist before `t3 thread start`, so a thread that checks out an existing branch never loses it. It removes the worktree's parent folder when that folder is empty, since T3 keeps one per project. Then it prunes worktrees, uninstalls the plugin, removes the marketplace and deletes the run directory. Orbit plugins enabled at user scope stay enabled, because only the lane commit's project settings turn them off.
+Each step pushes its undo before it runs, and every undo ignores a step that never happened. One cleanup function runs the undos in reverse from `finally` and on SIGINT or SIGTERM. The `--wake` hold runs before `finally`, so cleanup waits for it to end. When the thread is not yet known, it finds the thread by title with `t3 thread list --project <project> --json` and reads its `worktreePath` with `t3 thread show --json`. It removes that worktree with `git worktree remove --force`, or the worktree on `orbit-lane/<slug>-<id>` when no thread was found. It deletes that branch and whatever branch the worktree had checked out, since orbit's Worktree gate renames it to `<type>/<slug>`. It deletes only branches that did not exist before `t3 thread start`, so a thread that checks out an existing branch never loses it. It removes the worktree's parent folder when that folder is empty, since T3 keeps one per project. Then it prunes worktrees. A Codex lane moves `$CODEX_HOME/skills/orbit` back from the run directory and deletes `codex-skills.json`. If something new sits at that path by then, the harness keeps the new one, drops the moved copy and prints a warning. Last, it uninstalls the plugin, removes the marketplace and deletes the run directory. Orbit plugins enabled at user scope stay enabled, because only the lane commit's project settings turn them off.
 
-`claude plugin` edits user settings by read, modify and write, so register and unregister run under a lock directory, `$TMPDIR/orbit-lane.lock`. A lock whose pid is dead is taken over. Before it registers, a run reaps leftovers. It removes each `orbit-head-*` marketplace whose `lane.pid` is missing or names a dead process. It never touches a marketplace with any other name.
+`claude plugin` edits user settings by read, modify and write, so register and unregister run under a lock directory, `$TMPDIR/orbit-lane.lock`. A lock whose pid is dead is taken over. Before it registers, a run reaps leftovers. It removes each `orbit-head-*` marketplace whose `lane.pid` is missing or names a dead process, and first moves back any `$CODEX_HOME/skills/orbit` that the dead run's `codex-skills.json` records. It never touches a marketplace with any other name.
+
+Only one Codex lane at a time may hold `$CODEX_HOME/skills/orbit`. Under the lock, a Codex lane fails before it starts a thread when another live lane's run directory holds `codex-skills.json`. A second Codex lane would otherwise find the folder already gone, and the first lane's cleanup would put it back mid-run.
 
 The thread outlives the lane. A follow-up message after exit runs without the head orbit, because the worktree, branch and marketplace are gone. A thread that times out or is interrupted keeps running in T3. On timeout, stderr prints its link.
 

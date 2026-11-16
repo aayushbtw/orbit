@@ -1,6 +1,6 @@
 import { spawn, execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, readlinkSync, renameSync, rmdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,7 +8,10 @@ import { parseArgs } from 'node:util';
 
 const ORBIT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const CLAUDE_DIR = process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude');
+const CODEX_HOME = process.env.CODEX_HOME ?? join(homedir(), '.codex');
+const CODEX_SKILLS = join(CODEX_HOME, 'skills', 'orbit');
 const LOCK = join(tmpdir(), 'orbit-lane.lock');
+const LANE_START = Date.now();
 const SCENARIOS = {
   probe: 'Probe. Make no edits and load no skills. Run pwd, then list every skill whose name starts with orbit: with its description quoted verbatim.',
 };
@@ -24,6 +27,7 @@ const { values: opts } = parseArgs({
     provider: { type: 'string' },
     model: { type: 'string' },
     timeout: { type: 'string', default: '30' },
+    wake: { type: 'string' },
   },
 });
 
@@ -34,13 +38,16 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const alive = (pid) => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
 const gitError = (e) => (e.stderr?.toString().trim() || e.message);
 const readJsonl = (path) => (tryRead(path) ?? '').split('\n').filter(Boolean).flatMap((line) => { try { return [JSON.parse(line)]; } catch { return []; } });
+const lexists = (path) => { try { lstatSync(path); return true; } catch { return false; } };
 
 const slug = opts.scenario;
 const message = opts.message ?? SCENARIOS[slug];
 const id = randomBytes(4).toString('hex');
 const out = resolve(opts.out ?? join(tmpdir(), `orbit-lane-${slug}-${id}.json`));
 const timeoutMs = Number(opts.timeout) * 60_000;
+const wakeMs = opts.wake === undefined ? 0 : Number(opts.wake) * 60_000;
 const marketplace = opts.installed ? null : `orbit-head-${id}`;
+const runDir = join(tmpdir(), `orbit-lane-${id}`);
 const title = `orbit lane ${slug} ${id}`;
 const branch = `orbit-lane/${slug}-${id}`;
 
@@ -48,7 +55,7 @@ const result = {
   scenario: slug ?? null, message: message ?? null,
   head: { ref: opts.head ?? null, sha: null }, project: null, laneCommit: null,
   orbit: opts.installed ? 'installed' : 'head', marketplace: null,
-  exit: 1, status: 'error', reply: null, error: null,
+  exit: 1, status: 'error', reply: null, error: null, wake: null, wakes: [],
   pendingQuestion: null, thread: null, threads: [], messages: [],
   session: null, firstTurnInputTokens: null, toolCalls: null,
 };
@@ -69,10 +76,11 @@ function fail(error) {
   finish();
 }
 
-if (!opts.head || !slug) fail('usage: node tests/t3/lane.mjs --head <ref> --scenario <slug> [--message <text>] [--out <file>] [--project <dir>] [--installed] [--provider <id> --model <slug>] [--timeout <minutes>]');
+if (!opts.head || !slug) fail('usage: node tests/t3/lane.mjs --head <ref> --scenario <slug> [--message <text>] [--out <file>] [--project <dir>] [--installed] [--provider <id> --model <slug>] [--timeout <minutes>] [--wake <minutes>]');
 if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) fail(`--scenario must be lowercase letters, digits and hyphens, got ${slug}`);
 if (!message) fail(`--scenario ${slug} is not built in (${Object.keys(SCENARIOS).join(', ')}), so it needs --message`);
 if (!(timeoutMs > 0)) fail(`--timeout must be a positive number of minutes, got ${opts.timeout}`);
+if (opts.wake !== undefined && !(wakeMs > 0)) fail(`--wake must be a positive number of minutes, got ${opts.wake}`);
 
 const candidates = [process.env.T3CODE_CLI_PATH, 't3'].filter(Boolean);
 const cli = candidates.find((c) => tryRun(c, ['--version']) !== null);
@@ -123,15 +131,43 @@ const unregister = (name) => {
   tryRun('claude', ['plugin', 'marketplace', 'remove', name]);
 };
 
+const sidecar = (dir) => ({ record: join(dir, 'codex-skills.json'), saved: join(dir, 'codex-skills-orbit') });
+
+function restoreCodexSkills(dir) {
+  const { record, saved } = sidecar(dir);
+  const held = tryRead(record);
+  if (!held) return;
+  const { path } = JSON.parse(held);
+  if (lexists(saved)) {
+    if (lexists(path)) return console.error(`warning: ${path} exists again, so the copy moved aside to ${saved} is dropped`);
+    renameSync(saved, path);
+  }
+  rmSync(record);
+}
+
+function holdCodexSkills(liveRunDirs) {
+  const holder = liveRunDirs.find((dir) => existsSync(sidecar(dir).record));
+  if (holder) throw new Error(`another Codex lane (${holder}) holds ${CODEX_SKILLS}; run Codex lanes one at a time`);
+  if (!lexists(CODEX_SKILLS)) return;
+  const { record, saved } = sidecar(runDir);
+  undo.push(() => restoreCodexSkills(runDir));
+  const target = lstatSync(CODEX_SKILLS).isSymbolicLink() ? readlinkSync(CODEX_SKILLS) : null;
+  writeFileSync(record, JSON.stringify({ path: CODEX_SKILLS, target }) + '\n');
+  renameSync(CODEX_SKILLS, saved);
+}
+
 function reap() {
+  const live = [];
   for (const m of JSON.parse(run('claude', ['plugin', 'marketplace', 'list', '--json']))) {
     if (!m.name?.startsWith('orbit-head-') || !m.path) continue;
     const pid = Number(tryRead(join(m.path, 'lane.pid')));
-    if (pid && alive(pid)) continue;
+    if (pid && alive(pid)) { live.push(m.path); continue; }
+    restoreCodexSkills(m.path);
     unregister(m.name);
     rmSync(m.path, { recursive: true, force: true });
     console.error(`reaped ${m.name}, left by a lane that is no longer running`);
   }
+  return live;
 }
 
 function buildLaneCommit() {
@@ -149,6 +185,10 @@ function buildLaneCommit() {
     run('git', ['-C', project, 'read-tree', base], { env });
     const blob = run('git', ['-C', project, 'hash-object', '-w', '--stdin'], { input: JSON.stringify(settings, null, 2) + '\n' });
     run('git', ['-C', project, 'update-index', '--add', '--cacheinfo', `100644,${blob},.claude/settings.json`], { env });
+    if (codexLane) {
+      const link = run('git', ['-C', project, 'hash-object', '-w', '--stdin'], { input: join(runDir, 'plugin') });
+      run('git', ['-C', project, 'update-index', '--add', '--cacheinfo', `120000,${link},.agents/skills/orbit`], { env });
+    }
     const tree = run('git', ['-C', project, 'write-tree'], { env });
     return run('git', ['-C', project, '-c', 'user.name=orbit lane', '-c', 'user.email=lane@orbit.invalid', 'commit-tree', tree, '-p', base, '-m', `orbit lane ${slug} ${id}: load orbit from ${marketplace}`]);
   } finally {
@@ -175,7 +215,6 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
 }
 
 async function loadHead() {
-  const runDir = join(tmpdir(), `orbit-lane-${id}`);
   undo.push(() => rmSync(runDir, { recursive: true, force: true }));
   mkdirSync(join(runDir, '.claude-plugin'), { recursive: true });
   writeFileSync(join(runDir, 'lane.pid'), String(process.pid));
@@ -184,13 +223,14 @@ async function loadHead() {
   writeFileSync(join(runDir, '.claude-plugin', 'marketplace.json'), JSON.stringify({ ...manifest, name: marketplace }, null, 2) + '\n');
 
   await withLock(() => {
-    reap();
+    const liveRunDirs = reap();
     undo.push(() => tryRun('claude', ['plugin', 'marketplace', 'remove', marketplace]));
     run('claude', ['plugin', 'marketplace', 'add', runDir]);
     result.marketplace = marketplace;
     undo.push(() => tryRun('claude', ['plugin', 'uninstall', `orbit@${marketplace}`, '--scope', 'user']));
     run('claude', ['plugin', 'install', `orbit@${marketplace}`, '--scope', 'user']);
     run('claude', ['plugin', 'disable', `orbit@${marketplace}`, '--scope', 'user']);
+    if (codexLane) holdCodexSkills(liveRunDirs);
   });
 }
 
@@ -220,16 +260,82 @@ const sessionFiles = (dir, recursive = false) => existsSync(dir)
   ? readdirSync(dir, { recursive }).filter((f) => f.endsWith('.jsonl')).map((f) => join(dir, f))
   : [];
 
-function childThreadIds(dir) {
-  return new Set(sessionFiles(dir, true)
-    .flatMap(readJsonl)
-    .filter((e) => e.type === 'user' && Array.isArray(e.message?.content))
-    .flatMap((e) => e.message.content.filter((c) => c.type === 'tool_result'))
-    .flatMap((c) => {
-      try { return [JSON.parse(typeof c.content === 'string' ? c.content : c.content?.[0]?.text).childThreadId]; } catch { return []; }
-    })
-    .filter((id) => typeof id === 'string'));
-}
+const childIdIn = (text) => { try { return [JSON.parse(text).childThreadId].filter((id) => typeof id === 'string'); } catch { return []; } };
+const codexItems = (entries) => entries.filter((e) => e.type === 'event_msg' && e.payload?.type === 'item_completed' && e.payload.item);
+const CODEX_CALLS = {
+  McpToolCall: ({ server, tool, arguments: input }) => ({ name: `mcp__${server}__${tool}`, input }),
+  CommandExecution: ({ command, cwd }) => ({ name: 'exec_command', input: { command, cwd } }),
+  UserMessage: () => null,
+  AgentMessage: () => null,
+  Reasoning: () => null,
+};
+
+const SESSIONS = {
+  claude: {
+    where: sessionDir,
+    sessions: (worktreePath) => sessionFiles(sessionDir(worktreePath), true).map((f) => [f, readJsonl(f)]),
+    lead(sessions, worktreePath) {
+      const [, command, args] = message.match(/^\/(\S+)\s*([\s\S]*)$/) ?? [];
+      // Claude records a slash command message in this form, not as typed.
+      const opening = command ? `<command-message>${command}</command-message>\n<command-name>/${command}</command-name>\n<command-args>${args}</command-args>` : message;
+      const [file, entries] = sessions.find(([f, entries]) => {
+        const first = entries.find((e) => e.type === 'user')?.message?.content;
+        return dirname(f) === sessionDir(worktreePath) && (first === message || first === opening);
+      }) ?? [];
+      if (!file) return null;
+      const subDir = join(file.slice(0, -'.jsonl'.length), 'subagents');
+      const usage = entries.find((e) => e.type === 'assistant' && e.message?.usage)?.message.usage;
+      const seen = new Set();
+      const toolUses = (list, sidechain) => list
+        .filter((e) => e.type === 'assistant' && Array.isArray(e.message?.content))
+        .flatMap((e) => e.message.content.filter((c) => c.type === 'tool_use'))
+        .filter((c) => !seen.has(c.id) && seen.add(c.id))
+        .map((c) => ({ id: c.id, name: c.name, input: c.input, sidechain }));
+      const mainCalls = toolUses(entries, false);
+      const answered = new Set(entries
+        .filter((e) => e.type === 'user' && Array.isArray(e.message?.content))
+        .flatMap((e) => e.message.content.filter((c) => c.type === 'tool_result').map((c) => c.tool_use_id)));
+      return {
+        file,
+        firstTurnInputTokens: usage ? (usage.input_tokens ?? 0) + (usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0) : null,
+        toolCalls: [...mainCalls, ...sessions.filter(([f]) => dirname(f) === subDir).flatMap(([, sub]) => toolUses(sub, true))].map(({ id: _, ...call }) => call),
+        pending: mainCalls.filter((c) => !answered.has(c.id)).map(({ name, input }) => ({ name, input })),
+      };
+    },
+    childIds: (sessions) => sessions
+      .flatMap(([, entries]) => entries)
+      .filter((e) => e.type === 'user' && Array.isArray(e.message?.content))
+      .flatMap((e) => e.message.content.filter((c) => c.type === 'tool_result'))
+      .flatMap((c) => childIdIn(typeof c.content === 'string' ? c.content : c.content?.[0]?.text)),
+  },
+  codex: {
+    where: () => join(CODEX_HOME, 'sessions'),
+    sessions: (worktreePath) => sessionFiles(join(CODEX_HOME, 'sessions'), true)
+      .filter((f) => statSync(f).mtimeMs >= LANE_START)
+      .map((f) => [f, readJsonl(f)])
+      .filter(([, [meta]]) => meta?.type === 'session_meta' && meta.payload?.cwd === worktreePath),
+    lead(sessions) {
+      const [file, entries] = sessions.toSorted(([, [a]], [, [b]]) => a.payload.timestamp.localeCompare(b.payload.timestamp))[0] ?? [];
+      if (!file) return null;
+      const usage = entries.find((e) => e.type === 'token_usage_record')?.payload?.usage;
+      return {
+        file,
+        firstTurnInputTokens: usage?.input_tokens ?? null,
+        toolCalls: codexItems(entries).flatMap(({ payload: { thread_id, item } }) => {
+          const call = (CODEX_CALLS[item.type] ?? (() => ({ name: item.type, input: item })))(item);
+          return call ? [{ ...call, sidechain: thread_id !== entries[0].payload.id }] : [];
+        }),
+        pending: [],
+      };
+    },
+    childIds: (sessions) => sessions
+      .flatMap(([, entries]) => codexItems(entries))
+      .filter((e) => e.payload.item.type === 'McpToolCall')
+      .flatMap((e) => childIdIn(e.payload.item.result?.content?.[0]?.text)),
+  },
+};
+const kindOf = (providerInstanceId) => Object.keys(SESSIONS).find((kind) => providerInstanceId?.toLowerCase().startsWith(kind));
+const codexLane = !opts.installed && kindOf(opts.provider) === 'codex';
 
 function recordThreads(threadId) {
   threadId ??= JSON.parse(tryRun(cli, ['thread', 'list', '--project', project, '--json']) ?? '[]').find((t) => t.title === title)?.threadId;
@@ -245,7 +351,8 @@ function recordThreads(threadId) {
   lead.waiting ||= pendingRequestCount > 0;
   if (!worktreePath) return;
 
-  const children = [...childThreadIds(sessionDir(worktreePath))].flatMap((id) => {
+  const childIds = new Set(Object.values(SESSIONS).flatMap((reader) => reader.childIds(reader.sessions(worktreePath))));
+  const children = [...childIds].flatMap((id) => {
     const child = JSON.parse(tryRun(cli, ['thread', 'show', '--json', id]) ?? 'null')?.thread;
     return child ? [{ threadId: id, link: child.link ?? null, waiting: child.pendingRequestCount > 0, parentThreadId: child.parentThreadId ?? null }] : [];
   });
@@ -257,42 +364,34 @@ function recordThreads(threadId) {
   }
 }
 
-function readSession(worktreePath) {
-  const dir = sessionDir(worktreePath);
-  const [, command, args] = message.match(/^\/(\S+)\s*([\s\S]*)$/) ?? [];
-  // Claude records a slash command message in this form, not as typed.
-  const opening = command ? `<command-message>${command}</command-message>\n<command-name>/${command}</command-name>\n<command-args>${args}</command-args>` : message;
-  const [main, mainEntries] = sessionFiles(dir)
-    .map((f) => [f, readJsonl(f)])
-    .find(([, entries]) => {
-      const first = entries.find((e) => e.type === 'user')?.message?.content;
-      return first === message || first === opening;
-    }) ?? [];
-  if (!main) {
-    console.error(`warning: no Claude session in ${dir} opens with the scenario message, so session, toolCalls and firstTurnInputTokens are null`);
+function readSession({ providerInstanceId, worktreePath }) {
+  const kind = kindOf(providerInstanceId);
+  const reader = SESSIONS[kind];
+  const lead = reader?.lead(reader.sessions(worktreePath), worktreePath);
+  if (!lead) {
+    console.error(`warning: ${reader ? `no ${kind} session for the lead in ${reader.where(worktreePath)}` : `no session reader for provider ${providerInstanceId}`}, so session, toolCalls and firstTurnInputTokens are null`);
     return;
   }
-  const subDir = join(main.slice(0, -'.jsonl'.length), 'subagents');
-  const subs = sessionFiles(subDir);
-  const usage = mainEntries.find((e) => e.type === 'assistant' && e.message?.usage)?.message.usage;
+  result.session = lead.file;
+  result.firstTurnInputTokens = lead.firstTurnInputTokens;
+  result.toolCalls = lead.toolCalls;
+  if (result.status === 'waiting') result.pendingQuestion = lead.pending.length ? lead.pending : null;
+}
 
-  const seen = new Set();
-  const toolUses = (entries, sidechain) => entries
-    .filter((e) => e.type === 'assistant' && Array.isArray(e.message?.content))
-    .flatMap((e) => e.message.content.filter((c) => c.type === 'tool_use'))
-    .filter((c) => !seen.has(c.id) && seen.add(c.id))
-    .map((c) => ({ id: c.id, name: c.name, input: c.input, sidechain }));
-  const mainCalls = toolUses(mainEntries, false);
-  const answered = new Set(mainEntries
-    .filter((e) => e.type === 'user' && Array.isArray(e.message?.content))
-    .flatMap((e) => e.message.content.filter((c) => c.type === 'tool_result').map((c) => c.tool_use_id)));
-
-  result.session = main;
-  result.firstTurnInputTokens = usage ? (usage.input_tokens ?? 0) + (usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0) : null;
-  result.toolCalls = [...mainCalls, ...subs.flatMap((f) => toolUses(readJsonl(f), true))].map(({ id: _, ...call }) => call);
-  if (result.status === 'waiting') {
-    const pending = mainCalls.filter((c) => !answered.has(c.id)).map(({ name, input }) => ({ name, input }));
-    result.pendingQuestion = pending.length ? pending : null;
+async function holdForWake(threadId) {
+  const show = () => JSON.parse(run(cli, ['thread', 'show', '--json', '--messages', '1000', threadId]));
+  const seen = new Set(show().messages.map((m) => m.runId));
+  result.wake = 'none';
+  for (const deadline = Date.now() + wakeMs; Date.now() < deadline;) {
+    await sleep(10_000);
+    let shown;
+    try { shown = show(); } catch { continue; }
+    if (shown.thread.activeRunId) continue;
+    const woke = Map.groupBy(shown.messages.filter((m) => m.role === 'assistant' && !seen.has(m.runId)), (m) => m.runId);
+    if (!woke.size) continue;
+    result.wake = 'arrived';
+    result.wakes = [...woke.values()].map((msgs) => ({ at: new Date().toISOString(), text: msgs.at(-1).text }));
+    return;
   }
 }
 
@@ -339,7 +438,11 @@ async function lane() {
   recordThreads(reply?.threadId);
   if (!result.thread) return;
   if (timedOut) console.error(`timed out; the thread keeps running in T3: ${result.thread.link}`);
-  if (result.thread.worktreePath) readSession(result.thread.worktreePath);
+  if (wakeMs && result.status === 'completed') {
+    await holdForWake(result.thread.threadId);
+    recordThreads(result.thread.threadId);
+  }
+  if (result.thread.worktreePath) readSession(result.thread);
 }
 
 started = true;
