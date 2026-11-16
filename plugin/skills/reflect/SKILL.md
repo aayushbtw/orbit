@@ -24,7 +24,7 @@ That covers the session (`<id>.jsonl`) and its subagents (`<id>/subagents/<child
 
 ## 2. Spawn three reviewers in parallel
 
-One message, three `Agent` calls, `subagent_type: general-purpose`. Reviewers need MCP access to look up the tickets, chat threads, and observability traces the transcript references. Each runs on the model the table names (rules.md Workflow Defaults, Models).
+One message, three spawns: `Agent` calls, except the roster seat. Each `Agent` call takes `subagent_type: general-purpose`. Reviewers need MCP access to look up the tickets, chat threads, and observability traces the transcript references. Each runs on the model the table names (rules.md Workflow Defaults, Models).
 
 | Lens | Model | Prompt template |
 |---|---|---|

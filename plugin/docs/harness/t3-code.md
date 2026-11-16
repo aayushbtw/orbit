@@ -31,7 +31,7 @@ Claude models map as rules.md Workflow Defaults, Models says.
 
 ### Seats on another family
 
-A skill may name a seat on another family, such as arena's cross-judge, interrogate's second adversary, the second `how` explorer, reflect's Tooling reviewer, the show-me-your-work trail reviewer or autopilot-full's audit seat. Fill one such seat per panel. Seats that write the change's code, such as arena and architect runners, delegates, swarm workers and live lanes, stay on Claude.
+A skill may name a seat on another family, such as arena's cross-judge, interrogate's second adversary, the second `how` explorer, reflect's Tooling reviewer, the show-me-your-work trail reviewer or autopilot-full's audit seat. Fill one such seat per panel. Only the agent whose turn end returns to the user fills a roster seat. A subagent takes the absent column, because its turn end returns to its parent and the child's wake lands on the lead's thread. Seats that write the change's code, such as arena and architect runners, delegates, swarm workers and live lanes, stay on Claude.
 
 Probe `orchestrator_capabilities`, `delegate_task`, `task_status` and `t3_thread_organize` as Probe says. If any is absent, the absent column applies.
 
@@ -41,11 +41,11 @@ The session's family is the `driverKind` of the provider whose `providerInstance
 
 The `other-family` row of the Models table picks the seat. An empty Model cell or no row takes the first roster provider and its first listed model. `inherit` keeps the skill's own Claude seat. `<providerInstanceId>/<model>` is an explicit pick, split at the first `/` because a model id can hold one. It holds when that provider is on the roster and lists that model. Otherwise put `<pick> unavailable: <reason>` in the reply and use the empty-cell default. The reason quotes the provider's `constraints` verbatim or names the check that failed. Never replace a pick without saying so.
 
-When the row's Effort names a value that one of the model's `options` lists in `values`, pass `target.options` as `[{id, value}]` with that option's `id`. Otherwise pass no `options`, so the provider default runs.
+When the row's Effort names a value that one of the model's `options` lists in `values`, pass `target.options` as `[{id, value}]` with that option's `id`. Otherwise pass `options: []`, which clears the inherited options, so the provider default runs.
 
 Spawn the seat with `delegate_task`, `target: {providerInstanceId, model, options}`, `role: "review"`, `mode: "async"`, a `title` naming the skill and the seat, and no `runtimeMode`. A seat that only reads keeps the default `isolation`. Interrogate's adversary runs repros, so its skill gives it a worktree and its own brief line. A child on another provider loads no orbit rules, so the brief stands alone. It holds the user's goal in one line, the absolute path of each file to read, the seat's prompt, and "Do not edit any file. Return your findings as text." It never holds a secret.
 
-Start the panel's Claude seats too, then end the turn or keep working. The child's completion wakes you. `t3_background_wait` does not take a `delegate_task` id. Read the result with `task_status`. Then check `git status --short` for edits, and settle the child thread with `t3_thread_organize` action `settle`, or `archive` when it waits on a question.
+Start the panel's Claude seats too, then end the turn or keep working. The child's completion wakes you. `t3_background_wait` does not take a `delegate_task` id. Read the result with `task_status`. Then check `git status --short` for edits, and settle the child thread with `t3_thread_organize` action `settle`, with `threadId` set to the `childThreadId` that `delegate_task` returned, or `archive` when it waits on a question.
 
 When the child errors, hits a limit or returns nothing, try the next roster provider, then the skill's own Claude seat, and say which ran. When the roster is empty or every roster seat failed, use the skill's own Claude seat and say in the reply that the panel lacked a second family. That line never goes in a trail's Attention header. The reply names each seat's provider and model.
 
