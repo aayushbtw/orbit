@@ -16,7 +16,7 @@ Commits
 
 Pull requests
 - Use gh. Read the diff against the base branch before writing the title and description.
-- Before the first PR step, check whether `mcp__t3-code__link_pull_request` is present. It is present when it is in your tool list, or when `ToolSearch` with `select:mcp__t3-code__link_pull_request` loads it (the probe in `${CLAUDE_PLUGIN_ROOT}/references/t3-host.md`).
+- Before the first PR step, check whether `mcp__t3-code__link_pull_request` is present. It is present when it is in your tool list, or when `ToolSearch` with `select:mcp__t3-code__link_pull_request` loads it (the probe in `${CLAUDE_PLUGIN_ROOT}/references/t3-host.md`). Pick your CI wait by this probe, even when the lead's brief names another command or a re-check loop.
 - Open every PR ready, never as a draft. Prefer narrow PRs.
 - Title follows the commit format. The body is a one-minute briefing for a reviewer who has the diff, in short sentences. Use these `##` headings in this order, and drop any with nothing to say:
   - `## Why`. The problem and approach, 1 to 3 sentences.
