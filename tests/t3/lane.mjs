@@ -1,6 +1,6 @@
 import { spawn, execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -251,10 +251,16 @@ async function lane() {
   }
 
   undo.push(() => {
-    const porcelain = tryRun('git', ['-C', project, 'worktree', 'list', '--porcelain']) ?? '';
-    const path = porcelain.split('\n\n').find((b) => b.split('\n').includes(`branch refs/heads/${branch}`))?.match(/^worktree (.+)$/m)?.[1];
-    if (path) tryRun('git', ['-C', project, 'worktree', 'remove', '--force', path]);
-    tryRun('git', ['-C', project, 'branch', '-D', branch]);
+    const worktrees = (tryRun('git', ['-C', project, 'worktree', 'list', '--porcelain']) ?? '').split('\n\n').map((b) => b.split('\n'));
+    const path = result.thread?.worktreePath
+      ?? worktrees.find((lines) => lines.includes(`branch refs/heads/${branch}`))?.[0].replace(/^worktree /, '');
+    const checkedOut = worktrees.find((lines) => lines[0] === `worktree ${path}`)?.find((l) => l.startsWith('branch refs/heads/'))?.slice('branch refs/heads/'.length);
+    if (path) {
+      tryRun('git', ['-C', project, 'worktree', 'remove', '--force', path]);
+      // T3 keeps one folder per project for its worktrees and never removes it.
+      try { rmdirSync(dirname(path)); } catch {}
+    }
+    for (const b of new Set([branch, checkedOut].filter(Boolean))) tryRun('git', ['-C', project, 'branch', '-D', b]);
     tryRun('git', ['-C', project, 'worktree', 'prune']);
   });
   const args = ['thread', 'start', project, '-', '--worktree', result.laneCommit, '--branch', branch, '--title', title, '--wait', '--json'];

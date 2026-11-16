@@ -52,7 +52,7 @@ The CLI is `T3CODE_CLI_PATH`, else `t3` on `PATH`. stdout is the output path. Th
 
 ## Cleanup
 
-Each step pushes its undo before it runs, and every undo ignores a step that never happened. One cleanup function runs the undos in reverse from `finally` and on SIGINT or SIGTERM. It removes the worktree with `git worktree remove --force`, deletes the branch, prunes worktrees, uninstalls the plugin, removes the marketplace and deletes the run directory. `orbit@orbit` stays enabled at user scope, because only the lane commit's project settings turn it off.
+Each step pushes its undo before it runs, and every undo ignores a step that never happened. One cleanup function runs the undos in reverse from `finally` and on SIGINT or SIGTERM. It removes the thread's `worktreePath` with `git worktree remove --force`, or the worktree on `orbit-lane/<slug>-<id>` when no thread was found. It deletes that branch and whatever branch the worktree had checked out, since orbit's Worktree gate renames it to `<type>/<slug>`. It removes the worktree's parent folder when that folder is empty, since T3 keeps one per project. Then it prunes worktrees, uninstalls the plugin, removes the marketplace and deletes the run directory. `orbit@orbit` stays enabled at user scope, because only the lane commit's project settings turn it off.
 
 `claude plugin` edits user settings by read, modify and write, so register and unregister run under a lock directory, `$TMPDIR/orbit-lane.lock`. A lock whose pid is dead is taken over. Before it registers, a run reaps leftovers. It removes each `orbit-head-*` marketplace whose `lane.pid` is missing or names a dead process. It never touches a marketplace with any other name.
 

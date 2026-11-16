@@ -1,6 +1,6 @@
 import { spawn, execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -143,8 +143,7 @@ function git(cwd, ...args) {
 }
 
 function scaffold(settings) {
-  // T3 keys projects by their real path, and macOS tmpdir is a symlink.
-  const dir = join(settings ? realpathSync(tmpdir()) : tmpdir(), `skyforge-${randomBytes(3).toString('hex')}`);
+  const dir = join(tmpdir(), `skyforge-${randomBytes(3).toString('hex')}`);
   const files = settings ? { ...PROJECT, '.claude/settings.json': JSON.stringify(settings, null, 2) + '\n' } : PROJECT;
   for (const [path, body] of Object.entries(files)) {
     mkdirSync(dirname(join(dir, path)), { recursive: true });
