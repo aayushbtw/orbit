@@ -43,7 +43,7 @@ A T3 thread led by Claude or another provider, such as Grok or Codex, runs orbit
 | Grok | Verified |
 | Grok, code child | Not run live yet |
 | Codex | Verified |
-| Codex, code child on gpt-6.1-sol | Not run live yet |
+| Codex, code child on gpt-6.1-sol | Verified |
 | Other providers | Untested |
 
 To load orbit's rules in every session, even without `/orbit:start`, add this line to the provider's own instruction file, such as `~/.grok/AGENTS.md` or `~/.codex/AGENTS.md`. Setup adds it only when you say yes.
