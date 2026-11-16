@@ -1,6 +1,6 @@
 # Orbit in T3 Code
 
-T3 Code runs orbit under a Claude lead and under a lead on another provider, such as Grok. This record says how orbit loads, finds T3's tools, fills panel seats, spawns subagents and resolves paths in each case. The [host adapter](../plugin/docs/harness/t3-code.md) holds the rules a lead follows. The [README](../README.md#run-on-any-provider-in-t3) holds the setup.
+T3 Code runs orbit under a Claude lead and under a lead on another provider, such as Grok or Codex. This record says how orbit loads, finds T3's tools, fills panel seats, spawns subagents and resolves paths in each case. The [host adapter](../plugin/docs/harness/t3-code.md) holds the rules a lead follows. The [README](../README.md#run-on-any-provider-in-t3) holds the setup.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="diagrams/t3-lead-dark.svg">
@@ -13,7 +13,11 @@ A Claude lead loads orbit as a Claude Code plugin. Its SessionStart hook prints 
 
 A lead on another provider gets orbit from Claude Code's install record, `~/.claude/plugins/installed_plugins.json`. Grok reads the plugin's `installPath` from that record when orbit is enabled in Claude Code's user settings. Grok ignores a project's `.claude/settings.json`. A copy in `~/.grok/plugins/`, or one from `grok plugin install`, wins over the record, and Grok still loads orbit once. Orbit has no per-provider install. `/orbit:setup` finds a Grok install of its own and prints `grok plugin uninstall orbit` for the user to run, so Grok falls back to Claude Code's copy. `claude plugin update orbit@orbit` moves the record to a fresh copy of the new version, so it also updates what Grok loads. A directory marketplace updates Claude Code's copy on `git pull`, but Grok's copy only on `claude plugin update`.
 
-Grok drops the SessionStart hook output. `/orbit:start` therefore loads the `rules` skill when Non-negotiables is not in context, and the skill reads `../../rules.md`. A Claude lead skips that step, because the hook already printed the rules. A user who wants the rules in every session, even without `/orbit:start`, adds one line to the provider's own instruction file, as the README shows. Orbit writes that file only when the user says yes during `/orbit:setup`.
+Codex does not read Claude Code's install record. With orbit enabled in Claude Code, Codex listed no orbit skills. `/orbit:setup` therefore links `~/.codex/skills/orbit` to the folder Claude Code installs orbit from, the marketplace's `installLocation` joined with the plugin's `source`, `./plugin`. A directory marketplace's `installLocation` is the repo folder. A GitHub marketplace's is a shallow clone at `~/.claude/plugins/marketplaces/orbit`. The link skips Claude Code's install path because that path holds the version number and changes on every update. Codex then lists every skill as `orbit:<name>`, a prefix it takes from the link's folder name, and `$orbit:rules` reads `rules.md` through `../../rules.md`. Codex loads no orbit agents.
+
+The same link works from `~/.agents/skills/orbit`, but Grok also scans `.agents/skills/`, so orbit uses `~/.codex/skills/orbit`. A link to `plugin/skills` alone lists the skills, but `../../rules.md` then misses. A linked Codex plugin cache folder loads nothing. `codex plugin marketplace add` reads orbit's marketplace file and installs it, but that is a second install, and orbit has one install, in Claude Code. Codex does not dedupe, so two visible copies, such as a project's `.agents/skills/orbit` and the user link, both load. Setup reports an extra copy and prints its removal for the user to run. Codex follows the marketplace source, so `claude plugin marketplace update orbit` updates it. `claude plugin update orbit@orbit` does not pull a GitHub marketplace's clone. Claude Code children still load the record's version, which on the test machine was 0.29.3 against a source at 0.45.0. Setup compares the two versions and offers both updates on a mismatch. The Codex and Claude Code results in these two paragraphs were measured on 2026-11-16, with codex-cli 0.169.0 in a scratch home.
+
+Grok drops the SessionStart hook output, and Codex loads only orbit's skills. `/orbit:start` therefore loads the `rules` skill when Non-negotiables is not in context, and the skill reads `../../rules.md`. A Claude lead skips that step, because the hook already printed the rules. A user who wants the rules in every session, even without `/orbit:start`, adds one line to the provider's own instruction file, as the README shows. Orbit writes that file only when the user says yes during `/orbit:setup`.
 
 ## Find T3's tools
 
@@ -41,12 +45,15 @@ Only Claude is assumed present. Every other provider comes from the roster at ru
 
 A lead on another provider runs orbit agents with its native subagent tool, such as Grok's `spawn_subagent`. T3 shows each one as a nested node in the same thread, not as a new thread. Grok ignores an agent's `model` field, so a native subagent runs on the lead's own model.
 
+Codex's subagent tool, `spawn_agent`, takes no agent type, so it cannot select an orbit agent. The lead passes `fork_turns: "none"` and a brief that names the agent file, `agents/<name>.md` in the plugin folder, for the child to follow. The brief says that `${CLAUDE_PLUGIN_ROOT}` in that file is the plugin folder, because Codex leaves it literal in a file read by hand. It states the agent's `tools` limit, such as read-only for the advisor, because a hand-read file enforces none. The lead waits with `wait_agent`, then calls `close_agent`, because a finished agent stays open and counts toward a limit (inferred from the Codex binary). Codex reported these tools and `request_user_input` in `codex exec` on 2026-11-16. No T3 lane has run them yet.
+
 `delegate_task` has two uses. A child that writes code runs on the roster's Claude provider, with `role: "implementation"` and `mode: "async"`, never `mode: "wait"`, because only a child on Claude gets the role's model and orbit's rules. The lead ends its turn after the spawn, and the child's completion wakes it. It runs native, and the reply says so, when a T3 tool is absent, the roster has no Claude provider, or the spawn errors or returns nothing. A panel seat runs on another family. The lead reads each child's result with `task_status` and settles its thread. Each brief names orbit's plugin folder as an absolute path, because the agent's own paths may arrive unexpanded.
 
 ## Resolve paths
 
 - `plugin/rules.md` writes paths as `<orbit-plugin>`. The SessionStart hook rewrites that token to the plugin folder, so a Claude lead sees full paths. The `rules` skill tells another lead that the token is the folder two levels above the skill's base directory.
 - Skill bodies use paths relative to their own folder, because Grok leaves `${CLAUDE_PLUGIN_ROOT}` unexpanded and names each skill's base directory.
+- Some skills, such as `playbook` and `how`, name `${CLAUDE_SKILL_DIR}`. The adapter tells another lead that it is the skill's own base directory.
 - `poteto-agent` and `gitops` keep `${CLAUDE_PLUGIN_ROOT}`. Claude Code and Grok both expand it in agent bodies. When another provider leaves it unexpanded, gitops uses the plugin folder its brief names, and with none it reports that and stops.
 
 ## What is verified
@@ -57,6 +64,7 @@ A lead on another provider runs orbit agents with its native subagent tool, such
 | Grok lead, headless | Verified. The lead loads the `rules` skill first, reads `rules.md` through the relative path, quotes a Non-negotiable, and runs `orbit:gitops` with `spawn_subagent`. |
 | Grok lead in T3 | Verified. Over two turns the lead loads the `rules` skill once, calls `t3-code__list_thread_pull_requests` by its bare name, and runs `orbit:gitops` as a nested subagent with no new thread. |
 | Grok lead, code child on Claude | Partly verified. The lead read the roster, spawned one `delegate_task` child on the Claude provider with a subagent brief, and settled it by `childThreadId`, with no grandchild. That run passed `mode: "wait"`, so the adapter now requires `async` and ending the turn. The wake that then reopens a Grok lead's turn has not run live. T3's orchestrator sends that wake for any parent provider. |
+| Codex lead | Pending live lanes |
 | Other providers | Untested. |
 
 Each Grok run used Grok's fast model at low effort, on 2026-11-16, at the commit that added the `rules` skill.

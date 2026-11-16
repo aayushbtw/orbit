@@ -13,7 +13,7 @@ Install orbit once, in Claude Code:
 /plugin install orbit@orbit
 ```
 
-Then run `/orbit:setup` in a T3 thread led by Claude. It lists your T3 providers, asks which ones fill each panel's seat on another family, and saves your choice for every project in `~/.claude/rules/orbit-models.md`. A project's AGENTS.md Models rows still win. Run it from a Claude thread, because a Grok thread may load an older copy of orbit that lacks the skill.
+Then run `/orbit:setup` in a T3 thread led by Claude. It lists your T3 providers, asks which ones fill each panel's seat on another family, and saves your choice for every project in `~/.claude/rules/orbit-models.md`. A project's AGENTS.md Models rows still win. When Codex is on the list, setup links Codex to the folder Claude Code installs orbit from, so Codex needs no install of its own. Run it from a Claude thread, because a Grok thread may load an older copy of orbit that lacks the skill.
 
 Auto-update is off for third-party marketplaces. [Turn it on](docs/usage.md#auto-update) or run `claude plugin update orbit@orbit`.
 
@@ -35,22 +35,23 @@ Auto-update is off for third-party marketplaces. [Turn it on](docs/usage.md#auto
   <img alt="You run /orbit:start. The lead checks whether Non-negotiables is already in its context. Yes for a Claude lead, because the SessionStart hook printed the rules. No for another provider, so the lead loads the rules skill, which reads rules.md. Both paths then run the playbook. The lead spawns three kinds of child. An orbit agent runs as a native subagent, nested in the same thread. A code child runs on Claude through delegate_task. A panel seat runs on another family through delegate_task. A Claude lead runs code children as Agent spawns." src="docs/diagrams/t3-lead-light.svg">
 </picture>
 
-A T3 thread led by Claude or another provider, such as Grok, runs orbit. Each review panel fills a second seat from your other T3 providers, so a second model family checks the work. [Orbit in T3 Code](plugin/docs/harness/t3-code.md) maps each step to T3's tools.
+A T3 thread led by Claude or another provider, such as Grok or Codex, runs orbit. Each review panel fills a second seat from your other T3 providers, so a second model family checks the work. [Orbit in T3 Code](plugin/docs/harness/t3-code.md) maps each step to T3's tools.
 
 | Lead | Tested |
 | --- | --- |
 | Claude | Verified |
 | Grok | Verified |
 | Grok, code child on Claude | The wake after the child has not run live yet |
+| Codex | Pending live lanes |
 | Other providers | Untested |
 
-To load orbit's rules in every session, even without `/orbit:start`, add this line to the provider's own instruction file, such as `~/.grok/AGENTS.md`. Setup adds it only when you say yes.
+To load orbit's rules in every session, even without `/orbit:start`, add this line to the provider's own instruction file, such as `~/.grok/AGENTS.md` or `~/.codex/AGENTS.md`. Setup adds it only when you say yes.
 
 ```
 If Non-negotiables is not in your context, load the orbit `rules` skill before your first reply.
 ```
 
-[How orbit runs in T3](docs/t3-code.md) covers how Grok loads and updates orbit.
+[How orbit runs in T3](docs/t3-code.md) covers how Grok and Codex load and update orbit.
 
 ## What do I run?
 

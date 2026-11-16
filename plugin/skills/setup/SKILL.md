@@ -56,14 +56,23 @@ Overwrite the whole of `~/.claude/rules/orbit-models.md`, so a re-run stays idem
 
 ### 7. Check what the chosen providers load
 
-Run this step for each provider whose `driverKind` is `grok`, the one non-Claude host orbit has tested, when the user put it on the list or it is the session's family. For any other `driverKind`, say "orbit has no tested load check for <driverKind> yet" and go on. If the `grok` command is not found, say so and go on.
+Run this step for each provider whose `driverKind` is `grok` or `codex`, the non-Claude hosts whose load orbit has tested, when the user put it on the list or it is the session's family. For any other `driverKind`, say "orbit has no tested load check for <driverKind> yet" and go on.
+
+**grok.** If the `grok` command is not found, say so and go on.
 
 - Shadowing install. Run `grok plugin list --json`. If it lists `orbit`, tell the user that Grok's own install shadows Claude Code's copy, so `claude plugin update orbit@orbit` no longer reaches Grok. Print `grok plugin uninstall orbit` as a command for the user to run. Do not run it.
 - Stale copy. With no shadowing install, run `grok inspect --json`. If it has no skill named `rules` whose `source.plugin_name` is `orbit`, Grok loads a copy of orbit older than the `rules` skill. Offer to run `claude plugin update orbit@orbit`, and run it only after a yes. If it lists no plugin named `orbit` at all, tell the user that Grok loads orbit only when orbit is enabled in Claude Code's user settings.
 
+**codex.** Codex does not read Claude Code's install record. It loads orbit through one symlink to the folder Claude Code installs orbit from.
+
+- Link target. In `~/.claude/plugins/installed_plugins.json`, find the `orbit@<marketplace>` record. In `~/.claude/plugins/known_marketplaces.json`, take that marketplace's `installLocation`. Join it with orbit's `source` in `<installLocation>/.claude-plugin/marketplace.json`, such as `./plugin`. The result is the link target. If the target has no `skills/rules/SKILL.md`, say so and skip the rest of the codex case.
+- Version. Compare the `version` in the target's `.claude-plugin/plugin.json` with the record's `version`. If they differ, tell the user that Codex reads the target while Claude Code children load the record's version. Offer to run `claude plugin marketplace update <marketplace>`, then `claude plugin update orbit@<marketplace>`. Run them only after a yes.
+- Link. Check `${CODEX_HOME:-~/.codex}/skills/orbit`. If it is missing, offer to create it as a symlink to the target, and create it only after a yes. If it is a link to the target, say that the link is in place. If it is a link to another folder or a real folder, report what it is and print the commands that replace it with a link to the target, for the user to run. Do not touch it.
+- Duplicates. If `~/.agents/skills/orbit` exists, or `codex plugin list` shows orbit installed, tell the user that Codex then loads two copies of orbit. Print the command that removes the extra copy, `rm ~/.agents/skills/orbit` or `codex plugin remove orbit@<codex marketplace>`, for the user to run. Do not run it.
+
 ### 8. Offer the always-on rules line
 
-Ask whether to add orbit's always-on rules line to a non-Claude provider's own instruction file, such as `~/.grok/AGENTS.md`. The default is no. Write the line only after a yes, and only once per file. The line is:
+Ask whether to add orbit's always-on rules line to a non-Claude provider's own instruction file, such as `~/.grok/AGENTS.md` or `~/.codex/AGENTS.md`. The default is no. Write the line only after a yes, and only once per file. The line is:
 
 ```
 If Non-negotiables is not in your context, load the orbit `rules` skill before your first reply.
