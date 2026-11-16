@@ -20,7 +20,7 @@ Grok drops the SessionStart hook output. `/orbit:start` therefore loads the `rul
 T3 serves its tools as MCP tools, and a step probes each tool before its first call. A tool that is not present takes the adapter's absent column, so orbit keeps working outside T3.
 
 - A Claude lead finds a tool in its tool list, or loads it with `ToolSearch`.
-- A lead on another provider has no `ToolSearch`. A tool is present when its name is in the tool list. Otherwise the first real call is the probe, and an error means absent. The lead never probes with dummy arguments, because a dummy `delegate_task` starts a thread.
+- A lead on another provider uses its own tool search with the bare name. Grok finds `t3-code__list_thread_pull_requests` with `search_tool` and calls it with `use_tool`. With no tool search, a tool is present when its name is in the tool list. Otherwise the first real call is the probe, and an error means absent. The lead never probes with dummy arguments, because a dummy `delegate_task` starts a thread.
 
 ## Fill a panel seat on another family
 
@@ -46,13 +46,15 @@ A lead on another provider runs orbit agents with its native subagent tool, such
 
 - `plugin/rules.md` writes paths as `<orbit-plugin>`. The SessionStart hook rewrites that token to the plugin folder, so a Claude lead sees full paths. The `rules` skill tells another lead that the token is the folder two levels above the skill's base directory.
 - Skill bodies use paths relative to their own folder, because Grok leaves `${CLAUDE_PLUGIN_ROOT}` unexpanded and names each skill's base directory.
-- `poteto-agent` and `gitops` keep `${CLAUDE_PLUGIN_ROOT}`. When the variable arrives unexpanded, gitops uses the plugin folder its brief names, and with none it reports that and stops.
+- `poteto-agent` and `gitops` keep `${CLAUDE_PLUGIN_ROOT}`. Claude Code and Grok both expand it in agent bodies. When another provider leaves it unexpanded, gitops uses the plugin folder its brief names, and with none it reports that and stops.
 
 ## What is verified
 
 | Lead | Result |
 | --- | --- |
-| Claude lead | pending live lanes |
-| Grok lead, headless | pending live lanes |
-| Grok lead in T3 | pending live lanes |
-| Other providers | untested |
+| Claude lead | Verified headless. Routing matches trunk, the hook prints the same rules, and the lead never loads the `rules` skill. With hooks off, the lead loads it before the playbook, and not again on a second `/orbit:start`. |
+| Grok lead, headless | Verified. The lead loads the `rules` skill first, reads `rules.md` through the relative path, quotes a Non-negotiable, and runs `orbit:gitops` with `spawn_subagent`. |
+| Grok lead in T3 | Verified. Over two turns the lead loads the `rules` skill once, calls `t3-code__list_thread_pull_requests` by its bare name, and runs `orbit:gitops` as a nested subagent with no new thread. |
+| Other providers | Untested. |
+
+Each Grok run used Grok's fast model at low effort, on 2026-11-16, at the commit that added the `rules` skill.
