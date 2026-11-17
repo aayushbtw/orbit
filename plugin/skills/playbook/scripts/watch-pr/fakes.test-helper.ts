@@ -84,6 +84,7 @@ export function fakeReader(
     state: "OPEN",
     mergedAt: null,
     isDraft: false,
+    requestedReviewers: [],
   };
   let page = 0;
   let threadPage = 0;
