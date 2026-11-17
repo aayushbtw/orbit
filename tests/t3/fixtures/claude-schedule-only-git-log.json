@@ -1,0 +1,35 @@
+{
+  "scenario": "schedule-only",
+  "message": "/orbit:start schedule a one-time report of `git rev-list --count HEAD` in this thread for tomorrow at 09:00. Make no file changes and push nothing.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent"
+  },
+  "fixture": {
+    "origin": "hand-built",
+    "source": "P5 audit lane so-child.json",
+    "relabeled": false,
+    "note": "The lead scheduled the report, then counted commits now with git log piped to wc -l.",
+    "expect": {
+      "scheduled": "PASS",
+      "prompt-not-run": "FAIL",
+      "no-run-now": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "mcp__t3-code__schedule_task",
+      "input": {
+        "bindToCurrentThread": true
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git log --oneline | wc -l"
+      },
+      "sidechain": false
+    }
+  ]
+}

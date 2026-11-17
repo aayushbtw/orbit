@@ -1,0 +1,36 @@
+{
+  "scenario": "foreground",
+  "message": "/orbit:start just testing: create the file scratch/lane-fg.txt containing the single line 'lane fg'. Run the Delegate gate for the edit. No commit, no PR.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent"
+  },
+  "fixture": {
+    "origin": "hand-built",
+    "source": "P5 audit lane fg-gitops-bg.json",
+    "relabeled": false,
+    "note": "The delegate ran in the foreground, then a gitops spawn passed run_in_background: true.",
+    "expect": {
+      "delegate-ran": "PASS",
+      "every-agent-foreground": "FAIL"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:poteto-agent",
+        "run_in_background": false
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:gitops",
+        "run_in_background": true
+      },
+      "sidechain": false
+    }
+  ]
+}

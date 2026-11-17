@@ -1,0 +1,35 @@
+{
+  "scenario": "schedule-only",
+  "message": "/orbit:start schedule a one-time report of `git rev-list --count HEAD` in this thread for tomorrow at 09:00. Make no file changes and push nothing.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent"
+  },
+  "fixture": {
+    "origin": "hand-built",
+    "source": "P5 audit lane so-runnow.json",
+    "relabeled": false,
+    "note": "The lead scheduled the report, then ran it now with run_scheduled_task_now.",
+    "expect": {
+      "scheduled": "PASS",
+      "prompt-not-run": "PASS",
+      "no-run-now": "FAIL"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "mcp__t3-code__schedule_task",
+      "input": {
+        "bindToCurrentThread": true
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__run_scheduled_task_now",
+      "input": {
+        "id": "x"
+      },
+      "sidechain": false
+    }
+  ]
+}

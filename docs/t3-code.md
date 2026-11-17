@@ -30,7 +30,7 @@ T3 serves its tools as MCP tools, and a step probes each tool before its first c
 
 A review panel fills one seat on a model family other than the session's.
 
-- The lead calls `orchestrator_capabilities` once per session and reuses the result.
+- The lead calls `orchestrator_capabilities` once per thread and reuses the result, and calls it again only after an error or a user-named provider change, or with `search` for a model the Models table names.
 - The roster is every enabled provider that can run a cross-provider child task and has a family other than the session's.
 - The empty-cell default takes the first roster provider's first model, and skips a model of the session's own family that another provider hosts.
 - The `other-family` row comes from the project's AGENTS.md, else from `~/.claude/rules/orbit-models.md`, which `/orbit:setup` writes. Its Model cell can list providers in order. The seat tries only listed providers outside the session's family, then the session-family seat, never a provider the list leaves out.
@@ -70,6 +70,7 @@ Under a Codex lead, a spawn on the `code` role passes `model: "gpt-6.1-sol"` to 
 | Codex lead in T3 | Verified on gpt-6.1-sol, twice. The lead loads the `rules` skill and reads `rules.md` and the adapter, calls `mcp__t3-code__list_thread_pull_requests`, and runs `orbit:gitops` as a native `spawn_agent` child with no new thread. On gpt-6-luna the lead never read `rules.md`, so it missed the adapter and ran gitops through `delegate_task` as a child thread. |
 | Codex lead, code child on Claude | Verified. The lead sent one edit to a Claude child through `delegate_task` with `mode: "async"`, a per-round `clientRequestId` and an agent-file brief, then ended its turn. T3's completion wake reopened the lead, which read `task_status`, checked the file and both plugin checks, and settled the child. This is the first live wake under a lead not on Claude. The adapter has since retired this path. |
 | Codex lead, native code child on gpt-6.1-sol | Verified. A gpt-6-astra lead spawned the code child with `spawn_agent` and `model: "gpt-6.1-sol"`, so the model came from the adapter, not the lead's own. The child read `agents/poteto-agent.md`, the playbook `SKILL.md` and `rules.md`, made the edit and ran both plugin checks. The thread opened no child thread and called no `delegate_task`. Its tool list had no `close_agent`. |
+| Claude lead, spawn and probe defaults | Verified in T3 on claude-opus-5-5, 2026-11-17. Asked only to schedule, the lead read the adapter's Automations row, called `schedule_task` bound to the thread and did not run the prompt. Headless, the lead passed `run_in_background: false` on its delegate at trunk and at head, and linked each cited file by its absolute path. The T3 foreground lane spawned no delegate, so it proved nothing about foreground spawns. Not run live: the thread-read row, the proof table's `html_preview`, the sudo flow and the Probe retry. |
 | Other providers | Untested. |
 
 Each Grok run used Grok's fast model at low effort, on 2026-11-16, at the commit that added the `rules` skill. Each Codex run used gpt-6.1-sol, plus one gpt-6-luna run, on 2026-11-16, with orbit loaded from the `feat/codex-lead` branch head. The native code-child run used a gpt-6-astra lead on 2026-11-17, from the `feat/provider-roles` branch head.
