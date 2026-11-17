@@ -44,7 +44,7 @@ for (const { name, text, json } of fixtures) {
 
 test('fixtures hold no home path, email address or secret', () => {
   for (const path of [...fixtures.map((f) => f.path), truncated]) {
-    assert.doesNotMatch(readFileSync(path, 'utf8'), /[/-]Users[/-]|[/-]home[/-]|\/var\/folders\/|\/private\/tmp\/|[\w.+-]+@[\w-]+\.[a-z]{2,}|gh[pousr]_\w{20,}|sk-\w{20,}|gAAAAA/i, path);
+    assert.doesNotMatch(readFileSync(path, 'utf8'), /[/-]Users[/-]|[/-]home[/-]|%2F(Users|home)%2F|[/-]var[/-]folders[/-]|\/private\/tmp\/|[\w.+-]+@[\w-]+\.[a-z]{2,}|gh[pousr]_\w{20,}|sk-\w{20,}|gAAAAA/i, path);
   }
 });
 
@@ -84,6 +84,12 @@ test('a child that watches the PR fails no-child-watches; the lead watch still p
   assert.deepEqual(verdicts(lane({ scenario: 'watch-pr-wait', provider: 'claude', toolCalls })), { 'lead-watches': 'PASS', 'no-child-watches': 'FAIL' });
 });
 
+test('a clientRequestId on a different call than the other-family seat fails request-id', () => {
+  const seat = (input) => ({ name: 'mcp__t3-code__delegate_task', input: { role: 'review', mode: 'async', ...input }, sidechain: false });
+  const toolCalls = [seat({ target: { providerInstanceId: 'codex' } }), seat({ clientRequestId: 'x', target: { providerInstanceId: 'claudeAgent' } })];
+  assert.deepEqual(verdicts(lane({ scenario: 'review-seat', provider: 'claude', toolCalls })), { 'seat-other-family': 'PASS', 'request-id': 'FAIL' });
+});
+
 test('a schedule_task interval under 60 s fails', () => {
   const toolCalls = [{ name: 'mcp__t3-code__schedule_task', input: { bindToCurrentThread: true, schedule: { type: 'interval', everyMs: 30_000 } }, sidechain: false }];
   assert.deepEqual(verdicts(lane({ scenario: 'schedule-loop', provider: 'codex', toolCalls })), { 'bound-to-thread': 'PASS', 'interval-min-60s': 'FAIL' });
@@ -96,6 +102,7 @@ test('parseLane rejects a lane it cannot grade, naming the file', () => {
     [JSON.stringify({ ...base, scenario: 'nope' }), /unknown scenario "nope"/],
     [JSON.stringify({ ...base, thread: { providerInstanceId: 'gemini' } }), /unknown provider "gemini"/],
     [JSON.stringify({ ...base, toolCalls: undefined }), /no toolCalls key/],
+    [JSON.stringify({ ...base, toolCalls: [{ input: {} }] }), /toolCalls is neither null nor a list of calls with a name/],
   ];
   for (const [text, reason] of cases) {
     assert.throws(() => parseLane(text, 'x.json'), (e) => e instanceof LaneError && e.message.startsWith('x.json: ') && reason.test(e.message));
