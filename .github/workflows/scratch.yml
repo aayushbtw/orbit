@@ -1,0 +1,7 @@
+name: scratch
+on: pull_request
+jobs:
+  s:
+    runs-on: ubuntu-latest
+    steps:
+      - run: sleep 60
