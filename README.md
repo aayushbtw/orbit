@@ -36,7 +36,7 @@ Auto-update is off for third-party marketplaces. [Turn it on](docs/usage.md#auto
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/t3-lead-dark.svg">
-  <img alt="You run /orbit:start. The lead checks whether Non-negotiables is already in its context. Yes for a Claude lead, because the SessionStart hook printed the rules. No for another provider, so the lead loads the rules skill, which reads rules.md. Both paths then run the playbook. The lead spawns three kinds of child. An orbit agent runs as a native subagent, nested in the same thread. A code child runs the same way, on the lead's provider. A panel seat runs on another family through delegate_task. Under a Codex lead, code children run on gpt-6.1-sol." src="docs/diagrams/t3-lead-light.svg">
+  <img alt="You run /orbit:start. The lead checks whether Non-negotiables is already in its context. Yes for a Claude lead, because the SessionStart hook printed the rules. No for another provider, so the lead loads the rules skill, which reads rules.md. Both paths then run the playbook. The lead spawns three kinds of child. An orbit agent runs as a native subagent, nested in the same thread. A code child runs on the lead's provider, as a native subagent, or as a same-provider delegate_task child when it needs its own checkout. A panel seat runs on another family through delegate_task. Under a Codex lead, code children run on gpt-6.1-sol." src="docs/diagrams/t3-lead-light.svg">
 </picture>
 
 A T3 thread led by Claude or another provider, such as Grok or Codex, runs orbit. Each review panel fills a second seat from your other T3 providers, so a second model family checks the work. [Orbit in T3 Code](plugin/docs/harness/t3-code.md) maps each step to T3's tools.

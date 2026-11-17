@@ -10,7 +10,7 @@ Give `/orbit:start` a list of independent changes and ask it to autopilot them.
 /orbit:start autopilot this queue: add retries to the webhook sender, cache the feature flag lookup, delete the unused legacy_sessions table
 ```
 
-That routes to the `autopilot-full` flow. Its root agent writes no code. It spawns one owner per item, each in its own worktree off trunk, and the owners run in parallel. Each owner runs `/orbit:start` on its item, so the item goes through the same flow it would get as a single task, Opening a PR included. Then the owner babysits its own PR to merge-ready.
+That routes to the `autopilot-full` flow. Its root agent writes no code. It spawns one owner per item, each in its own worktree off trunk, and the owners run in parallel. Each owner runs `/orbit:start` on its item, so the item goes through the same flow it would get as a single task, Opening a PR included. Then the owner babysits its own PR to merge-ready. In T3 Code, the owner returns once its PR is open, and the root babysits the PR. Each later round of that owner, such as a fix or the merge, then runs in the root's own thread, in the owner's worktree.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../diagrams/guide-autopilot-dark.svg">

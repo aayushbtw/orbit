@@ -39,6 +39,6 @@ Rewrite history only on a task branch. Amend when a fix belongs in the just-made
 
 Rewrite pushed history only on a task branch you pushed or took over, never `main` or another session's branch. Publish it with `git push --force-with-lease=<branch>:<sha>`, pinned to the SHA you last pushed or took over. The lead passes that SHA. If the remote tip differs, stop and report.
 
-A conflict is the one blocker you report rather than resolve. Say which branch needs the rebase and stop. Never push while a rebase or merge is in progress.
+A conflict is the one blocker you report rather than resolve. Say which branch needs the rebase and stop. On a conflicted cherry-pick, run `git cherry-pick --abort` before you report. Never push while a rebase or merge is in progress.
 
 Reply with the result only: the commit hash and subject, or the PR URL. After a rebase, also say whether `origin/main` had new commits.
