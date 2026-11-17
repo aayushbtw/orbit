@@ -1,0 +1,124 @@
+{
+  "scenario": "seat-empty",
+  "message": "/orbit:interrogate Scope: commit 99184637efe30a8b8ab51153db268ec3e786ac42 (it adds scratch/median.mjs) against its parent. Intent: median(values) returns the median of an array of numbers.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "relabeled": true,
+    "origin": "hand-built",
+    "source": "claude-seat-empty-pre-p9.json",
+    "note": "Hand-built PASS variant. The grok seat replaced by the native code adversary, an Agent with model omitted, and the calls on the seat's worktree and thread dropped. A real fixture from a live seat-empty lane replaces this one.",
+    "expect": {
+      "no-seat": "PASS",
+      "session-family-seat": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git show 99184637efe30a8b8ab51153db268ec3e786ac42"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "ToolSearch",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__orchestrator_capabilities",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "general-purpose",
+        "isolation": "worktree"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "general-purpose",
+        "model": "opus",
+        "isolation": "worktree"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node ~/Projects/orbit/.claude/worktrees/agent-a14dee995f26d3859/scratch/repro-median.mjs"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git worktree list"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git worktree remove --force ~/Projects/orbit/.claude/worktrees/agent-a14dee995f26d3859"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git branch -D worktree-agent-a14dee995f26d3859"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C ~/Projects/orbit/.claude/worktrees/agent-a14dee995f26d3859 checkout 99184637efe30a8b8ab51153db268ec3e786ac42"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Write",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node ~/Projects/orbit/.claude/worktrees/agent-a14dee995f26d3859/scratch/repro-median.mjs"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "pwd"
+      },
+      "sidechain": true
+    }
+  ]
+}

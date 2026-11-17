@@ -11,8 +11,11 @@ const noChildThread = {
   codex: none(t3('delegate_task')),
   grok: none('use_tool', viaUseTool('delegate_task')),
 };
-const seat = (kind) => ({ role: 'review', mode: 'async', runtimeMode: ABSENT, target: { providerInstanceId: otherFamily(kind) } });
+const seatOn = (providerInstanceId) => ({ role: 'review', mode: 'async', runtimeMode: ABSENT, target: { providerInstanceId } });
+const seat = (kind) => seatOn(otherFamily(kind));
 const verifierSeat = (kind) => ({ isolation: 'worktree', target: { providerInstanceId: otherFamily(kind) } });
+const codeAdversary = { subagent_type: 'general-purpose', model: (m) => m !== 'opus' };
+const judgmentAdversary = { subagent_type: 'general-purpose', model: 'opus' };
 const countsCommits = /rev-list|\bgit\b[^|]*\blog\b[^|]*\|\s*wc\s+-l/;
 const onceRead = /\/watch-pr\s[^|;&]*--once\b/;
 const prefix = /^(\w+=\S*|env|exec|nohup|time|command)$/;
@@ -52,10 +55,10 @@ const workflow = `## Workflow
 - Check: \`node --test\`.
 - Land: \`main\`.
 `;
+const interrogateMedian = '/orbit:interrogate Scope: the commit that adds median.mjs, against its parent. Intent: median(values) returns the median of an array of numbers. Make no edits.';
 
-// orbit's own AGENTS.md sets other-family to inherit, so a lead there rightly keeps every seat native.
-const seatProject = {
-  name: 'seats',
+const seatsProject = (name, otherFamilyCell) => ({
+  name,
   commits: [
     {
       message: 'chore: add the workflow block',
@@ -64,14 +67,14 @@ const seatProject = {
 
 - Check: \`node --test\`.
 - Land: \`main\`.
-
+${otherFamilyCell === null ? '' : `
 ### Models
 
 | Task | Use for | Model | Effort |
 | --- | --- | --- | --- |
-| other-family | panel seat on another family | codex, claudeAgent | |
+| other-family | panel seat on another family | ${otherFamilyCell} | |
 | verifier | runs the change before it lands | other-family | |
-`,
+`}`,
       },
     },
     {
@@ -95,7 +98,10 @@ test('median of odd and even lengths', () => {
       },
     },
   ],
-};
+});
+
+// orbit's own AGENTS.md sets other-family to inherit, so a lead there rightly keeps every seat native.
+const seatProject = seatsProject('seats', 'codex, claudeAgent');
 
 const unitsProject = {
   name: 'units',
@@ -216,7 +222,7 @@ export const SCENARIOS = {
     },
   },
   'review-seat': {
-    prompt: '/orbit:interrogate Scope: the commit that adds median.mjs, against its parent. Intent: median(values) returns the median of an array of numbers. Make no edits.',
+    prompt: interrogateMedian,
     project: seatProject,
     checks: {
       'seat-other-family': {
@@ -228,6 +234,46 @@ export const SCENARIOS = {
         claude: some(t3('delegate_task'), { ...seat('claude'), clientRequestId: /./ }, 'lead'),
         codex: some(t3('delegate_task'), { ...seat('codex'), clientRequestId: /./ }, 'lead'),
         grok: some('use_tool', viaUseTool('delegate_task', { ...seat('grok'), clientRequestId: /./ }), 'lead'),
+      },
+    },
+  },
+  'seat-listed': {
+    prompt: interrogateMedian,
+    project: seatsProject('seats-listed', 'codex, grok'),
+    checks: {
+      'seat-on-first-listed': {
+        claude: some(t3('delegate_task'), seatOn(/^codex/), 'lead'),
+        codex: some(t3('delegate_task'), seatOn(/^grok/), 'lead'),
+        grok: some('use_tool', viaUseTool('delegate_task', seatOn(/^codex/)), 'lead'),
+      },
+    },
+  },
+  'seat-empty': {
+    prompt: interrogateMedian,
+    project: seatsProject('seats-empty', null),
+    checks: {
+      'no-seat': noChildThread,
+      'session-family-seat': {
+        claude: some('Agent', codeAdversary, 'lead'),
+        codex: some('spawn_agent', { model: 'gpt-6.1-sol' }, 'lead'),
+        grok: some('spawn_subagent', undefined, 'lead'),
+      },
+    },
+  },
+  'seat-all-fail': {
+    prompt: interrogateMedian,
+    project: seatsProject('seats-all-fail', 'cursor, muse'),
+    checks: {
+      'no-seat': noChildThread,
+      'no-native-replacement': {
+        claude: none('Agent', codeAdversary, 'lead'),
+        codex: none('spawn_agent', { model: 'gpt-6.1-sol' }, 'lead'),
+        na: { grok: 'spawn_subagent cannot tell the code adversary from the judgment one' },
+      },
+      'judgment-adversary-ran': {
+        claude: some('Agent', judgmentAdversary, 'lead'),
+        codex: some('spawn_agent', undefined, 'lead'),
+        grok: some('spawn_subagent', undefined, 'lead'),
       },
     },
   },
