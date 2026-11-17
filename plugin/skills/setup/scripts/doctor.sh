@@ -70,17 +70,19 @@ json_field() {
 
 real_dir() { (cd -P "$1" 2>/dev/null && pwd -P); }
 
-plugins="$HOME/.claude/plugins"
 target=""
-if ! command -v jq >/dev/null 2>&1; then
+if [ -z "${HOME:-}" ]; then
+	echo "install: check skipped, HOME unset"
+elif ! command -v jq >/dev/null 2>&1; then
 	echo "install: check skipped, it needs jq"
 else
+	plugins="$HOME/.claude/plugins"
 	key=$(json_field "$plugins/installed_plugins.json" '[.plugins // {} | keys[] | select(startswith("orbit@"))][0]')
 	if [ -z "$key" ]; then
 		echo "install: no orbit install record in $plugins/installed_plugins.json"
 	else
 		market=${key#orbit@}
-		record='.plugins[$a] | if type == "array" then .[0] else . end'
+		record='.plugins[$a] | if type == "array" then (map(select(.scope == "user"))[0] // .[0]) else . end'
 		record_version=$(json_field "$plugins/installed_plugins.json" "$record | .version" "$key")
 		install_path=$(json_field "$plugins/installed_plugins.json" "$record | .installPath" "$key")
 		echo "install: $key record ${record_version:-unknown} at ${install_path:-unknown path}"
@@ -104,8 +106,9 @@ else
 	fi
 fi
 
-codex_home="${CODEX_HOME:-$HOME/.codex}"
-if command -v codex >/dev/null 2>&1 || [ -d "$codex_home" ]; then
+codex_home="${CODEX_HOME:-${HOME:+$HOME/.codex}}"
+if command -v codex >/dev/null 2>&1 || { [ -n "$codex_home" ] && [ -d "$codex_home" ]; }; then
+	echo "codex: found"
 	link="$codex_home/skills/orbit"
 	if [ -z "$target" ]; then
 		echo "codex: link check skipped, no local marketplace copy to link to"
@@ -120,7 +123,7 @@ if command -v codex >/dev/null 2>&1 || [ -d "$codex_home" ]; then
 	else
 		echo "codex: link missing. Create: mkdir -p '$codex_home/skills' && ln -s '$target' '$link'"
 	fi
-	agents_link="$HOME/.agents/skills/orbit"
+	agents_link="${HOME:-}/.agents/skills/orbit"
 	if [ -n "$target" ] && [ -e "$agents_link" ]; then
 		if [ "$(real_dir "$agents_link")" = "$target" ]; then
 			echo "codex: $agents_link resolves to the target"
