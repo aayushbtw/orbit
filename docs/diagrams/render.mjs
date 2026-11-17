@@ -81,7 +81,7 @@ function readme(theme) {
   const seq = [
     ['you', '/orbit:start', 'you name the goal'],
     ['claude', 'Pick the flow', 'steps + worktree'],
-    ['agent', 'Write a unit', 'poteto-agent on Claude'],
+    ['agent', 'Write a unit', 'poteto-agent'],
     ['claude', 'Review it', 'lead reads and runs it'],
     ['agent', 'Commit', 'gitops'],
     ['claude', 'Clean up', 'deslop, no-comments'],
@@ -287,13 +287,13 @@ function guideArchitect(theme) {
 }
 
 function guideModels(theme) {
-  const W = 1060, H = 560;
+  const W = 1140, H = 560;
   const k = canvas(theme, W, H);
-  const ask = (y, t, s) => { const r = B({ x: 30, y, w: 420, h: 84, t, s, kind: 'claude' }); k.box(r); return r; };
-  const pick = (y, t, s) => { const r = B({ x: 620, y, w: 410, h: 84, t, s, kind: 'agent' }); k.box(r); return r; };
+  const ask = (y, t, s, ss) => { const r = B({ x: 30, y, w: 500, h: 84, t, s, ss, kind: 'claude' }); k.box(r); return r; };
+  const pick = (y, t, s) => { const r = B({ x: 700, y, w: 410, h: 84, t, s, kind: 'agent' }); k.box(r); return r; };
   const qs = [
     ask(30, 'Step picks its own?', 'model or effort, such as recall'),
-    ask(170, 'Spawn names a role?', 'gitops, verifier, advisor, judgment, code'),
+    ask(170, 'Spawn names a role?', 'gitops, verifier, advisor, judgment, code, other-family', 15),
     ask(310, 'A work type fits?', 'any other poteto-agent unit'),
   ];
   const picks = [
@@ -301,7 +301,7 @@ function guideModels(theme) {
     pick(170, "The role's row", 'an empty cell keeps the default'),
     pick(310, "The work type's row", 'after <n> failed tries steps up'),
   ];
-  const tier = B({ x: 30, y: 450, w: 420, h: 84, t: 'Tier by difficulty', s: 'hardest or prose: judgment, the rest: code', kind: 'agent' });
+  const tier = B({ x: 30, y: 450, w: 500, h: 84, t: 'Tier by difficulty', s: 'hardest or prose: judgment, the rest: code', kind: 'agent' });
   k.box(tier);
   qs.forEach((q, i) => {
     k.arrow([[q.r + 6, q.cy], [picks[i].x - 6, picks[i].cy]]);
@@ -316,7 +316,7 @@ function guideModels(theme) {
 }
 
 function t3Lead(theme) {
-  const W = 1000, H = 816;
+  const W = 1000, H = 842;
   const k = canvas(theme, W, H);
   const box = (b) => { const r = B({ h: 84, kind: 'claude', ...b }); k.box(r); return r; };
   const start = box({ x: 400, y: 20, w: 200, t: '/orbit:start', s: 'you name the goal', kind: 'you' });
@@ -326,9 +326,9 @@ function t3Lead(theme) {
   const play = box({ x: 380, y: 440, w: 240, t: 'Playbook', s: 'runs the flow' });
   k.frame(15, 570, 970, 160, 'what the lead spawns');
   const spawns = [
-    box({ x: 35, y: 620, w: 290, t: 'orbit agent', s: 'native subagent, nested', kind: 'agent' }),
-    box({ x: 355, y: 620, w: 290, t: 'Code child', s: "lead's provider", kind: 'agent' }),
-    box({ x: 675, y: 620, w: 290, t: 'Panel seat', s: 'other family, delegate_task', kind: 'agent' }),
+    box({ x: 25, y: 620, w: 300, t: 'orbit agent', s: 'native subagent, nested', kind: 'agent' }),
+    box({ x: 350, y: 620, w: 300, t: 'Code child', s: "lead's provider", kind: 'agent' }),
+    box({ x: 675, y: 620, w: 300, t: 'Panel seat', s: 'a provider you listed, delegate_task', ss: 15, kind: 'agent' }),
   ];
   k.arrow([[start.cx, start.bot + 6], [ask.cx, ask.y - 6]]);
   k.arrow([[ask.cx - 80, ask.bot + 6], [hook.cx + 20, hook.y - 6]]);
@@ -339,7 +339,8 @@ function t3Lead(theme) {
   k.arrow([[skill.cx - 40, skill.bot + 6], [play.r - 30, play.y - 6]]);
   const ends = [spawns[0].cx + 40, spawns[1].cx, spawns[2].cx - 40];
   ends.forEach((x, i) => k.arrow([[play.cx + (i - 1) * 60, play.bot + 6], [x, spawns[i].y - 8]]));
-  k.text(W - 20, H - 50, 'a code child is a native subagent, or a delegate_task child when it needs its own checkout', 17, k.c.muted, 'end');
+  k.text(W - 20, H - 76, 'a child that needs its own checkout, or runs while the lead works, goes through delegate_task', 17, k.c.muted, 'end');
+  k.text(W - 20, H - 50, 'a panel seat runs only on providers you listed in /orbit:setup', 17, k.c.muted, 'end');
   k.text(W - 20, H - 24, 'under a Codex lead, code children run on gpt-6.1-sol', 17, k.c.muted, 'end');
   return k;
 }
