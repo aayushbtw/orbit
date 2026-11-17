@@ -1,0 +1,134 @@
+{
+  "scenario": "gitops-native",
+  "message": "/orbit:start Report the current git branch of this repo. Read-only: change no file. Ask orbit's gitops agent for the branch name, and have it also quote verbatim the watch-pr path its own instructions give. In your final reply, quote one Non-negotiable verbatim and list the absolute path of every orbit file you read.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "grok",
+    "model": "grok-4.7-build-fast"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "orbit-lane-grok-t3-t34-b0a55d382c241abf/01a1e527",
+    "relabeled": true,
+    "note": "Grok lead in T3 ran orbit:gitops with spawn_subagent and called no delegate_task.",
+    "expect": {
+      "gitops-native-child": "PASS",
+      "no-child-thread": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "read_file",
+      "input": {
+        "target_file": "~/.grok/plugins/orbit/skills/rules/SKILL.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "read_file",
+      "input": {
+        "target_file": "~/.grok/plugins/orbit/skills/playbook/SKILL.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "read_file",
+      "input": {
+        "target_file": "~/.grok/plugins/orbit/rules.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "read_file",
+      "input": {
+        "target_file": "~/.grok/plugins/orbit/skills/playbook/playbooks/investigation.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "grep",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "read_file",
+      "input": {
+        "target_file": "~/.grok/plugins/orbit/docs/harness/t3-code.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "read_file",
+      "input": {
+        "target_file": "~/.grok/plugins/orbit/skills/how/SKILL.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "read_file",
+      "input": {
+        "target_file": "~/.grok/plugins/orbit/skills/unslop/SKILL.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "todo_write",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "spawn_subagent",
+      "input": {
+        "subagent_type": "orbit:gitops"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "run_terminal_command",
+      "input": {
+        "command": "git rev-parse --abbrev-ref HEAD && git status --short"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "todo_write",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "todo_write",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "search_tool",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "use_tool",
+      "input": {
+        "tool_name": "t3-code__list_thread_pull_requests",
+        "tool_input": {}
+      },
+      "sidechain": false
+    },
+    {
+      "name": "todo_write",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "run_terminal_command",
+      "input": {
+        "command": "git rev-parse --abbrev-ref HEAD && git status -sb"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "grep",
+      "input": {},
+      "sidechain": true
+    }
+  ]
+}

@@ -1,0 +1,148 @@
+{
+  "scenario": "review-seat",
+  "message": "/orbit:interrogate Scope: commit 99184637efe30a8b8ab51153db268ec3e786ac42 (it adds scratch/median.mjs) against its parent. Intent: median(values) returns the median of an array of numbers.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "orbit-lane-interrogate--5b3974d12a498483/928661f8.jsonl",
+    "relabeled": true,
+    "note": "Interrogate lane that ran before 3bf084a added clientRequestId to the adapter, so request-id fails by design, not as an orbit bug.",
+    "expect": {
+      "seat-other-family": "PASS",
+      "request-id": "FAIL"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git show 99184637efe30a8b8ab51153db268ec3e786ac42"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "ToolSearch",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__orchestrator_capabilities",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "target": {
+          "providerInstanceId": "grok",
+          "model": "grok-4.7-build-fast"
+        },
+        "role": "review",
+        "mode": "async",
+        "isolation": "worktree"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "general-purpose",
+        "model": "opus",
+        "isolation": "worktree"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node ~/Projects/orbit/.claude/worktrees/agent-a14dee995f26d3859/scratch/repro-median.mjs"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node ~/.t3/worktrees/orbit/t3-4ad67c4b-b851d690a44bfc25/scratch/median-repro.mjs"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__t3_thread_organize",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git worktree list"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git worktree remove --force ~/Projects/orbit/.claude/worktrees/agent-a14dee995f26d3859"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git worktree remove --force ~/.t3/worktrees/orbit/t3-4ad67c4b-b851d690a44bfc25"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git branch -D worktree-agent-a14dee995f26d3859"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C ~/Projects/orbit/.claude/worktrees/agent-a14dee995f26d3859 checkout 99184637efe30a8b8ab51153db268ec3e786ac42"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Write",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node ~/Projects/orbit/.claude/worktrees/agent-a14dee995f26d3859/scratch/repro-median.mjs"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "pwd"
+      },
+      "sidechain": true
+    }
+  ]
+}

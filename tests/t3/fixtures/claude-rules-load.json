@@ -1,0 +1,19 @@
+{
+  "scenario": "rules-load",
+  "message": "/orbit:start in two sentences, which orbit agent commits and which writes code? Make no edits.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "hand-built",
+    "source": "none",
+    "relabeled": false,
+    "note": "Hand-built. A Claude lead gets rules.md from the SessionStart hook, so rules-read is N/A whatever it calls.",
+    "expect": {
+      "rules-read": "N/A"
+    }
+  },
+  "toolCalls": []
+}

@@ -1,0 +1,35 @@
+{
+  "scenario": "verifier-seat",
+  "message": "Tooling check. Make no file edits and open no preview tab. Spawn the orbit:verifier agent with this brief: \"Tooling check, not a verification; reply PASS+NOTES. Call the T3 tool t3_preview_list with no arguments (load it with ToolSearch if needed) and report its raw result or the exact error. Open no preview.\" Report what it returned verbatim.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "hand-built",
+    "source": "claude-verifier-seat-pre-79ebe0b.json",
+    "relabeled": true,
+    "note": "Hand-built PASS variant. The native verifier spawn is swapped for the seat call the adapter makes since 79ebe0b, on a Codex provider in a worktree.",
+    "expect": {
+      "verifier-ran": "PASS",
+      "seat-other-family": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "role": "review",
+        "mode": "async",
+        "isolation": "worktree",
+        "clientRequestId": "ship-verifier-r1",
+        "target": {
+          "providerInstanceId": "codex",
+          "model": "gpt-6.1-sol"
+        }
+      },
+      "sidechain": false
+    }
+  ]
+}

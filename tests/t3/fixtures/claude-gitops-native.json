@@ -1,0 +1,47 @@
+{
+  "scenario": "gitops-native",
+  "message": "Ask the orbit:gitops agent to wait for CI on PR https://github.com/aayushbtw/orbit-t3-lane-ci/pull/5 and report the result. Do nothing else.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "orbit-lane-ci-wait-792d-336d7f4c30de003b/8cfd4c97.jsonl",
+    "relabeled": true,
+    "note": "Claude lead asked orbit:gitops to wait for CI. Relabeled: the lead spawned gitops as a native Agent and called no delegate_task.",
+    "expect": {
+      "gitops-native-child": "PASS",
+      "no-child-thread": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:gitops"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "ToolSearch",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "$TMPDIR/orbit-lane-a92c1360/plugin/skills/playbook/scripts/watch-pr/watch-pr --pr 5 --timeout 120"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "gh pr view 5 --repo aayushbtw/orbit-t3-lane-ci --json headRefOid -q .headRefOid"
+      },
+      "sidechain": true
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import { homedir, tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { SCENARIOS } from './scenarios.mjs';
 import { HOMES, READERS, kindOf } from './sessions.mjs';
 
 const ORBIT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -14,9 +15,6 @@ const CODEX_USER_ORBITS = [
 ];
 const LOCK = join(tmpdir(), 'orbit-lane.lock');
 const LANE_START = Date.now();
-const SCENARIOS = {
-  probe: 'Probe. Make no edits and load no skills. Run pwd, then list every skill whose name starts with orbit: with its description quoted verbatim.',
-};
 
 const { values: opts } = parseArgs({
   options: {
@@ -42,7 +40,7 @@ const gitError = (e) => (e.stderr?.toString().trim() || e.message);
 const lexists = (path) => { try { lstatSync(path); return true; } catch { return false; } };
 
 const slug = opts.scenario;
-const message = opts.message ?? SCENARIOS[slug];
+const message = opts.message ?? SCENARIOS[slug]?.prompt;
 const id = randomBytes(4).toString('hex');
 const out = resolve(opts.out ?? join(tmpdir(), `orbit-lane-${slug}-${id}.json`));
 const timeoutMs = Number(opts.timeout) * 60_000;

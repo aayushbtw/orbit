@@ -1,0 +1,281 @@
+{
+  "scenario": "code-child",
+  "message": "/orbit:start just testing: create the file scratch/lane-l3.txt containing the single line 'lane l3'. Run the Delegate gate for the edit as orbit's adapter says for a lead on another provider. No commit, no PR.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "codex",
+    "model": "gpt-6-astra"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "rollout-2026-11-17T00-05-00-01a1e5f6-82fc-74b2-bdd1-d7d3674e4c20.jsonl",
+    "relabeled": false,
+    "note": "A gpt-6-astra lead spawned the code child with spawn_agent, fork_turns none and model gpt-6.1-sol.",
+    "expect": {
+      "code-native-child": "PASS",
+      "no-child-thread": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/skills/rules/SKILL.md .agents/skills/orbit/skills/start/SKILL.md"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/rules.md .agents/skills/orbit/docs/…[214 chars]"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/docs/harness/t3-code.md"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/skills/playbook/playbooks/feature.m…[211 chars]"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "git status --short"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "spawn_agent",
+      "input": {
+        "fork_turns": "none",
+        "model": "gpt-6.1-sol"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "wait_agent",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "claude plugin validate . && claude plugin validate plugin"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "wait_agent",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "python3 -c \"from pathlib import Path; p=Path('scratch/lane-l3.txt'); assert p.read_bytes() == b'lane l3\\n'; print('PASS: exact bytes lane l3 followed by one newline')\""
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "git status --short --untracked-files=all"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/agents/poteto-agent.md"
+        ]
+      },
+      "sidechain": true
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/skills/playbook/SKILL.md"
+        ]
+      },
+      "sidechain": true
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/rules.md"
+        ]
+      },
+      "sidechain": true
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "pwd && rg --files -g AGENTS.md -g '!node_modules' -g '!vendor'"
+        ]
+      },
+      "sidechain": true
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat AGENTS.md"
+        ]
+      },
+      "sidechain": true
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/skills/principle-prove-it-works/SKILL.md"
+        ]
+      },
+      "sidechain": true
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/skills/unslop/SKILL.md"
+        ]
+      },
+      "sidechain": true
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "ls -ld scratch"
+        ]
+      },
+      "sidechain": true
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "git status --short"
+        ]
+      },
+      "sidechain": true
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "python3 -c 'from pathlib import Path; p = Path(\"scratch/lane…[221 chars]"
+        ]
+      },
+      "sidechain": true
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "git status --short"
+        ]
+      },
+      "sidechain": true
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "claude plugin validate ."
+        ]
+      },
+      "sidechain": true
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "claude plugin validate plugin"
+        ]
+      },
+      "sidechain": true
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "git status --short"
+        ]
+      },
+      "sidechain": true
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "scenario": "code-child",
+  "message": "/orbit:start just testing: create the file scratch/lane-l3.txt containing the single line 'lane l3'. Run the Delegate gate for the edit as orbit's adapter says for a lead on another provider. No commit, no PR.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "codex",
+    "model": "gpt-6-astra"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "rollout-2026-11-17T00-05-00-01a1e5f6-82fc-74b2-bdd1-d7d3674e4c20.jsonl",
+    "relabeled": false,
+    "note": "A gpt-6-astra lead spawned the code child with spawn_agent, fork_turns none and model gpt-6.1-sol.",
+    "expect": {
+      "code-native-child": "PASS",
+      "no-child-thread": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "exec_command",
+      "input": {
+        "co
