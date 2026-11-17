@@ -41,7 +41,7 @@ Each line does one job:
 | Land | `pr` to land through pull requests, plus the merge method if it isn't squash | Opening a PR opens the PR, Babysit drives it to merge-ready, and Shipping merges it. Under either setting, a fresh verifier passes the change before it lands. |
 | Before code | Guidance for writing code under a path, as `<path>: <source>` entries separated by `;`. A source is a file to read, or a command that prints a skill or its path. | Each code delegate under that path, copied word for word into its brief. Also the plan gate and `/orbit:interrogate`. |
 | Review also checks | Docs to read before planning and at review only. Scope one to a path with `src/server/: <source>`. | The plan gate and `/orbit:interrogate` |
-| Models | A `### Models` table with Task, Use for, Model and Effort columns. Each row is a work type of your own, or one of orbit's roles: `gitops`, `verifier`, `advisor`, `judgment`, `code` and `other-family`. An empty cell takes the same cell from `~/.claude/rules/orbit-models.md`, else the default. | Every subagent Claude spawns, except Comment Sicko and a step that names its own model or effort, such as `/orbit:recall`. [Route work by work type](#route-work-by-work-type) explains how Claude picks a row. |
+| Models | A `### Models` table with Task, Use for, Model and Effort columns. Each row is a work type of your own or one of orbit's six roles, `gitops`, `verifier`, `advisor`, `judgment`, `code` and `other-family`. An empty cell takes the same cell from `~/.claude/rules/orbit-models.md`, else the default. | Every subagent Claude spawns, except Comment Sicko and a step that names its own model or effort, such as `/orbit:recall`. [Route work by work type](#route-work-by-work-type) explains how Claude picks a row. |
 
 Before code is the line that goes into the brief of the agent writing the code. Put guidance there that code under a path must follow. Put a doc in Review also checks when it matters for the plan and the review but not for each edit.
 
@@ -67,7 +67,7 @@ Without work types, Claude decides which units are hard, and only those go to th
 
 Each column does one job:
 
-- **Task** names the row in kebab case. Six names belong to orbit's roles: `gitops`, `verifier`, `advisor`, `judgment`, `code` and `other-family`. A row with one of those names changes only that role. Every other row is a work type.
+- **Task** names the row in kebab case. Six names are orbit's roles, which are `gitops`, `verifier`, `advisor`, `judgment`, `code` and `other-family`. A row with one of those names changes only that role. Every other row is a work type.
 - **Use for** names the work the row covers. Claude reads it to match a unit to a row.
 - **Model** is `opus`, `sonnet`, `haiku`, `fable` or `inherit`. `inherit` passes no model, so the spawn runs on `CLAUDE_CODE_SUBAGENT_MODEL` when it is set, else on your session model. On the `gitops` and `advisor` rows, `inherit` keeps the model in the agent file. `fable` is Fable 5.2 from Claude Code 2.1.321 on, and Fable 5.1 before it. Fable's safeguards block most cybersecurity work, such as penetration testing and exploit generation, and an older Opus answers in its place. On a security project, set the `advisor` row's Model to `opus` and keep `fable` off rows whose work is security. Under T3 Code, the `other-family` row's Model is an ordered list of providers, and the `verifier` row's Model may be `other-family` or `other-family, inherit` ([Give the panels a second family in T3 Code](#give-the-panels-a-second-family-in-t3-code)).
 - **Effort** is `low`, `medium`, `high`, `xhigh` or `max`.
@@ -80,7 +80,7 @@ Before each spawn, Claude asks three questions in order. The first yes decides t
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../diagrams/guide-models-dark.svg">
-  <img alt="Claude asks three questions before each spawn, with a fallback when every answer is no. If the step picks its own model or effort, such as recall's haiku or the trail reviewer's tier, the spawn keeps it. Else, if the spawn names a role (gitops, verifier, advisor, judgment, code or other-family), it takes that role's row, where an empty cell keeps the default. Else, if a work type fits the poteto-agent unit, it takes that work type's row, which can step up after n failed tries. Else Claude tiers by difficulty, with the hardest change or prose on judgment and the rest on code, and when the project has work types the reply names the unit so you can add a row." src="../diagrams/guide-models-light.svg">
+  <img alt="Claude asks three questions before each spawn, with a fallback when every answer is no. If the step picks its own model or effort, such as recall's haiku or the trail reviewer's tier, the spawn keeps it. Else, if the spawn names a role (gitops, verifier, advisor, judgment, code or other-family), it takes that role's row, where an empty cell falls through to the user file, else the default. Else, if a work type fits the poteto-agent unit, it takes that work type's row, which can step up after n failed tries. Else Claude tiers by difficulty, with the hardest change or prose on judgment and the rest on code, and when the project has work types the reply names the unit so you can add a row." src="../diagrams/guide-models-light.svg">
 </picture>
 
 1. A step that names its own model or effort keeps it. `/orbit:recall` runs on Haiku, and the trail reviewer in `show-me-your-work` picks its own tier.
@@ -137,7 +137,7 @@ The Model cell is an ordered list of T3 provider ids. Each entry is a fallback f
 
 An empty cell, or no row, runs the skill's own seat, and the reply says that no seat on another family is configured. When every listed entry fails, the seat is skipped, and the reply says so. The Effort cell maps onto the model's own effort option.
 
-The verifier follows its own row. A `verifier` row whose Model is `other-family` sends each verifier to the same list. Setup writes that row whenever its list is not empty. When every entry fails, Claude asks you before the native verifier runs, or holds the PR. `other-family, inherit` runs the native verifier in that case without asking. Setup asks which one you want and recommends `other-family`. A trailing `inherit` on the `other-family` row covers panel seats, not the verifier.
+The verifier follows its own row. A `verifier` row whose Model is `other-family` sends each verifier to the same list. Setup writes that row when the list is not empty, unless the file already has a `verifier` row with another Model. When every entry fails, Claude asks you before the native verifier runs, or holds the PR. `other-family, inherit` runs the native verifier in that case without asking. Setup asks which one you want and recommends `other-family`. A trailing `inherit` on the `other-family` row covers panel seats, not the verifier.
 
 Setup ranks providers Claude, Codex, Muse, Gemini, then Grok. With all five enabled, it recommends Claude, Codex, Muse and Gemini.
 

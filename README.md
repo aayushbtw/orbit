@@ -46,13 +46,13 @@ Auto-update is off for third-party marketplaces. [Turn it on](docs/usage.md#auto
   <img alt="You run /orbit:start. The lead checks whether Non-negotiables is already in its context. Yes for a Claude lead, because the SessionStart hook printed the rules. No for another provider, so the lead loads the rules skill, which reads rules.md. Both paths then run the playbook. The lead spawns three kinds of child. An orbit agent runs as a native subagent, nested in the same thread. A code child runs on the lead's provider. A panel seat runs through delegate_task, only on providers you listed in /orbit:setup. A child that needs its own checkout, or runs while the lead works, goes through delegate_task. Under a Codex lead, code children run on gpt-6.1-sol." src="docs/diagrams/t3-lead-light.svg">
 </picture>
 
-A T3 thread led by Claude or another provider, such as Codex or Grok, runs orbit. A review panel's seat on another family runs only on a provider you listed in `/orbit:setup`, never on one you left out. With no provider listed, the seat runs on the lead's family, and the reply says that no seat on another family is configured. When every listed provider fails, orbit skips the seat, and the reply says so. [Orbit in T3 Code](plugin/docs/harness/t3-code.md) maps each step to T3's tools.
+A T3 thread led by Claude or another provider, such as Codex or Grok, runs orbit. A review panel's seat on another family runs only on a provider you listed in `/orbit:setup`, never on one you left out. With no provider listed, the seat runs on the lead's family, and the reply says that no seat on another family is configured. When every listed provider fails, orbit skips the seat, and the reply says so, unless the list ends with `inherit`. [Orbit in T3 Code](plugin/docs/harness/t3-code.md) maps each step to T3's tools.
 
 | Lead in T3 | Live result |
 | --- | --- |
 | Claude | 16 of 16 scenarios pass at `34fdaae`, 1 run each. |
-| Codex, code children on gpt-6.1-sol | 17 of 17 scenarios pass, 1 run each. 12 pass at `34fdaae`. The other 5 pass on reruns at the branch commits of the fix in [#74](https://github.com/aayushbtw/orbit/pull/74). |
-| Grok | Not proven. Each of 4 runs at `34fdaae` stopped on T3's usage-balance error before the lead acted. The native code child has never run live. |
+| Codex, code children on gpt-6.1-sol | 17 of 17 scenarios pass, 1 passing run each. 12 pass at `34fdaae`. The other 5 pass on reruns at the branch commits of the fix in [#74](https://github.com/aayushbtw/orbit/pull/74). |
+| Grok | Not proven. Each of 4 runs at `34fdaae` stopped on the Grok provider's 402 usage-balance error, before the lead acted. The native code child has never run live. |
 | Other providers | Untested. |
 
 No lane has run at the merged fix. [What is verified](docs/t3-code.md#what-is-verified) lists each scenario, its commit and its date.

@@ -47,7 +47,7 @@ Each phase has one job:
 
 Arena returns one artifact and a short note that names the base, the judge's verdict or that arena skipped the judge, each graft and its source, and what was rejected.
 
-When the `judgment` and `code` models are the same, as in an Opus session under the defaults, both runners run on one model and arena skips the judge, so the panel loses its model diversity. Arena still gives you independent attempts, but they come from one model, and Claude picks the base alone. In T3 Code with providers listed in `/orbit:setup`, the judge runs on another family, so arena keeps it.
+When the `judgment` and `code` models are the same, as in an Opus session under the defaults, both runners run on one model and arena skips the judge, so the panel loses its model diversity. Arena still gives you independent attempts, but they come from one model, and Claude picks the base alone. In T3 Code with providers listed in `/orbit:setup`, the judge runs on another family, so arena keeps it unless every listed provider fails.
 
 Arena also runs inside architect for a large or contested design, and inside the feature flow when the code admits several valid shapes, such as two ways to handle errors or structure the tests.
 

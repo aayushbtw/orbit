@@ -290,7 +290,7 @@ function guideModels(theme) {
   const W = 1140, H = 560;
   const k = canvas(theme, W, H);
   const ask = (y, t, s, ss) => { const r = B({ x: 30, y, w: 500, h: 84, t, s, ss, kind: 'claude' }); k.box(r); return r; };
-  const pick = (y, t, s) => { const r = B({ x: 700, y, w: 410, h: 84, t, s, kind: 'agent' }); k.box(r); return r; };
+  const pick = (y, t, s, ss) => { const r = B({ x: 700, y, w: 410, h: 84, t, s, ss, kind: 'agent' }); k.box(r); return r; };
   const qs = [
     ask(30, 'Step picks its own?', 'model or effort, such as recall'),
     ask(170, 'Spawn names a role?', 'gitops, verifier, advisor, judgment, code, other-family', 15),
@@ -298,7 +298,7 @@ function guideModels(theme) {
   ];
   const picks = [
     pick(30, 'Keep it', "recall's haiku, trail reviewer"),
-    pick(170, "The role's row", 'an empty cell keeps the default'),
+    pick(170, "The role's row", 'empty cell falls through to user file, else default', 15),
     pick(310, "The work type's row", 'after <n> failed tries steps up'),
   ];
   const tier = B({ x: 30, y: 450, w: 500, h: 84, t: 'Tier by difficulty', s: 'hardest or prose: judgment, the rest: code', kind: 'agent' });
