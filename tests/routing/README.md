@@ -1,6 +1,8 @@
 # Routing eval
 
-Proves that a real `/orbit:start` run routes each delegate through the project's Models table and keeps effort at or below `high`. A lead that is only asked to list its calls can say the right thing and still spawn the wrong thing, so this eval grades the spawns that actually happen.
+This folder holds two evals. `run.mjs` grades delegate routing, and `flows.mjs` grades flow selection. Both share the lead launcher in `lead.mjs` and the hook in `hook.mjs`.
+
+`run.mjs` proves that a real `/orbit:start` run routes each delegate through the project's Models table and keeps effort at or below `high`. A lead that is only asked to list its calls can say the right thing and still spawn the wrong thing, so this eval grades the spawns that actually happen. The sections up to [Flow selection](#flow-selection) cover `run.mjs`.
 
 ## What it does
 
@@ -43,6 +45,8 @@ node tests/routing/run.mjs --host t3 --provider <id> --model <slug>
 
 It exits non-zero on any FAIL, and when `--grade` finds no `spawns.jsonl` or `run-*/` in the directory. Ctrl-C sends SIGTERM to every lead's process group, waits for each to exit, removes the scratch projects unless `--keep`, and exits 1. With `--runs N`, the runs go in parallel and the summary prints each check as k/N. Each run writes `stream.jsonl` (the lead's stream-json output), `spawns.jsonl` (the hook log), `settings.json` and `stderr.log` to `$TMPDIR/orbit-routing-<timestamp>/run-<i>/`. Under `--host t3`, `lane.json` and `stdout.log` take the place of `stream.jsonl` and `settings.json`.
 
+Before the lead starts, each run writes `meta.json`, `{ sha, dirty }`. `sha` is orbit's `HEAD`, and `dirty` is true when `git status --porcelain` in this repo prints anything. The summary prints `orbit <sha>`, with ` (dirty)` after it for a dirty tree. A live run also writes `summary.json` to the output root, with the SHA, host, model, run count and each check's pass count. `--grade` writes nothing. It prints `orbit unrecorded` for runs saved before `meta.json` existed.
+
 ## Run the lead in T3 Code
 
 `--host t3` runs each lead through the T3 lane harness (`tests/t3/lane.mjs`, see `tests/t3/README.md`) instead of `claude -p`:
@@ -59,9 +63,60 @@ A T3 run differs from a `claude -p` run in four ways, so compare the two with ca
 
 - No `--setting-sources`. Your user plugins, hooks and settings reach the lead.
 - No `--max-turns`. Only the lane's 23-minute timeout bounds the lead.
-- Orbit loads from this repo's committed `HEAD`. Uncommitted edits under `plugin/` do not reach the lead.
+- Orbit loads from this repo's committed `HEAD`. Uncommitted edits under `plugin/` do not reach the lead, so a run marked `(dirty)` still ran the recorded SHA.
 - `delegate_task` children run on the target the lead chose. The hook records and allows them but does not force them to a cheap model.
+
+## Flow selection
+
+`flows.mjs` proves which route `/orbit:start` picks for each of the 14 prompts in `flows.json`. The prompts come from the table in `docs/guide/01-start-a-task.md`, one per route, and each row names the route it expects in `expect`.
+
+Each route runs one lead on its own scratch project, the same project `run.mjs` builds, with at most 12 turns and a 12-minute timeout:
+
+1. `claude -p` expands the slash command, so the lead's first route decision is a `Skill` call. The hook matcher is `^(Skill|Agent|Task|.*delegate_task)$`.
+2. `hook.mjs` runs in `stop` mode. It logs every matched call. On the first route `Skill` call or spawn, it returns `continue: false`, so the lead stops after that turn.
+3. `orbit:start` and `orbit:rules` are not routes. The hook allows them and the grade skips them.
+4. The grade reads the lead's first route `Skill` call or spawn. A spawn grades as `spawn before Skill`. A run with neither grades as `no route`.
+
+The route id is `orbit:playbook <first word of args>` for a playbook call, such as `orbit:playbook bug`, and the bare skill name otherwise, such as `orbit:ship`. A row passes when its route id equals `expect`. A `--prompt` run has no `expect`, so it prints N/A.
+
+Each route writes to `$TMPDIR/orbit-flows-<timestamp>/<route>/`. `run.json` holds the prompt, `expect`, `sha`, `dirty`, host and model, and after the run the measured `turns`, `cost`, `cache_read` and `cache_creation`. `spawns.jsonl` is the hook log and `stream.jsonl` is the lead's output. A live run also writes `summary.json` at the root, with one row per route and the total cost.
+
+```sh
+node tests/routing/flows.mjs                              # all 14 routes, opus lead, 4 at a time
+node tests/routing/flows.mjs --route bug,ship             # only these routes
+node tests/routing/flows.mjs --prompt "/orbit:start ..."  # one ad hoc prompt, graded N/A
+node tests/routing/flows.mjs --model haiku                # opus, sonnet, fable or haiku
+node tests/routing/flows.mjs --jobs 2                     # leads at once, default 4
+node tests/routing/flows.mjs --keep                       # keep the scratch projects
+node tests/routing/flows.mjs --grade-only <dir>           # regrade every run.json under <dir>
+node tests/routing/flows.mjs --host t3 --route bug        # lead in a T3 Code thread
+```
+
+`--host t3` needs `--route` or `--prompt`. Each route is its own T3 lane thread, and a PR may run at most 4.
+
+It exits 0 only when every row meets its `want`, which defaults to PASS. N/A rows always meet it. A fixture's `run.json` carries `want`, so a fixture can require a FAIL. `fixtures/flows/` holds one real refactor capture graded two ways. `pass/` expects `orbit:playbook refactor`, and `fail/` expects `orbit:playbook feature` with `want: "FAIL"`. This command regrades both with no session:
+
+```sh
+node tests/routing/flows.mjs --grade-only tests/routing/fixtures
+```
+
+Only Claude leads are graded. Codex and Grok leads fire no `Skill` hook, so their route decision never reaches the log.
 
 ## Cost
 
-Each run is a real session of up to 25 minutes, and under `--host claude` up to 80 turns. The lead runs on the chosen model. Every `Agent` child is forced to haiku at low effort. This eval is not part of Check.
+Each `run.mjs` run is a real session of up to 25 minutes, and under `--host claude` up to 80 turns. The lead runs on the chosen model. Every `Agent` child is forced to haiku at low effort.
+
+A `flows.mjs` route measured on opus costs $0.17 to $0.18, so all 14 cost about $2.50. Each session writes about 20.6k tokens to the cache at the 1-hour TTL and reads about 24.1k. The cache write is the first user message, which holds the skills list, the SessionStart rules and the expanded start skill. Routes don't share it, so each route pays for it again.
+
+Neither eval is part of Check.
+
+## Release
+
+Before each orbit release, run both evals from a clean tree:
+
+```sh
+node tests/routing/run.mjs --runs 3
+node tests/routing/flows.mjs
+```
+
+Copy each `summary.json` into `docs/trails/`, as `routing-<version>.json` and `flows-<version>.json`, and commit both with the release. One run per lead can't tell a flake from a regression, so `run.mjs` runs 3. The stored summary ties each result to the SHA it ran.
