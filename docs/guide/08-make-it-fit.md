@@ -12,7 +12,7 @@ Without a block, orbit uses these defaults:
 - **Land.** `main`. Each change gets its own worktree off `origin/main`, and Shipping fast-forwards `main` to it.
 - **Review.** `/orbit:interrogate` runs before shipping when the design is contested.
 - **Parallel.** At most 4 agents that build, test or run the app run at once. Read-only agents don't count.
-- **Models.** No work types. Prose delegates, such as a docs unit, run on the `judgment` model, which is Opus. Code delegates tier by difficulty, so the hardest also run on the `judgment` model and the rest on the `code` model, which is your session model or `CLAUDE_CODE_SUBAGENT_MODEL` when it is set. The `judgment` model also runs one side of each two-model panel, autopilot owners, the `how` explainer and the `why` synthesizer. The `code` model also runs the other side, swarm workers and explorers. gitops runs on Sonnet at `low`, the verifier on your session model at `high`, and the advisor on Fable at `high`, each from its agent file.
+- **Models.** No work types. Prose delegates, such as a docs unit, run on the `judgment` model, which is Opus. Code delegates tier by difficulty, so the hardest also run on the `judgment` model and the rest on the `code` model, which is your session model or `CLAUDE_CODE_SUBAGENT_MODEL` when it is set. The `judgment` model also runs one side of each two-model panel, autopilot owners and the `how` explainer. The `code` model also runs the other side, swarm workers and `/orbit:recall`'s source investigators. gitops runs on Sonnet at `low`, the verifier on your session model at `high`, and the advisor on Fable at `high`, each from its agent file.
 
 The block lists only what differs. Start from [`templates/workflow-block.md`](../../templates/workflow-block.md), paste it into AGENTS.md, and delete every line that doesn't apply. The template says not to create a CLAUDE.md for it. Here is a block for a project that opens PRs, has two folders with their own conventions, and routes two kinds of work to their own models:
 
@@ -80,11 +80,11 @@ Before each spawn, Claude asks three questions in order. The first yes decides t
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../diagrams/guide-models-dark.svg">
-  <img alt="Claude asks three questions before each spawn, with a fallback when every answer is no. If the step picks its own model or effort, such as recall's haiku or multi-phase-plan's live lanes at high, the spawn keeps it. Else, if the spawn names a role (gitops, verifier, advisor, judgment or code), it takes that role's row, where an empty cell keeps the default. Else, if a work type fits the poteto-agent unit, it takes that work type's row, which can step up after n failed tries. Else Claude tiers by difficulty, with the hardest change or prose on judgment and the rest on code, and when the project has work types the reply names the unit so you can add a row." src="../diagrams/guide-models-light.svg">
+  <img alt="Claude asks three questions before each spawn, with a fallback when every answer is no. If the step picks its own model or effort, such as recall's haiku or the trail reviewer's tier, the spawn keeps it. Else, if the spawn names a role (gitops, verifier, advisor, judgment or code), it takes that role's row, where an empty cell keeps the default. Else, if a work type fits the poteto-agent unit, it takes that work type's row, which can step up after n failed tries. Else Claude tiers by difficulty, with the hardest change or prose on judgment and the rest on code, and when the project has work types the reply names the unit so you can add a row." src="../diagrams/guide-models-light.svg">
 </picture>
 
-1. A step that names its own model or effort keeps it. `/orbit:recall` runs on Haiku, the trail reviewer in `show-me-your-work` picks its own tier, and multi-phase-plan's live lanes run at `high`.
-2. A spawn that names a role takes that role's row. gitops, the verifier and the advisor each take their own row. Interrogate's adversaries, arena's runners, swarm workers, autopilot owners, multi-phase-plan explorers, and the subagents of `/orbit:how`, `/orbit:why` and `/orbit:reflect` each name `judgment` or `code`. A skill that spawns with `model: "opus"` names the `judgment` role, so a `judgment` row reaches it. A two-model panel never takes a work type, so its sides follow only the `judgment` and `code` rows. Comment Sicko takes no row, so it keeps its agent file's effort and runs on the default subagent model.
+1. A step that names its own model or effort keeps it. `/orbit:recall` runs on Haiku, and the trail reviewer in `show-me-your-work` picks its own tier.
+2. A spawn that names a role takes that role's row. gitops, the verifier and the advisor each take their own row. Interrogate's adversaries, arena's runners, swarm workers, autopilot owners, the `/orbit:how` explainer and `/orbit:recall`'s source investigators each name `judgment` or `code`. A skill that spawns with `model: "opus"` names the `judgment` role, so a `judgment` row reaches it. A two-model panel never takes a work type, so its sides follow only the `judgment` and `code` rows. Comment Sicko takes no row, so it keeps its agent file's effort and runs on the default subagent model.
 3. Any other `orbit:poteto-agent` spawn takes the work type whose Use for fits its unit. That covers code delegates and their fix rounds.
 4. A unit that no work type fits runs as it does with no table. A prose unit, such as docs or a written explanation, runs on the `judgment` model. A code unit tiers by difficulty. The hardest change, such as a cross-cutting design or a subtle algorithm, runs on the `judgment` model, and the rest run on the `code` model. When a `code` row sets that model to `sonnet` or `haiku`, only trivial mechanical edits go to it, and the rest run on your session model. When the project has work types, Claude's reply names each unit that none of them fit, so you can add a row.
 
@@ -116,7 +116,7 @@ In an Opus session under the defaults, the `judgment` and `code` models are both
 | `code` | | sonnet | |
 ```
 
-The row moves every spawn on the `code` role to Sonnet. That covers one side of each panel, swarm workers and `how` explorers. In an Opus session, the same row makes all of those spawns cheaper. The row doesn't move gitops, the verifier, the advisor or Comment Sicko.
+The row moves every spawn on the `code` role to Sonnet. That covers one side of each panel, swarm workers and `/orbit:recall`'s source investigators. In an Opus session, the same row makes all of those spawns cheaper. The row doesn't move gitops, the verifier, the advisor or Comment Sicko.
 
 Code delegates are the catch. Without a guard, a Sonnet `code` row would also move every code delegate that no work type fits and isn't the hardest, so most of your code would be written on Sonnet. Orbit guards it. When the `code` row is `sonnet` or `haiku`, only trivial mechanical edits go to it, and every other code delegate runs on your session model. To put more code on Sonnet on purpose, add a work type for that kind of work.
 
@@ -183,7 +183,7 @@ Run it with no argument and it reads recent commits, reverts, and review comment
 /orbit:reflect
 ```
 
-It reads the transcript of the current session and its subagents, and no other session. Three reviewers read it in parallel, one each for judgment, tooling, and divergent ideas, and a synthesizer sorts their findings into Accepted, Rejected, and Backlog.
+It reads the transcript of the current session and its subagents, and no other session. Claude reads it for corrections, discovered commands, skipped checks and skills that should have fired, keeps only lessons that will still hold in six months, and sorts them into Accepted, Rejected, and Backlog.
 
 Accepted items are skill edits. Reflect shows you the full list and waits for your approval, because a skill edit changes every future session that uses that skill. You pick the subset to apply. It edits a plugin skill in that plugin's source repo, never the cached copy that an update would overwrite.
 

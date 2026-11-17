@@ -55,7 +55,7 @@ Under a Codex lead, a spawn on the `code` role passes `model: "gpt-6.1-sol"` to 
 
 - `plugin/rules.md` writes paths as `<orbit-plugin>`. The SessionStart hook rewrites that token to the plugin folder, so a Claude lead sees full paths. The `rules` skill tells another lead that the token is the folder two levels above the skill's base directory.
 - Skill bodies use paths relative to their own folder, because Grok leaves `${CLAUDE_PLUGIN_ROOT}` unexpanded and names each skill's base directory.
-- Some skills, such as `playbook` and `how`, name `${CLAUDE_SKILL_DIR}`. The adapter tells another lead that it is the skill's own base directory.
+- Some skills, such as `playbook` and `worktree-cleanup`, name `${CLAUDE_SKILL_DIR}`. The adapter tells another lead that it is the skill's own base directory.
 - `poteto-agent` and `gitops` keep `${CLAUDE_PLUGIN_ROOT}`. Claude Code and Grok both expand it in agent bodies. When another provider leaves it unexpanded, gitops uses the plugin folder its brief names, and with none it reports that and stops.
 
 ## What is verified

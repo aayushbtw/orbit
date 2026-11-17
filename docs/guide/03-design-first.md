@@ -1,35 +1,25 @@
 # Design before code
 
-The first shape a model reaches for is rarely the best one, and once code grows around it, that shape is expensive to change. The commands here run several attempts or reviewers in parallel before the first real line, so you choose a design from several options instead of polishing the only one on the table.
+The first shape a model reaches for is rarely the best one, and once code grows around it, that shape is expensive to change. Most commands here run several attempts or reviewers in parallel before the first real line, so you choose a design from several options instead of polishing the only one on the table.
 
 ## Write the shape as types first
 
-`/orbit:architect` writes the design as code that does not run yet. You get types, function signatures, class shapes and module boundaries, with `not implemented` bodies and pseudocode where the logic will go. A reader can trace data from input to output through the signatures alone, and changing a boundary at this stage touches only signatures.
+`/orbit:architect` settles the shape before any code. It sketches two different shapes for the change (types, signatures, module boundaries) and picks the one where each piece of state has one owner, each task has one way to do it, and callers need to know least.
 
 ```text
 /orbit:architect a retry policy for the upload client. callers should never see backoff or attempt counts.
 ```
 
-Architect works in five phases:
+Architect works in three steps:
 
-1. **Ground.** It runs `/orbit:how` over every system the new code touches. When the design moves ownership or layering, it also runs `/orbit:why`, so the reason for the current shape becomes a constraint instead of a guess. Only greenfield work skips this phase.
-2. **Sketch.** It runs `/orbit:arena` with two design runners, one on the `judgment` model and one on the `code` model. By default those are Opus and your session model. Each runner writes the caller's usage and a few real call sites first, then derives the types from them. Architect requires at least two structurally different candidates, even when the first looks good enough.
-3. **Agree.** This phase is off by default, and the synthesized design goes straight to implementation. Ask for a checkpoint to review it first.
-4. **Implement.** The code must match the sketch's signatures. Inside a flow, a poteto-agent fills in the bodies against it. If a function needs a parameter the sketch did not plan for, Claude treats that as a question about the sketch, not as friction to absorb.
-5. **Scrap.** A pattern of friction means the design is wrong. The same workaround in unrelated places, types that compile only with `any` or casts, or a lock for state the sketch called unshared all count. Architect throws the sketch out, designs a smaller one, and runs the sketch phase again.
+1. **Trace.** It traces every system the change touches. Inside a flow, it reuses an earlier `/orbit:how` answer when that answer covers those systems.
+2. **Sketch.** It sketches two different shapes. For a large or contested design, it runs `/orbit:arena` instead of sketching alone.
+3. **Pick.** It keeps the shape whose callers need to know least. If workarounds repeat once the build starts, it redesigns instead of patching.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../diagrams/guide-architect-dark.svg">
-  <img alt="Architect's phases left to right. Ground runs how and why. Sketch runs arena with two runners. Agree is a checkpoint you ask for, and a dashed arc skips it because it is off by default. Implement fills in the bodies. A pattern of friction sends Implement to Scrap, which throws the sketch out and loops back to Sketch with a smaller one." src="../diagrams/guide-architect-light.svg">
+  <img alt="Architect's steps left to right. Trace covers every system the change touches. Sketch draws two different shapes. Pick keeps the one callers need to know least about, and the build follows it. A dashed arc from Trace to Build runs arena instead for a large or contested design. A dashed loop from Build back to Sketch redesigns when workarounds repeat." src="../diagrams/guide-architect-light.svg">
 </picture>
-
-To see the design before any code fills it in, say so in the prompt:
-
-```text
-/orbit:architect with checkpoint. move session storage out of the request handler into its own module.
-```
-
-The design rationale goes in the PR body when your project lands by PR. Otherwise it goes in the reply.
 
 You rarely need to type architect. Orbit's rules send any code that crosses a function boundary through it, and step 2 of the feature flow runs it.
 
@@ -59,7 +49,7 @@ Arena returns one artifact and a short note that names the base, the judge's ver
 
 When the `judgment` and `code` models are the same, as in an Opus session under the defaults, both runners run on one model and arena skips the judge, so the panel loses its model diversity. Arena still gives you independent attempts, but they come from one model, and Claude picks the base alone.
 
-Arena also runs inside architect, and inside the feature flow when the code admits several valid shapes, such as two ways to handle errors or structure the tests.
+Arena also runs inside architect for a large or contested design, and inside the feature flow when the code admits several valid shapes, such as two ways to handle errors or structure the tests.
 
 ## Spread wide work with `/orbit:swarm`
 
@@ -127,6 +117,6 @@ The prototype is throwaway. It never runs Opening a PR and never ships. The chos
 
 ## Let the defaults do most of it
 
-Most of this runs without you typing a command. Architect runs for code that crosses a function boundary. Arena runs inside architect and on code with several valid shapes. Interrogate runs on a contested design. A question you could settle by running something becomes a prototype, not a question to you. Type a command yourself when you want more scrutiny than the default, or a fan-out the flow would not start on its own. The full command list is in [the usage reference](../usage.md#understand-code).
+Most of this runs without you typing a command. Architect runs for code that crosses a function boundary. Arena runs inside architect for a large or contested design, and on code with several valid shapes. Interrogate runs on a contested design. A question you could settle by running something becomes a prototype, not a question to you. Type a command yourself when you want more scrutiny than the default, or a fan-out the flow would not start on its own. The full command list is in [the usage reference](../usage.md#understand-code).
 
 Next: [Build a change](./04-build-a-change.md)

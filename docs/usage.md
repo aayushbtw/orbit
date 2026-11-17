@@ -75,8 +75,8 @@ When each runs:
 - poteto-agent and comment-sicko run only inside the flow you start. The verifier runs only inside Shipping (at task end or `/orbit:ship`), orchestrate, autopilot-full and autopilot-stack.
 - The advisor runs at the plan gate, or when you ask for it.
 - As in pstack, the rest is opt-in. `/orbit:setup`, `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill` and `/orbit:maintain-verification-skill` run only when you type them.
-- `/orbit:how` and `/orbit:why` run when you type them, when Claude matches a question to them, and inside the investigate and bug flows and `no-comments`.
-- `/orbit:arena` runs when you type it, inside `/orbit:architect`, and in the feature flow on a choice with several valid shapes.
+- `/orbit:how` and `/orbit:why` run when you type them and when Claude matches a question to them. `/orbit:how` also runs before a nontrivial change, and `/orbit:why` inside the investigate and bug flows and `no-comments`.
+- `/orbit:arena` runs when you type it, inside `/orbit:architect` for a large or contested design, and in the feature flow on a choice with several valid shapes.
 - `show-me-your-work` also runs when Claude sees long or unattended work.
 - `/orbit:worktree-cleanup` runs when you type it, or when Claude matches "clean up worktrees" or "free up space".
 

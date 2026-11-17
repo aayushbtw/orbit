@@ -10,7 +10,7 @@ You don't need a special command to ask about code. Give `/orbit:start` a questi
 /orbit:start how does a job get from the queue to a worker, and what happens when the worker crashes mid-job?
 ```
 
-The `investigate` flow is read-only. It makes no commit and opens no PR. It routes the question through `/orbit:how`, and also through `/orbit:why` when the question is about motivation. The answer comes back in five sections, and Claude drops any that don't apply:
+The `investigate` flow is read-only. It makes no commit and opens no PR. It traces the code the question is about, and also routes through `/orbit:why` when the question is about motivation. The answer comes back in five sections, and Claude drops any that don't apply:
 
 - Overview
 - Key Concepts
@@ -44,11 +44,9 @@ Ask this kind of question before a risky change, not after. A wrong premise foun
 /orbit:how the plugin loader
 ```
 
-`/orbit:how` first sizes the question. A narrow question, such as one function or one small module, gets one explainer that reads and writes the answer in a single pass. A subsystem that spans many files gets split into 2 to 4 angles. A separate explorer reads each angle in parallel, and one explainer then joins their findings into the answer. The explorers don't edit files, and Claude checks `git status` after they return.
+`/orbit:how` spawns one read-only explainer that explores and writes the answer in a single pass. It doesn't edit files, and Claude checks `git status` after it returns. The bulk reading stays in that subagent, so your session gets the finished explanation instead of every file.
 
-The split keeps the bulk reading in subagents. Each explorer reads only its slice, the explainer works from their findings, and your session gets the finished explanation instead of every file. When the size is in doubt, it takes the single-explainer path.
-
-You don't always have to type it. Claude runs `/orbit:how` on its own when your question matches it, inside the `investigate` and `bug` flows, and before a nontrivial change or an architecture decision.
+You don't always have to type it. Claude runs `/orbit:how` on its own when your question matches it, and before a nontrivial change or an architecture decision.
 
 ## Learn why code is the way it is with /orbit:why
 
@@ -58,11 +56,9 @@ You don't always have to type it. Claude runs `/orbit:how` on its own when your 
 /orbit:why the 45 second timeout in src/sync/client.ts
 ```
 
-`/orbit:why` first builds a code anchor from git. It runs `git blame` and `git log` on the target, finds the PR numbers in the commits, and reads those PR bodies and reviews with `gh`. Then it spawns one investigator per kind of evidence, in parallel. Source control is always one of them. Each other kind gets an investigator when a connected MCP covers it. Those kinds are an issue tracker, long-form docs, team chat, infrastructure observability, error tracking, and a product analytics warehouse. The more of them you connect, the more places `/orbit:why` can look.
+`/orbit:why` answers from the record, not the code. It reads the commits and PR discussions that introduced the target and each later change, and other sources, such as a connected tracker or chat, when that trail is thin.
 
-The answer keeps what the evidence shows apart from what is a guess. It has separate sections for what was found, what can be reasonably inferred, competing hypotheses, and what is still unknown. Sources Consulted lists every investigator, including the ones that found nothing and the ones skipped with the reason. A search that came back empty is still a result, so you can see where it looked.
-
-The investigators trace back past the latest commit, because the current shape is often many older decisions stacked up. Trusting only the most recent change is the mistake `/orbit:why` is built to avoid. When your question leads into a change, the answer also ends with a Preserve, Change, Avoid and Risk list to plan it with.
+The answer cites what the authors wrote, marks Claude's own inferences as inferences, and says what the record does not answer.
 
 ## Find where you left off with /orbit:recall
 
@@ -72,7 +68,7 @@ The investigators trace back past the latest commit, because the current shape i
 /orbit:recall the billing webhook retries
 ```
 
-By default it looks at the last 7 days of chats in the current project, and it states that scope back to you before it searches. Subagents read the matching chats, so the raw transcripts stay out of your session. When the topic names a feature, file or bug, it also asks the `/orbit:why` investigators what has been tried, what got reverted, and what users still report. It then checks each PR, branch and ticket it found against live `git` and `gh` state.
+By default it looks at the last 7 days of chats in the current project, and it states that scope back to you before it searches. Subagents read the matching chats, so the raw transcripts stay out of your session. When the topic names a feature, file or bug, it also starts one investigator per source, such as git history, the issue tracker and error tracking, and asks what has been tried, what got reverted, and what users still report. It then checks each PR, branch and ticket it found against live `git` and `gh` state.
 
 You get a short brief. It has a capsule of where things stand, one line per thread with a status tag such as `[open PR #N]` or `[reverted #N]`, the recurring problems, and the single best next move. `/orbit:recall` runs only when you type it.
 

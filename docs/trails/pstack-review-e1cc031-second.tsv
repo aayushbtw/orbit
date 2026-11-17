@@ -1,0 +1,156 @@
+file	hunk	original verdict	second verdict	agree	reason
+pstack/agents/poteto-agent.md	1	drop	drop	yes	Reason 3 holds: claude-opus-5-5-xhigh-fast is above the high ceiling and -fast; orbit's frontmatter keeps effort: medium (plugin/agents/poteto-agent.md:5), matching coding on Opus 5.5 medium. Edit 6 records it. Upstream's own adapter hunk (claude-code.md hunk 2) says the slug must never reach the API, so nothing is lost.
+pstack/skills/show-me-your-work/SKILL.md	1a	drop	drop	yes	Reason 2 holds: show-me-your-work edit 4 and pstack-differences.md:156 keep a different-Claude-tier fallback with no roster, which is not another vendor. In effect it is a take-edited, since edit 4 now rewrites the upstream phrase back. Gap: no pstack-differences line records this drop yet (file unchanged).
+pstack/skills/show-me-your-work/SKILL.md	1b	take	take	yes	Orbit's edit 4 already drops the whole Subagents sentence, so the file has no change (SKILL.md:69).
+pstack/skills/swarm/SKILL.md	1a	take-edited	take-edited	yes	The claude-opus-5-5-high-fast default never ships (swarm/SKILL.md:23 = code model). Phase B's Agent + isolation:"worktree" + start-next-as-one-finishes is the pre-existing T3-2/T3-4 clash (orchestrationInstructions.ts:9), not from this hunk.
+pstack/skills/swarm/SKILL.md	1b	take-edited	take-edited	yes	Edit line reworded only; no text change.
+pstack/skills/figure-it-out/SKILL.md	1	take	take	yes	Phase B edit replaces the sentence; no text change.
+pstack/agents/comment-sicko.md	1	take-edited	take-edited	yes	Outcome fine (comment-sicko.md:29 git log -L / blame). But edit 2's reason "can't spawn the investigators why needs" is now false: why spawns none at e1cc031 (plugin/skills/why/SKILL.md:10). Reword the reason or take upstream's "trace ... run /why".
+pstack/skills/no-comments/SKILL.md	1a	take	take	yes	No-op under orbit's step 1 edit.
+pstack/skills/no-comments/SKILL.md	1b	take-edited	take-edited	yes	no-comments/SKILL.md:21 reads "trace their symbol or run /orbit:why". Parent-run, so no T3 subagent issue.
+pstack/skills/recall/SKILL.md	1a	take	take	yes	Shared-record sentence no longer names why.
+pstack/skills/recall/SKILL.md	1b	take	take	yes	No-op under orbit's step 3 edit (model: haiku, not Fable, so the Fable-low rule does not apply).
+pstack/skills/recall/SKILL.md	1c	take-edited	take-edited	yes	recall/SKILL.md:22 spawns same-provider general-purpose Agents on code, with no worktree, so OI:9 native is correct (orchestrationInstructions.ts:9).
+pstack/skills/automate-me/SKILL.md	1	take	take	yes	No-op under orbit's step 1 edit.
+pstack/skills/poteto-mode/playbooks/session-pickup.md	1	take	take	yes	No-op; orbit drops the Subagents sentence.
+pstack/skills/poteto-mode/playbooks/worktree-cleanup.md	1	take	take	yes	No-op; orbit drops the Subagents sentence.
+pstack/skills/how/SKILL.md	1b	take-edited	take-edited	yes	One Explore Agent on judgment, a native same-provider spawn, so OI:9 is fine.
+pstack/skills/how/SKILL.md	1c	take-edited	take-edited	yes	Take is right: upstream removed the how-explorer slug that orbit's roster seat stood in for (pstack-differences.md:150 "seats pstack puts on a grok slug"). The reason "moot" understates it, though, because recorded behavior is lost. pstack-differences.md:148 still lists six roster seats including "the second how explorer". It must drop to four (with reflect).
+pstack/skills/why/SKILL.md	1b	take	take	yes	No spawns remain.
+pstack/skills/why/SKILL.md	1d	take	take	yes	Investigators gone. pstack-differences.md:147 and :150 still describe why investigators and stale grok defaults, so update the doc.
+pstack/skills/reflect/SKILL.md	1c	take-edited	take-edited	yes	Replay verified against e1cc031: session-id lookup and two separate commands.
+pstack/skills/reflect/SKILL.md	1d	take	take	yes	The lead applies the lenses itself, with no subagents. Same doc gap as how 1c: reflect's Tooling seat is still listed at pstack-differences.md:148 and :150 ("recorded degradation").
+pstack/skills/architect/SKILL.md	1a	take-edited	take-edited	yes	The appended reuse-/orbit:how sentence is now near-dead: feature, refactor and bug no longer run /orbit:how (feature.md step 1 "Trace the affected subsystem"). Only rules.md:10 still produces that output. Harmless.
+pstack/skills/architect/SKILL.md	1d	take-edited	take-edited	yes	Lead sketches; /orbit:arena only for large or contested designs. Fewer worktree subagents, so this reduces T3-2 exposure.
+pstack/skills/arena/SKILL.md	1a	drop	drop	yes	Reasons 2 and 3 hold: the -fast slug and the Gemini default conflict with Models roles and Panel seats (pstack-differences.md:142). Fable high does not breach "Fable never low", so that is not the reason. Gap: no pstack-differences line yet, and :129/:167 still quote de8ee15 grok defaults.
+pstack/skills/arena/SKILL.md	1b	take-edited	take-edited	yes	arena/SKILL.md:18 keeps two runners on judgment and code.
+pstack/skills/arena/SKILL.md	1c	take	take	yes	Wording only.
+pstack/skills/arena/SKILL.md	1d	take-edited	take-edited	yes	Effort sentence kept. Step 4's Agent + isolation:"worktree" is the pre-existing T3-2 clash (orchestrationInstructions.ts:9), not from this hunk.
+pstack/skills/arena/SKILL.md	2a	drop	drop	yes	Same as 1a: the judge is the roster seat, else the first of judgment or code that differs (arena/SKILL.md:29).
+pstack/skills/arena/SKILL.md	2b	take-edited	take-edited	yes	Orbit's judge text already skips on rejection.
+pstack/skills/arena/SKILL.md	2c	take	take	yes	"While you read in Phase D, the judge scores" works under T3: an async roster seat via delegate_task, or a foreground Agent issued in the same message as the reads.
+pstack/skills/poteto-mode/playbooks/babysit.md	1a	take-edited	take-edited	yes	Stance line plus /orbit:ship routing (edit 13). Replay verified.
+pstack/skills/poteto-mode/playbooks/babysit.md	1b	take-edited	take-edited	yes	Ship-by-default start, Land main stop and Delegate gate kept (babysit.md:5).
+pstack/skills/poteto-mode/playbooks/babysit.md	1c	take	take	yes	Background mode is cut. No plugin file references it any more (rg).
+pstack/skills/poteto-mode/playbooks/babysit.md	1d	take-edited	take-edited	yes	Minor: the reason says the watcher sentences are kept, but "The watcher covers GitHub only." was also dropped. Harmless under gh-only (edit 2).
+pstack/skills/poteto-mode/playbooks/babysit.md	1e	take-edited	take-edited	yes	The replay is faithful to edit 14, but the resulting babysit.md:9 still breaks runtimeInstructions.ts:3 ("For PR waits, no sleep, loops, gh --watch, Monitor or ScheduleWakeup"): the bare watcher polls up to --timeout 120, and the absent branch uses /loop dynamic (ScheduleWakeup). This is known clash T3-6/T3-8, not introduced by P13, and P6 owns it. Note: plan.md:408 and :410 cite "babysit step 6", which no longer exists. The anchor is now the **Host watcher.** bullet.
+pstack/skills/poteto-mode/playbooks/babysit.md	1f	take	take	yes	The frontier rule survives in the stance line.
+pstack/skills/poteto-mode/playbooks/babysit.md	1g	take	take	yes	The owner-rebase exception moved to autopilot-full.md:8.
+pstack/skills/poteto-mode/playbooks/babysit.md	1h	take	take	yes	Dropping "Rearm the watcher after every push wave" matches runtimeInstructions.ts:3 ("Links and watches persist across pushes").
+pstack/skills/poteto-mode/playbooks/babysit.md	1i	take-edited	take-edited	yes	gitops reply plus Write-tool payload kept (babysit.md:12).
+pstack/skills/poteto-mode/playbooks/babysit.md	1j	take-edited	take-edited	yes	Upstream also deleted the "stop the watcher at READY" lines, so babysit.md now says nothing about ending a watch. Pre-existing gap T3-9: runtimeInstructions.ts:3 "Before handback, call unwatch_pull_request". P6 owns it (plan.md:412).
+pstack/skills/poteto-mode/playbooks/opening-a-pr.md	1a	take-edited	take-edited	yes	Worktree gate kept.
+pstack/skills/poteto-mode/playbooks/opening-a-pr.md	1b	take-edited	take-edited	yes	gitops commits, fixup and autosquash kept.
+pstack/skills/poteto-mode/playbooks/opening-a-pr.md	1c	take-edited	take-edited	yes	/orbit:no-comments kept. It is needed by autopilot-full.md:10.
+pstack/skills/poteto-mode/playbooks/opening-a-pr.md	1d	take	take	yes	rules.md:17-18 still trigger unslop and technical-writing for PR and commit prose.
+pstack/skills/poteto-mode/playbooks/opening-a-pr.md	1f	take	take	yes	gitops.md:21-26 keeps the per-heading guidance.
+pstack/skills/poteto-mode/playbooks/opening-a-pr.md	1g	take-edited	take-edited	yes	The link step moved into the ready sentence.
+pstack/skills/poteto-mode/playbooks/opening-a-pr.md	1h	take-edited	take-edited	yes	opening-a-pr.md:11 links only after gh pr create. runtimeInstructions.ts:3 asks for a link on create, take-over or push, for every stack layer, using link_pull_requests for several. This is pre-existing clash T3-19, not from the hunk.
+pstack/skills/poteto-mode/playbooks/opening-a-pr.md	1i	take-edited	take-edited	yes	Land main stack form kept. autopilot-stack's Size-and-stacks pointer updated.
+pstack/skills/poteto-mode/playbooks/opening-a-pr.md	1j	take-edited	take-edited	yes	"an autopilot owner babysits" (opening-a-pr.md:13) keeps pre-existing clash T3-5: runtimeInstructions.ts:3 says "Delegated children never watch, even if the brief says babysit". A native owner never sees watch_pull_request, so it falls to /loop. P6 owns it (plan.md:82).
+pstack/skills/poteto-mode/playbooks/shipping.md	1	take-edited	take-edited	yes	shipping.md:15 still leads with "under /loop", which is pre-existing T3-8 (runtimeInstructions.ts:3). The edit 17 pointer to **Host watcher** resolves.
+pstack/skills/poteto-mode/playbooks/autopilot-full.md	1	take-edited	take-edited	yes	A pinned-lease owner push through gitops is fine. A child that pushes owes a link and the RI:3 last line (runtimeInstructions.ts:3), a pre-existing gap for P6/P7.
+pstack/skills/poteto-mode/playbooks/autopilot-stack.md	1	take	take	yes	Pointer fixed; edits 23 and 24 replayed.
+pstack/skills/poteto-mode/playbooks/bug-fix.md	1c	take-edited	take-edited	yes	Delegation pointer replayed.
+pstack/skills/poteto-mode/playbooks/bug-fix.md	1d	take-edited	take-edited	yes	No xhigh or -fast slug in plugin/ (rg across plugin/ minus docs and rules).
+pstack/skills/poteto-mode/playbooks/feature.md	1c	take-edited	take-edited	yes	As bug-fix 1c.
+pstack/skills/poteto-mode/playbooks/feature.md	1d	take-edited	take-edited	yes	Slug never ships.
+pstack/skills/poteto-mode/playbooks/hillclimb.md	1b	take-edited	take-edited	yes	As bug-fix 1c. The edit 11 wake rule is untouched.
+pstack/skills/poteto-mode/playbooks/hillclimb.md	1c	take-edited	take-edited	yes	Slug never ships.
+pstack/skills/poteto-mode/playbooks/perf-issue.md	2a	take-edited	take-edited	yes	As bug-fix 1c.
+pstack/skills/poteto-mode/playbooks/perf-issue.md	2b	take-edited	take-edited	yes	Slug never ships.
+pstack/skills/poteto-mode/playbooks/refactoring.md	1c	take-edited	take-edited	yes	As bug-fix 1c.
+pstack/skills/poteto-mode/playbooks/refactoring.md	1d	take-edited	take-edited	yes	Slug never ships.
+pstack/skills/poteto-mode/playbooks/multi-phase-plan.md	1b	take	take	yes	The explorer subagents are gone.
+pstack/skills/poteto-mode/playbooks/multi-phase-plan.md	1c	take-edited	take-edited	yes	TMPDIR plan path replayed (multi-phase-plan.md:9). Replay verified.
+pstack/skills/poteto-mode/playbooks/multi-phase-plan.md	1g	take-edited	take-edited	yes	Ship-by-default pick replayed (:11).
+pstack/skills/poteto-mode/playbooks/multi-phase-plan.md	1h	take	take	yes	The ten swarm lanes are gone.
+pstack/skills/poteto-mode/playbooks/multi-phase-plan.md	1i	take	take	yes	Removes clash T3-23 (orchestrationInstructions.ts:48 device tools). Feed this to the clash re-run.
+pstack/skills/poteto-mode/playbooks/multi-phase-plan.md	1j	take	take	yes	Removes clash T3-13 (orchestrationInstructions.ts:14, threads only on user ask). Feed this to the clash re-run.
+pstack/skills/poteto-mode/playbooks/orchestrate.md	1	drop	drop	yes	Fits reason 2: edits lines 26 and 28, plus start/playbook routing 14 flows (playbook/SKILL.md:4,75), and removing a flow is an operator product call. Provisional until the root rules on it. orchestrate.md still carries T3-2/T3-4/T3-15 for P7. Gap: no pstack-differences line yet.
+harness/pstack/claude-code/skills/poteto-mode/scripts/check-plan.mjs	1	take	take	yes	Take is right: the plan skeleton it lints was taken out (multi-phase-plan 1j), and it would fail plans written to the new 5-step spec. But it silently deletes P1's recorded edits (HEAD skills.json playbook-scripts edits 4, 5 and 7, from #40) with no record. pstack-differences.md:363 still says plans pass the vendored check-plan.mjs, and docs/guide/06-hands-off.md:58 still says the flow lints with it.
+harness/pstack/claude-code/skills/poteto-mode/scripts/check-plan.test.ts	1	take	take	yes	Same as check-plan.mjs.
+harness/pstack/claude-code/skills/poteto-mode/scripts/package.json	1	take	take	yes	The test script drops check-plan.test.ts. The P1 devDependency pins (edit 4) still hold.
+pstack/skills/poteto-mode/SKILL.md	1	drop	drop	yes	Unvendored. Orbit's counterpart is rules.md plus playbook/SKILL.md. The worker.md kickoff trigger depends on the dropped worker.md.
+pstack/skills/poteto-mode/SKILL.md	2	drop	drop	yes	Reason 3 holds: Opus xhigh-fast defaults break the high ceiling and coding at Opus medium.
+pstack/skills/poteto-mode/worker.md	1	drop	drop	yes	Unvendored. "Add no check, gate, sign-off or review round" would cut the Plan gate and the pre-land verifier.
+pstack/skills/setup-pstack/SKILL.md	1	drop	drop	yes	Unvendored. /orbit:setup is orbit-written, and the new xhigh defaults are above the ceiling.
+pstack/skills/setup-pstack/SKILL.md	2	drop	drop	yes	Same.
+pstack/docs/harness/claude-code.md	1	drop	drop	yes	Unvendored. The stated xhigh reason applies only to hunk 4. This hunk (todolist wording) is harmless and has no orbit counterpart.
+pstack/docs/harness/claude-code.md	2	drop	drop	yes	Unvendored. Its rule (pass model and effort on every poteto-agent spawn so the Cursor slug never reaches the API) is already met because orbit dropped the model line (row 8).
+pstack/docs/harness/claude-code.md	3	drop	drop	yes	Unvendored. The non-Claude slug row now names gemini, with no orbit counterpart.
+pstack/docs/harness/claude-code.md	4	drop	drop	yes	Unvendored. The default slugs map to opus xhigh, above the ceiling.
+pstack/skills/poteto-mode/playbooks/autonomous-run.md	1	drop	drop	yes	Skip-listed in skills.json playbook-playbooks, so orbit does not ship it.
+pstack/skills/poteto-mode/playbooks/eval.md	1	drop	drop	yes	Skip-listed in skills.json playbook-playbooks, so orbit does not ship it.
+pstack/skills/poteto-mode/playbooks/runtime-forensics.md	1	drop	drop	yes	Skip-listed in skills.json playbook-playbooks, so orbit does not ship it.
+pstack/skills/poteto-mode/playbooks/trace-forensics.md	1	drop	drop	yes	Skip-listed in skills.json playbook-playbooks, so orbit does not ship it.
+pstack/.cursor-plugin/plugin.json	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/README.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/README.md	2	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/README.md	3	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/README.md	4	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/README.md	5	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/README.md	6	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/README.md	7	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/automations/benny/FOR_AGENTS.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/automations/benny/FOR_AGENTS.md	2	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/automations/benny/skills/reproduce-and-fix-issues/SKILL.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/automations/benny/skills/setup-benny/SKILL.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/automations/benny/skills/triage-issue-reports/SKILL.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/01-setup.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/01-setup.md	2	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/02-poteto-mode.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/02-poteto-mode.md	2	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/02-poteto-mode.md	3	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/02-poteto-mode.md	4	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/02-poteto-mode.md	5	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/03-understand.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/03-understand.md	2	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/03-understand.md	3	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/04-design.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/04-design.md	2	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/04-design.md	3	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/04-design.md	4	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/05-build-and-clean.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/06-verify-and-ship.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/06-verify-and-ship.md	2	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/07-overnight.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/07-overnight.md	2	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/09-make-it-yours.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/docs/guide/10-recipes-and-pitfalls.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/plugin.json	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/blast-radius/SKILL.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/poteto-help/SKILL.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/poteto-help/SKILL.md	2	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/poteto-help/SKILL.md	3	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/poteto-mode/scripts/check-plan.mjs	1	drop	drop	yes	Duplicate of the harness scripts path orbit vendors; reviewed in those rows.
+pstack/skills/poteto-mode/scripts/check-plan.test.ts	1	drop	drop	yes	Duplicate of the harness scripts path orbit vendors; reviewed in those rows.
+pstack/skills/poteto-mode/scripts/package.json	1	drop	drop	yes	Duplicate of the harness scripts path orbit vendors; reviewed in those rows.
+pstack/skills/sharpen/SKILL.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/backends/mermaid.ts	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/backends/mermaid.ts	2	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/backends/mermaid.ts	3	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/backends/mermaid.ts	4	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/run.ts	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/run.ts	2	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/run.ts	3	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/run.ts	4	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/test/chart.test.ts	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/test/chart.test.ts	2	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/test/cli.test.ts	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/test/cli.test.ts	2	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/test/cli.test.ts	3	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/test/cli.test.ts	4	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/test/cli.test.ts	5	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/test/cli.test.ts	6	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/test/cli.test.ts	7	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/test/corpus.test.ts	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/test/corpus/Login/chart.mmd	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/test/drawn.ts	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/test/labels.ts	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/test/labels.ts	2	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/test/labels.ts	3	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/test/render.test.ts	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/statechart/scripts/test/render.test.ts	2	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+pstack/skills/teach/SKILL.md	1	drop	drop	yes	Unvendored, so out of scope (no orbit file to change).
+harness/pstack/** (99 files outside poteto-mode/scripts)	all	drop	drop	yes	Generated mirror of reviewed pstack/ files; orbit vendors only the poteto-mode/scripts path.
