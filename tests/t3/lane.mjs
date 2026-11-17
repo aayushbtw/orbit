@@ -343,8 +343,12 @@ const cleanup = () => cleaning ??= (async () => {
 
 // The CLI reaches the server's /mcp tools with an mcp-client session but has no organize command, so the lane does the same.
 async function organize(calls) {
-  const issued = JSON.parse(run(cli, ['auth', 'session', 'issue', '--subject', 'mcp-client', '--scope', 'orchestration:read', '--scope', 'orchestration:operate', '--ttl', '5m', '--label', title, '--json']));
+  let sessionId;
   try {
+    const issue = run(cli, ['auth', 'session', 'issue', '--subject', 'mcp-client', '--scope', 'orchestration:read', '--scope', 'orchestration:operate', '--ttl', '5m', '--label', title, '--json']);
+    // Read before JSON.parse, so output that fails to parse still gets its session revoked.
+    sessionId = issue.match(/"sessionId"\s*:\s*"([^"]+)"/)?.[1];
+    const issued = JSON.parse(issue);
     const { origin } = JSON.parse(readFileSync(join(process.env.T3CODE_HOME ?? join(homedir(), '.t3'), 'userdata', 'server-runtime.json'), 'utf8'));
     let session = null;
     let n = 0;
@@ -374,7 +378,7 @@ async function organize(calls) {
       }
     }
   } finally {
-    tryRun(cli, ['auth', 'session', 'revoke', issued.sessionId]);
+    if (sessionId) tryRun(cli, ['auth', 'session', 'revoke', sessionId]);
   }
 }
 
@@ -391,11 +395,12 @@ async function endThreads() {
   }
 }
 
-async function end() {
+let ending;
+const end = () => ending ??= (async () => {
   save();
   await endThreads();
   process.exit(result.exit);
-}
+})();
 
 let live = null;
 for (const signal of ['SIGINT', 'SIGTERM']) {

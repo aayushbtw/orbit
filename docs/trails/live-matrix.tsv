@@ -49,4 +49,4 @@ parallel-units	codex	gpt-6.1-sol	083c25e	1	completed	PASS	own-checkout-children=
 parallel-units	grok	grok-4.7-build-fast	34fdaae	0	not rerun							
 autopilot-owners	claude	claude-opus-5-5	34fdaae	1	completed	PASS	owners-are-children=PASS no-worktree-agent=PASS no-shell-worktree=PASS tick-bound=PASS	51956	233	3	2026-11-17	
 autopilot-owners	codex	gpt-6.1-sol	cfc882d	1	completed	PASS	owners-are-children=PASS no-worktree-agent=N/A no-shell-worktree=PASS tick-bound=PASS	21266	120	3	2026-11-17	both owners carry clientRequestId; typo-fix owners at reasoningEffort low, which the rule allows for an edit that writes no logic
-autopilot-owners	grok	grok-4.7-build-fast	34fdaae	0	not rerun
+autopilot-owners	grok	grok-4.7-build-fast	34fdaae	0	not rerun							

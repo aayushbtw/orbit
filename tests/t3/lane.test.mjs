@@ -73,15 +73,18 @@ async function killLauncher(argv, env) {
   await until(() => !alive(worker), `worker ${worker} exited`);
 }
 
-async function t3Server() {
+async function t3Server(onCall) {
   const organized = [];
   const server = createServer((req, res) => {
     let body = '';
     req.on('data', (d) => { body += d; });
-    req.on('end', () => {
+    req.on('end', async () => {
       const { id, method, params } = JSON.parse(body);
       if (req.headers.authorization !== 'Bearer stub-token') { res.writeHead(401).end(); return; }
-      if (method === 'tools/call') organized.push(params.arguments);
+      if (method === 'tools/call') {
+        organized.push(params.arguments);
+        await onCall();
+      }
       if (id === undefined) { res.writeHead(202).end(); return; }
       res.writeHead(200, { 'content-type': 'application/json', 'mcp-session-id': 'stub-mcp' });
       res.end(JSON.stringify({ jsonrpc: '2.0', id, result: method === 'tools/call' ? { content: [], structuredContent: {} } : {} }));
@@ -91,18 +94,26 @@ async function t3Server() {
   return { organized, origin: `http://127.0.0.1:${server.address().port}`, close: () => server.close() };
 }
 
-function runLane(argv, env) {
+function runLane(argv, env, started = () => {}) {
   return new Promise((done) => {
     const lane = spawn(process.execPath, argv, { env, stdio: ['ignore', 'ignore', 'pipe'] });
+    started(lane);
     let stderr = '';
     lane.stderr.on('data', (d) => { stderr += d; });
     lane.on('close', (status) => done({ status, stderr }));
   });
 }
 
-async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0, kill = false, inspect = () => null } = {}) {
+async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0, kill = false, interruptOrganize = false, inspect = () => null } = {}) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'orbit-lane-test-')));
-  const t3 = await t3Server();
+  let launcherErr = '';
+  let interrupted = false;
+  const t3 = await t3Server(async () => {
+    if (!interruptOrganize || interrupted) return;
+    interrupted = true;
+    process.kill(Number(launcherErr.match(/worker (\d+)/)[1]), 'SIGTERM');
+    await sleep(500);
+  });
   try {
     mkdirSync(join(root, 't3home', 'userdata'), { recursive: true });
     writeFileSync(join(root, 't3home', 'userdata', 'server-runtime.json'), JSON.stringify({ origin: t3.origin }));
@@ -125,7 +136,7 @@ async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0,
     if (kill) {
       await killLauncher(argv, env);
     } else {
-      const lane = await runLane(argv, env);
+      const lane = await runLane(argv, env, (child) => child.stderr.on('data', (d) => { launcherErr += d; }));
       assert.equal(lane.status, exit, lane.stderr);
     }
     const out = JSON.parse(readFileSync(join(root, 'out.json'), 'utf8'));
@@ -256,6 +267,12 @@ test('a lane whose thread waits on its own question archives the thread', async 
   });
   assert.equal(out.status, 'waiting');
   assert.deepEqual(organized, [{ threadId: 'stub-thread', action: 'archive' }]);
+  assert.equal(auth, 'issue mcp-client\nrevoke stub-session\n');
+});
+
+test('a signal while the lane settles its thread issues and revokes one session', async () => {
+  const { organized, auth } = await withProject([], 'true', { interruptOrganize: true });
+  assert.deepEqual(organized, [{ threadId: 'stub-thread', action: 'settle' }]);
   assert.equal(auth, 'issue mcp-client\nrevoke stub-session\n');
 });
 
