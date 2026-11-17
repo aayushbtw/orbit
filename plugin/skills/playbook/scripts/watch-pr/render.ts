@@ -163,11 +163,28 @@ export function renderPretty(verdict: T.WatcherVerdict): string {
     case "BLOCKER":
       return `${renderBlocker(verdict.blocker)}\n`;
     case "READY": {
-      const detail =
-        verdict.scope.kind === "single" && verdict.scope.pr.kind === "ready-pr"
-          ? `\nmergeStateStatus=${verdict.scope.pr.proof.ci.github.mergeStateStatus}\nreviewDecision=${verdict.scope.pr.proof.gate.reviewDecision}${verdict.scope.pr.proof.gate.reviewDecision === "REVIEW_REQUIRED" ? `\nrequestedReviewers=${verdict.scope.pr.proof.gate.requestedReviewers.join(",")}` : ""}\nisDraft=${verdict.scope.pr.proof.gate.draft === "draft-allowed"}${verdict.scope.pr.proof.gate.draft === "draft-allowed" ? "\nnote=draft allowed (--allow-draft); leave draft \u2014 do not mark ready" : ""}`
-          : "";
-      return `READY: no merge conflicts, no unresolved review threads, no failing or pending checks${detail}\n`;
+      const lines = [
+        "READY: no merge conflicts, no unresolved review threads, no failing or pending checks",
+      ];
+      if (verdict.scope.kind === "single" && verdict.scope.pr.kind === "ready-pr") {
+        const { ci, gate } = verdict.scope.pr.proof;
+        lines.push(
+          `mergeStateStatus=${ci.github.mergeStateStatus}`,
+          `reviewDecision=${gate.reviewDecision}`
+        );
+        if (gate.reviewDecision === "REVIEW_REQUIRED")
+          lines.push(
+            gate.requestedReviewers.length === 0
+              ? "note=review required, none requested"
+              : `requestedReviewers=${gate.requestedReviewers.join(",")}`
+          );
+        lines.push(`isDraft=${gate.draft === "draft-allowed"}`);
+        if (gate.draft === "draft-allowed")
+          lines.push(
+            "note=draft allowed (--allow-draft); leave draft \u2014 do not mark ready"
+          );
+      }
+      return `${lines.join("\n")}\n`;
     }
     case "COMPLETE":
       return `COMPLETE: queued stack merged (${verdict.queue.length} PR${verdict.queue.length === 1 ? "" : "s"})\n`;
@@ -175,7 +192,7 @@ export function renderPretty(verdict: T.WatcherVerdict): string {
       if (verdict.reason.kind === "pending-checks")
         return `TIMEOUT: checks still pending; frontier=#${verdict.reason.frontier.number}\n`;
       if (verdict.reason.kind === "status-unavailable")
-        return "TIMEOUT: GitHub status remained unavailable\n";
+        return `TIMEOUT: GitHub status remained unavailable${verdict.reason.pr === null ? "" : `; pr=#${verdict.reason.pr.number}`}\n`;
       return `TIMEOUT: queued stack still has ${verdict.reason.unmergedCount} PR${verdict.reason.unmergedCount === 1 ? "" : "s"} unmerged; frontier=#${verdict.reason.frontier.number}; waiting on ${frontierWaitText(verdict.reason.waitingOn)}\n`;
     default: {
       const exhaustive: never = verdict;

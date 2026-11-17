@@ -229,11 +229,21 @@ export type QueryFailure =
       readonly detail: string;
     }
   | {
+      readonly kind: "not-found";
+      readonly retryable: false;
+      readonly detail: string;
+      readonly code: number;
+    }
+  | {
       readonly kind: "invalid-context-url";
       readonly retryable: false;
       readonly detail: string;
       readonly rawValue: string;
     };
+export type RetryableQueryFailure = Extract<
+  QueryFailure,
+  { readonly retryable: true }
+>;
 /**
  * `frontier` names the lowest unmerged PR that is actually waiting, and
  * `pending` is that PR's checks only. Pooling every row's pending under the
@@ -352,7 +362,11 @@ export type TimeoutVerdict = Terminal<"TIMEOUT", 5> & {
         readonly frontier: PrContext;
         readonly pending: NonEmpty<PendingCheck>;
       }
-    | { readonly kind: "status-unavailable"; readonly failure: QueryFailure }
+    | {
+        readonly kind: "status-unavailable";
+        readonly pr: PrContext | null;
+        readonly failure: RetryableQueryFailure;
+      }
     | {
         readonly kind: "queued-stack";
         readonly frontier: PrContext;
