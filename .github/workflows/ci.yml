@@ -1,0 +1,9 @@
+name: ci
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ok
