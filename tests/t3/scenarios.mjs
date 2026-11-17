@@ -15,6 +15,50 @@ const seat = (kind) => ({ role: 'review', mode: 'async', runtimeMode: ABSENT, ta
 const verifierSeat = (kind) => ({ isolation: 'worktree', target: { providerInstanceId: otherFamily(kind) } });
 const shortInterval = { schedule: { type: 'interval', everyMs: (ms) => !(ms >= 60_000) } };
 
+// orbit's own AGENTS.md sets other-family to inherit, so a lead there rightly keeps every seat native.
+const seatProject = {
+  name: 'seats',
+  commits: [
+    {
+      message: 'chore: add the workflow block',
+      files: {
+        'AGENTS.md': `## Workflow
+
+- Check: \`node --test\`.
+- Land: \`main\`.
+
+### Models
+
+| Task | Use for | Model | Effort |
+| --- | --- | --- | --- |
+| other-family | panel seat on another family | codex, claudeAgent | |
+| verifier | runs the change before it lands | other-family | |
+`,
+      },
+    },
+    {
+      message: 'feat: add median',
+      files: {
+        'median.mjs': `export function median(values) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+`,
+        'median.test.mjs': `import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { median } from './median.mjs';
+
+test('median of odd and even lengths', () => {
+  assert.equal(median([3, 1, 2]), 2);
+  assert.equal(median([4, 1, 3, 2]), 2.5);
+});
+`,
+      },
+    },
+  ],
+};
+
 export const SCENARIOS = {
   probe: {
     prompt: 'Probe. Make no edits and load no skills. Run pwd, then list every skill whose name starts with orbit: with its description quoted verbatim.',
@@ -64,7 +108,8 @@ export const SCENARIOS = {
     },
   },
   'verifier-seat': {
-    prompt: '/orbit:ship the last commit on this branch, verifier step only. Do not land.',
+    prompt: '/orbit:ship the commit that adds median.mjs, verifier step only. Do not land.',
+    project: seatProject,
     checks: {
       'verifier-ran': {
         claude: { anyOf: [some(t3('delegate_task'), verifierSeat('claude'), 'lead'), some('Agent', { subagent_type: 'orbit:verifier' }, 'lead')] },
@@ -79,7 +124,8 @@ export const SCENARIOS = {
     },
   },
   'review-seat': {
-    prompt: '/orbit:interrogate Scope: tests/t3/lane.mjs at HEAD. Intent: cleanup never deletes a branch that existed before the lane started. Make no edits.',
+    prompt: '/orbit:interrogate Scope: the commit that adds median.mjs, against its parent. Intent: median(values) returns the median of an array of numbers. Make no edits.',
+    project: seatProject,
     checks: {
       'seat-other-family': {
         claude: some(t3('delegate_task'), seat('claude'), 'lead'),
@@ -87,9 +133,9 @@ export const SCENARIOS = {
         grok: some('use_tool', viaUseTool('delegate_task', seat('grok')), 'lead'),
       },
       'request-id': {
-        claude: some(t3('delegate_task'), { clientRequestId: /./ }, 'lead'),
-        codex: some(t3('delegate_task'), { clientRequestId: /./ }, 'lead'),
-        grok: some('use_tool', viaUseTool('delegate_task', { clientRequestId: /./ }), 'lead'),
+        claude: some(t3('delegate_task'), { ...seat('claude'), clientRequestId: /./ }, 'lead'),
+        codex: some(t3('delegate_task'), { ...seat('codex'), clientRequestId: /./ }, 'lead'),
+        grok: some('use_tool', viaUseTool('delegate_task', { ...seat('grok'), clientRequestId: /./ }), 'lead'),
       },
     },
   },

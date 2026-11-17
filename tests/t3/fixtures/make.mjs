@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
@@ -60,8 +60,13 @@ for (const { checks } of Object.values(SCENARIOS)) {
   for (const { na: _, ...cells } of Object.values(checks)) Object.values(cells).forEach(collectExpect);
 }
 
-const unhome = (text) => text.split(tmpdir()).join('$TMPDIR').replace(/\/private\/tmp\/[^/\s]+\/[^/\s]+/g, '$TMPDIR')
-  .split(homedir()).join('~').split(homedir().replace(/[^a-zA-Z0-9]/g, '-')).join('~');
+// Session folders spell a path URL-encoded (Grok) or with dashes (Claude); a one-segment path like /tmp would match too much that way.
+const spellings = (path) => path.split('/').length > 2 ? [path, encodeURIComponent(path), path.replace(/[^a-zA-Z0-9]/g, '-')] : [path];
+const SCRUB = [
+  ...[realpathSync(tmpdir()), tmpdir()].flatMap(spellings).map((from) => [from, '$TMPDIR']),
+  ...spellings(homedir()).map((from) => [from, '~']),
+];
+const unhome = (text) => SCRUB.reduce((s, [from, to]) => s.split(from).join(to), text.replace(/\/private\/tmp\/[^/\s]+\/[^/\s]+/g, '$TMPDIR'));
 const cut = (text) => {
   const s = unhome(text);
   return s.length > 200 ? `${s.slice(0, 60)}…[${s.length} chars]` : s;

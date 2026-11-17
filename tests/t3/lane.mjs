@@ -1,10 +1,11 @@
 import { spawn, execFileSync } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
-import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, renameSync, rmdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { createHash, randomBytes } from 'node:crypto';
+import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, realpathSync, renameSync, rmdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { clash, deleteLaneBranches, listBranches } from './branches.mjs';
 import { SCENARIOS } from './scenarios.mjs';
 import { HOMES, READERS, kindOf } from './sessions.mjs';
 
@@ -92,19 +93,6 @@ try {
   fail(gitError(e));
 }
 
-const commonDir = (dir) => run('git', ['-C', dir, 'rev-parse', '--path-format=absolute', '--git-common-dir']);
-const orbitCommon = commonDir(ORBIT);
-let base;
-try {
-  result.project = opts.project ? resolve(opts.project) : dirname(orbitCommon);
-  base = commonDir(result.project) === orbitCommon
-    ? result.head.sha
-    : run('git', ['-C', result.project, 'rev-parse', '--verify', 'HEAD^{commit}']);
-} catch (e) {
-  fail(`--project ${result.project}: ${gitError(e)}`);
-}
-const project = result.project;
-
 let locked = false;
 async function withLock(fn) {
   if (locked) return fn();
@@ -125,6 +113,37 @@ async function withLock(fn) {
   locked = true;
   try { return await fn(); } finally { rmSync(LOCK, { recursive: true, force: true }); locked = false; }
 }
+
+function scratchProject({ name, commits }) {
+  const hash = createHash('sha256').update(JSON.stringify(commits)).digest('hex').slice(0, 8);
+  const dir = join(realpathSync(tmpdir()), `orbit-lane-project-${name}-${hash}`);
+  if (!existsSync(dir)) {
+    const build = `${dir}.${id}`;
+    run('git', ['init', '-q', '-b', 'main', build]);
+    for (const { message, files } of commits) {
+      for (const [path, text] of Object.entries(files)) writeFileSync(join(build, path), text);
+      run('git', ['-C', build, 'add', '-A']);
+      run('git', ['-C', build, '-c', 'user.name=orbit lane', '-c', 'user.email=lane@orbit.invalid', '-c', 'commit.gpgsign=false', 'commit', '-q', '-m', message]);
+    }
+    renameSync(build, dir);
+  }
+  if (tryRun(cli, ['thread', 'list', '--project', dir, '--json']) === null) run(cli, ['project', 'add', dir, '--title', basename(dir)]);
+  return dir;
+}
+
+const commonDir = (dir) => run('git', ['-C', dir, 'rev-parse', '--path-format=absolute', '--git-common-dir']);
+const orbitCommon = commonDir(ORBIT);
+const fixture = opts.project ? null : SCENARIOS[slug]?.project;
+let base;
+try {
+  result.project = opts.project ? resolve(opts.project) : fixture ? await withLock(() => scratchProject(fixture)) : dirname(orbitCommon);
+  base = commonDir(result.project) === orbitCommon
+    ? result.head.sha
+    : run('git', ['-C', result.project, 'rev-parse', '--verify', 'HEAD^{commit}']);
+} catch (e) {
+  fail(fixture ? `scenario project ${fixture.name}: ${gitError(e)}` : `--project ${result.project}: ${gitError(e)}`);
+}
+const project = result.project;
 
 const unregister = (name) => {
   tryRun('claude', ['plugin', 'uninstall', `orbit@${name}`, '--scope', 'user']);
@@ -350,7 +369,10 @@ async function lane() {
     result.laneCommit = buildLaneCommit();
   }
 
-  const preexisting = new Set(run('git', ['-C', project, 'for-each-ref', '--format=%(refname)', 'refs/heads']).split('\n'));
+  const before = listBranches(project);
+  const laneRef = `refs/heads/${branch}`;
+  const taken = clash(before, laneRef);
+  if (taken) throw new Error(`the lane branch ${branch} matches the existing ${taken} when case is ignored, so the lane will not create it; run the lane again for a new id`);
   undo.push(() => {
     if (!result.thread) {
       try { recordThreads(); } catch (e) { console.error(`cleanup: ${gitError(e)}`); }
@@ -364,9 +386,7 @@ async function lane() {
       // T3 keeps one folder per project for its worktrees and never removes it.
       try { rmdirSync(dirname(path)); } catch {}
     }
-    for (const ref of new Set([`refs/heads/${branch}`, checkedOut])) {
-      if (ref && !preexisting.has(ref)) tryRun('git', ['-C', project, 'branch', '-D', ref.slice('refs/heads/'.length)]);
-    }
+    deleteLaneBranches(project, { before, createdAt: result.laneCommit, refs: [laneRef, checkedOut] });
     tryRun('git', ['-C', project, 'worktree', 'prune']);
   });
   if (result.status === 'interrupted') return;
