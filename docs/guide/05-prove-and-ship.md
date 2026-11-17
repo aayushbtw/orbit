@@ -28,6 +28,8 @@ What opens next depends on the Land line in your project's Workflow block. Leave
 
 Shipping spawns one `verifier` per PR, fresh, in its own worktree. It has Read, Grep, Glob, Bash and Write. It uses Write only for scratch scripts under `/tmp`. It has no Edit, so it can't patch the change and then pass its own patch. It commits nothing. In T3 Code it also has two named T3 read tools, which it loads when the host serves them. It never uses T3's preview browser, which the user shares, and drives a UI through the control skill's own headless browser.
 
+In T3 Code, when the `verifier` row's Model is `other-family` or `other-family, inherit`, the verifier runs as a seat on a provider you listed in `/orbit:setup`. When every listed provider fails, Claude asks you before the native verifier runs, or holds the PR when no one can answer. It runs the native verifier without asking only when you said yes to setup's second question, which writes `other-family, inherit` in that row.
+
 Its brief holds the head SHA, the parent SHA, a paragraph on what the change is for, the changed paths, and the skill that drives your app. It checks out the head, runs the change, then checks out the parent and runs the same steps again. That second run is what turns an observation into evidence. "The export prints 40 rows" says little. "The parent printed 52 rows and the head prints 40, and the 12 missing rows are older than `--since`" says the change did its job.
 
 It answers with one of three verdicts:
@@ -96,6 +98,8 @@ address the review comments on PR 214, nothing else
 ```
 
 It clears one PR at a time. It clears conflicts first, then review threads, then CI. A conflict is the one blocker it reports instead of fixing, because a babysit never rebases or force-pushes. A flake earns one fresh build, and only failures in the diff's own code get a commit. Babysit stops at merge-ready and never merges. Under Land `main` there is no PR to watch, so it says so and stops.
+
+In `drive` mode, the wait depends on the host. Outside T3 Code, Claude runs orbit's PR watcher under `/loop` until the watcher reports a result. In T3 Code, Claude reads the PR once with the watcher's `--once` flag. While checks or a review are pending, it calls `watch_pull_request` and ends its turn. T3 wakes the thread on failed checks, passed required checks, a new comment or review, or a conflict. It never wakes the thread on a merge. Claude unwatches each PR before it hands back to you. A subagent never watches a PR. It reads the PR once after each push and ends its report with the PR's URL, head SHA, and the state of its checks and reviews.
 
 ## Read bot reviews with suspicion
 

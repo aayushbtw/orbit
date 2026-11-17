@@ -40,14 +40,14 @@ Each phase has one job:
 
 - **Frame.** Every candidate gets the same prompt, so the attempts differ only in how they answer it. Claude also writes a rubric of 3 to 6 gradeable criteria for picking the winner. The candidates see only the task.
 - **Fan out.** By default two `orbit:poteto-agent` runners work in parallel, one on the `judgment` model and one on the `code` model. More runners join when the task covers several design directions. Each writes to its own worktree where possible, else its own scratch directory, so the attempts stay independent.
-- **Cross-judge.** One read-only judge scores every candidate on each criterion and recommends a base. It never runs on Claude's own model, so it takes the first of the `judgment` and `code` models that differs. When both are Claude's model, arena skips the judge and says so.
+- **Cross-judge.** One read-only judge scores every candidate on each criterion and recommends a base. It never runs on Claude's own model, so it takes the first of the `judgment` and `code` models that differs. When both are Claude's model, arena skips the judge and says so. In T3 Code with providers listed in `/orbit:setup`, the judge is a seat on another family instead ([Give the panels a second family in T3 Code](./08-make-it-fit.md#give-the-panels-a-second-family-in-t3-code)).
 - **Pick.** Claude reads every candidate end to end and scores each one against the rubric itself. When a judge ran, Claude compares its pick with the judge's, since a disagreement means one of them is biased or the rubric was unclear. The base is the one a future maintainer can extend with the least risk of breaking its invariants.
 - **Graft.** Claude walks each losing candidate for the one or two things worth porting. Claude folds the grafts in by hand instead of pasting them, so the result still reads as one design. Inside a flow, a fresh poteto-agent does the folding. If the candidates agree on one shape, no graft is needed. If they disagree wildly, the frame was too loose, and arena reframes and runs again.
 - **Verify.** The merged result gets the same proof as any other change.
 
 Arena returns one artifact and a short note that names the base, the judge's verdict or that arena skipped the judge, each graft and its source, and what was rejected.
 
-When the `judgment` and `code` models are the same, as in an Opus session under the defaults, both runners run on one model and arena skips the judge, so the panel loses its model diversity. Arena still gives you independent attempts, but they come from one model, and Claude picks the base alone.
+When the `judgment` and `code` models are the same, as in an Opus session under the defaults, both runners run on one model and arena skips the judge, so the panel loses its model diversity. Arena still gives you independent attempts, but they come from one model, and Claude picks the base alone. In T3 Code with providers listed in `/orbit:setup`, the judge runs on another family, so arena keeps it.
 
 Arena also runs inside architect for a large or contested design, and inside the feature flow when the code admits several valid shapes, such as two ways to handle errors or structure the tests.
 
@@ -69,7 +69,7 @@ Each worker runs in its own worktree on the `code` model and reports `PASS`, `IS
 
 ## Invite a hostile review with `/orbit:interrogate`
 
-A design that looks sound to the model that wrote it can still hide a flaw that model is blind to. `/orbit:interrogate` sends two adversaries to break the change, one on the `judgment` model and one on the `code` model, each in its own worktree. When those two models are the same, as in an Opus session under the defaults, both adversaries run on one model.
+A design that looks sound to the model that wrote it can still hide a flaw that model is blind to. `/orbit:interrogate` sends two adversaries to break the change, one on the `judgment` model and one on the `code` model, each in its own worktree. When those two models are the same, as in an Opus session under the defaults, both adversaries run on one model. In T3 Code with providers listed in `/orbit:setup`, a seat on another family replaces the `code` adversary. When every listed provider fails, the `judgment` adversary runs alone.
 
 ```text
 /orbit:interrogate this branch. i think the new cache could serve one user's data to another.

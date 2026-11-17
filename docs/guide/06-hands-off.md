@@ -25,7 +25,7 @@ That routes to the `autopilot-full` flow. Its root agent writes no code. It spaw
 
 Once the owner reports merge-ready and its head is verified, a fresh owner takes the merge round. It checks that the code still matches what the verifiers passed, merges, and reads the PR back. Green CI alone never authorizes a merge.
 
-On your go, the root arms `/loop 1h`. Each tick reads every owner's trail, starts verification at each new `code-ready` head, and replaces any agent that has stalled. You keep your gates. Items you name as yours stop at merge-ready. Asking the root to state its plan is not a go. Say stop, and every owner gets an order to make no more writes and reports where it stands.
+On your go, the root arms `/loop 1h`. In T3 Code, that loop is a `schedule_task` bound to the root's thread. Each tick reads every owner's trail, starts verification at each new `code-ready` head, and replaces any agent that has stalled. You keep your gates. Items you name as yours stop at merge-ready. Asking the root to state its plan is not a go. Say stop, and every owner gets an order to make no more writes and reports where it stands.
 
 ## Stack it when you want to land it yourself
 
@@ -83,7 +83,7 @@ The `evidence` cell always points at something you can open, such as a commit, a
 
 The trail is append-only. A wrong call gets a new row that supersedes it, so the history stays honest. It stays out of git unless a reviewer needs it to trust the result. figure-it-out runs usually commit theirs.
 
-Before handing back, Claude checks each row against the session's transcript. Then a reviewer on a different Claude model reads the trail and flags weak evidence and skipped checks. The reply ends with an Attention section. Read that first, then follow its pointers into the rows. For a quick status instead, run `/orbit:ketchup`.
+Before handing back, Claude checks each row against the session's transcript. Then a reviewer on another model reads the trail and flags weak evidence and skipped checks. In T3 Code with providers listed in `/orbit:setup`, the reviewer is the seat on another family. Otherwise it runs on Sonnet when Claude runs on Opus, else on Opus. The reply ends with an Attention section. When every listed provider fails, that section opens with `not reviewed: seat on another family skipped`. Read the Attention section first, then follow its pointers into the rows. For a quick status instead, run `/orbit:ketchup`.
 
 ## Stop cleanly, pick up later
 
