@@ -11,10 +11,11 @@ if git -C "$repo" diff --quiet "$merge_base" HEAD -- plugin/; then
 	exit 0
 fi
 
-base_version=$(git -C "$repo" show "$merge_base:$manifest" | jq -r .version)
+base_version=$(git -C "$repo" show "$base_ref:$manifest" | jq -r .version)
 head_version=$(git -C "$repo" show "HEAD:$manifest" | jq -r .version)
-if [ "$base_version" = "$head_version" ]; then
-	echo "FAIL: plugin/ changed since $base_ref but version stayed $head_version; bump version in $manifest"
+highest=$(printf '%s\n%s\n' "$base_version" "$head_version" | sort -V | tail -n 1)
+if [ "$base_version" = "$head_version" ] || [ "$highest" != "$head_version" ]; then
+	echo "FAIL: plugin/ changed since $base_ref but version $head_version is not above $base_ref's $base_version; bump version in $manifest"
 	exit 1
 fi
 echo "ok: plugin/ changed since $base_ref and version moved $base_version -> $head_version"
