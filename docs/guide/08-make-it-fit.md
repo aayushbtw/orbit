@@ -14,7 +14,7 @@ Without a block, orbit uses these defaults:
 - **Parallel.** At most 4 agents that build, test or run the app run at once. Read-only agents don't count.
 - **Models.** No work types. Prose delegates, such as a docs unit, run on the `judgment` model, which is Opus. Code delegates tier by difficulty, so the hardest also run on the `judgment` model and the rest on the `code` model, which is your session model or `CLAUDE_CODE_SUBAGENT_MODEL` when it is set. The `judgment` model also runs one side of each two-model panel, autopilot owners and the `how` explainer. The `code` model also runs the other side, swarm workers and `/orbit:recall`'s source investigators. gitops runs on Sonnet at `low`, the verifier on your session model at `high`, and the advisor on Fable at `high`, each from its agent file.
 
-The block lists only what differs. Start from [`templates/workflow-block.md`](../../templates/workflow-block.md), paste it into AGENTS.md, and delete every line that doesn't apply. The template says not to create a CLAUDE.md for it. Here is a block for a project that opens PRs, has two folders with their own conventions, and routes two kinds of work to their own models:
+The block lists only what differs. Start from [`plugin/skills/setup/workflow-block.md`](../../plugin/skills/setup/workflow-block.md), paste it into AGENTS.md, and delete every line that doesn't apply. The template says not to create a CLAUDE.md for it. Here is a block for a project that opens PRs, has two folders with their own conventions, and routes two kinds of work to their own models:
 
 ```md
 ## Workflow

@@ -1,44 +1,92 @@
 ---
 name: setup
-description: Choose which T3 Code providers fill orbit's panel seat on another family. Reads the providers T3 has enabled and writes a user-wide Models file that a project's AGENTS.md rows override. Use for /orbit:setup.
+description: Check what orbit needs on this machine and in this project, on any host. Reports missing tools, the gh login, the git repo, the Workflow block, install drift and what Codex and Grok load. Under T3 Code it also chooses which providers fill orbit's panel seat on another family and writes a user-wide Models file that a project's AGENTS.md rows override. Use for /orbit:setup.
 disable-model-invocation: true
 ---
 
 # Setup orbit
 
-Write `~/.claude/rules/orbit-models.md`, a user-wide Models table that sets which providers fill the `other-family` seat (`../../rules.md` Workflow Defaults, Models). Claude Code loads every `.md` file in `~/.claude/rules/` into each new session. A lead on another provider reads the file through the `rules` skill. A cell in a project's AGENTS.md Models table wins over the same cell in this file.
+Setup checks orbit's prerequisites on any host, so a missing tool shows up here and not mid-flow. Setup changes none of your files or settings without a yes. Host CLIs it calls (gh, grok, codex, vp shims) may write their own logs or caches. Setup collects each change it could make as an offer and asks about all of them in one question at the end. A headless run stops at its first question, so it still prints every finding.
+
+Under T3 Code, setup also writes `~/.claude/rules/orbit-models.md`, a user-wide Models table that sets which providers fill the `other-family` seat (`../../rules.md` Workflow Defaults, Models). Claude Code loads every `.md` file in `~/.claude/rules/` into each new session. A lead on another provider reads the file through the `rules` skill. A cell in a project's AGENTS.md Models table wins over the same cell in this file.
+
+| Step | Runs on | May change, after a yes in step 5 |
+| --- | --- | --- |
+| 1. Doctor | Any host | Nothing |
+| 2. Install and host loads | Any host | Orbit's install, the Codex link, the always-on rules line |
+| 3. Workflow block | Any host, in a git repo | The project's AGENTS.md |
+| 4. T3 providers | T3 Code only | `~/.claude/rules/orbit-models.md` |
+| 5. One question | Any host, when step 2, 3 or 4 made an offer | Nothing |
+| 6. Apply and confirm | Any host | Only what the user said yes to |
 
 ## Steps
 
-### 1. Detect providers
+### 1. Doctor
 
-Read `../../docs/harness/t3-code.md`, sections Probe and Seats on another family. A lead that is not Claude Code also reads Lead on another provider. Probe `orchestrator_capabilities` as Probe says. If it is absent, tell the user that setup needs T3 Code, and stop.
+Run `"${CLAUDE_SKILL_DIR}/scripts/doctor.sh"` as one Bash call from the project folder. A lead that is not Claude Code runs `scripts/doctor.sh` from this skill's base directory. The script writes no files, needs no network and always exits 0.
 
-Call `orchestrator_capabilities`. The session's family is the `driverKind` of the provider whose `providerInstanceId` equals `inheritedProviderInstanceId`. A provider whose `constraints` hold "Provider instance is disabled." is disabled. Never write a provider or model you have not seen in a result.
+Relay its lines to the user nearly verbatim. Each missing tool comes with its install command. Keep going whatever is missing. The later steps use these lines:
 
-### 2. Load current state
+- `install:` and `install drift:` lines, for step 2.
+- `codex:` and `grok:` lines, for step 2.
+- `ok git repo`, `not in a git repo`, `workflow block:` and `vpr:` lines, for step 3.
 
-If `~/.claude/rules/orbit-models.md` exists, read it. Its `other-family` row is the current choice. Keep every other row as it is.
+### 2. Install and host loads
 
-### 3. Show the providers and ask
+**Install.** With `no orbit install record`, orbit runs from a folder Claude Code did not install, such as `--plugin-dir`. Say so and skip the drift and Codex link checks. Never link Codex to the folder orbit runs from. With `install drift`, the record and the local marketplace copy differ, so Claude Code children and Codex can run different versions. Offer `claude plugin marketplace update <marketplace>`, then `claude plugin update orbit@<marketplace>`. When the record matches, say it matches the local marketplace copy. Upstream may still be ahead. When the `claude` command is not found, print the update commands for the user instead of offering them.
 
-Show every provider in `providers`, in listed order, with its `providerInstanceId` and `driverKind`:
+**codex.** Codex does not read Claude Code's install record. It loads orbit through one symlink to the folder Claude Code installs orbit from, the target the doctor names as the local marketplace copy. Run this case when the doctor printed `codex: found`. If the target has no `skills/rules/SKILL.md`, say so and skip the rest of the codex case.
+
+- Link. If it is missing, offer to create it with the command the doctor printed. If it is a link to the target, say that the link is in place. If it is a link to another folder or a real folder, report what it is and print the commands that replace it with a link to the target, for the user to run. Do not touch it.
+- Duplicates. Codex skips a second link to a folder it already loads. If the doctor says `~/.agents/skills/orbit` resolves somewhere other than the target, or `codex plugin list` shows orbit installed, tell the user that Codex then loads two copies of orbit. Print the command that removes the extra copy, `rm ~/.agents/skills/orbit` or `codex plugin remove orbit@<codex marketplace>`, for the user to run. Do not run it.
+
+**grok.** Run this case when the doctor printed `grok: found`. Grok loads the record's `installPath`, so the record's version is the one Grok runs.
+
+- Shadowing install. Run `grok plugin list --json`. If it lists `orbit`, tell the user that Grok's own install shadows Claude Code's copy, so `claude plugin update orbit@orbit` no longer reaches Grok. Print `grok plugin uninstall orbit` as a command for the user to run. Do not run it.
+- Not loaded. With no shadowing install, run `grok inspect --json`. If it lists no plugin named `orbit`, tell the user that Grok loads orbit only when orbit is enabled in Claude Code's user settings. Offer nothing for Grok.
+- Stale copy. If it lists orbit but no skill named `rules` whose `source.plugin_name` is `orbit`, Grok loads a copy of orbit older than the `rules` skill. Offer to run `claude plugin update orbit@orbit`, once, alongside any update offer above.
+
+**Always-on rules line.** When `codex` or `grok` is found, offer to add orbit's always-on rules line to that provider's own instruction file, `~/.codex/AGENTS.md` or `~/.grok/AGENTS.md`, when the file lacks it. The recommended answer is no. The line is:
+
+```
+If Non-negotiables is not in your context, load the orbit `rules` skill before your first reply.
+```
+
+### 3. Workflow block
+
+Outside a git repo, print `Skipped: Workflow block. Not in a git repo.` and go on.
+
+In a repo, the Check defaults to `vpr check` (`../../rules.md` Workflow Defaults). With `workflow block: present`, say so and go on. With `workflow block: missing` and `vpr: found`, say the defaults hold and go on. With the block missing and `vpr: missing`, every verify step would fail, so offer a block:
+
+1. Read `workflow-block.md`, next to this file.
+2. Find the project's Check command. Use the `check`, `test` or `build` scripts in the root `package.json`, run with the package manager its lockfile names, or the `check` or `test` target in a root `Makefile`. Read these files to find the command, and never run it. With none, the step 5 question asks the user for the command.
+3. Propose a filled block with only the lines that differ from the defaults, such as ``- Check: `bun run check && bun test`.`` Never append the template as it is, with its placeholders.
+
+The block goes at the end of the repo root's AGENTS.md. When the root has no AGENTS.md, the offer is to create it with the block alone. Never write the block to a project's `CLAUDE.md`.
+
+### 4. T3 providers
+
+Read `../../docs/harness/t3-code.md`, sections Probe and Seats on another family. A lead that is not Claude Code also reads Lead on another provider. Probe `orchestrator_capabilities` as Probe says. A call that errors because the tool needs an agent running inside T3 Code counts as absent. If it is absent, print `Skipped outside T3: provider seats. <reason>.` and go on to step 5.
+
+**4a. Detect providers.** Call `orchestrator_capabilities`. The session's family is the `driverKind` of the provider whose `providerInstanceId` equals `inheritedProviderInstanceId`. A provider whose `constraints` hold "Provider instance is disabled." is disabled. Never write a provider or model you have not seen in a result.
+
+**4b. Load current state.** If `~/.claude/rules/orbit-models.md` exists, read it. Its `other-family` row is the current choice. Keep every other row and every line outside the table as it is.
+
+**4c. Show the providers and ask.** Show every provider in `providers`, in listed order, with its `providerInstanceId` and `driverKind`:
 
 - An enabled provider, with the `id` of each model it lists.
 - A disabled provider, marked disabled.
 - The session's family, marked as the session's.
 
-Then ask one question: which providers, in order, fill the `other-family` seat. Say in the question that the chosen providers also run the pre-land verifier, and that `inherit` in the file's `verifier` row keeps it native. Offer each enabled provider with `canRunCrossProviderChildTask` true. The recommended answer is all of them, in listed order. Name the current choice when step 2 found one. Use your host's question tool, else a numbered question with the recommended option first.
+Then ask one question: which providers, in order, fill the `other-family` seat. This question is its own step, before step 5. Say in the question that the chosen providers also run the pre-land verifier, and that `inherit` in the file's `verifier` row keeps it native. Offer each enabled provider with `canRunCrossProviderChildTask` true. The recommended answer is all of them, in listed order. Name the current choice when 4b found one. Use your host's question tool, else a numbered question with the recommended option first.
 
 The answer is an ordered list. A seat tries only values from a family other than the parent's, in list order, so the session's own family may stay on the list for a thread that another family leads. An entry is a bare `<providerInstanceId>`, which takes that provider's first eligible model, or `<providerInstanceId>/<model>` when the user names a model. Ask nothing about the lead or about other roles.
 
-### 4. Validate
+For each chosen provider whose `driverKind` is not `grok` or `codex`, the non-Claude hosts whose load orbit has tested, and whose `providerInstanceId` is not `inheritedProviderInstanceId`, say "orbit has no tested load check for <driverKind> yet".
 
-Every entry's provider is in `providers`, enabled, with `canRunCrossProviderChildTask` true. For a `<providerInstanceId>/<model>` entry, that provider lists the model. The first result is a short list, so before you call a model missing, call `orchestrator_capabilities` with `search` set to the model id. If an entry fails, name the check that failed and ask again.
+**4d. Validate.** Every entry's provider is in `providers`, enabled, with `canRunCrossProviderChildTask` true. For a `<providerInstanceId>/<model>` entry, that provider lists the model. The first result is a short list, so before you call a model missing, call `orchestrator_capabilities` with `search` set to the model id. If an entry fails, name the check that failed and ask again.
 
-### 5. Show the file and confirm
-
-Show the whole new file. Shape:
+**4e. Show the file.** Show the whole new file. A new file has this shape:
 
 ```
 Orbit's user-wide Models table, written by /orbit:setup. A cell in a project's AGENTS.md Models table wins over the same cell here.
@@ -49,36 +97,30 @@ Orbit's user-wide Models table, written by /orbit:setup. A cell in a project's A
 | verifier | Pre-land verifier on another family under T3 Code | other-family | |
 ```
 
-No frontmatter. The Model cell holds the entries in order, separated by `, `. The Effort cell stays empty unless the user named an effort. Write the `verifier` row only when the list is not empty and step 2 found no `verifier` row. The rows step 2 kept follow the `other-family` row, verbatim. Ask for a yes. Write nothing without it.
+No frontmatter. The Model cell holds the entries in order, separated by `, `. The Effort cell stays empty unless the user named an effort. Write the `verifier` row only when the list is not empty and 4b found no `verifier` row. The rows 4b kept follow the `other-family` row, verbatim.
 
-### 6. Write the file
+An existing file keeps every line outside its Models table, such as the header line and the user's notes, byte for byte. Only the table changes. A file with no table gets the table after its last line. When the new file is byte-identical to the current one, say the file is current and make no offer. Otherwise the write is an offer for step 5.
 
-Overwrite the whole of `~/.claude/rules/orbit-models.md`, so a re-run stays idempotent. Create `~/.claude/rules/` when it is missing. Write the rows only to this file, never to a project's `CLAUDE.md` or `AGENTS.md`.
+### 5. One question
 
-### 7. Check what the chosen providers load
+When steps 2 to 4 made no offer, ask nothing and go to step 6. Otherwise ask one multi-select question that lists every offer:
 
-Run this step for each provider whose `driverKind` is `grok` or `codex`, the non-Claude hosts whose load orbit has tested, when the user put it on the list or it is the session's family. For any other `driverKind`, say "orbit has no tested load check for <driverKind> yet" and go on.
+- Update orbit's install.
+- Create the Codex link.
+- Add the Workflow block, with its target file, or the Check command it still needs.
+- Add the always-on rules line, per file.
+- Write `~/.claude/rules/orbit-models.md`.
 
-**grok.** If the `grok` command is not found, say so and go on.
+Recommend each offer except the rules line, and preselect nothing beyond the recommendation. Use your host's question tool, else a numbered list the user answers with numbers. Change nothing without a yes.
 
-- Shadowing install. Run `grok plugin list --json`. If it lists `orbit`, tell the user that Grok's own install shadows Claude Code's copy, so `claude plugin update orbit@orbit` no longer reaches Grok. Print `grok plugin uninstall orbit` as a command for the user to run. Do not run it.
-- Stale copy. With no shadowing install, run `grok inspect --json`. If it has no skill named `rules` whose `source.plugin_name` is `orbit`, Grok loads a copy of orbit older than the `rules` skill. Offer to run `claude plugin update orbit@orbit`, and run it only after a yes. If it lists no plugin named `orbit` at all, tell the user that Grok loads orbit only when orbit is enabled in Claude Code's user settings.
+### 6. Apply and confirm
 
-**codex.** Codex does not read Claude Code's install record. It loads orbit through one symlink to the folder Claude Code installs orbit from.
+Apply only what the user said yes to:
 
-- Link target. In `~/.claude/plugins/installed_plugins.json`, find the `orbit@<marketplace>` record. In `~/.claude/plugins/known_marketplaces.json`, take that marketplace's `installLocation`. Join it with orbit's `source` in `<installLocation>/.claude-plugin/marketplace.json`, such as `./plugin`. The result is the link target. If the target has no `skills/rules/SKILL.md`, say so and skip the rest of the codex case.
-- Version. Compare the `version` in the target's `.claude-plugin/plugin.json` with the record's `version`. If they differ, tell the user that Codex reads the target while Claude Code children load the record's version. Offer to run `claude plugin marketplace update <marketplace>`, then `claude plugin update orbit@<marketplace>`. Run them only after a yes.
-- Link. Check `${CODEX_HOME:-~/.codex}/skills/orbit`. If it is missing, offer to create it as a symlink to the target, and create it only after a yes. If it is a link to the target, say that the link is in place. If it is a link to another folder or a real folder, report what it is and print the commands that replace it with a link to the target, for the user to run. Do not touch it.
-- Duplicates. Codex skips a second link to a folder it already loads. If `~/.agents/skills/orbit` exists, compare its `realpath` with the link target's. If they differ, or `codex plugin list` shows orbit installed, tell the user that Codex then loads two copies of orbit. Print the command that removes the extra copy, `rm ~/.agents/skills/orbit` or `codex plugin remove orbit@<codex marketplace>`, for the user to run. Do not run it.
+- Update. Run `claude plugin marketplace update <marketplace>`, then `claude plugin update orbit@<marketplace>`.
+- Codex link. Run the doctor's `mkdir -p` and `ln -s` command.
+- Workflow block. Append it to the repo root's AGENTS.md, or create AGENTS.md with it. Never write a project's `CLAUDE.md`.
+- Rules line. Add it to each chosen file, once per file.
+- Models file. Create `~/.claude/rules/` when it is missing and write the file 4e showed. Write the rows only to this file, never to a project's `CLAUDE.md` or `AGENTS.md`.
 
-### 8. Offer the always-on rules line
-
-Ask whether to add orbit's always-on rules line to a non-Claude provider's own instruction file, such as `~/.grok/AGENTS.md` or `~/.codex/AGENTS.md`. The default is no. Write the line only after a yes, and only once per file. The line is:
-
-```
-If Non-negotiables is not in your context, load the orbit `rules` skill before your first reply.
-```
-
-### 9. Confirm
-
-Show the written file. Tell the user that a new session picks it up, and that re-running `/orbit:setup` updates it.
+Then tell the user what changed and what still needs them: each missing tool with its install command, `gh auth login` when gh is not logged in, a missing `origin/main`, and every command setup printed for them to run. When the Models file changed, say that a new session picks it up, and that re-running `/orbit:setup` updates it.
