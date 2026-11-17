@@ -80,7 +80,7 @@ Code children once ran on the roster's Claude provider through `delegate_task`, 
 ### Commit trailers
 
 - **pstack.** No such hook. pstack ships no hooks (`pstack/plugin.json`).
-- **orbit.** A PreToolUse hook on Bash (`hooks/no-claude-trailer.sh`) refuses a `git commit` whose command holds a `Co-Authored-By: Claude` trailer and tells the agent to commit again without it. It reads only the command, not the description.
+- **orbit.** A PreToolUse hook on Bash (`hooks/no-claude-trailer.sh`) refuses a `git commit` or `git commit-tree` at command position whose command, or the message file `-F`/`--file` names, holds a `Co-Authored-By: Claude` trailer, and tells the agent to commit again without it. A command that only mentions both strings passes. It never reads the description.
 - **Why.** Agents added the trailer despite an empty `attribution.commit` and gitops's "No trailers". Leads copied it into briefs, and later agents copied it from `git log`, so the text rule didn't hold. A hook holds it structurally (principle Encode Lessons in Structure).
 
 ### Model per role
