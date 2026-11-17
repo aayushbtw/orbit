@@ -1,6 +1,6 @@
 import { appendFileSync, readFileSync } from 'node:fs';
 
-const [log] = process.argv.slice(2);
+const [log, mode] = process.argv.slice(2);
 const input = JSON.parse(readFileSync(0, 'utf8'));
 const record = {
   ts: new Date().toISOString(),
@@ -16,7 +16,10 @@ if (input.hook_event_name === 'PostToolUse') {
 } else {
   appendFileSync(log, JSON.stringify({ ...record, tool_input: input.tool_input }) + '\n');
   const rewrite = input.tool_name === 'Agent' || input.tool_name === 'Task';
-  process.stdout.write(JSON.stringify({
+  const routed = rewrite || /(^|__)delegate_task$/.test(input.tool_name ?? '')
+    || (input.tool_name === 'Skill' && !['orbit:start', 'orbit:rules'].includes(input.tool_input?.skill));
+  if (mode === 'stop' && routed) process.stdout.write(JSON.stringify({ continue: false, stopReason: 'routing eval: route recorded' }));
+  else process.stdout.write(JSON.stringify({
     hookSpecificOutput: {
       hookEventName: 'PreToolUse',
       permissionDecision: 'allow',

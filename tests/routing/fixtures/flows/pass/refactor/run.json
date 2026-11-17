@@ -1,0 +1,13 @@
+{
+  "route": "refactor",
+  "prompt": "/orbit:start rename UserRecord to Account across the server package. no behavior change.",
+  "expect": "orbit:playbook refactor",
+  "sha": "578223b9965d0758cdaabfad14db68b5f80dde96",
+  "dirty": true,
+  "host": "claude",
+  "model": "opus",
+  "turns": 5,
+  "cost": 0.1793812,
+  "cache_read": 24106,
+  "cache_creation": 20654
+}
