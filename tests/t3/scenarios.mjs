@@ -15,7 +15,15 @@ const seat = (kind) => ({ role: 'review', mode: 'async', runtimeMode: ABSENT, ta
 const verifierSeat = (kind) => ({ isolation: 'worktree', target: { providerInstanceId: otherFamily(kind) } });
 const countsCommits = /rev-list|\bgit\b[^|]*\blog\b[^|]*\|\s*wc\s+-l/;
 const onceRead = /\/watch-pr\s[^|;&]*--once\b/;
-const sleepingWatcher = /\/watch-pr\s(?![^|;&]*--(once|status-only)\b)/;
+const watcherArgs = (segment) => {
+  const words = segment.trim().split(/\s+/).map((word) => word.replace(/^["']|["']$/g, ''));
+  const at = words.findIndex((word) => /(^|\/)watch-pr$/.test(word));
+  return at < 0 || words[0] === 'cd' ? null : words.slice(at + 1);
+};
+const sleepingWatcher = (command) => typeof command === 'string' && command.split(/&&|\|\||[;|&\n]/).some((segment) => {
+  const args = watcherArgs(segment);
+  return args !== null && !args.some((arg) => /^(--once|--status-only|--help|-h)$/.test(arg));
+});
 const shortInterval = { schedule: { type: 'interval', everyMs: (ms) => !(ms >= 60_000) } };
 
 // orbit's own AGENTS.md sets other-family to inherit, so a lead there rightly keeps every seat native.
