@@ -4,7 +4,7 @@
 
 Under Land `main`, a PR here means a task branch, its merge is gitops pushing `HEAD:main` per the Land `main` paragraph of `playbooks/shipping.md`, and the Check run there stands in for green CI.
 
-Run it with your own tools. Spawn workers with the `Agent` tool. Keep the program's state in `notes.md` in the program's store, `<git common dir>/orbit-orchestrate/<slug>/`, with the git common dir from `git rev-parse --path-format=absolute --git-common-dir`, so every worktree reaches it and the OS never clears it. Watch each PR with PR and CI event subscriptions when your harness has them. You call no scripts, run no polling loops, and never relay messages or status between agents. Owners still run their babysit watcher per `playbooks/babysit.md`, except in T3 Code, where an owner's build round reads its PR once and you babysit it (step 2 of `playbooks/autopilot-full.md`).
+Run it with your own tools. Spawn workers with the `Agent` tool. Keep the program's state in `notes.md` in the program's store, `<git common dir>/orbit-orchestrate/<slug>/`, with the git common dir from `git rev-parse --path-format=absolute --git-common-dir`, so every worktree reaches it and the OS never clears it. Watch each PR with PR and CI event subscriptions when your harness has them. You call no scripts, run no polling loops, and never relay messages or status between agents. Owners still run their babysit watcher per `playbooks/babysit.md`, except in T3 Code, where an owner's build round reads its PR once with `watch-pr --once` and you babysit it (step 2 of `playbooks/autopilot-full.md`).
 
 #### Topology
 

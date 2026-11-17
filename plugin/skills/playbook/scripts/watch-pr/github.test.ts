@@ -447,7 +447,38 @@ describe("closed enum parsing", () => {
     state: "OPEN",
     mergedAt: null,
     isDraft: false,
+    reviewRequests: [],
   };
+
+  it("reads requested reviewers as user logins and team slugs", () => {
+    expect(
+      parsePullRequest(
+        {
+          ...rawPullRequest,
+          reviewRequests: [
+            { __typename: "User", login: "octocat" },
+            { __typename: "Team", name: "Core", slug: "org/core" },
+          ],
+        },
+        context
+      ).requestedReviewers
+    ).toEqual(["octocat", "org/core"]);
+  });
+
+  it("never reads a requested reviewer as an empty name", () => {
+    expect(
+      parsePullRequest(
+        {
+          ...rawPullRequest,
+          reviewRequests: [
+            { __typename: "Team", name: "Core", slug: "" },
+            { __typename: "Team", name: "", slug: "" },
+          ],
+        },
+        context
+      ).requestedReviewers
+    ).toEqual(["Core"]);
+  });
 
   it("accepts mergeStateStatus CONFLICTING", () => {
     expect(

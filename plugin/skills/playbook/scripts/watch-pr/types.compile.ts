@@ -8,6 +8,7 @@ import type {
 } from "./types.ts";
 
 type ReadyVerdict = Extract<TerminalVerdict, { readonly kind: "READY" }>;
+type TimeoutReason = Extract<TerminalVerdict, { readonly kind: "TIMEOUT" }>["reason"];
 
 const context = {
   owner: "octocat",
@@ -47,6 +48,7 @@ const readyPr = {
     gate: {
       state: "OPEN",
       reviewDecision: "APPROVED",
+      requestedReviewers: [],
       draft: "not-draft",
     },
   },
@@ -87,7 +89,18 @@ const unprovenPr = { kind: "ready-pr", context } as const;
 // @ts-expect-error An open READY row must carry positive readiness proof.
 const readyWithoutProof: ReadyPr = unprovenPr;
 
+const missingPr = {
+  kind: "not-found",
+  retryable: false,
+  detail: "no pull requests found",
+  code: 1,
+} as const;
+
+// @ts-expect-error A missing PR never waits: it is a status-query blocker.
+const missingPrWaits: TimeoutReason = { kind: "status-unavailable", pr: context, failure: missingPr };
+
 void refusalIsNotAllowed;
 void refusalIsNotClean;
 void readyWithBlockerExit;
 void readyWithoutProof;
+void missingPrWaits;

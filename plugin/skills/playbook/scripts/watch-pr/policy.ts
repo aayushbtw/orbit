@@ -1,5 +1,6 @@
 import {
   WatcherQueryError,
+  readingPr,
   resolveChecks,
   resolveReviewThreads,
 } from "./github.ts";
@@ -56,12 +57,15 @@ const AUTOMATION_TOKENS = [
   "pr review automation",
   "review automation",
 ] as const;
-export async function readSnapshot(args: {
+interface SnapshotRead {
   readonly reader: T.GitHubReader;
   readonly context: T.PrContext;
   readonly pendingHistory: "include" | "omit";
   readonly allowDraft: boolean;
-}): Promise<T.PrSnapshot> {
+}
+export const readSnapshot = (args: SnapshotRead): Promise<T.PrSnapshot> =>
+  readingPr(args.context, () => readPrSnapshot(args));
+async function readPrSnapshot(args: SnapshotRead): Promise<T.PrSnapshot> {
   const facts = await args.reader.pullRequest(args.context);
   if (facts.state === "MERGED" || facts.mergedAt !== null)
     return { kind: "merged", context: args.context, facts };
@@ -211,6 +215,7 @@ function readyContribution(
       gate: {
         state: "OPEN",
         reviewDecision,
+        requestedReviewers: row.facts.requestedReviewers,
         draft: row.facts.isDraft ? "draft-allowed" : "not-draft",
       },
     },
@@ -340,6 +345,18 @@ export function statusQueryVerdict(
     blocker: { kind: "status-query", failures, failure },
   });
 }
+export function statusUnavailableVerdict(
+  stamp: VerdictStamp,
+  failure: T.RetryableQueryFailure,
+  pr: T.PrContext | null
+): T.TimeoutVerdict {
+  return stamp({
+    kind: "TIMEOUT",
+    terminal: true,
+    exitCode: 5,
+    reason: { kind: "status-unavailable", pr, failure },
+  });
+}
 export interface WatchClock {
   now(): number;
   observedAt(): string;
@@ -354,7 +371,8 @@ const deadlinePassed = (
   started: number,
   options: T.PollingOptions,
   now: number
-): boolean => options.timeout > 0 && now - started >= options.timeout;
+): boolean =>
+  options.once || (options.timeout > 0 && now - started >= options.timeout);
 type StepResult<V> =
   | { readonly kind: "terminal"; readonly verdict: V }
   | {
@@ -384,9 +402,14 @@ async function pollUntilTerminal<V>(args: {
       failures = 0;
     } catch (error) {
       if (!(error instanceof WatcherQueryError)) throw error;
+      const { failure, pr } = error;
       failures += 1;
-      if (!error.failure.retryable || failures >= args.options.maxQueryErrors)
-        return statusQueryVerdict(args.stamp, failures, error.failure);
+      if (!failure.retryable)
+        return statusQueryVerdict(args.stamp, failures, failure);
+      if (args.options.once)
+        return statusUnavailableVerdict(args.stamp, failure, pr);
+      if (failures >= args.options.maxQueryErrors)
+        return statusQueryVerdict(args.stamp, failures, failure);
       const retryInSeconds = queryBackoffSeconds(
         args.options.interval,
         failures
@@ -395,18 +418,13 @@ async function pollUntilTerminal<V>(args: {
         args.stamp({
           kind: "RETRY",
           terminal: false,
-          failure: error.failure,
+          failure,
           consecutiveFailures: failures,
           retryInSeconds,
         })
       );
       if (deadlinePassed(started, args.options, args.dependencies.clock.now()))
-        return args.stamp({
-          kind: "TIMEOUT",
-          terminal: true,
-          exitCode: 5,
-          reason: { kind: "status-unavailable", failure: error.failure },
-        });
+        return statusUnavailableVerdict(args.stamp, failure, pr);
       await sleep(retryInSeconds);
       continue;
     }
@@ -497,14 +515,15 @@ export async function runSimple(args: {
           args.mode
         ),
       };
-    args.dependencies.emit(
-      stamp({
-        kind: "WAITING",
-        terminal: false,
-        frontier: decision.frontier,
-        reason: { kind: "pending-checks", pending: decision.pending },
-      })
-    );
+    if (!args.options.once)
+      args.dependencies.emit(
+        stamp({
+          kind: "WAITING",
+          terminal: false,
+          frontier: decision.frontier,
+          reason: { kind: "pending-checks", pending: decision.pending },
+        })
+      );
     return {
       kind: "sleep",
       seconds: args.options.interval,
@@ -513,7 +532,11 @@ export async function runSimple(args: {
           kind: "TIMEOUT",
           terminal: true,
           exitCode: 5,
-          reason: { kind: "pending-checks", pending: decision.pending },
+          reason: {
+            kind: "pending-checks",
+            frontier: decision.frontier,
+            pending: decision.pending,
+          },
         }),
     };
   };
@@ -637,6 +660,7 @@ export type QueueEvaluation =
       readonly state: QueueState;
       readonly frontier: T.PrContext;
       readonly unmergedCount: number;
+      readonly waitingOn: T.FrontierWait;
     }
   | {
       readonly kind: "waiting";
@@ -650,6 +674,16 @@ export type QueueEvaluation =
         | { readonly kind: "merge-queue"; readonly unmergedCount: number };
       readonly emit: boolean;
     };
+function frontierWait(row: T.PrSnapshot): T.FrontierWait {
+  if (row.kind === "open" && row.ci.kind === "ci-pending")
+    return { kind: "pending-checks", pending: row.ci.pending };
+  return row.facts.reviewDecision === "REVIEW_REQUIRED"
+    ? {
+        kind: "review-required",
+        requestedReviewers: row.facts.requestedReviewers,
+      }
+    : { kind: "merge" };
+}
 export function evaluateQueue(
   state: QueueState,
   now: number,
@@ -687,20 +721,19 @@ export function evaluateQueue(
       frontier,
       remaining: active.length,
     };
+  const waitingOn = frontierWait(rows[0]);
   if (deadlinePassed(state.startedAt, options, now))
     return {
       kind: "timeout",
       state: { ...state, frontier },
       frontier,
       unmergedCount: active.length,
+      waitingOn,
     };
-  const row = rows[0];
-  const pending =
-    row.kind === "open" && row.ci.kind === "ci-pending" ? row.ci.pending : null;
   const reason =
-    pending === null
-      ? ({ kind: "merge-queue", unmergedCount: active.length } as const)
-      : ({ kind: "pending-checks", pending } as const);
+    waitingOn.kind === "pending-checks"
+      ? ({ kind: "pending-checks", pending: waitingOn.pending } as const)
+      : ({ kind: "merge-queue", unmergedCount: active.length } as const);
   const key =
     reason.kind === "pending-checks"
       ? `pending:${frontier.number}:${reason.pending.length}`
@@ -816,6 +849,7 @@ export async function runQueued(args: {
               kind: "queued-stack",
               frontier: evaluation.frontier,
               unmergedCount: evaluation.unmergedCount,
+              waitingOn: evaluation.waitingOn,
             },
           }),
         };

@@ -3,7 +3,7 @@ name: gitops
 description: "Use proactively for all git and GitHub work: committing changes, creating, reading or editing pull requests, checking branch or PR status. Delegate here instead of running git commit or gh pr yourself."
 model: sonnet
 effort: low
-tools: Bash, Read, Grep, Glob, ToolSearch, mcp__t3-code__link_pull_request, mcp__t3-code__list_thread_pull_requests
+tools: Bash, Read, Grep, Glob, ToolSearch, mcp__t3-code__link_pull_request, mcp__t3-code__link_pull_requests, mcp__t3-code__list_thread_pull_requests
 ---
 You handle git and GitHub for this repo. Be fast and terse.
 
@@ -16,7 +16,7 @@ Commits
 
 Pull requests
 - Use gh. Read the diff against the base branch before writing the title and description.
-- Before linking a PR, check whether `link_pull_request` is present, per the probe in `${CLAUDE_PLUGIN_ROOT}/docs/harness/t3-code.md`.
+- Before linking a PR, check whether `link_pull_request` and `link_pull_requests` are present, per the probe in `${CLAUDE_PLUGIN_ROOT}/docs/harness/t3-code.md`.
 - Open every PR ready, never as a draft. Prefer narrow PRs.
 - Title follows the commit format. The body is a one-minute briefing for a reviewer who has the diff, in short sentences. Use these `##` headings in this order, and drop any with nothing to say:
   - `## Why`. The problem and approach, 1 to 3 sentences.
@@ -27,8 +27,8 @@ Pull requests
   - `## Verification`. 1 to 3 bullets, each a real run and its outcome.
 - These title and body rules follow orbit's opening-a-pr playbook (`skills/playbook/playbooks/opening-a-pr.md`). Use a title and description the lead gives you as written.
 - Read, create and edit PRs as asked.
-- After you create a PR with gh, when `link_pull_request` is present, call it with the PR URL, once per PR. A later push needs no new link. When it is absent, skip it silently.
-- When asked to wait on CI, run `${CLAUDE_PLUGIN_ROOT}/skills/playbook/scripts/watch-pr/watch-pr --pr <n> --timeout 120` once, with a Bash timeout of 180000 ms. Report its verdict and reason. A `TIMEOUT` goes back to the lead. Never loop, sleep, or run it again. Wait this way even when the lead's brief names another command or a re-check loop.
+- Link each PR you create, take over or push to, as your next call. For several PRs, such as every layer of a stack, call `link_pull_requests` with every URL. For one, call `link_pull_request` with the PR URL. Skip PRs you only read or review. If linking fails, say so. When the link tools are absent, skip the link silently.
+- When asked to wait on CI, run `${CLAUDE_PLUGIN_ROOT}/skills/playbook/scripts/watch-pr/watch-pr --owner <owner> --repo <repo> --pr <n> --once` once, on every host. Report its verdict and reason. A `TIMEOUT`, `status-unavailable` included, goes back to the lead. Never loop, sleep, or run it again. Wait this way even when the lead's brief names another command or a re-check loop.
 - If the watcher path above starts with `$` instead of `/`, your host did not expand it. Use the orbit plugin folder your lead's brief names. With none, report that and stop.
 - On a failure, report the failing check, its run id and the tail of `gh run view <run-id> --log-failed`. Don't classify it. Rerun only when told, with `gh run rerun <run-id>` (the whole run, never `--job`).
 - After a merge, read back `gh pr view <n> --json state,mergedAt,baseRefName` and report each field as it reads.
@@ -41,4 +41,4 @@ Rewrite pushed history only on a task branch you pushed or took over, never `mai
 
 A conflict is the one blocker you report rather than resolve. Say which branch needs the rebase and stop. On a conflicted cherry-pick, run `git cherry-pick --abort` before you report. Never push while a rebase or merge is in progress.
 
-Reply with the result only: the commit hash and subject, or the PR URL. After a rebase, also say whether `origin/main` had new commits.
+Reply with the result only: the commit hash and subject, or the PR URL, and any link failure. After a rebase, also say whether `origin/main` had new commits. After PR work (create, push or wait), the last line is `PR <full URL>, head <SHA>, checks and reviews <state>`. Take the state from the `--once` verdict, or from one `gh pr view <n> --json statusCheckRollup,reviewDecision` when no wait was asked.

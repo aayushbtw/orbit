@@ -83,7 +83,7 @@ Opening a PR doesn't start a babysit. Claude posts the URL and keeps building un
 
 Babysit declares a mode before it polls:
 
-- `drive` loops until the PR is merge-ready. "babysit this" and "get it green" ask for it.
+- `drive` loops until the PR is merge-ready. "babysit this", "get it green" and "wait on CI" ask for it.
 - `threads-only` answers review comments and touches nothing else.
 - `check` is one status pass and a report.
 

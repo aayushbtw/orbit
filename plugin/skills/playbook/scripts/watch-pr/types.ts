@@ -49,6 +49,7 @@ export interface PullRequestFacts {
   readonly state: "OPEN" | "CLOSED" | "MERGED";
   readonly mergedAt: string | null;
   readonly isDraft: boolean;
+  readonly requestedReviewers: readonly string[];
 }
 export interface OpenPullRequest {
   readonly number: PrNumber;
@@ -169,6 +170,7 @@ export interface ReadyPr {
     readonly gate: {
       readonly state: "OPEN";
       readonly reviewDecision: Exclude<ReviewDecision, "CHANGES_REQUESTED">;
+      readonly requestedReviewers: readonly string[];
       readonly draft: "not-draft" | "draft-allowed";
     };
   };
@@ -227,11 +229,21 @@ export type QueryFailure =
       readonly detail: string;
     }
   | {
+      readonly kind: "not-found";
+      readonly retryable: false;
+      readonly detail: string;
+      readonly code: number;
+    }
+  | {
       readonly kind: "invalid-context-url";
       readonly retryable: false;
       readonly detail: string;
       readonly rawValue: string;
     };
+export type RetryableQueryFailure = Extract<
+  QueryFailure,
+  { readonly retryable: true }
+>;
 /**
  * `frontier` names the lowest unmerged PR that is actually waiting, and
  * `pending` is that PR's checks only. Pooling every row's pending under the
@@ -253,6 +265,16 @@ export type PrDecision =
   | WaitingDecision
   | { readonly kind: "ready"; readonly pr: ReadyPr }
   | { readonly kind: "merged"; readonly pr: MergedPr };
+export type FrontierWait =
+  | {
+      readonly kind: "pending-checks";
+      readonly pending: NonEmpty<PendingCheck>;
+    }
+  | {
+      readonly kind: "review-required";
+      readonly requestedReviewers: readonly string[];
+    }
+  | { readonly kind: "merge" };
 export type StackDecision =
   | { readonly kind: "blocker"; readonly blocker: MergeBlocker }
   | WaitingDecision
@@ -337,13 +359,19 @@ export type TimeoutVerdict = Terminal<"TIMEOUT", 5> & {
   readonly reason:
     | {
         readonly kind: "pending-checks";
+        readonly frontier: PrContext;
         readonly pending: NonEmpty<PendingCheck>;
       }
-    | { readonly kind: "status-unavailable"; readonly failure: QueryFailure }
+    | {
+        readonly kind: "status-unavailable";
+        readonly pr: PrContext | null;
+        readonly failure: RetryableQueryFailure;
+      }
     | {
         readonly kind: "queued-stack";
         readonly frontier: PrContext;
         readonly unmergedCount: number;
+        readonly waitingOn: FrontierWait;
       };
 };
 export type TerminalVerdict =
@@ -414,4 +442,5 @@ export interface PollingOptions {
   readonly timeout: number;
   readonly maxQueryErrors: number;
   readonly allowDraft: boolean;
+  readonly once: boolean;
 }
