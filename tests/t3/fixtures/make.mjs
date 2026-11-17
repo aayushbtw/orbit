@@ -4,7 +4,7 @@ import { basename, dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { gradeLane } from '../grade.mjs';
 import { SCENARIOS } from '../scenarios.mjs';
-import { kindOf, readLead } from '../sessions.mjs';
+import { kindOf, readJsonl, readLead } from '../sessions.mjs';
 
 const { values: opts } = parseArgs({
   options: {
@@ -22,7 +22,7 @@ if (!kind || !opts.session || !Object.hasOwn(SCENARIOS, opts.scenario ?? '') || 
   process.exit(1);
 }
 
-const entries = readFileSync(opts.session, 'utf8').split('\n').filter(Boolean).flatMap((line) => { try { return [JSON.parse(line)]; } catch { return []; } });
+const entries = readJsonl(opts.session);
 const SESSION_INFO = {
   claude: () => {
     const first = entries.find((e) => e.type === 'user')?.message?.content;
@@ -60,7 +60,8 @@ for (const { checks } of Object.values(SCENARIOS)) {
   for (const { na: _, ...cells } of Object.values(checks)) Object.values(cells).forEach(collectExpect);
 }
 
-const unhome = (text) => text.split(tmpdir()).join('$TMPDIR').split(homedir()).join('~');
+const unhome = (text) => text.split(tmpdir()).join('$TMPDIR').replace(/\/private\/tmp\/[^/\s]+\/[^/\s]+/g, '$TMPDIR')
+  .split(homedir()).join('~').split(homedir().replace(/[^a-zA-Z0-9]/g, '-')).join('~');
 const cut = (text) => {
   const s = unhome(text);
   return s.length > 200 ? `${s.slice(0, 60)}…[${s.length} chars]` : s;

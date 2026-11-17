@@ -44,7 +44,7 @@ for (const { name, text, json } of fixtures) {
 
 test('fixtures hold no home path, email address or secret', () => {
   for (const path of [...fixtures.map((f) => f.path), truncated]) {
-    assert.doesNotMatch(readFileSync(path, 'utf8'), /\/Users\/|\/home\/|\/var\/folders\/|[\w.+-]+@[\w-]+\.[a-z]{2,}|gh[pousr]_\w{20,}|sk-\w{20,}|gAAAAA/i, path);
+    assert.doesNotMatch(readFileSync(path, 'utf8'), /[/-]Users[/-]|[/-]home[/-]|\/var\/folders\/|\/private\/tmp\/|[\w.+-]+@[\w-]+\.[a-z]{2,}|gh[pousr]_\w{20,}|sk-\w{20,}|gAAAAA/i, path);
   }
 });
 

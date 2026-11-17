@@ -124,7 +124,9 @@ It reads the calls with the reader `lane.mjs` uses, and the message and model fr
 
 | File | Origin | Source | Shows |
 | --- | --- | --- | --- |
-| `claude-gitops-native.json` | real, relabeled | `orbit-lane-ci-wait-792d-336d7f4c30de003b` | A Claude lead spawns `orbit:gitops` as an `Agent` |
+| `claude-probe.json` | real | `orbit-lane-probe-fa8172` | A Claude lead runs `pwd` and loads no skill |
+| `claude-gitops-native.json` | real | `orbit-lane-gitops-native-c1ab0a` | A Claude lead spawns `orbit:gitops` as an `Agent` |
+| `claude-code-child.json` | real, relabeled | `orbit-lane-routing-8524-8094ae89ae7d6368` | A Claude lead spawns `orbit:poteto-agent` as an `Agent` |
 | `claude-review-seat-pre-3bf084a.json` | real, relabeled | `orbit-lane-interrogate--5b3974d12a498483` | A seat on Grok with no `clientRequestId`, before 3bf084a asked for one. `request-id` fails |
 | `claude-review-seat.json` | hand-built | the fixture above | The same seat call with a `clientRequestId` |
 | `claude-rules-load.json` | hand-built | none | `rules-read` is N/A on a Claude lead |

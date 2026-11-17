@@ -10,7 +10,7 @@ export const HOMES = {
 
 const tryRead = (path) => { try { return readFileSync(path, 'utf8'); } catch { return null; } };
 const parseJson = (text) => { try { return JSON.parse(text); } catch { return null; } };
-const readJsonl = (path) => (tryRead(path) ?? '').split('\n').filter(Boolean).flatMap((line) => { try { return [JSON.parse(line)]; } catch { return []; } });
+export const readJsonl = (path) => (tryRead(path) ?? '').split('\n').filter(Boolean).flatMap((line) => { try { return [JSON.parse(line)]; } catch { return []; } });
 const jsonlFiles = (dir, recursive = false) => existsSync(dir)
   ? readdirSync(dir, { recursive }).filter((f) => f.endsWith('.jsonl')).map((f) => join(dir, f))
   : [];
@@ -22,7 +22,6 @@ const claude = {
   lead(sessions, worktreePath, ctx) {
     const { message } = ctx;
     const [, command, args] = message.match(/^\/(\S+)\s*([\s\S]*)$/) ?? [];
-    // Claude records a slash command message in this form, not as typed.
     const opening = command ? `<command-message>${command}</command-message>\n<command-name>/${command}</command-name>\n<command-args>${args}</command-args>` : message;
     const [file] = sessions.find(([f, entries]) => {
       const first = entries.find((e) => e.type === 'user')?.message?.content;
@@ -150,7 +149,6 @@ const grok = {
     const answered = new Set(entries.filter((e) => e.type === 'tool_result').map((e) => e.tool_call_id));
     const children = family.slice(1).flatMap((id) => grokCalls(readJsonl(join(root, id, 'chat_history.jsonl')), true));
     return {
-      // Grok records usage per turn, not per model call, so the first call's input is unknown.
       firstTurnInputTokens: null,
       toolCalls: [...mainCalls, ...children].map(({ id: _, ...call }) => call),
       pending: mainCalls.filter((c) => !answered.has(c.id)).map(({ name, input }) => ({ name, input })),
