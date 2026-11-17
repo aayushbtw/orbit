@@ -1,0 +1,122 @@
+{
+  "scenario": "parallel-units",
+  "message": "/orbit:start feature, just testing, don't ship: add two independent modules to this repo, each in its own file with a node:test test: `min.mjs` exporting min(values) and `max.mjs` exporting max(values). They share no file, so run them as two parallel delegates per the Delegate gate. Commit each unit on the task branch. No PR.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "hand-built",
+    "source": "none",
+    "relabeled": false,
+    "note": "Hand-built pending the real lane. Two same-provider delegate_task children in their own worktrees, gitops cherry-picks each commit, and the lead settles both children. Every check passes.",
+    "expect": {
+      "own-checkout-children": "PASS",
+      "no-worktree-agent": "PASS",
+      "no-shell-worktree": "PASS",
+      "cherry-picked": "PASS",
+      "children-settled": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Skill",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__orchestrator_capabilities",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "target": {
+          "providerInstanceId": "claudeAgent"
+        },
+        "role": "implementation",
+        "mode": "async",
+        "isolation": "worktree",
+        "clientRequestId": "feature-min-1a2b3c4-try1"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "target": {
+          "providerInstanceId": "claudeAgent"
+        },
+        "role": "implementation",
+        "mode": "async",
+        "isolation": "worktree",
+        "clientRequestId": "feature-max-1a2b3c4-try1"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__task_status",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git show 5d6e7f8"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git show 9a0b1c2"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:gitops",
+        "run_in_background": false
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git cherry-pick 5d6e7f8"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git cherry-pick 9a0b1c2"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "mcp__t3-code__t3_thread_organize",
+      "input": {
+        "action": "settle"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__t3_thread_organize",
+      "input": {
+        "action": "settle"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git worktree list"
+      },
+      "sidechain": false
+    }
+  ]
+}

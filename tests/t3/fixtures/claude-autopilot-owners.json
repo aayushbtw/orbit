@@ -1,0 +1,70 @@
+{
+  "scenario": "autopilot-owners",
+  "message": "/orbit:start autopilot-stack, Land main, two queue items, each a one-line doc fix: (1) in README.md change 'teh' to 'the'; (2) in NOTES.md change 'recieve' to 'receive'. Arm the audit tick every 1 minute bound to this thread. Stop each item at code-ready and skip the step 4 swarm; this is a lane test.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "hand-built",
+    "source": "none",
+    "relabeled": false,
+    "note": "Hand-built pending the real lane. The lead arms a 1-minute tick bound to the thread and runs each queue item's owner as a same-provider delegate_task child in its own worktree. Every check passes.",
+    "expect": {
+      "owners-are-children": "PASS",
+      "no-worktree-agent": "PASS",
+      "no-shell-worktree": "PASS",
+      "tick-bound": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Skill",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__schedule_task",
+      "input": {
+        "bindToCurrentThread": true,
+        "schedule": {
+          "type": "interval",
+          "everyMs": 60000
+        }
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__orchestrator_capabilities",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "target": {
+          "providerInstanceId": "claudeAgent"
+        },
+        "role": "implementation",
+        "mode": "async",
+        "isolation": "worktree",
+        "clientRequestId": "autopilot-readme-typo-1a2b3c4-try1"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "target": {
+          "providerInstanceId": "claudeAgent"
+        },
+        "role": "implementation",
+        "mode": "async",
+        "isolation": "worktree",
+        "clientRequestId": "autopilot-notes-typo-1a2b3c4-try1"
+      },
+      "sidechain": false
+    }
+  ]
+}

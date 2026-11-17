@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { chmodSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
@@ -33,13 +33,16 @@ if (args[0] === 'thread' && args[1] === 'start') {
 const s = existsSync(state) ? JSON.parse(readFileSync(state, 'utf8')) : null;
 if (args[0] === 'thread' && args[1] === 'list') { console.log(JSON.stringify(s ? [s] : [])); process.exit(0); }
 if (args[0] === 'thread' && args[1] === 'show') {
-  console.log(JSON.stringify({ thread: { threadId: s.threadId, link: 't3://stub', providerInstanceId: 'stub', model: 'stub', runtimeMode: 'full-access', worktreePath: s.worktreePath, pendingRequestCount: 0 }, messages: [] }));
+  const shows = JSON.parse(process.env.STUB_SHOWS ?? '[[]]');
+  const n = s.shows ?? 0;
+  writeFileSync(state, JSON.stringify({ ...s, shows: n + 1 }));
+  console.log(JSON.stringify({ thread: { threadId: s.threadId, link: 't3://stub', providerInstanceId: 'stub', model: 'stub', runtimeMode: 'full-access', worktreePath: s.worktreePath, pendingRequestCount: 0 }, messages: shows[Math.min(n, shows.length - 1)] }));
   process.exit(0);
 }
 process.exit(1);
 `;
 
-function withProject(setup, agent) {
+function withProject(setup, agent, { args = [], env: extra = {} } = {}) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'orbit-lane-test-')));
   try {
     const project = join(root, 'project');
@@ -54,10 +57,12 @@ function withProject(setup, agent) {
       ...process.env,
       T3CODE_CLI_PATH: stub, STUB_STATE: join(root, 'state.json'), STUB_WORKTREES: join(root, 'worktrees'), STUB_AGENT: agent,
       CLAUDE_CONFIG_DIR: join(root, 'claude'), CODEX_HOME: join(root, 'codex'), GROK_HOME: join(root, 'grok'),
+      ...extra,
     };
-    const lane = spawnSync(process.execPath, [join(here, 'lane.mjs'), '--head', 'HEAD', '--scenario', 'probe', '--project', project, '--installed', '--out', join(root, 'out.json')], { encoding: 'utf8', env });
+    const lane = spawnSync(process.execPath, [join(here, 'lane.mjs'), '--head', 'HEAD', '--scenario', 'probe', '--project', project, '--installed', '--out', join(root, 'out.json'), ...args], { encoding: 'utf8', env });
     assert.equal(lane.status, 0, lane.stderr);
-    return { before, after: branches(project), worktrees: git(project, 'worktree', 'list', '--porcelain') };
+    const out = JSON.parse(readFileSync(join(root, 'out.json'), 'utf8'));
+    return { before, after: branches(project), worktrees: git(project, 'worktree', 'list', '--porcelain'), out };
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -84,6 +89,28 @@ test('cleanup deletes the lane branch after the thread renames it and commits on
 test('cleanup deletes the lane branch when the thread leaves it checked out', () => {
   const { before, after } = withProject([], 'true');
   assert.equal(after, before);
+});
+
+const lead = [{ role: 'user', text: 'go', runId: 'r1' }, { role: 'assistant', text: 'started', runId: 'r1' }];
+const wakeA = { role: 'assistant', text: 'wake a', runId: 'r2' };
+const wakeB = { role: 'assistant', text: 'wake b', runId: 'r3' };
+const holdFor = (wake, shows) => withProject([], 'true', {
+  args: ['--wake', wake, '--wakes', '2'],
+  env: { ORBIT_LANE_POLL_MS: '20', STUB_SHOWS: JSON.stringify(shows) },
+}).out;
+
+test('--wakes 2 keeps polling past the first wake run until the second arrives', () => {
+  const out = holdFor('1', [lead, [...lead, wakeA], [...lead, wakeA], [...lead, wakeA, wakeB]]);
+  assert.equal(out.wake, 'arrived');
+  assert.deepEqual(out.wakes.map((w) => w.text), ['wake a', 'wake b']);
+  assert.equal(out.status, 'completed');
+});
+
+test('--wakes 2 returns at the --wake deadline with the one wake run that came', () => {
+  const out = holdFor('0.005', [lead, [...lead, wakeA]]);
+  assert.equal(out.wake, 'arrived');
+  assert.deepEqual(out.wakes.map((w) => w.text), ['wake a']);
+  assert.equal(out.status, 'completed');
 });
 
 test('a lane branch name that differs from an existing branch only in case clashes', () => {

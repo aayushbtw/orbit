@@ -37,6 +37,7 @@ node tests/t3/lane.mjs --head HEAD --scenario docs-goal --message "/orbit:start 
 node tests/t3/lane.mjs --head HEAD --scenario probe --provider codex --model gpt-6-luna
 node tests/t3/lane.mjs --head HEAD --scenario gitops-native --provider codex
 node tests/t3/lane.mjs --head HEAD --scenario codex-child --provider codex --message "<task that delegates a child>" --wake 15
+node tests/t3/lane.mjs --head HEAD --scenario parallel-units --wake 20 --wakes 2
 ```
 
 | Flag | Meaning |
@@ -50,6 +51,7 @@ node tests/t3/lane.mjs --head HEAD --scenario codex-child --provider codex --mes
 | `--provider <id>`, `--model <slug>` | Passed to `t3` only when given. Otherwise the project default runs. A Codex id also links the head orbit into `.agents/skills` (see How a Codex lane loads orbit). A Codex thread started without one reports `orbit: "installed"` |
 | `--timeout <minutes>` | Default 30 |
 | `--wake <minutes>` | After the lead completes, keep polling `t3 thread show` until a later run of the lead posts a reply, such as the wake after an async `delegate_task` child finishes, or until this many minutes pass. Off by default |
+| `--wakes <n>` | With `--wake`, keep polling until `n` later runs have posted a reply, such as one wake per child of `parallel-units`. Default 1 |
 
 The CLI is `T3CODE_CLI_PATH`, else `t3` on `PATH`. stdout is the output path. The exit code is 0 when the agent completed, 2 when it asked a question back, and 1 otherwise. If no T3 CLI runs or the ref does not resolve, the harness prints the cause, writes the JSON when `--out` is given, and exits 1 before it starts a thread or touches settings. On SIGINT or SIGTERM, it runs cleanup, writes the JSON with status `interrupted` and `threads` filled in, and exits 1.
 
@@ -63,6 +65,8 @@ A scenario whose check depends on the project's Workflow block names a `project`
 ```
 
 A Claude or Grok lead takes the `codex` seat. A Codex lead skips the entry of its own family and takes `claudeAgent`. A second commit adds `median.mjs` and its test, which the two prompts name as the change to review or verify.
+
+`parallel-units` runs in the `units` project and `autopilot-owners` in the `docs-queue` project. Each `AGENTS.md` sets Check to `node --test` and Land to `main`, with no Models table, so every child runs on the lead's provider. `units` adds `sum.mjs` and its test in a second commit. `docs-queue` holds `README.md` with "teh" and `NOTES.md` with "recieve", the two queue items.
 
 A project's spec is a name and a list of commits, each a message and its files. The lane builds it once at `$TMPDIR/orbit-lane-project-<name>-<hash>`, where the hash covers the commits, so a changed spec gets a new folder. It builds the repo in a sibling folder and renames it into place, so a crashed build never leaves a half-made project. It then runs `t3 project add` when `t3 thread list --project <dir>` does not find the project. Both steps run under the lock. The folder and the T3 project stay for the next lane, because removing a T3 project also deletes its threads.
 
@@ -88,11 +92,11 @@ With no reader for the provider, or no session file for the lead, `session`, `to
 
 `threads` lists the lead first, with `parentThreadId` null. `t3 thread list` does not list `delegate_task` children, so the harness reads each `childThreadId` from the tool results of every reader's session files for the worktree. Those are Claude's and Grok's `tool_result` entries and Codex's `McpToolCall` results. A Codex lead's seats that run on Claude are found this way too. It adds a child once `t3 thread show` gives a `parentThreadId` already in `threads`, and repeats until nothing is added, so grandchildren in the folder are found too. A child's `waiting` is true when it has pending requests. A child isolated in its own worktree writes its session elsewhere, so its own children are found only when their ids appear in a tool result in a session file for the lead's worktree.
 
-`wake` is `null` without `--wake`. With it, and once the lead completes, the harness reads `t3 thread show` at once and then every 10 seconds. The first run is the `runId` of the first message that has one, the run of the scenario message. A wake is an `assistant` message from any later `runId`, read once the thread has no `activeRunId`. T3 posts a wake as assistant messages under a new run with no user message, and `t3 thread start --wait` can return only after the wake run ends, so the first read can already hold the wake. When one arrives, `wake` is `"arrived"` and `wakes` holds the last message of each new run, with `at` set to the time the harness saw it. When none arrives in time, `wake` is `"none"`, `wakes` is empty and `status` stays `completed`. The harness then reads `threads`, `messages` and the session again, so they include the wake.
+`wake` is `null` without `--wake`. With it, and once the lead completes, the harness reads `t3 thread show` at once and then every 10 seconds. The first run is the `runId` of the first message that has one, the run of the scenario message. A wake is an `assistant` message from any later `runId`, read once the thread has no `activeRunId`. T3 posts a wake as assistant messages under a new run with no user message, and `t3 thread start --wait` can return only after the wake run ends, so the first read can already hold the wake. The harness stops polling once `--wakes` wake runs have arrived, or when the `--wake` minutes pass. When at least one arrives, `wake` is `"arrived"` and `wakes` holds the last message of each new run, with `at` set to the time the harness first saw that run. When none arrives in time, `wake` is `"none"`, `wakes` is empty and `status` stays `completed`. The harness then reads `threads`, `messages` and the session again, so they include the wake.
 
 ## Grade a lane
 
-`scenarios.mjs` holds each scenario's prompt and its checks. A check holds one expectation per provider kind, `claude`, `codex` and `grok`, over the raw `toolCalls`. An expectation says that `some` call, or `none`, matches a tool name, an input shape and who made it, `lead`, `child` or `any`. `anyOf` passes when any expectation it lists passes. A shape names only the input keys it checks. Each leaf is a literal, a RegExp that tests a string or any string in an array, `ABSENT` for a missing key, or a function. A provider with no expectation is N/A, and the check's `na` gives the reason. So the table is the one place that says what each lead must call.
+`scenarios.mjs` holds each scenario's prompt and its checks. A check holds one expectation per provider kind, `claude`, `codex` and `grok`, over the raw `toolCalls`. An expectation says that `some` call, or `none`, matches a tool name, an input shape and who made it, `lead`, `child` or `any`. A `some` expectation may set `min`, the number of calls that must match, default 1, such as two `delegate_task` children. `anyOf` passes when any expectation it lists passes. A shape names only the input keys it checks. Each leaf is a literal, a RegExp that tests a string or any string in an array, `ABSENT` for a missing key, or a function. A provider with no expectation is N/A, and the check's `na` gives the reason. So the table is the one place that says what each lead must call.
 
 | Scenario | Checks | Passes when |
 | --- | --- | --- |
@@ -106,6 +110,8 @@ With no reader for the provider, or no session file for the lead, `session`, `to
 | `watch-pr-wait` | `lead-watches`, `no-child-watches` | The lead calls `watch_pull_request` on a PR URL, and no child does |
 | `schedule-loop` | `bound-to-thread`, `interval-min-60s` | `schedule_task` has `bindToCurrentThread: true`, and no interval is under 60000 ms |
 | `schedule-only` | `scheduled`, `prompt-not-run`, `no-run-now` | The lead calls `schedule_task` with `bindToCurrentThread: true`. It never counts the commits itself, with `git rev-list` or `git log` piped to `wc -l`, and never calls `run_scheduled_task_now` |
+| `parallel-units` | `own-checkout-children`, `no-worktree-agent`, `no-shell-worktree`, `cherry-picked`, `children-settled` | The lead starts at least two `delegate_task` children with `isolation: "worktree"`, `mode: "async"` and a `clientRequestId`. No `Agent` call passes `isolation: "worktree"`, which is N/A off Claude, and no shell runs `git worktree add`. At least two `git cherry-pick` commands run, and the lead settles at least two threads with `t3_thread_organize` |
+| `autopilot-owners` | `owners-are-children`, `no-worktree-agent`, `no-shell-worktree`, `tick-bound` | Each of the two owners is a `delegate_task` child as in `parallel-units`, with the same two worktree checks. The lead arms `schedule_task` with `bindToCurrentThread: true` |
 
 The `gitops-native` and `code-child` prompts are the ones the Codex lanes ran. The `watch-pr-wait` prompt is the hillclimb wake lane's, with its PR URL replaced. The rest are drafts that live lanes may tune.
 
@@ -114,7 +120,7 @@ node tests/t3/grade.mjs tests/t3/fixtures/*.json
 node tests/t3/grade.mjs "$TMPDIR"/orbit-lane-gitops-native-*.json
 ```
 
-For each lane, `grade.mjs` prints `<file>  <scenario>  <provider>`, then one line per check with `PASS`, `FAIL` or `N/A`, the check and why. A `PASS` names the matching call by its position, counted from 1. A `FAIL` names the call it missed and the nearest call with that name. A `spawn_agent` with `join: "missing"` fails with a why that says its call args were not found. A lane whose `status` is not `completed` fails every check, N/A ones included. A lane whose `toolCalls` is `null` fails every check that applies.
+For each lane, `grade.mjs` prints `<file>  <scenario>  <provider>`, then one line per check with `PASS`, `FAIL` or `N/A`, the check and why. A `PASS` names the matching call by its position, counted from 1, or every matching call when `min` is over 1. A `FAIL` names the call it missed and the nearest call with that name. Under `min`, it also says how many calls matched of how many it needs, and names those that matched. A `spawn_agent` with `join: "missing"` fails with a why that says its call args were not found. A lane whose `status` is not `completed` fails every check, N/A ones included. A lane whose `toolCalls` is `null` fails every check that applies.
 
 The exit code is 0 when no check fails and 1 when any check fails. It is 2 when a file cannot be graded, because it is not valid JSON, names an unknown scenario, has a `thread.providerInstanceId` no reader knows, has no `toolCalls` key, or has a `toolCalls` that is neither `null` nor a list of calls that each have a string `name`. stderr then names the file and the reason. Exit 2 wins over exit 1.
 
@@ -139,6 +145,9 @@ It reads the calls with the reader `lane.mjs` uses, and the message and model fr
 
 | File | Origin | Source | Shows |
 | --- | --- | --- | --- |
+| `claude-autopilot-owners.json` | hand-built | none | Two owners as `delegate_task` worktree children and a tick bound to the thread. Pending the real lane |
+| `claude-parallel-units.json` | hand-built | none | Two `delegate_task` worktree children, two cherry-picks by gitops and two settles. Pending the real lane |
+| `claude-parallel-units-agent-worktree.json` | hand-built | the fixture above | Two `Agent` calls with `isolation: "worktree"` and no child thread. `own-checkout-children`, `no-worktree-agent` and `children-settled` fail |
 | `claude-probe.json` | real | `orbit-lane-probe-fa8172` | A Claude lead runs `pwd` and loads no skill |
 | `claude-gitops-native.json` | real | `orbit-lane-gitops-native-c1ab0a` | A Claude lead spawns `orbit:gitops` as an `Agent` |
 | `claude-code-child.json` | real, relabeled | `orbit-lane-routing-8524-8094ae89ae7d6368` | A Claude lead spawns `orbit:poteto-agent` as an `Agent` |

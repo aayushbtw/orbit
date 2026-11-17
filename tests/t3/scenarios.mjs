@@ -1,7 +1,7 @@
 export const ABSENT = Symbol('absent');
 
 export const t3 = (tool) => new RegExp(`^(mcp__)?t3-code(-direct)?__${tool}$`);
-const some = (name, input, by = 'any') => ({ want: 'some', name, input, by });
+const some = (name, input, by = 'any', min = 1) => ({ want: 'some', name, input, by, min });
 const none = (name, input, by = 'any') => ({ want: 'none', name, input, by });
 const viaUseTool = (tool, input) => ({ tool_name: t3(tool), ...(input && { tool_input: input }) });
 const otherFamily = (kind) => new RegExp(`^(?!${kind})`, 'i');
@@ -15,6 +15,30 @@ const seat = (kind) => ({ role: 'review', mode: 'async', runtimeMode: ABSENT, ta
 const verifierSeat = (kind) => ({ isolation: 'worktree', target: { providerInstanceId: otherFamily(kind) } });
 const countsCommits = /rev-list|\bgit\b[^|]*\blog\b[^|]*\|\s*wc\s+-l/;
 const shortInterval = { schedule: { type: 'interval', everyMs: (ms) => !(ms >= 60_000) } };
+const ownCheckout = { isolation: 'worktree', mode: 'async', clientRequestId: /./ };
+const ownCheckoutChildren = {
+  claude: some(t3('delegate_task'), ownCheckout, 'lead', 2),
+  codex: some(t3('delegate_task'), ownCheckout, 'lead', 2),
+  grok: some('use_tool', viaUseTool('delegate_task', ownCheckout), 'lead', 2),
+};
+const noWorktreeAgent = {
+  claude: none('Agent', { isolation: 'worktree' }),
+  na: {
+    codex: "the Agent worktree option is Claude Code's; no-shell-worktree covers a checkout made in the shell",
+    grok: "the Agent worktree option is Claude Code's; no-shell-worktree covers a checkout made in the shell",
+  },
+};
+const worktreeAdd = { command: /\bgit\b.*\bworktree\s+add\b/ };
+const noShellWorktree = {
+  claude: none('Bash', worktreeAdd),
+  codex: none('exec_command', worktreeAdd),
+  grok: none('run_terminal_command', worktreeAdd),
+};
+const workflow = `## Workflow
+
+- Check: \`node --test\`.
+- Land: \`main\`.
+`;
 
 // orbit's own AGENTS.md sets other-family to inherit, so a lead there rightly keeps every seat native.
 const seatProject = {
@@ -55,6 +79,45 @@ test('median of odd and even lengths', () => {
   assert.equal(median([4, 1, 3, 2]), 2.5);
 });
 `,
+      },
+    },
+  ],
+};
+
+const unitsProject = {
+  name: 'units',
+  commits: [
+    { message: 'chore: add the workflow block', files: { 'AGENTS.md': workflow } },
+    {
+      message: 'feat: add sum',
+      files: {
+        'sum.mjs': `export function sum(values) {
+  return values.reduce((a, b) => a + b, 0);
+}
+`,
+        'sum.test.mjs': `import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { sum } from './sum.mjs';
+
+test('sum adds every value', () => {
+  assert.equal(sum([1, 2, 3]), 6);
+  assert.equal(sum([]), 0);
+});
+`,
+      },
+    },
+  ],
+};
+
+const docsQueueProject = {
+  name: 'docs-queue',
+  commits: [
+    {
+      message: 'chore: add the workflow block and docs',
+      files: {
+        'AGENTS.md': workflow,
+        'README.md': '# Docs queue\n\nRead teh notes before you start.\n',
+        'NOTES.md': '# Notes\n\nEach item should recieve one commit.\n',
       },
     },
   ],
@@ -202,6 +265,39 @@ export const SCENARIOS = {
         claude: none(t3('run_scheduled_task_now'), undefined, 'lead'),
         codex: none(t3('run_scheduled_task_now'), undefined, 'lead'),
         grok: none('use_tool', viaUseTool('run_scheduled_task_now'), 'lead'),
+      },
+    },
+  },
+  'parallel-units': {
+    prompt: "/orbit:start feature, just testing, don't ship: add two independent modules to this repo, each in its own file with a node:test test: `min.mjs` exporting min(values) and `max.mjs` exporting max(values). They share no file, so run them as two parallel delegates per the Delegate gate. Commit each unit on the task branch. No PR.",
+    project: unitsProject,
+    checks: {
+      'own-checkout-children': ownCheckoutChildren,
+      'no-worktree-agent': noWorktreeAgent,
+      'no-shell-worktree': noShellWorktree,
+      'cherry-picked': {
+        claude: some('Bash', { command: /\bgit\b.*\bcherry-pick\b/ }, 'any', 2),
+        codex: some('exec_command', { command: /\bgit\b.*\bcherry-pick\b/ }, 'any', 2),
+        grok: some('run_terminal_command', { command: /\bgit\b.*\bcherry-pick\b/ }, 'any', 2),
+      },
+      'children-settled': {
+        claude: some(t3('t3_thread_organize'), { action: 'settle' }, 'lead', 2),
+        codex: some(t3('t3_thread_organize'), { action: 'settle' }, 'lead', 2),
+        grok: some('use_tool', viaUseTool('t3_thread_organize', { action: 'settle' }), 'lead', 2),
+      },
+    },
+  },
+  'autopilot-owners': {
+    prompt: "/orbit:start autopilot-stack, Land main, two queue items, each a one-line doc fix: (1) in README.md change 'teh' to 'the'; (2) in NOTES.md change 'recieve' to 'receive'. Arm the audit tick every 1 minute bound to this thread. Stop each item at code-ready and skip the step 4 swarm; this is a lane test.",
+    project: docsQueueProject,
+    checks: {
+      'owners-are-children': ownCheckoutChildren,
+      'no-worktree-agent': noWorktreeAgent,
+      'no-shell-worktree': noShellWorktree,
+      'tick-bound': {
+        claude: some(t3('schedule_task'), { bindToCurrentThread: true }, 'lead'),
+        codex: some(t3('schedule_task'), { bindToCurrentThread: true }, 'lead'),
+        grok: some('use_tool', viaUseTool('schedule_task', { bindToCurrentThread: true }), 'lead'),
       },
     },
   },

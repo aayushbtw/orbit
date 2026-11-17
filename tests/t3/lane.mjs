@@ -29,6 +29,7 @@ const { values: opts } = parseArgs({
     model: { type: 'string' },
     timeout: { type: 'string', default: '30' },
     wake: { type: 'string' },
+    wakes: { type: 'string' },
   },
 });
 
@@ -46,6 +47,8 @@ const id = randomBytes(4).toString('hex');
 const out = resolve(opts.out ?? join(tmpdir(), `orbit-lane-${slug}-${id}.json`));
 const timeoutMs = Number(opts.timeout) * 60_000;
 const wakeMs = opts.wake === undefined ? 0 : Number(opts.wake) * 60_000;
+const wakeCount = Number(opts.wakes ?? 1);
+const POLL_MS = Number(process.env.ORBIT_LANE_POLL_MS ?? 10_000);
 const marketplace = opts.installed ? null : `orbit-head-${id}`;
 const runDir = join(tmpdir(), `orbit-lane-${id}`);
 const title = `orbit lane ${slug} ${id}`;
@@ -77,11 +80,13 @@ function fail(error) {
   finish();
 }
 
-if (!opts.head || !slug) fail('usage: node tests/t3/lane.mjs --head <ref> --scenario <slug> [--message <text>] [--out <file>] [--project <dir>] [--installed] [--provider <id> --model <slug>] [--timeout <minutes>] [--wake <minutes>]');
+if (!opts.head || !slug) fail('usage: node tests/t3/lane.mjs --head <ref> --scenario <slug> [--message <text>] [--out <file>] [--project <dir>] [--installed] [--provider <id> --model <slug>] [--timeout <minutes>] [--wake <minutes> [--wakes <n>]]');
 if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) fail(`--scenario must be lowercase letters, digits and hyphens, got ${slug}`);
 if (!message) fail(`--scenario ${slug} is not built in (${Object.keys(SCENARIOS).join(', ')}), so it needs --message`);
 if (!(timeoutMs > 0)) fail(`--timeout must be a positive number of minutes, got ${opts.timeout}`);
 if (opts.wake !== undefined && !(wakeMs > 0)) fail(`--wake must be a positive number of minutes, got ${opts.wake}`);
+if (opts.wakes !== undefined && opts.wake === undefined) fail('--wakes needs --wake');
+if (!(Number.isInteger(wakeCount) && wakeCount > 0)) fail(`--wakes must be a positive whole number, got ${opts.wakes}`);
 
 const candidates = [process.env.T3CODE_CLI_PATH, 't3'].filter(Boolean);
 const cli = candidates.find((c) => tryRun(c, ['--version']) !== null);
@@ -350,14 +355,17 @@ function wakeRuns(threadId) {
 
 async function holdForWake(threadId) {
   result.wake = 'none';
-  for (const deadline = Date.now() + wakeMs; ; await sleep(10_000)) {
+  const seen = new Map();
+  for (const deadline = Date.now() + wakeMs; ; await sleep(POLL_MS)) {
     const woke = wakeRuns(threadId);
     if (woke.length) {
       result.wake = 'arrived';
-      result.wakes = woke.map((msgs) => ({ at: new Date().toISOString(), text: msgs.at(-1).text }));
-      return;
+      result.wakes = woke.map((msgs) => {
+        if (!seen.has(msgs[0].runId)) seen.set(msgs[0].runId, new Date().toISOString());
+        return { at: seen.get(msgs[0].runId), text: msgs.at(-1).text };
+      });
     }
-    if (Date.now() >= deadline) return;
+    if (woke.length >= wakeCount || Date.now() >= deadline) return;
   }
 }
 
