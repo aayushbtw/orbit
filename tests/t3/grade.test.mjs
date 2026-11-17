@@ -164,6 +164,20 @@ test('seat-listed fails a near-miss provider, a same-family alias, an opaque mod
   assert.deepEqual(grade([reviewSeat('codex', 'gpt-5'), reviewSeat('codex', 'gpt-5')]), { 'seat-on-first-listed': 'PASS', 'only-listed-seats': 'PASS', 'one-seat': 'PASS', 'no-native-code-adversary': 'PASS' });
 });
 
+test('a same-provider delegate_task is no seat, but still counts as a native adversary or verifier', () => {
+  const grade = (scenario, toolCalls, provider = 'claude') => verdicts(lane({ scenario, provider, toolCalls: [caps, ...toolCalls] }));
+  const testChild = (providerInstanceId) => call('mcp__t3-code__delegate_task', { role: 'test', target: { providerInstanceId } });
+  assert.deepEqual(grade('seat-all-fail', [reviewSeat('claudeAgent', 'claude-opus-5-5')]), { 'caps-read': 'PASS', 'no-seat': 'PASS', 'no-native-replacement': 'PASS', 'judgment-adversary-ran': 'PASS' });
+  assert.equal(grade('seat-all-fail', [reviewSeat('claudeAgent', 'claude-opus-5-5'), reviewSeat('claudeAgent')])['no-native-replacement'], 'FAIL');
+  assert.equal(grade('seat-all-fail', [call('mcp__t3-code__delegate_task', { role: 'review' })])['no-native-replacement'], 'FAIL');
+  assert.equal(grade('seat-all-fail', [reviewSeat('codex', 'gpt-6.1-sol')])['no-seat'], 'FAIL');
+  assert.equal(grade('seat-listed', [reviewSeat('claudeAgent', 'claude-sonnet-5')])['no-native-code-adversary'], 'FAIL');
+  assert.equal(grade('seat-empty', [reviewSeat('claudeAgent', 'claude-opus-5-5')])['session-family-seat'], 'FAIL');
+  assert.equal(grade('verifier-all-fail', [testChild('claudeAgent')])['no-native-verifier'], 'FAIL');
+  assert.equal(grade('verifier-all-fail', [testChild('codex')], 'codex')['no-native-verifier'], 'FAIL');
+  assert.equal(grade('verifier-all-fail', [testChild('claudeAgent')], 'codex')['no-seat'], 'FAIL');
+});
+
 test('grade.mjs runs when its path goes through a symlink', () => {
   const tmp = mkdtempSync(join(tmpdir(), 'orbit-grade-'));
   try {

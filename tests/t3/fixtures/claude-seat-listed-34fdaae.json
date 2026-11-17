@@ -1,0 +1,151 @@
+{
+  "scenario": "seat-listed",
+  "message": "/orbit:interrogate Scope: the commit that adds median.mjs, against its parent. Intent: median(values) returns the median of an array of numbers. Make no edits.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "orbit-lane-seat-listed--c6a7bebcd18112e3",
+    "relabeled": false,
+    "note": "At 34fdaae, the opus adversary runs as a same-provider review delegate_task on claudeAgent, and the one review seat on another family targets codex with model gpt-6.1-sol",
+    "expect": {
+      "seat-on-first-listed": "PASS",
+      "only-listed-seats": "PASS",
+      "one-seat": "PASS",
+      "no-native-code-adversary": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git log --stat -3; git show d4d5f01; ls; cat AGENTS.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "ToolSearch",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node --test"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__orchestrator_capabilities",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "isolation": "worktree",
+        "mode": "async",
+        "role": "review",
+        "clientRequestId": "interrogate-adversary-opus-d4d5f01-try1",
+        "target": {
+          "providerInstanceId": "claudeAgent",
+          "model": "claude-opus-5-5"
+        }
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "isolation": "worktree",
+        "mode": "async",
+        "role": "review",
+        "clientRequestId": "interrogate-adversary-otherfamily-codex-d4d5f01-try1",
+        "target": {
+          "providerInstanceId": "codex",
+          "model": "gpt-6.1-sol"
+        }
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cd ~/.t3/worktrees/orbit-lane-project-seats-listed-5890584b/…[320 chars]"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__task_status",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__t3_thread_organize",
+      "input": {
+        "action": "settle"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git worktree remove --force ~/.t3/worktrees/orbit-lane-project-seats-listed-5890584b/t3-5f45f529-b53a2d4b28bfe516"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git branch -D t3/audit-median-function"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cd ~/.t3/worktrees/orbit-lane-project-seats-listed-5890584b/…[322 chars]"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__task_status",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__t3_thread_organize",
+      "input": {
+        "action": "settle"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git worktree remove --force ~/.t3/worktrees/orbit-lane-project-seats-listed-5890584b/t3-7bbe1ee6-04f281793077b2ec"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git branch -D t3/audit-median-implementation"
+      },
+      "sidechain": false
+    }
+  ]
+}

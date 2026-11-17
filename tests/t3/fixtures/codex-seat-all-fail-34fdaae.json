@@ -1,0 +1,157 @@
+{
+  "scenario": "seat-all-fail",
+  "message": "/orbit:interrogate Scope: the commit that adds median.mjs, against its parent. Intent: median(values) returns the median of an array of numbers. Make no edits.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "codex",
+    "model": "gpt-6.1-sol"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "rollout-2026-11-17T18-51-36-01a1e9fd-f129-71e2-8f4f-3f45f9750ad3.jsonl",
+    "relabeled": false,
+    "note": "At 34fdaae, with cursor, muse listed, a Codex lead sends its adversary to claudeAgent, a provider of another family that the row does not list. no-seat and judgment-adversary-ran fail",
+    "expect": {
+      "caps-read": "PASS",
+      "no-seat": "FAIL",
+      "no-native-replacement": "PASS",
+      "judgment-adversary-ran": "FAIL"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/skills/rules/SKILL.md .agents/skills/orbit/skills/interrogate/SKILL.md"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/rules.md .agents/skills/orbit/docs/harness/t3-code.md .agents/skills/orbit/skills/arena/SKILL.md"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__orchestrator_capabilities",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "git log --all --oneline -- median.mjs"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "git status --short"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat median.mjs"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code-direct__delegate_task",
+      "input": {
+        "target": {
+          "providerInstanceId": "claudeAgent",
+          "model": "claude-opus-5-5"
+        },
+        "role": "review",
+        "mode": "async"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "git show d5e565e --"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "node --test"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "node --input-type=module -e 'import {median} from \"./median.mjs\"; console.log(median([1e308,1e308])); console.log(median([Number.MIN_VALUE,0]));'"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/skills/unslop/SKILL.md"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__t3_thread_organize",
+      "input": {
+        "action": "settle"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "git status --short"
+        ]
+      },
+      "sidechain": false
+    }
+  ]
+}

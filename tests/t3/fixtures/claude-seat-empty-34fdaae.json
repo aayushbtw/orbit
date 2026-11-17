@@ -1,0 +1,159 @@
+{
+  "scenario": "seat-empty",
+  "message": "/orbit:interrogate Scope: the commit that adds median.mjs, against its parent. Intent: median(values) returns the median of an array of numbers. Make no edits.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "orbit-lane-seat-empty-a-8662b7b4b5c63a6e",
+    "relabeled": false,
+    "note": "At 34fdaae, with no Models table, both adversaries run as same-provider review delegate_task children on claudeAgent, the code one with target.model omitted. No seat on another family",
+    "expect": {
+      "no-seat": "PASS",
+      "session-family-seat": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C ~/.t3/worktrees/orbit-lane-project-seats-empty-2dbc7e92/orbit-lane-seat-empty-a-8662b7b4b5c63a6e show 9468831 --stat -p"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat ~/.claude/rules/orbit-models.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node --test"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "ToolSearch",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__orchestrator_capabilities",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "isolation": "worktree",
+        "mode": "async",
+        "role": "review",
+        "target": {
+          "providerInstanceId": "claudeAgent",
+          "model": "claude-opus-5-5"
+        },
+        "clientRequestId": "interrogate-adversaryA-9468831-try1"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "isolation": "worktree",
+        "mode": "async",
+        "role": "review",
+        "target": {
+          "providerInstanceId": "claudeAgent"
+        },
+        "clientRequestId": "interrogate-adversaryB-9468831-try1"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node ~/.t3/worktrees/orbit-lane-project-seats-empty-2dbc7e92/t3-53a010bc-4679d9839d462bf5/repro-median.mjs"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node --input-type=module -e \"import {median} from '~/.t3/wor…[268 chars]"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C ~/.t3/worktrees/orbit-lane-project-seats-empty-2dbc7e92/t3-53a010bc-4679d9839d462bf5 log -1 --format=%h"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__t3_thread_organize",
+      "input": {
+        "action": "settle"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node $TMPDIR/1926dc84-8767-48d7-bf8a-66d2a89287fc/scratchpad/probe.mjs"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat $TMPDIR/1926dc84-8767-48d7-bf8a-66d2a89287fc/scratchpad/probe.mjs"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__t3_thread_organize",
+      "input": {
+        "action": "settle"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C ~/.t3/worktrees/orbit-lane-project-seats-empty-2dbc7e…[212 chars]"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C ~/.t3/worktrees/orbit-lane-project-seats-empty-2dbc7e…[212 chars]"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C ~/.t3/worktrees/orbit-lane-project-seats-empty-2dbc7e92/orbit-lane-seat-empty-a-8662b7b4b5c63a6e branch -D t3/review-median-bugs t3/review-median-bugs-1"
+      },
+      "sidechain": false
+    }
+  ]
+}

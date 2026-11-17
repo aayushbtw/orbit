@@ -1,0 +1,167 @@
+{
+  "scenario": "parallel-units",
+  "message": "/orbit:start feature, just testing, don't ship: add two independent modules to this repo, each in its own file with a node:test test: `min.mjs` exporting min(values) and `max.mjs` exporting max(values). They share no file, so run them as two parallel delegates per the Delegate gate. Commit each unit on the task branch. No PR.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "codex",
+    "model": "gpt-6.1-sol"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "rollout-2026-11-17T18-32-50-01a1e9ec-c3fc-7e41-a157-1c58feac7535.jsonl",
+    "relabeled": false,
+    "note": "At 34fdaae, a Codex lead starts two delegate_task worktree children with no mode and no clientRequestId. own-checkout-children fails",
+    "expect": {
+      "own-checkout-children": "FAIL",
+      "no-worktree-agent": "N/A",
+      "no-shell-worktree": "PASS",
+      "cherry-picked": "PASS",
+      "children-settled": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/skills/rules/SKILL.md .agents/skills/orbit/skills/start/SKILL.md"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/rules.md .agents/skills/orbit/docs/harness/t3-code.md .agents/skills/orbit/skills/playbook/SKILL.md; cat ~/.claude/rules/orbit-models.md 2>/dev/null"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__orchestrator_capabilities",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/skills/playbook/playbooks/feature.md; git status --short; git branch --show-current; rg --files -g '*.mjs' -g 'AGENTS.md' -g 'package.json'"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code-direct__delegate_task",
+      "input": {
+        "isolation": "worktree"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code-direct__delegate_task",
+      "input": {
+        "isolation": "worktree"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "git show 1f1201f5276dc4d9b403da0efd7cef50e9c77b30 --"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "git cherry-pick 1f1201f5276dc4d9b403da0efd7cef50e9c77b30"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "node --test"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__t3_thread_organize",
+      "input": {
+        "action": "settle"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "git show d29bb13ce91bd25f802f0754529b58d5f91d8e54 --"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "git cherry-pick d29bb13ce91bd25f802f0754529b58d5f91d8e54"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "node --test"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "git status --short"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__t3_thread_organize",
+      "input": {
+        "action": "settle"
+      },
+      "sidechain": false
+    }
+  ]
+}
