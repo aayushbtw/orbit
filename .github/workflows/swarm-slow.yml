@@ -1,0 +1,8 @@
+name: slow
+on:
+  pull_request:
+jobs:
+  slow:
+    runs-on: ubuntu-latest
+    steps:
+      - run: sleep 150
