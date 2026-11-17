@@ -17,10 +17,24 @@ interface CommandResult {
 }
 export class WatcherQueryError extends Error {
   readonly failure: T.QueryFailure;
-  constructor(failure: T.QueryFailure) {
+  readonly pr: T.PrContext | null;
+  constructor(failure: T.QueryFailure, pr: T.PrContext | null = null) {
     super(failure.detail);
     this.name = "WatcherQueryError";
     this.failure = failure;
+    this.pr = pr;
+  }
+}
+export async function readingPr<V>(
+  pr: T.PrContext,
+  read: () => Promise<V>
+): Promise<V> {
+  try {
+    return await read();
+  } catch (error) {
+    if (error instanceof WatcherQueryError)
+      throw new WatcherQueryError(error.failure, pr);
+    throw error;
   }
 }
 export class ChecksUnavailable extends WatcherQueryError {
@@ -61,16 +75,19 @@ function parseJson(text: string, label: string): unknown {
     });
   }
 }
+const NOT_FOUND =
+  /Could not resolve to a (PullRequest|Repository)\b|no pull requests found/;
 async function runJson(argv: readonly [string, ...string[]]): Promise<unknown> {
   const result = await run(argv);
-  if (result.code !== 0)
-    throw new WatcherQueryError({
-      kind: "command-exit",
-      retryable: true,
-      code: result.code,
-      detail:
-        firstLine(result.stderr) || `${argv.join(" ")} exited ${result.code}`,
-    });
+  if (result.code !== 0) {
+    const detail =
+      firstLine(result.stderr) || `${argv.join(" ")} exited ${result.code}`;
+    throw new WatcherQueryError(
+      NOT_FOUND.test(result.stderr)
+        ? { kind: "not-found", retryable: false, code: result.code, detail }
+        : { kind: "command-exit", retryable: true, code: result.code, detail }
+    );
+  }
   return parseJson(result.stdout, argv.join(" "));
 }
 function raw(value: unknown): string {
@@ -578,7 +595,9 @@ export function parsePullRequest(
       "pull request.reviewRequests"
     ).flatMap((request) => {
       if (!isRecord(request)) return [];
-      const name = request.login ?? request.slug ?? request.name;
+      const name = [request.login, request.slug, request.name].find(
+        (value) => typeof value === "string" && value !== ""
+      );
       return typeof name === "string" ? [name] : [];
     }),
   };
@@ -882,5 +901,7 @@ export async function discoverStack(
   reader: T.GitHubReader,
   context: T.PrContext
 ): Promise<T.NonEmpty<T.PrContext>> {
-  return orderStack(context, await reader.openPullRequests(context));
+  return readingPr(context, async () =>
+    orderStack(context, await reader.openPullRequests(context))
+  );
 }

@@ -211,10 +211,11 @@ export async function main(
   } catch (error) {
     if (!(error instanceof WatcherQueryError)) throw error;
     const stamp = verdictFactory(runtime.clock, options.mode);
+    const { failure, pr } = error;
     const verdict =
-      options.polling.once && error.failure.retryable
-        ? statusUnavailableVerdict(stamp, error.failure)
-        : statusQueryVerdict(stamp, 1, error.failure);
+      options.polling.once && failure.retryable
+        ? statusUnavailableVerdict(stamp, failure, pr)
+        : statusQueryVerdict(stamp, 1, failure);
     runtime.stdout(render(verdict));
     return verdict.exitCode;
   }

@@ -1,5 +1,6 @@
 import {
   WatcherQueryError,
+  readingPr,
   resolveChecks,
   resolveReviewThreads,
 } from "./github.ts";
@@ -56,12 +57,15 @@ const AUTOMATION_TOKENS = [
   "pr review automation",
   "review automation",
 ] as const;
-export async function readSnapshot(args: {
+interface SnapshotRead {
   readonly reader: T.GitHubReader;
   readonly context: T.PrContext;
   readonly pendingHistory: "include" | "omit";
   readonly allowDraft: boolean;
-}): Promise<T.PrSnapshot> {
+}
+export const readSnapshot = (args: SnapshotRead): Promise<T.PrSnapshot> =>
+  readingPr(args.context, () => readPrSnapshot(args));
+async function readPrSnapshot(args: SnapshotRead): Promise<T.PrSnapshot> {
   const facts = await args.reader.pullRequest(args.context);
   if (facts.state === "MERGED" || facts.mergedAt !== null)
     return { kind: "merged", context: args.context, facts };
@@ -343,13 +347,14 @@ export function statusQueryVerdict(
 }
 export function statusUnavailableVerdict(
   stamp: VerdictStamp,
-  failure: T.QueryFailure
+  failure: T.RetryableQueryFailure,
+  pr: T.PrContext | null
 ): T.TimeoutVerdict {
   return stamp({
     kind: "TIMEOUT",
     terminal: true,
     exitCode: 5,
-    reason: { kind: "status-unavailable", failure },
+    reason: { kind: "status-unavailable", pr, failure },
   });
 }
 export interface WatchClock {
@@ -397,25 +402,29 @@ async function pollUntilTerminal<V>(args: {
       failures = 0;
     } catch (error) {
       if (!(error instanceof WatcherQueryError)) throw error;
+      const { failure, pr } = error;
       failures += 1;
-      if (!error.failure.retryable || failures >= args.options.maxQueryErrors)
-        return statusQueryVerdict(args.stamp, failures, error.failure);
+      if (!failure.retryable)
+        return statusQueryVerdict(args.stamp, failures, failure);
+      if (args.options.once)
+        return statusUnavailableVerdict(args.stamp, failure, pr);
+      if (failures >= args.options.maxQueryErrors)
+        return statusQueryVerdict(args.stamp, failures, failure);
       const retryInSeconds = queryBackoffSeconds(
         args.options.interval,
         failures
       );
-      if (!args.options.once)
-        args.dependencies.emit(
-          args.stamp({
-            kind: "RETRY",
-            terminal: false,
-            failure: error.failure,
-            consecutiveFailures: failures,
-            retryInSeconds,
-          })
-        );
+      args.dependencies.emit(
+        args.stamp({
+          kind: "RETRY",
+          terminal: false,
+          failure,
+          consecutiveFailures: failures,
+          retryInSeconds,
+        })
+      );
       if (deadlinePassed(started, args.options, args.dependencies.clock.now()))
-        return statusUnavailableVerdict(args.stamp, error.failure);
+        return statusUnavailableVerdict(args.stamp, failure, pr);
       await sleep(retryInSeconds);
       continue;
     }
