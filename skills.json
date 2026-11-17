@@ -459,7 +459,10 @@
       "Add `.gitignore` holding `node_modules/`, so the dependencies `bootstrap.ts` installs stay untracked.",
       "In `watch-pr/`, when both check sources are empty, `resolveChecks` asks GitHub whether the repository runs checks (`runsChecks`, `PR_RUNS_CHECKS_QUERY`: a `.yml` or `.yaml` file in `.github/workflows` on the PR head or the base branch whose `on` names a `pull_request*` event, or a `push` unless its `branches` lists only the base branch or it has only `tags` or `tags-ignore` filters, or whose triggers `Bun.YAML` cannot read, a check on an earlier commit of the PR, a check on one of the repository's 10 most recently updated pull requests, or a protection rule or ruleset that requires checks). With none, the read is `source: \"no-ci\"` with zero checks, and the status table shows `✅ no CI`.",
       "In `watch-pr/policy.ts`, `runSimple` runs a `--status-only` read with `maxQueryErrors: 1`, so a query error returns the `status-query` blocker at once instead of retrying.",
-      "In `check-plan.mjs`, the Verify, live error names `<code model>` in place of `<swarm workers model>`, matching multi-phase-plan.md's template."
+      "In `check-plan.mjs`, the Verify, live error names `<code model>` in place of `<swarm workers model>`, matching multi-phase-plan.md's template.",
+      "In `check-plan.mjs`, `--help`, `-h`, no argument, and a file `readFileSync` cannot read (after a `Cannot read <file>: <code>` line) print the usage line to stderr and exit 2, with no stack trace.",
+      "In `package.json`, pin the devDependencies `bun-types` to `1.3.14` and `typescript` to `7.0.2` in place of `latest`, and match `bun.lock`'s workspace specifiers.",
+      "In `check-plan.test.ts`, add usage and unreadable-file cases, a `test.each` table with one negative case per structure rule, and a case that the multi-phase-plan.md skeleton fails only on Verify, live until `<code model>` is filled in."
     ]
   },
   "ketchup": {

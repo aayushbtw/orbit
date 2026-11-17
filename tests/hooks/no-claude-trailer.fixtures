@@ -1,0 +1,7 @@
+trailer via -m | block | git commit -m "fix: thing" -m "Co-Authored-By: Claude <noreply@anthropic.com>"
+git -C dir commit | block | git -C /tmp/repo commit -m "fix: thing" -m "Co-Authored-By: Claude <noreply@anthropic.com>"
+heredoc message | block | git commit -m "$(cat <<'EOF'\nfix: thing\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)"
+double spaces | block | git  commit -m "fix: thing" -m "Co-Authored-By:  Claude <noreply@anthropic.com>"
+plain commit | allow | git commit -m "fix: thing"
+echo of trailer | allow | echo "Co-Authored-By: Claude <noreply@anthropic.com>"
+commit -F file (known limit) | allow | git commit -F msg.txt
