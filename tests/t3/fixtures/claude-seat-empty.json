@@ -1,0 +1,215 @@
+{
+  "scenario": "seat-empty",
+  "message": "/orbit:interrogate Scope: the commit that adds median.mjs, against its parent. Intent: median(values) returns the median of an array of numbers. Make no edits.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "orbit-lane-seat-empty-f1cb6630",
+    "relabeled": false,
+    "note": "A live seat-empty lane at 41b1c74. With no Models table the lead starts no seat and spawns the native code adversary, an Agent with model omitted, beside the opus one.",
+    "expect": {
+      "no-seat": "PASS",
+      "session-family-seat": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git log --oneline --stat -5"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git show 9468831"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node --test"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat ~/.claude/rules/orbit-models.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "ToolSearch",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "ls -la ~/.t3/worktrees/orbit-lane-project-seats-empty-2dbc7e92/"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "TaskStop",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "fd -H -t f '^median\\.mjs$' ~ $TMPDIR /private/tmp --max-depth 8"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C $TMPDIR/orbit-lane-project-seats-empty-2dbc7e92 show 9468831"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C $TMPDIR/orbit-lane-project-seats-empty-2dbc7e92 worktree list"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node --test $TMPDIR/orbit-lane-project-seats-empty-2dbc7e92/median.test.mjs"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "general-purpose",
+        "model": "opus",
+        "run_in_background": false
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "general-purpose",
+        "run_in_background": false
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node $TMPDIR/3646245a-23e2-4595-a61d-8115a4e010d9/scratchpad/adv-a/probe.mjs"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node $TMPDIR/3646245a-23e2-4595-a61d-8115a4e010d9/scratchpad/adv-b/probe.mjs"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C $TMPDIR/orbit-lane-project-seats-empty-2dbc7e92 worktree remove --force $TMPDIR/3646245a-23e2-4595-a61d-8115a4e010d9/scratchpad/adv-a"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C $TMPDIR/orbit-lane-project-seats-empty-2dbc7e92 worktree remove --force $TMPDIR/3646245a-23e2-4595-a61d-8115a4e010d9/scratchpad/adv-b"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C $TMPDIR/orbit-lane-project-seats-empty-2dbc7e92 worktree add --detach $TMPDIR/3646245a-23e2-4595-a61d-8115a4e010d9/scratchpad/adv-b 9468831"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C $TMPDIR/orbit-lane-project-seats-empty-2dbc7e92 show 9468831"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Write",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node $TMPDIR/3646245a-23e2-4595-a61d-8115a4e010d9/scratchpad/adv-b/probe.mjs"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node --test $TMPDIR/3646245a-23e2-4595-a61d-8115a4e010d9/scratchpad/adv-b/median.test.mjs"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C $TMPDIR/orbit-lane-project-seats-empty-2dbc7e92 worktree add --detach $TMPDIR/3646245a-23e2-4595-a61d-8115a4e010d9/scratchpad/adv-a 9468831"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C $TMPDIR/3646245a-23e2-4595-a61d-8115a4e010d9/scratchpad/adv-a show 9468831"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat > $TMPDIR/3646245a-23e2-4595-a61d-8115a4e010d9/scratchpa…[728 chars]"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node --test $TMPDIR/3646245a-23e2-4595-a61d-8115a4e010d9/scratchpad/adv-a/median.test.mjs"
+      },
+      "sidechain": true
+    }
+  ]
+}

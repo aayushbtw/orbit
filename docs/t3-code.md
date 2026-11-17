@@ -31,15 +31,33 @@ T3 serves its tools as MCP tools, and a step probes each tool before its first c
 A review panel fills one seat on a model family other than the session's.
 
 - The lead calls `orchestrator_capabilities` once per thread and reuses the result, and calls it again only after an error or a user-named provider change, or with `search` for a model the Models table names.
-- The roster is every enabled provider that can run a cross-provider child task and has a family other than the session's.
-- The empty-cell default takes the first roster provider's first model, and skips a model of the session's own family that another provider hosts.
-- The `other-family` row comes from the project's AGENTS.md, else from `~/.claude/rules/orbit-models.md`, which `/orbit:setup` writes. Its Model cell can list providers in order. The seat tries only listed providers outside the session's family, then the session-family seat, never a provider the list leaves out.
+- The `other-family` row comes from the project's AGENTS.md, else from `~/.claude/rules/orbit-models.md`, which `/orbit:setup` writes. The roster is the list of providers in its Model cell.
+- An empty cell runs the skill's own seat, and the reply says that no seat on another family is configured. `inherit` keeps the session-family seat.
+- A list tries at most three listed providers outside the session's family, in list order, and never a provider the list leaves out.
 - An explicit model pick is checked with `search` before it is called unavailable.
-- An unavailable entry goes in the reply with its reason.
+- An unavailable entry goes in the reply with its reason, whether it failed a check or its child failed.
 - The seat runs through `delegate_task`, reads only, and its child thread is settled when it returns.
 - Seats that write code never take a roster seat. They run on the lead's provider.
 
-Orbit assumes no provider beyond the lead's own. Each seat on another family comes from the roster at run time.
+Orbit assumes no provider beyond the lead's own. Each seat on another family comes from a provider the user listed, checked at run time.
+
+## Provider selection
+
+The `other-family` Model cell resolves to one of four outcomes. The [host adapter](../plugin/docs/harness/t3-code.md) holds them as one table.
+
+- An empty cell, or no row, runs the skill's session-family seat, as outside T3. The reply says that no seat on another family is configured and that `/orbit:setup` lists providers.
+- `inherit` runs the session-family seat, with no line.
+- A list gives at most three candidates, one per provider, in list order. An entry is a candidate when its provider is outside the session's family, is enabled, can run a cross-provider child task, lists models and offers the parent's runtime mode for a seat that runs commands. Its model must also pass the family check. The lead tries the candidates in order for one seat. They are fallbacks, not more reviewers.
+- When every candidate fails at a check or after its spawn, the seat is skipped, and the reply says `Skipped <skill>'s seat on another family: every listed entry failed.` A list that ends with `inherit` runs the session-family seat instead. The verifier never skips. It runs native only when the `verifier` row's Model is `other-family, inherit`, which setup writes after the user's yes. Otherwise the lead asks the user before a native verifier runs, or holds the PR when no user can answer. A trailing `inherit` on the `other-family` row covers panel seats, not the verifier.
+
+The family check reads the model, not only the provider. A provider's `driverKind` does not name the family of every model it serves, and an aggregator can serve the session's own family. A model is of the session's family when any token of its `id` matches the session's family word or that family's vendor, `anthropic`, `openai` or `xai`. That word comes from `inheritedModel`, not from each model the session's provider lists, because an aggregator lead lists models of several families. When `inheritedModel` is an alias such as `opus`, the word comes from the session provider's model whose `id` holds the alias. When neither gives a word, the family is unknown, and every seat says `family unverified`. A model named `auto` or `default` is opaque, so its seat says `family unverified`.
+
+`/orbit:setup` recommends a list ranked Claude, Codex, Muse, Gemini, then Grok. For each enabled lead kind it takes the first three ranked providers outside that kind, and it recommends the union of those picks. A seat counts its three candidates after its own checks, so an entry after the third under every lead kind still runs when an earlier entry fails them. Setup names such an entry with that condition and accepts the list.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="diagrams/provider-selection-dark.svg">
+  <img alt="The lead reads the other-family Model cell. An empty cell runs the skill's own seat and says that no seat on another family is configured. A list is filtered by family, provider and model checks, and keeps at most three candidates. The candidates are tried in order for one seat. When all fail, the seat is skipped and the reply says so, or the native session-family seat runs when the list ends with inherit." src="diagrams/provider-selection-light.svg">
+</picture>
 
 ## Spawn subagents under another lead
 

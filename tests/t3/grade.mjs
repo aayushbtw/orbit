@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { ABSENT, SCENARIOS } from './scenarios.mjs';
 import { kindOf } from './sessions.mjs';
@@ -18,7 +18,7 @@ export function parseLane(text, file) {
   if (toolCalls !== null && !(Array.isArray(toolCalls) && toolCalls.every((c) => typeof c?.name === 'string'))) {
     throw bad('toolCalls is neither null nor a list of calls with a name');
   }
-  return { scenario: lane.scenario, provider, status: lane.status, toolCalls };
+  return { scenario: lane.scenario, provider, status: lane.status, pendingQuestion: lane.pendingQuestion ?? null, toolCalls };
 }
 
 function matches(shape, value) {
@@ -48,10 +48,16 @@ function evaluate(expect, toolCalls) {
     const results = expect.anyOf.map((e) => evaluate(e, toolCalls));
     return results.find((r) => r.ok) ?? { ok: false, why: results.map((r) => r.why).join('; or ') };
   }
-  const { want, name, input, by, min = 1 } = expect;
+  const { want, name, input, by, key, min = 1 } = expect;
   const calls = toolCalls.map((call, i) => ({ call, i })).filter(({ call }) => matches(name, call.name));
   const hits = calls.filter(({ call }) => BY[by](call) && (input === undefined || matches(input, call.input)));
   const wanted = `${by === 'any' ? '' : `${by} `}call ${String(name)}${input === undefined ? '' : ` with ${show(input)}`}`;
+  if (want === 'atMostOne') {
+    const first = new Map();
+    for (const h of hits) if (!first.has(key(h.call.input))) first.set(key(h.call.input), h);
+    const seen = [...first].map(([k, h]) => `${describe(h)} on ${JSON.stringify(k)}`);
+    return { ok: seen.length <= 1, why: seen.length ? seen.join(' and ') : `no ${wanted}` };
+  }
   if (want === 'none') return hits.length ? { ok: false, why: describe(hits[0], input) } : { ok: true, why: `no ${wanted}` };
   if (hits.length >= min) return { ok: true, why: (min > 1 ? hits : hits.slice(0, 1)).map((h) => describe(h, input)).join('; ') };
   if (hits.length) return { ok: false, why: `${hits.length} of ${min} needed ${wanted}; matched ${hits.map((h) => describe(h, input)).join('; ')}` };
@@ -59,9 +65,15 @@ function evaluate(expect, toolCalls) {
   return { ok: false, why: `${min > 1 ? `0 of ${min} needed` : 'no'} ${wanted}${near ? `; saw ${describe(near, input)}` : ''}` };
 }
 
-export function gradeLane({ scenario, provider, status, toolCalls }) {
-  return Object.entries(SCENARIOS[scenario].checks).map(([check, cell]) => {
-    if (status !== 'completed') return { check, verdict: 'FAIL', why: `lane status is ${status}, not completed` };
+const QUESTION = /^(AskUserQuestion|ask_user_question|request_user_input)$/;
+const askedUser = (pending) => Array.isArray(pending) && pending.length > 0 && pending.every((q) => QUESTION.test(q?.name));
+
+export function gradeLane({ scenario, provider, status, pendingQuestion, toolCalls }) {
+  const { checks, mayAsk } = SCENARIOS[scenario];
+  const graded = status === 'completed' || (mayAsk && status === 'waiting' && askedUser(pendingQuestion));
+  const notGraded = `lane status is ${status}, not completed${mayAsk ? " or waiting only on the lead's own question" : ''}`;
+  return Object.entries(checks).map(([check, cell]) => {
+    if (!graded) return { check, verdict: 'FAIL', why: notGraded };
     const expect = cell[provider];
     if (!expect) return { check, verdict: 'N/A', why: cell.na[provider] };
     if (!toolCalls) return { check, verdict: 'FAIL', why: 'no toolCalls, so the lead session was not read' };
@@ -70,7 +82,7 @@ export function gradeLane({ scenario, provider, status, toolCalls }) {
   });
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   const files = process.argv.slice(2);
   if (!files.length) {
     console.error('usage: node tests/t3/grade.mjs <lane.json>...');

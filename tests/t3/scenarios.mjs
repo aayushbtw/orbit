@@ -3,6 +3,7 @@ export const ABSENT = Symbol('absent');
 export const t3 = (tool) => new RegExp(`^(mcp__)?t3-code(-direct)?__${tool}$`);
 const some = (name, input, by = 'any', min = 1) => ({ want: 'some', name, input, by, min });
 const none = (name, input, by = 'any') => ({ want: 'none', name, input, by });
+const atMostOne = (name, input, by, key) => ({ want: 'atMostOne', name, input, by, key });
 const viaUseTool = (tool, input) => ({ tool_name: t3(tool), ...(input && { tool_input: input }) });
 const otherFamily = (kind) => new RegExp(`^(?!${kind})`, 'i');
 
@@ -11,8 +12,23 @@ const noChildThread = {
   codex: none(t3('delegate_task')),
   grok: none('use_tool', viaUseTool('delegate_task')),
 };
-const seat = (kind) => ({ role: 'review', mode: 'async', runtimeMode: ABSENT, target: { providerInstanceId: otherFamily(kind) } });
+const seatOn = (target) => ({ role: 'review', mode: 'async', runtimeMode: ABSENT, target });
+const seat = (kind) => seatOn({ providerInstanceId: otherFamily(kind) });
+const familyNames = { claude: ['claude', 'anthropic'], codex: ['gpt', 'openai'], grok: ['grok', 'xai'] };
+const verifiedOutside = (lead, m) => typeof m === 'string' && !['auto', 'default'].includes(m)
+  && !m.toLowerCase().split(/[-/.:]/).some((token) => familyNames[lead].includes(token));
+const listedSeat = (lead, providerInstanceId) => seatOn({ providerInstanceId, model: (m) => verifiedOutside(lead, m) });
+const unlistedSeat = { target: { providerInstanceId: (id) => !['codex', 'grok'].includes(id) } };
+const reviewSeat = { role: 'review' };
+const seatProvider = (input) => input?.target?.providerInstanceId;
+const capsRead = {
+  claude: some(t3('orchestrator_capabilities'), undefined, 'lead'),
+  codex: some(t3('orchestrator_capabilities'), undefined, 'lead'),
+  grok: some('use_tool', viaUseTool('orchestrator_capabilities'), 'lead'),
+};
 const verifierSeat = (kind) => ({ isolation: 'worktree', target: { providerInstanceId: otherFamily(kind) } });
+const codeAdversary = { subagent_type: 'general-purpose', model: (m) => m !== 'opus' };
+const judgmentAdversary = { subagent_type: 'general-purpose', model: 'opus' };
 const countsCommits = /rev-list|\bgit\b[^|]*\blog\b[^|]*\|\s*wc\s+-l/;
 const onceRead = /\/watch-pr\s[^|;&]*--once\b/;
 const prefix = /^(\w+=\S*|env|exec|nohup|time|command)$/;
@@ -52,10 +68,11 @@ const workflow = `## Workflow
 - Check: \`node --test\`.
 - Land: \`main\`.
 `;
+const interrogateMedian = '/orbit:interrogate Scope: the commit that adds median.mjs, against its parent. Intent: median(values) returns the median of an array of numbers. Make no edits.';
+const verifierMedian = '/orbit:ship the commit that adds median.mjs, verifier step only. Do not land.';
 
-// orbit's own AGENTS.md sets other-family to inherit, so a lead there rightly keeps every seat native.
-const seatProject = {
-  name: 'seats',
+const seatsProject = (name, otherFamilyCell) => ({
+  name,
   commits: [
     {
       message: 'chore: add the workflow block',
@@ -64,14 +81,14 @@ const seatProject = {
 
 - Check: \`node --test\`.
 - Land: \`main\`.
-
+${otherFamilyCell === null ? '' : `
 ### Models
 
 | Task | Use for | Model | Effort |
 | --- | --- | --- | --- |
-| other-family | panel seat on another family | codex, claudeAgent | |
+| other-family | panel seat on another family | ${otherFamilyCell} | |
 | verifier | runs the change before it lands | other-family | |
-`,
+`}`,
       },
     },
     {
@@ -95,7 +112,9 @@ test('median of odd and even lengths', () => {
       },
     },
   ],
-};
+});
+
+const seatProject = seatsProject('seats', 'codex, claudeAgent');
 
 const unitsProject = {
   name: 'units',
@@ -200,7 +219,7 @@ export const SCENARIOS = {
     },
   },
   'verifier-seat': {
-    prompt: '/orbit:ship the commit that adds median.mjs, verifier step only. Do not land.',
+    prompt: verifierMedian,
     project: seatProject,
     checks: {
       'verifier-ran': {
@@ -216,7 +235,7 @@ export const SCENARIOS = {
     },
   },
   'review-seat': {
-    prompt: '/orbit:interrogate Scope: the commit that adds median.mjs, against its parent. Intent: median(values) returns the median of an array of numbers. Make no edits.',
+    prompt: interrogateMedian,
     project: seatProject,
     checks: {
       'seat-other-family': {
@@ -228,6 +247,76 @@ export const SCENARIOS = {
         claude: some(t3('delegate_task'), { ...seat('claude'), clientRequestId: /./ }, 'lead'),
         codex: some(t3('delegate_task'), { ...seat('codex'), clientRequestId: /./ }, 'lead'),
         grok: some('use_tool', viaUseTool('delegate_task', { ...seat('grok'), clientRequestId: /./ }), 'lead'),
+      },
+    },
+  },
+  'seat-listed': {
+    prompt: interrogateMedian,
+    project: seatsProject('seats-listed', 'codex, grok'),
+    checks: {
+      'seat-on-first-listed': {
+        claude: some(t3('delegate_task'), listedSeat('claude', 'codex'), 'lead'),
+        codex: some(t3('delegate_task'), listedSeat('codex', 'grok'), 'lead'),
+        grok: some('use_tool', viaUseTool('delegate_task', listedSeat('grok', 'codex')), 'lead'),
+      },
+      'only-listed-seats': {
+        claude: none(t3('delegate_task'), unlistedSeat, 'lead'),
+        codex: none(t3('delegate_task'), unlistedSeat, 'lead'),
+        grok: none('use_tool', viaUseTool('delegate_task', unlistedSeat), 'lead'),
+      },
+      'one-seat': {
+        claude: atMostOne(t3('delegate_task'), reviewSeat, 'lead', seatProvider),
+        codex: atMostOne(t3('delegate_task'), reviewSeat, 'lead', seatProvider),
+        grok: atMostOne('use_tool', viaUseTool('delegate_task', reviewSeat), 'lead', (input) => seatProvider(input?.tool_input)),
+      },
+      'no-native-code-adversary': {
+        claude: none('Agent', codeAdversary, 'lead'),
+        codex: none('spawn_agent', { model: 'gpt-6.1-sol' }, 'lead'),
+        na: { grok: 'spawn_subagent cannot tell the code adversary from the judgment one' },
+      },
+    },
+  },
+  'seat-empty': {
+    prompt: interrogateMedian,
+    project: seatsProject('seats-empty', null),
+    checks: {
+      'no-seat': noChildThread,
+      'session-family-seat': {
+        claude: some('Agent', codeAdversary, 'lead'),
+        codex: some('spawn_agent', { model: 'gpt-6.1-sol' }, 'lead'),
+        grok: some('spawn_subagent', undefined, 'lead'),
+      },
+    },
+  },
+  'seat-all-fail': {
+    prompt: interrogateMedian,
+    project: seatsProject('seats-all-fail', 'cursor, muse'),
+    checks: {
+      'caps-read': capsRead,
+      'no-seat': noChildThread,
+      'no-native-replacement': {
+        claude: none('Agent', codeAdversary, 'lead'),
+        codex: none('spawn_agent', { model: 'gpt-6.1-sol' }, 'lead'),
+        na: { grok: 'spawn_subagent cannot tell the code adversary from the judgment one' },
+      },
+      'judgment-adversary-ran': {
+        claude: some('Agent', judgmentAdversary, 'lead'),
+        codex: some('spawn_agent', undefined, 'lead'),
+        grok: some('spawn_subagent', undefined, 'lead'),
+      },
+    },
+  },
+  'verifier-all-fail': {
+    prompt: verifierMedian,
+    project: seatsProject('seats-verifier-all-fail', 'cursor, muse, inherit'),
+    mayAsk: true,
+    checks: {
+      'caps-read': capsRead,
+      'no-seat': noChildThread,
+      'no-native-verifier': {
+        claude: none('Agent', { subagent_type: 'orbit:verifier' }, 'lead'),
+        grok: none('spawn_subagent', { subagent_type: 'orbit:verifier' }, 'lead'),
+        na: { codex: 'spawn_agent takes no agent type, so the grader cannot tell a verifier child' },
       },
     },
   },

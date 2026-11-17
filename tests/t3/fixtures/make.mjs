@@ -14,11 +14,12 @@ const { values: opts } = parseArgs({
     out: { type: 'string' },
     source: { type: 'string' },
     note: { type: 'string' },
+    lane: { type: 'string' },
   },
 });
 const kind = kindOf(opts.provider);
 if (!kind || !opts.session || !Object.hasOwn(SCENARIOS, opts.scenario ?? '') || !opts.out) {
-  console.error(`usage: node tests/t3/fixtures/make.mjs --provider <providerInstanceId> --session <file> --scenario <${Object.keys(SCENARIOS).join('|')}> --out <file> [--source <name>] [--note <text>]`);
+  console.error(`usage: node tests/t3/fixtures/make.mjs --provider <providerInstanceId> --session <file> --scenario <${Object.keys(SCENARIOS).join('|')}> --out <file> [--source <name>] [--note <text>] [--lane <lane.json>]`);
   process.exit(1);
 }
 
@@ -78,7 +79,9 @@ const slim = (value) => typeof value === 'string' ? cut(value)
 
 const { message, model } = SESSION_INFO[kind]();
 const { toolCalls } = readLead(kind, opts.session);
-const lane = { scenario: opts.scenario, provider: kind, status: 'completed' };
+const laneJson = opts.lane ? JSON.parse(readFileSync(opts.lane, 'utf8')) : {};
+const pendingQuestion = laneJson.pendingQuestion?.map(({ name }) => ({ name })) ?? null;
+const lane = { scenario: opts.scenario, provider: kind, status: laneJson.status ?? 'completed', pendingQuestion };
 const raw = gradeLane({ ...lane, toolCalls });
 const slimCalls = toolCalls.map(({ name, input, sidechain }) => ({ name, input: slim(input), sidechain }));
 const graded = gradeLane({ ...lane, toolCalls: slimCalls });
@@ -91,7 +94,8 @@ if (differ.length) {
 const fixture = {
   scenario: opts.scenario,
   message: unhome(message),
-  status: 'completed',
+  status: lane.status,
+  ...(pendingQuestion && { pendingQuestion }),
   thread: { providerInstanceId: opts.provider, model: model ?? null },
   fixture: {
     origin: 'real',
