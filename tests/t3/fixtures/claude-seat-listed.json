@@ -1,19 +1,20 @@
 {
   "scenario": "seat-listed",
-  "message": "/orbit:interrogate Scope: commit 99184637efe30a8b8ab51153db268ec3e786ac42 (it adds scratch/median.mjs) against its parent. Intent: median(values) returns the median of an array of numbers.",
+  "message": "/orbit:interrogate Scope: the commit that adds median.mjs, against its parent. Intent: median(values) returns the median of an array of numbers. Make no edits.",
   "status": "completed",
   "thread": {
     "providerInstanceId": "claudeAgent",
     "model": "claude-opus-5-5"
   },
   "fixture": {
-    "relabeled": true,
-    "origin": "hand-built",
-    "source": "claude-review-seat.json",
-    "note": "Hand-built PASS variant. The same seat call moved from grok to codex/gpt-6.1-sol, the first entry of seat-listed's list on a model outside the lead's family, with only the opus adversary native. A real fixture from a live seat-listed lane replaces this one.",
+    "origin": "real",
+    "source": "orbit-lane-seat-listed-80cc9af8",
+    "relabeled": false,
+    "note": "A live seat-listed lane at 31ee0b3. With codex, grok listed, the lead reads orchestrator_capabilities and starts one review seat on codex with gpt-6.1-sol. Only the opus adversary runs native.",
     "expect": {
       "seat-on-first-listed": "PASS",
       "only-listed-seats": "PASS",
+      "one-seat": "PASS",
       "no-native-code-adversary": "PASS"
     }
   },
@@ -21,7 +22,7 @@
     {
       "name": "Bash",
       "input": {
-        "command": "git show 99184637efe30a8b8ab51153db268ec3e786ac42"
+        "command": "git show d4d5f01 --stat --patch; git log --oneline -5; git status --short; ls"
       },
       "sidechain": false
     },
@@ -41,6 +42,13 @@
       "sidechain": false
     },
     {
+      "name": "Bash",
+      "input": {
+        "command": "node --test"
+      },
+      "sidechain": false
+    },
+    {
       "name": "mcp__t3-code__orchestrator_capabilities",
       "input": {},
       "sidechain": false
@@ -55,7 +63,7 @@
         "role": "review",
         "mode": "async",
         "isolation": "worktree",
-        "clientRequestId": "interrogate-adversary-r1"
+        "clientRequestId": "interrogate-median-codex-adversary-r1"
       },
       "sidechain": false
     },
@@ -64,21 +72,41 @@
       "input": {
         "subagent_type": "general-purpose",
         "model": "opus",
-        "isolation": "worktree"
+        "isolation": "worktree",
+        "run_in_background": false
       },
       "sidechain": false
     },
     {
       "name": "Bash",
       "input": {
-        "command": "node ~/Projects/orbit/.claude/worktrees/agent-a14dee995f26d3859/scratch/repro-median.mjs"
+        "command": "node --test $TMPDIR/orbit-lane-project-seats-listed-5890584b/.claude/worktrees/agent-a52b0dfe0f10bea5c/repro/median.repro.test.mjs"
       },
       "sidechain": false
     },
     {
       "name": "Bash",
       "input": {
-        "command": "node ~/.t3/worktrees/orbit/t3-4ad67c4b-b851d690a44bfc25/scratch/median-repro.mjs"
+        "command": "node --input-type=module -e \"import {median as m} from '$TMP…[263 chars]"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node --input-type=module -e 'import { median } from \"~/.t3/w…[242 chars]"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__task_status",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C ~/.t3/worktrees/orbit-lane-project-seats-listed-5890584b/t3-d7bd2d3e-7885f7cbcf7188fe status --short"
       },
       "sidechain": false
     },
@@ -90,41 +118,36 @@
     {
       "name": "Bash",
       "input": {
-        "command": "git worktree list"
+        "command": "git worktree remove --force ~/.t3/worktrees/orbit-lane-project-seats-listed-5890584b/t3-d7bd2d3e-7885f7cbcf7188fe"
       },
       "sidechain": false
     },
     {
       "name": "Bash",
       "input": {
-        "command": "git worktree remove --force ~/Projects/orbit/.claude/worktrees/agent-a14dee995f26d3859"
+        "command": "git worktree remove --force $TMPDIR/orbit-lane-project-seats-listed-5890584b/.claude/worktrees/agent-a52b0dfe0f10bea5c"
       },
       "sidechain": false
     },
     {
       "name": "Bash",
       "input": {
-        "command": "git worktree remove --force ~/.t3/worktrees/orbit/t3-4ad67c4b-b851d690a44bfc25"
+        "command": "git branch -D t3/audit-median-implementation worktree-agent-a52b0dfe0f10bea5c"
       },
       "sidechain": false
     },
     {
       "name": "Bash",
       "input": {
-        "command": "git branch -D worktree-agent-a14dee995f26d3859"
-      },
-      "sidechain": false
-    },
-    {
-      "name": "Bash",
-      "input": {
-        "command": "git -C ~/Projects/orbit/.claude/worktrees/agent-a14dee995f26d3859 checkout 99184637efe30a8b8ab51153db268ec3e786ac42"
+        "command": "git checkout --detach d4d5f01 && pwd && cat median.mjs && echo ---- && cat median.test.mjs && node --test"
       },
       "sidechain": true
     },
     {
-      "name": "Read",
-      "input": {},
+      "name": "Bash",
+      "input": {
+        "command": "mkdir -p repro && cat > repro/median.repro.test.mjs <<'EOF'\n…[865 chars]"
+      },
       "sidechain": true
     },
     {
@@ -135,14 +158,14 @@
     {
       "name": "Bash",
       "input": {
-        "command": "node ~/Projects/orbit/.claude/worktrees/agent-a14dee995f26d3859/scratch/repro-median.mjs"
+        "command": "node --test $TMPDIR/orbit-lane-project-seats-listed-5890584b/.claude/worktrees/agent-a52b0dfe0f10bea5c/repro/median.repro.test.mjs 2>&1 | rg -v '^\\s+at '"
       },
       "sidechain": true
     },
     {
       "name": "Bash",
       "input": {
-        "command": "pwd"
+        "command": "node --input-type=module -e \"import {median as m} from '$TMP…[215 chars]"
       },
       "sidechain": true
     }

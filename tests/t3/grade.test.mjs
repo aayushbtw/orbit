@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readdirSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -129,6 +130,51 @@ test('an expectation with min passes only when that many calls match, naming eac
   assert.equal(one.verdict, 'FAIL');
   assert.match(one.why, /^1 of 2 needed lead call .*; matched call 1 /);
   assert.match(grade([]).why, /^0 of 2 needed lead call/);
+});
+
+const call = (name, input = {}) => ({ name, input, sidechain: false });
+const caps = call('mcp__t3-code__orchestrator_capabilities');
+const opusAdversary = call('Agent', { subagent_type: 'general-purpose', model: 'opus' });
+const reviewSeat = (providerInstanceId, model) => call('mcp__t3-code__delegate_task', { role: 'review', mode: 'async', target: { providerInstanceId, model } });
+
+test('an all-fail lane that never read orchestrator_capabilities fails caps-read', () => {
+  assert.deepEqual(verdicts(lane({ scenario: 'verifier-all-fail', provider: 'claude' })), { 'caps-read': 'FAIL', 'no-seat': 'PASS', 'no-native-verifier': 'PASS' });
+  assert.equal(verdicts(lane({ scenario: 'verifier-all-fail', provider: 'codex' }))['caps-read'], 'FAIL');
+  assert.equal(verdicts(lane({ scenario: 'seat-all-fail', provider: 'claude', toolCalls: [opusAdversary] }))['caps-read'], 'FAIL');
+  assert.equal(verdicts(lane({ scenario: 'seat-all-fail', provider: 'claude', toolCalls: [caps, opusAdversary] }))['caps-read'], 'PASS');
+});
+
+test("verifier-all-fail grades a lane that waits only on the lead's own question", () => {
+  const waiting = (scenario, pendingQuestion) => lane({ scenario, provider: 'claude', status: 'waiting', pendingQuestion, toolCalls: [caps, opusAdversary] });
+  assert.deepEqual(verdicts(waiting('verifier-all-fail', [{ name: 'AskUserQuestion' }])), { 'caps-read': 'PASS', 'no-seat': 'PASS', 'no-native-verifier': 'PASS' });
+  for (const pending of [null, [], [{ name: 'Bash' }], [{ name: 'AskUserQuestion' }, { name: 'Bash' }]]) {
+    const results = gradeLane(waiting('verifier-all-fail', pending));
+    assert.ok(results.every((r) => r.verdict === 'FAIL' && /status is waiting/.test(r.why)), JSON.stringify(pending));
+  }
+  assert.ok(gradeLane(waiting('seat-all-fail', [{ name: 'AskUserQuestion' }])).every((r) => r.verdict === 'FAIL'), 'only verifier-all-fail accepts a question');
+});
+
+test('seat-listed fails a near-miss provider, a same-family alias, an opaque model and a second seat', () => {
+  const grade = (toolCalls, provider = 'claude') => verdicts(lane({ scenario: 'seat-listed', provider, toolCalls }));
+  assert.deepEqual(grade([reviewSeat('codex-proxy', 'gpt-5')]), { 'seat-on-first-listed': 'FAIL', 'only-listed-seats': 'FAIL', 'one-seat': 'PASS', 'no-native-code-adversary': 'PASS' });
+  assert.equal(grade([reviewSeat('codex', 'anthropic/opus-4')])['seat-on-first-listed'], 'FAIL');
+  assert.equal(grade([reviewSeat('grok', 'openai/o3')], 'codex')['seat-on-first-listed'], 'FAIL');
+  assert.equal(grade([reviewSeat('codex', 'auto')])['seat-on-first-listed'], 'FAIL');
+  assert.equal(grade([reviewSeat('codex', 'gpt-5'), reviewSeat('grok', 'grok-4')])['one-seat'], 'FAIL');
+  assert.deepEqual(grade([reviewSeat('codex', 'gpt-5'), reviewSeat('codex', 'gpt-5')]), { 'seat-on-first-listed': 'PASS', 'only-listed-seats': 'PASS', 'one-seat': 'PASS', 'no-native-code-adversary': 'PASS' });
+});
+
+test('grade.mjs runs when its path goes through a symlink', () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'orbit-grade-'));
+  try {
+    symlinkSync(here, join(tmp, 't3'));
+    const probe = fixtures.find((f) => f.name === 'claude-probe.json').path;
+    const { status, stdout, stderr } = spawnSync(process.execPath, [join(tmp, 't3', 'grade.mjs'), probe], { encoding: 'utf8' });
+    assert.equal(status, 0, stderr);
+    assert.ok(stdout.startsWith(`${probe}  probe  claude\n`), stdout);
+  } finally {
+    rmSync(tmp, { recursive: true });
+  }
 });
 
 test('parseLane rejects a lane it cannot grade, naming the file', () => {

@@ -10,8 +10,9 @@
     "origin": "hand-built",
     "source": "claude-verifier-seat-pre-79ebe0b.json",
     "relabeled": false,
-    "note": "Hand-built FAIL variant. The other-family list ends with inherit, but the verifier row is other-family, the user's no to a native verifier. Every listed entry fails and the lead still spawns the native verifier, so no-native-verifier fails.",
+    "note": "Hand-built FAIL variant. The other-family list ends with inherit, but the verifier row is other-family, the user's no to a native verifier. Every listed entry fails and the lead still spawns the native verifier, so no-native-verifier fails. The lead never reads orchestrator_capabilities, so caps-read fails too.",
     "expect": {
+      "caps-read": "FAIL",
       "no-seat": "PASS",
       "no-native-verifier": "FAIL"
     }

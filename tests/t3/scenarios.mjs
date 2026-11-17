@@ -3,6 +3,7 @@ export const ABSENT = Symbol('absent');
 export const t3 = (tool) => new RegExp(`^(mcp__)?t3-code(-direct)?__${tool}$`);
 const some = (name, input, by = 'any', min = 1) => ({ want: 'some', name, input, by, min });
 const none = (name, input, by = 'any') => ({ want: 'none', name, input, by });
+const atMostOne = (name, input, by, key) => ({ want: 'atMostOne', name, input, by, key });
 const viaUseTool = (tool, input) => ({ tool_name: t3(tool), ...(input && { tool_input: input }) });
 const otherFamily = (kind) => new RegExp(`^(?!${kind})`, 'i');
 
@@ -13,9 +14,18 @@ const noChildThread = {
 };
 const seatOn = (target) => ({ role: 'review', mode: 'async', runtimeMode: ABSENT, target });
 const seat = (kind) => seatOn({ providerInstanceId: otherFamily(kind) });
-const modelFamily = { claude: /claude/i, codex: /gpt/i, grok: /grok/i };
-const listedSeat = (lead, providerInstanceId) => seatOn({ providerInstanceId, model: (m) => typeof m === 'string' && !modelFamily[lead].test(m) });
-const unlistedSeat = { target: { providerInstanceId: /^(?!codex|grok)/ } };
+const familyNames = { claude: ['claude', 'anthropic'], codex: ['gpt', 'openai'], grok: ['grok', 'xai'] };
+const verifiedOutside = (lead, m) => typeof m === 'string' && !['auto', 'default'].includes(m)
+  && !m.toLowerCase().split(/[-/.:]/).some((token) => familyNames[lead].includes(token));
+const listedSeat = (lead, providerInstanceId) => seatOn({ providerInstanceId, model: (m) => verifiedOutside(lead, m) });
+const unlistedSeat = { target: { providerInstanceId: (id) => !['codex', 'grok'].includes(id) } };
+const reviewSeat = { role: 'review' };
+const seatProvider = (input) => input?.target?.providerInstanceId;
+const capsRead = {
+  claude: some(t3('orchestrator_capabilities'), undefined, 'lead'),
+  codex: some(t3('orchestrator_capabilities'), undefined, 'lead'),
+  grok: some('use_tool', viaUseTool('orchestrator_capabilities'), 'lead'),
+};
 const verifierSeat = (kind) => ({ isolation: 'worktree', target: { providerInstanceId: otherFamily(kind) } });
 const codeAdversary = { subagent_type: 'general-purpose', model: (m) => m !== 'opus' };
 const judgmentAdversary = { subagent_type: 'general-purpose', model: 'opus' };
@@ -245,14 +255,19 @@ export const SCENARIOS = {
     project: seatsProject('seats-listed', 'codex, grok'),
     checks: {
       'seat-on-first-listed': {
-        claude: some(t3('delegate_task'), listedSeat('claude', /^codex/), 'lead'),
-        codex: some(t3('delegate_task'), listedSeat('codex', /^grok/), 'lead'),
-        grok: some('use_tool', viaUseTool('delegate_task', listedSeat('grok', /^codex/)), 'lead'),
+        claude: some(t3('delegate_task'), listedSeat('claude', 'codex'), 'lead'),
+        codex: some(t3('delegate_task'), listedSeat('codex', 'grok'), 'lead'),
+        grok: some('use_tool', viaUseTool('delegate_task', listedSeat('grok', 'codex')), 'lead'),
       },
       'only-listed-seats': {
         claude: none(t3('delegate_task'), unlistedSeat, 'lead'),
         codex: none(t3('delegate_task'), unlistedSeat, 'lead'),
         grok: none('use_tool', viaUseTool('delegate_task', unlistedSeat), 'lead'),
+      },
+      'one-seat': {
+        claude: atMostOne(t3('delegate_task'), reviewSeat, 'lead', seatProvider),
+        codex: atMostOne(t3('delegate_task'), reviewSeat, 'lead', seatProvider),
+        grok: atMostOne('use_tool', viaUseTool('delegate_task', reviewSeat), 'lead', (input) => seatProvider(input?.tool_input)),
       },
       'no-native-code-adversary': {
         claude: none('Agent', codeAdversary, 'lead'),
@@ -277,6 +292,7 @@ export const SCENARIOS = {
     prompt: interrogateMedian,
     project: seatsProject('seats-all-fail', 'cursor, muse'),
     checks: {
+      'caps-read': capsRead,
       'no-seat': noChildThread,
       'no-native-replacement': {
         claude: none('Agent', codeAdversary, 'lead'),
@@ -293,7 +309,9 @@ export const SCENARIOS = {
   'verifier-all-fail': {
     prompt: verifierMedian,
     project: seatsProject('seats-verifier-all-fail', 'cursor, muse, inherit'),
+    mayAsk: true,
     checks: {
+      'caps-read': capsRead,
       'no-seat': noChildThread,
       'no-native-verifier': {
         claude: none('Agent', { subagent_type: 'orbit:verifier' }, 'lead'),

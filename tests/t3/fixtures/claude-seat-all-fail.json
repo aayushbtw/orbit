@@ -12,6 +12,7 @@
     "relabeled": false,
     "note": "A live seat-all-fail lane at 41b1c74. Every listed entry, cursor and muse, is unavailable, so the lead starts no seat and no native code adversary. Only the opus adversary runs.",
     "expect": {
+      "caps-read": "PASS",
       "no-seat": "PASS",
       "no-native-replacement": "PASS",
       "judgment-adversary-ran": "PASS"

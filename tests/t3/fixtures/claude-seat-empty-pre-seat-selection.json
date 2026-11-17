@@ -10,7 +10,7 @@
     "relabeled": true,
     "origin": "real",
     "source": "orbit-lane-interrogate--5b3974d12a498483/928661f8.jsonl",
-    "note": "A lead that started a seat on grok. The source session does not record its Models cell. Under the listed-providers rule an empty cell starts no seat, so no-seat fails. p9 stands for the commit that lands that rule, filled in at merge. session-family-seat fails too, because the only native adversary is the opus one.",
+    "note": "A lead that started a seat on grok. The source session does not record its Models cell. Under the listed-providers rule an empty cell starts no seat, so no-seat fails. The name points at feat/t3-seat-selection, the change that lands that rule. session-family-seat fails too, because the only native adversary is the opus one.",
     "expect": {
       "no-seat": "FAIL",
       "session-family-seat": "FAIL"
