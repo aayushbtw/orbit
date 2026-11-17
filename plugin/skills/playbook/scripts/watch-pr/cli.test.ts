@@ -1,12 +1,21 @@
 import { describe, expect, it } from "bun:test";
 import { type CliRuntime, main, parseArgs } from "./cli.ts";
 import {
+  type FakeReaderOptions,
   fakeReader,
   passingCheck,
   pendingCheck,
 } from "./fakes.test-helper.ts";
+import { WatcherQueryError } from "./github.ts";
 import { renderJson, renderPretty } from "./render.ts";
-import type { GitHubReader, WatcherVerdict } from "./types.ts";
+import type {
+  ChecksFastPath,
+  GitHubReader,
+  OpenPullRequest,
+  PrContext,
+  PullRequestFacts,
+  WatcherVerdict,
+} from "./types.ts";
 import { parsePrNumber } from "./types.ts";
 
 const silentIo = { stdout: () => {}, stderr: () => {} };
@@ -140,6 +149,7 @@ describe("rendering", () => {
           state: "MERGED",
           mergedAt: "now",
           isDraft: false,
+          requestedReviewers: [],
         },
       },
     ],
@@ -275,24 +285,188 @@ describe("main", () => {
       });
     });
 
-    it("reports a query failure once without a RETRY line", async () => {
-      const harness = testRuntime(
-        fakeReader({
-          fastPath: {
-            kind: "unusable",
-            exitCode: 1,
-            stderr: "no checks reported on the 'feature' branch",
-          },
-        })
+    const noChecksYet = {
+      fastPath: {
+        kind: "unusable",
+        exitCode: 1,
+        stderr: "no checks reported on the 'feature' branch",
+      },
+    } as const;
+    const unavailable = {
+      kind: "TIMEOUT",
+      exitCode: 5,
+      reason: {
+        kind: "status-unavailable",
+        failure: { kind: "checks-unavailable" },
+      },
+    };
+
+    it("ends a retryable query failure in TIMEOUT without a RETRY line", async () => {
+      const harness = testRuntime(fakeReader(noChecksYet));
+      expect(await main([...repo, "--pr", "1", "--once"], harness.runtime)).toBe(
+        5
       );
+      expect(harness.stdout).toHaveLength(1);
+      expect(lastVerdict(harness.stdout)).toMatchObject(unavailable);
+    });
+
+    it("ends a retryable queued query failure in TIMEOUT", async () => {
+      const harness = testRuntime(fakeReader(noChecksYet));
+      expect(await main(queued, harness.runtime)).toBe(5);
+      expect(harness.stdout.join("")).not.toContain('"kind":"RETRY"');
+      expect(lastVerdict(harness.stdout)).toMatchObject(unavailable);
+    });
+
+    it("ends a retryable stack discovery failure in TIMEOUT", async () => {
+      const base = fakeReader();
+      const reader = {
+        ...base,
+        async openPullRequests(): Promise<readonly OpenPullRequest[]> {
+          throw new WatcherQueryError({
+            kind: "command-exit",
+            retryable: true,
+            code: 1,
+            detail: "rate limited",
+          });
+        },
+      } satisfies GitHubReader;
+      const harness = testRuntime(reader);
+      expect(
+        await main([...repo, "--pr", "1", "--stack", "--once"], harness.runtime)
+      ).toBe(5);
+      expect(lastVerdict(harness.stdout)).toMatchObject({
+        kind: "TIMEOUT",
+        reason: { kind: "status-unavailable", failure: { kind: "command-exit" } },
+      });
+    });
+
+    it("keeps a non-retryable query failure a status-query BLOCKER", async () => {
+      const base = fakeReader();
+      const reader = {
+        ...base,
+        async pullRequest(): Promise<PullRequestFacts> {
+          throw new WatcherQueryError({
+            kind: "invalid-context-url",
+            retryable: false,
+            detail: "not a GitHub PR URL",
+            rawValue: "x",
+          });
+        },
+      } satisfies GitHubReader;
+      const harness = testRuntime(reader);
       expect(await main([...repo, "--pr", "1", "--once"], harness.runtime)).toBe(
         7
       );
-      expect(harness.stdout).toHaveLength(1);
       expect(lastVerdict(harness.stdout)).toMatchObject({
         kind: "BLOCKER",
         blocker: { kind: "status-query", failures: 1 },
       });
+    });
+
+    it("names the stack frontier whose checks are pending", async () => {
+      const base = fakeReader({
+        openPullRequests: [
+          {
+            number: parsePrNumber(1),
+            isCrossRepository: false,
+            headRefName: "a",
+            baseRefName: "main",
+          },
+          {
+            number: parsePrNumber(2),
+            isCrossRepository: false,
+            headRefName: "b",
+            baseRefName: "a",
+          },
+        ],
+      });
+      const pending: ChecksFastPath = { kind: "checks", checks: [pendingCheck()] };
+      const reader = {
+        ...base,
+        async checksFastPath(pr: PrContext): Promise<ChecksFastPath> {
+          return pr.number === 2 ? pending : base.checksFastPath(pr);
+        },
+      } satisfies GitHubReader;
+      const harness = testRuntime(reader);
+      expect(
+        await main([...repo, "--pr", "1", "--stack", "--once"], harness.runtime)
+      ).toBe(5);
+      expect(lastVerdict(harness.stdout)).toMatchObject({
+        kind: "TIMEOUT",
+        reason: { kind: "pending-checks", frontier: { number: 2 } },
+      });
+    });
+
+    it("shows a required review and its requested reviewers on READY", async () => {
+      const harness = testRuntime(
+        fakeReader({
+          facts: {
+            reviewDecision: "REVIEW_REQUIRED",
+            requestedReviewers: ["octocat", "org/core"],
+          },
+        })
+      );
+      expect(await main([...repo, "--pr", "1", "--once"], harness.runtime)).toBe(
+        0
+      );
+      expect(lastVerdict(harness.stdout)).toMatchObject({
+        kind: "READY",
+        scope: {
+          pr: {
+            proof: {
+              gate: {
+                reviewDecision: "REVIEW_REQUIRED",
+                requestedReviewers: ["octocat", "org/core"],
+              },
+            },
+          },
+        },
+      });
+    });
+
+    it("says what an unmerged queued frontier waits on", async () => {
+      const cases: readonly {
+        readonly reader: FakeReaderOptions;
+        readonly waitingOn: unknown;
+      }[] = [
+        {
+          reader: { fastPath: { kind: "checks", checks: [pendingCheck()] } },
+          waitingOn: { kind: "pending-checks", pending: [{ name: "ci" }] },
+        },
+        {
+          reader: {
+            facts: {
+              reviewDecision: "REVIEW_REQUIRED",
+              requestedReviewers: ["octocat"],
+            },
+          },
+          waitingOn: { kind: "review-required", requestedReviewers: ["octocat"] },
+        },
+        { reader: {}, waitingOn: { kind: "merge" } },
+      ];
+      for (const { reader, waitingOn } of cases) {
+        const harness = testRuntime(fakeReader(reader));
+        expect(await main(queued, harness.runtime)).toBe(5);
+        expect(lastVerdict(harness.stdout)).toMatchObject({
+          kind: "TIMEOUT",
+          reason: { kind: "queued-stack", frontier: { number: 1 }, waitingOn },
+        });
+      }
+    });
+
+    it("renders what a queued frontier waits on", async () => {
+      const harness = testRuntime(
+        fakeReader({
+          facts: {
+            reviewDecision: "REVIEW_REQUIRED",
+            requestedReviewers: ["octocat"],
+          },
+        })
+      );
+      expect(await main([...queued, "--pretty"], harness.runtime)).toBe(5);
+      expect(harness.stdout[harness.stdout.length - 1]).toBe(
+        "TIMEOUT: queued stack still has 1 PR unmerged; frontier=#1; waiting on review from octocat\n"
+      );
     });
 
     it("ends an unmerged queued stack in TIMEOUT", async () => {
