@@ -28,10 +28,10 @@ Released 2026-11-17.
 - Autopilot's tick fires while owners build, and it judges each owner by its trail and git ([#61](https://github.com/aayushbtw/orbit/pull/61)).
 - Parallel delegates take one path on every host. Each commits its own unit, and gitops cherry-picks the kept commit ([#74](https://github.com/aayushbtw/orbit/pull/74)).
 - A code delegate runs at medium effort, even for a small change. Low effort is only for an edit that writes no logic ([#74](https://github.com/aayushbtw/orbit/pull/74)).
-- Outside T3 Code, a Codex or Grok lead with no native worktree option runs units that need their own checkout one at a time, never with `git worktree add`. The same holds in T3 Code when `delegate_task` is off.
-- A lead in plan mode passes `interactionMode: "plan"` on every `delegate_task`.
-- The lead reads a thread with `t3_thread_read` before it answers about it. When you only ask to schedule, it calls `schedule_task` without running the prompt. It follows T3's `request_secret` sudo flow. It reads `orchestrator_capabilities` once per thread.
-- Hillclimb passes a `Monitor` task to `t3_background_wait`.
+- Outside T3 Code, a Codex or Grok lead with no native worktree option runs units that need their own checkout one at a time, never with `git worktree add`. The same holds in T3 Code when `delegate_task` is off ([#61](https://github.com/aayushbtw/orbit/pull/61)).
+- A lead in plan mode passes `interactionMode: "plan"` on every `delegate_task` ([#49](https://github.com/aayushbtw/orbit/pull/49)).
+- The lead reads a thread with `t3_thread_read` before it answers about it. When you only ask to schedule, it calls `schedule_task` without running the prompt. It follows T3's `request_secret` sudo flow. It reads `orchestrator_capabilities` once per thread ([#48](https://github.com/aayushbtw/orbit/pull/48)).
+- Hillclimb passes a `Monitor` task to `t3_background_wait` ([#49](https://github.com/aayushbtw/orbit/pull/49)).
 - The verifier never uses T3's preview browser. It drives a UI through the control skill's headless browser ([#49](https://github.com/aayushbtw/orbit/pull/49)).
 - Ketchup draws a chart through `html_preview`, then `html_render`, when T3 provides them ([#49](https://github.com/aayushbtw/orbit/pull/49)).
 
@@ -40,8 +40,8 @@ Released 2026-11-17.
 - `watch-pr --once` reads a PR's status once and never sleeps. A pending PR returns `TIMEOUT pending-checks` in about 3 s ([#52](https://github.com/aayushbtw/orbit/pull/52)).
 - In T3 Code, babysit reads once with `--once`. While checks or a review are pending, it calls `watch_pull_request` and ends the turn. It unwatches each PR before it hands back. A child never watches a PR ([#52](https://github.com/aayushbtw/orbit/pull/52)).
 - A stacked PR whose CI runs only on PRs into `main` reads as `no CI` and reaches `READY`, instead of `TIMEOUT` ([#31](https://github.com/aayushbtw/orbit/pull/31)).
-- `watch-pr --once` ends at `TIMEOUT status-unavailable` (exit 5) when checks are not registered yet, and a missing PR is a `not-found` BLOCKER (exit 7).
-- In T3 Code, gitops links each PR it creates, takes over or pushes to, with `link_pull_requests` for several.
+- `watch-pr --once` ends at `TIMEOUT status-unavailable` (exit 5) when checks are not registered yet, and a missing PR is a `not-found` BLOCKER (exit 7) ([#52](https://github.com/aayushbtw/orbit/pull/52)).
+- In T3 Code, gitops links each PR it creates, takes over or pushes to, with `link_pull_requests` for several ([#52](https://github.com/aayushbtw/orbit/pull/52)).
 - `/orbit:pause-safely` unwatches the thread's PRs and names them in the resume note. Session pickup sends each one to babysit, which watches it again ([#49](https://github.com/aayushbtw/orbit/pull/49)).
 
 ### Hooks
@@ -53,7 +53,7 @@ Released 2026-11-17.
 ### Skills
 
 - The vendored pstack skills move to `e1cc031`. Babysit, opening-a-pr and multi-phase-plan have shorter steps ([#47](https://github.com/aayushbtw/orbit/pull/47)).
-- The reply links each file it cites or produces by its absolute path.
+- The reply links each file it cites or produces by its absolute path ([#48](https://github.com/aayushbtw/orbit/pull/48)).
 
 ### CI and tests
 
