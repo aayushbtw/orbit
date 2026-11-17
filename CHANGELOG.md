@@ -2,9 +2,9 @@
 
 ## Version policy
 
-From 1.0.0 on, a change to a rule or a flow that changes what orbit does for you bumps the major version. A fix bumps the patch version. Before 1.0.0, a change of that kind bumped the minor version.
+Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
-## 1.0.0
+## 0.62.0
 
 Released 2026-11-17.
 

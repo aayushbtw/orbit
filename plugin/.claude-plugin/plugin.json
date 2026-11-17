@@ -1,8 +1,8 @@
 {
   "name": "orbit",
   "displayName": "Orbit",
-  "version": "1.0.0",
-  "description": "A Claude Code plugin that plans, builds, verifies and ships the goal you name, in T3 Code or in Claude Code alone.",
+  "version": "0.62.0",
+  "description": "Name the goal. Orbit ships it.",
   "author": {
     "name": "Aayush",
     "url": "https://github.com/aayushbtw"

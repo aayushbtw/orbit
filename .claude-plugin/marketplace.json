@@ -4,12 +4,12 @@
     "name": "Aayush",
     "url": "https://github.com/aayushbtw"
   },
-  "description": "A Claude Code plugin that plans, builds, verifies and ships the goal you name, in T3 Code or in Claude Code alone.",
+  "description": "Name the goal. Orbit ships it.",
   "plugins": [
     {
       "name": "orbit",
       "source": "./plugin",
-      "description": "A Claude Code plugin that plans, builds, verifies and ships the goal you name, in T3 Code or in Claude Code alone."
+      "description": "Name the goal. Orbit ships it."
     }
   ]
 }
