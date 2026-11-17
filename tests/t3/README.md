@@ -45,13 +45,26 @@ node tests/t3/lane.mjs --head HEAD --scenario codex-child --provider codex --mes
 | `--scenario <slug>` | Names the thread, the branch and the default output file. A slug in `scenarios.mjs` sends that scenario's prompt. Other slugs need `--message` |
 | `--message <text>` | Message to send. It replaces the scenario's prompt |
 | `--out <file>` | Output JSON. Default `$TMPDIR/orbit-lane-<slug>-<id>.json` |
-| `--project <dir>` | Run in another repo that is already a T3 project. The worktree base is that repo's `HEAD`. Default is orbit's main checkout, based on the head |
+| `--project <dir>` | Run in another repo that is already a T3 project. The worktree base is that repo's `HEAD`. Default is the scenario's project when it has one (see Scenario projects), else orbit's main checkout, based on the head |
 | `--installed` | Skip head loading, so orbit comes from the installed plugin |
 | `--provider <id>`, `--model <slug>` | Passed to `t3` only when given. Otherwise the project default runs. A Codex id also links the head orbit into `.agents/skills` (see How a Codex lane loads orbit). A Codex thread started without one reports `orbit: "installed"` |
 | `--timeout <minutes>` | Default 30 |
 | `--wake <minutes>` | After the lead completes, keep polling `t3 thread show` until a later run of the lead posts a reply, such as the wake after an async `delegate_task` child finishes, or until this many minutes pass. Off by default |
 
 The CLI is `T3CODE_CLI_PATH`, else `t3` on `PATH`. stdout is the output path. The exit code is 0 when the agent completed, 2 when it asked a question back, and 1 otherwise. If no T3 CLI runs or the ref does not resolve, the harness prints the cause, writes the JSON when `--out` is given, and exits 1 before it starts a thread or touches settings. On SIGINT or SIGTERM, it runs cleanup, writes the JSON with status `interrupted` and `threads` filled in, and exits 1.
+
+## Scenario projects
+
+A scenario whose check depends on the project's Workflow block names a `project` in `scenarios.mjs`, and the lane runs there unless `--project` is given. `review-seat` and `verifier-seat` need one, because orbit's own `AGENTS.md` sets the `other-family` row to `inherit`, so a correct lead in orbit keeps every seat native and `seat-other-family` cannot pass. They share the `seats` project. Its `AGENTS.md` Models table has these rows, in the format of rules.md Workflow Defaults, Models:
+
+```
+| other-family | panel seat on another family | codex, claudeAgent | |
+| verifier | runs the change before it lands | other-family | |
+```
+
+A Claude or Grok lead takes the `codex` seat. A Codex lead skips the entry of its own family and takes `claudeAgent`. A second commit adds `median.mjs` and its test, which the two prompts name as the change to review or verify.
+
+A project's spec is a name and a list of commits, each a message and its files. The lane builds it once at `$TMPDIR/orbit-lane-project-<name>-<hash>`, where the hash covers the commits, so a changed spec gets a new folder. It builds the repo in a sibling folder and renames it into place, so a crashed build never leaves a half-made project. It then runs `t3 project add` when `t3 thread list --project <dir>` does not find the project. Both steps run under the lock. The folder and the T3 project stay for the next lane, because removing a T3 project also deletes its threads.
 
 ## Output
 
@@ -88,7 +101,7 @@ With no reader for the provider, or no session file for the lead, `session`, `to
 | `gitops-native` | `gitops-native-child`, `no-child-thread` | gitops runs as a native child, `Agent` or `spawn_subagent` with `orbit:gitops`, or `spawn_agent` with `fork_turns: "none"`. No `delegate_task` |
 | `code-child` | `code-native-child`, `no-child-thread` | The code child runs native, as `orbit:poteto-agent`, or on Codex with `fork_turns: "none"` and `model: "gpt-6.1-sol"`. No `delegate_task` |
 | `verifier-seat` | `verifier-ran`, `seat-other-family` | A verifier runs, and it is a `delegate_task` seat on another family in a worktree |
-| `review-seat` | `seat-other-family`, `request-id` | The lead calls `delegate_task` with `role: "review"`, `mode: "async"`, no `runtimeMode`, a provider of another family and a `clientRequestId` |
+| `review-seat` | `seat-other-family`, `request-id` | The lead calls `delegate_task` with `role: "review"`, `mode: "async"`, no `runtimeMode` and a provider of another family, and that same call has a `clientRequestId` |
 | `watch-pr-wait` | `lead-watches`, `no-child-watches` | The lead calls `watch_pull_request` on a PR URL, and no child does |
 | `schedule-loop` | `bound-to-thread`, `interval-min-60s` | `schedule_task` has `bindToCurrentThread: true`, and no interval is under 60000 ms |
 
@@ -101,7 +114,7 @@ node tests/t3/grade.mjs "$TMPDIR"/orbit-lane-gitops-native-*.json
 
 For each lane, `grade.mjs` prints `<file>  <scenario>  <provider>`, then one line per check with `PASS`, `FAIL` or `N/A`, the check and why. A `PASS` names the matching call by its position, counted from 1. A `FAIL` names the call it missed and the nearest call with that name. A `spawn_agent` with `join: "missing"` fails with a why that says its call args were not found. A lane whose `status` is not `completed` fails every check, N/A ones included. A lane whose `toolCalls` is `null` fails every check that applies.
 
-The exit code is 0 when no check fails and 1 when any check fails. It is 2 when a file cannot be graded, because it is not valid JSON, names an unknown scenario, has a `thread.providerInstanceId` no reader knows, or has no `toolCalls` key. stderr then names the file and the reason. Exit 2 wins over exit 1.
+The exit code is 0 when no check fails and 1 when any check fails. It is 2 when a file cannot be graded, because it is not valid JSON, names an unknown scenario, has a `thread.providerInstanceId` no reader knows, has no `toolCalls` key, or has a `toolCalls` that is neither `null` nor a list of calls that each have a string `name`. stderr then names the file and the reason. Exit 2 wins over exit 1.
 
 ## Fixtures
 
@@ -127,7 +140,7 @@ It reads the calls with the reader `lane.mjs` uses, and the message and model fr
 | `claude-probe.json` | real | `orbit-lane-probe-fa8172` | A Claude lead runs `pwd` and loads no skill |
 | `claude-gitops-native.json` | real | `orbit-lane-gitops-native-c1ab0a` | A Claude lead spawns `orbit:gitops` as an `Agent` |
 | `claude-code-child.json` | real, relabeled | `orbit-lane-routing-8524-8094ae89ae7d6368` | A Claude lead spawns `orbit:poteto-agent` as an `Agent` |
-| `claude-review-seat-pre-3bf084a.json` | real, relabeled | `orbit-lane-interrogate--5b3974d12a498483` | A seat on Grok with no `clientRequestId`, before 3bf084a asked for one. `request-id` fails |
+| `claude-review-seat-pre-1f80b16.json` | real, relabeled | `orbit-lane-interrogate--5b3974d12a498483` | A seat on Grok with no `clientRequestId`, before 1f80b16 asked for one. `request-id` fails |
 | `claude-review-seat.json` | hand-built | the fixture above | The same seat call with a `clientRequestId` |
 | `claude-rules-load.json` | hand-built | none | `rules-read` is N/A on a Claude lead |
 | `claude-schedule-loop.json` | real, relabeled | `orbit-lane-hillclimb-wa-2d6d996f1cc0dfc1` | A `once` `schedule_task` bound to the thread |
@@ -150,7 +163,14 @@ A real session that ran before a rule landed is named for the commit that added 
 
 ## Cleanup
 
-Each step pushes its undo before it runs, and every undo ignores a step that never happened. One cleanup function runs the undos in reverse from `finally` and on SIGINT or SIGTERM. The `--wake` hold runs before `finally`, so cleanup waits for it to end. When the thread is not yet known, it finds the thread by title with `t3 thread list --project <project> --json` and reads its `worktreePath` with `t3 thread show --json`. It removes that worktree with `git worktree remove --force`, or the worktree on `orbit-lane/<slug>-<id>` when no thread was found. It deletes that branch and whatever branch the worktree had checked out, since orbit's Worktree gate renames it to `<type>/<slug>`. It deletes only branches that did not exist before `t3 thread start`, so a thread that checks out an existing branch never loses it. It removes the worktree's parent folder when that folder is empty, since T3 keeps one per project. Then it prunes worktrees. A Codex lane moves each folder that `codex-skills.json` lists back to its original path, then deletes `codex-skills.json`. If something new sits at a path by then, the harness keeps the new one and moves the saved copy next to the skills root as `orbit.orbit-lane-<id>`, such as `~/.codex/orbit.orbit-lane-<id>`, and prints that path. It never deletes that copy. It goes next to the root, not in it, because Codex loads a folder in a skills root under any name. If a move fails, `codex-skills.json` stays, and the harness keeps the run directory and prints its path. Last, it uninstalls the plugin, removes the marketplace and deletes the run directory. Orbit plugins enabled at user scope stay enabled, because only the lane commit's project settings turn them off.
+Each step pushes its undo before it runs, and every undo ignores a step that never happened. One cleanup function runs the undos in reverse from `finally` and on SIGINT or SIGTERM. The `--wake` hold runs before `finally`, so cleanup waits for it to end. When the thread is not yet known, it finds the thread by title with `t3 thread list --project <project> --json` and reads its `worktreePath` with `t3 thread show --json`. It removes that worktree with `git worktree remove --force`, or the worktree on `orbit-lane/<slug>-<id>` when no thread was found. It may delete that branch and whatever branch the worktree had checked out, since orbit's Worktree gate renames it to `<type>/<slug>`. Before `t3 thread start` it records every branch, and it refuses to start when `orbit-lane/<slug>-<id>` matches one of them with case ignored. It then deletes a branch only when all of these hold, so a thread that checks out an existing branch never loses it:
+
+- The ref starts with `refs/heads/`, so a `HEAD` pointed at `refs/tags/v1` deletes nothing.
+- `git for-each-ref refs/heads` lists the ref by that exact name. On a case-insensitive disk, git resolves `refs/heads/Main` to the file of `refs/heads/main`, but lists only `main`.
+- No branch recorded before the thread started matches it with case ignored.
+- The oldest entry of its reflog, or its tip when it has no reflog, is the lane commit, the SHA T3 created the lane branch at. A rename keeps the reflog, so the renamed branch still qualifies.
+
+It deletes with `git update-ref --no-deref -d <ref> <sha>`, so a symbolic ref loses only itself and a branch that moved since the check is kept. `lane.test.mjs` runs these cases against a stub `t3` and a throwaway repo. It removes the worktree's parent folder when that folder is empty, since T3 keeps one per project. Then it prunes worktrees. A Codex lane moves each folder that `codex-skills.json` lists back to its original path, then deletes `codex-skills.json`. If something new sits at a path by then, the harness keeps the new one and moves the saved copy next to the skills root as `orbit.orbit-lane-<id>`, such as `~/.codex/orbit.orbit-lane-<id>`, and prints that path. It never deletes that copy. It goes next to the root, not in it, because Codex loads a folder in a skills root under any name. If a move fails, `codex-skills.json` stays, and the harness keeps the run directory and prints its path. Last, it uninstalls the plugin, removes the marketplace and deletes the run directory. Orbit plugins enabled at user scope stay enabled, because only the lane commit's project settings turn them off.
 
 `claude plugin` edits user settings by read, modify and write, so register and unregister run under a lock directory, `$TMPDIR/orbit-lane.lock`. A lock whose pid is dead is taken over. Before it registers, a run reaps leftovers. It removes each `orbit-head-*` marketplace whose `lane.pid` is missing or names a dead process, and first moves back each folder that the dead run's `codex-skills.json` records, the same way cleanup does. It never touches a marketplace with any other name.
 
