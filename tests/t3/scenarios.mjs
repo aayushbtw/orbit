@@ -13,6 +13,7 @@ const noChildThread = {
 };
 const seat = (kind) => ({ role: 'review', mode: 'async', runtimeMode: ABSENT, target: { providerInstanceId: otherFamily(kind) } });
 const verifierSeat = (kind) => ({ isolation: 'worktree', target: { providerInstanceId: otherFamily(kind) } });
+const countsCommits = /rev-list|\bgit\b[^|]*\blog\b[^|]*\|\s*wc\s+-l/;
 const shortInterval = { schedule: { type: 'interval', everyMs: (ms) => !(ms >= 60_000) } };
 
 // orbit's own AGENTS.md sets other-family to inherit, so a lead there rightly keeps every seat native.
@@ -193,9 +194,14 @@ export const SCENARIOS = {
         grok: some('use_tool', viaUseTool('schedule_task', { bindToCurrentThread: true }), 'lead'),
       },
       'prompt-not-run': {
-        claude: none('Bash', { command: /rev-list/ }, 'lead'),
-        codex: none('exec_command', { command: /rev-list/ }, 'lead'),
-        grok: none('run_terminal_command', { command: /rev-list/ }, 'lead'),
+        claude: none('Bash', { command: countsCommits }, 'lead'),
+        codex: none('exec_command', { command: countsCommits }, 'lead'),
+        grok: none('run_terminal_command', { command: countsCommits }, 'lead'),
+      },
+      'no-run-now': {
+        claude: none(t3('run_scheduled_task_now'), undefined, 'lead'),
+        codex: none(t3('run_scheduled_task_now'), undefined, 'lead'),
+        grok: none('use_tool', viaUseTool('run_scheduled_task_now'), 'lead'),
       },
     },
   },

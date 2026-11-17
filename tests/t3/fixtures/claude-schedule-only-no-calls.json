@@ -1,0 +1,20 @@
+{
+  "scenario": "schedule-only",
+  "message": "/orbit:start schedule a one-time report of `git rev-list --count HEAD` in this thread for tomorrow at 09:00. Make no file changes and push nothing.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent"
+  },
+  "fixture": {
+    "origin": "hand-built",
+    "source": "P5 audit lane so-zero.json",
+    "relabeled": false,
+    "note": "The lead made no tool call, so nothing was scheduled.",
+    "expect": {
+      "scheduled": "FAIL",
+      "prompt-not-run": "PASS",
+      "no-run-now": "PASS"
+    }
+  },
+  "toolCalls": []
+}

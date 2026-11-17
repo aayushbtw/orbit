@@ -105,7 +105,7 @@ With no reader for the provider, or no session file for the lead, `session`, `to
 | `review-seat` | `seat-other-family`, `request-id` | The lead calls `delegate_task` with `role: "review"`, `mode: "async"`, no `runtimeMode` and a provider of another family, and that same call has a `clientRequestId` |
 | `watch-pr-wait` | `lead-watches`, `no-child-watches` | The lead calls `watch_pull_request` on a PR URL, and no child does |
 | `schedule-loop` | `bound-to-thread`, `interval-min-60s` | `schedule_task` has `bindToCurrentThread: true`, and no interval is under 60000 ms |
-| `schedule-only` | `scheduled`, `prompt-not-run` | The lead calls `schedule_task` with `bindToCurrentThread: true` and never runs the scheduled `git rev-list` itself |
+| `schedule-only` | `scheduled`, `prompt-not-run`, `no-run-now` | The lead calls `schedule_task` with `bindToCurrentThread: true`. It never counts the commits itself, with `git rev-list` or `git log` piped to `wc -l`, and never calls `run_scheduled_task_now` |
 
 The `gitops-native` and `code-child` prompts are the ones the Codex lanes ran. The `watch-pr-wait` prompt is the hillclimb wake lane's, with its PR URL replaced. The rest are drafts that live lanes may tune.
 

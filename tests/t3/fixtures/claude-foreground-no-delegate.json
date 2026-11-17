@@ -1,0 +1,27 @@
+{
+  "scenario": "foreground",
+  "message": "/orbit:start just testing: create the file scratch/lane-fg.txt containing the single line 'lane fg'. Run the Delegate gate for the edit. No commit, no PR.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent"
+  },
+  "fixture": {
+    "origin": "hand-built",
+    "source": "P5 audit lane fg-zero.json",
+    "relabeled": false,
+    "note": "The lead wrote the file itself and spawned no delegate.",
+    "expect": {
+      "delegate-ran": "FAIL",
+      "every-agent-foreground": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Write",
+      "input": {
+        "file_path": "scratch/lane-fg.txt"
+      },
+      "sidechain": false
+    }
+  ]
+}
