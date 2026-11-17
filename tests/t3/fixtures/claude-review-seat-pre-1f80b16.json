@@ -10,7 +10,7 @@
     "origin": "real",
     "source": "orbit-lane-interrogate--5b3974d12a498483/928661f8.jsonl",
     "relabeled": true,
-    "note": "Interrogate lane that ran before 3bf084a added clientRequestId to the adapter, so request-id fails by design, not as an orbit bug.",
+    "note": "Interrogate lane that ran before 1f80b16 added clientRequestId to the adapter, so request-id fails by design, not as an orbit bug.",
     "expect": {
       "seat-other-family": "PASS",
       "request-id": "FAIL"

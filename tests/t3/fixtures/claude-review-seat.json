@@ -8,9 +8,9 @@
   },
   "fixture": {
     "origin": "hand-built",
-    "source": "claude-review-seat-pre-3bf084a.json",
+    "source": "claude-review-seat-pre-1f80b16.json",
     "relabeled": true,
-    "note": "Hand-built PASS variant. The real seat call plus the clientRequestId the adapter has required since 3bf084a.",
+    "note": "Hand-built PASS variant. The real seat call plus the clientRequestId the adapter has required since 1f80b16.",
     "expect": {
       "seat-other-family": "PASS",
       "request-id": "PASS"
