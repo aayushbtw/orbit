@@ -354,7 +354,8 @@ const deadlinePassed = (
   started: number,
   options: T.PollingOptions,
   now: number
-): boolean => options.timeout > 0 && now - started >= options.timeout;
+): boolean =>
+  options.once || (options.timeout > 0 && now - started >= options.timeout);
 type StepResult<V> =
   | { readonly kind: "terminal"; readonly verdict: V }
   | {
@@ -497,14 +498,15 @@ export async function runSimple(args: {
           args.mode
         ),
       };
-    args.dependencies.emit(
-      stamp({
-        kind: "WAITING",
-        terminal: false,
-        frontier: decision.frontier,
-        reason: { kind: "pending-checks", pending: decision.pending },
-      })
-    );
+    if (!args.options.once)
+      args.dependencies.emit(
+        stamp({
+          kind: "WAITING",
+          terminal: false,
+          frontier: decision.frontier,
+          reason: { kind: "pending-checks", pending: decision.pending },
+        })
+      );
     return {
       kind: "sleep",
       seconds: args.options.interval,
