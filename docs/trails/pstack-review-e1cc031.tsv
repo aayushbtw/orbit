@@ -229,3 +229,6 @@ bf0c7cd	pstack/skills/statechart/scripts/test/render.test.ts	1	test/render.test.
 bf0c7cd	pstack/skills/statechart/scripts/test/render.test.ts	2	test/render.test.ts hunk 2	drop	Not vendored: orbit does not ship this skill
 bf0c7cd	pstack/skills/teach/SKILL.md	1	teach/SKILL.md hunk 1	drop	Not vendored: orbit does not ship this skill
 bf0c7cd+2f87c85	harness/pstack/** (99 files outside poteto-mode/scripts)	all	Generated Claude Code mirror of the pstack/ changes above	drop	Not vendored: orbit vendors only harness/pstack/claude-code/skills/poteto-mode/scripts; every other file mirrors a pstack/ file reviewed in its own row
+2f87c85	pstack/skills/poteto-mode/playbooks/babysit.md	1c	Supersedes row 92 (fix round)	take-edited	Fix round in c04309e: the request-to-mode mapping and the watcher flags stay.
+2f87c85	pstack/skills/poteto-mode/playbooks/opening-a-pr.md	1f	Supersedes row 105 (fix round)	take-edited	Fix round in c04309e: the evidence-link sentence stays.
+2f87c85	pstack/skills/architect/SKILL.md	1a	Supersedes row 72 (fix round)	take-edited	Fix round in c04309e: sketches stay in the reply, and stub code goes through the Delegate gate.

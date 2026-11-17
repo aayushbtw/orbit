@@ -445,5 +445,5 @@ Upstream's deletion is a product change, not a text sync. `start` routes 14 flow
 ### Vendored subset
 
 - **pstack.** 58 skills (`pstack/skills/`).
-- **orbit.** The subset in `skills.json`: all 24 principle leaves, `arena`, `ketchup`, and `deslop`, `control-ui` and `control-cli` from cursor-team-kit, among others. Every entry pins e1cc031. The playbook scripts come from `harness/pstack/claude-code/`. They first pinned 1ba91fc there, when the 9580c23 scripts still carried `orch/` and a test script that runs it. Upstream removed `orch` in c742dd6.
+- **orbit.** The subset in `skills.json`: all 24 principle leaves, `arena`, `ketchup`, and `deslop`, `control-ui` and `control-cli` from cursor-team-kit, among others. Every entry pins e1cc031 except `playbook-orchestrate`, which keeps de8ee15 because upstream deleted the file. The playbook scripts come from `harness/pstack/claude-code/`. They first pinned 1ba91fc there, when the 9580c23 scripts still carried `orch/` and a test script that runs it. Upstream removed `orch` in c742dd6.
 - **Why.** Unvendored skills are adopted when a flow needs them.
