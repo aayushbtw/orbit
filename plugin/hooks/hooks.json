@@ -5,11 +5,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sed -e '/^# Code Quality$/,$d' -e \"s|<orbit-plugin>|${CLAUDE_PLUGIN_ROOT}|g\" \"${CLAUDE_PLUGIN_ROOT}/rules.md\""
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/load-rules.sh\" head"
           },
           {
             "type": "command",
-            "command": "sed -e '/^# Code Quality$/,$!d' -e \"s|<orbit-plugin>|${CLAUDE_PLUGIN_ROOT}|g\" \"${CLAUDE_PLUGIN_ROOT}/rules.md\""
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/load-rules.sh\" tail"
           }
         ]
       }
