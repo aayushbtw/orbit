@@ -70,7 +70,7 @@ Read `../../docs/harness/t3-code.md`, sections Probe and Seats on another family
 
 **4a. Detect providers.** Call `orchestrator_capabilities`. The session's family is the `driverKind` of the provider whose `providerInstanceId` equals `inheritedProviderInstanceId`. A provider whose `constraints` hold "Provider instance is disabled." is disabled. Never write a provider or model you have not seen in a result.
 
-**4b. Load current state.** If `~/.claude/rules/orbit-models.md` exists, read it. Its `other-family` row is the current choice. Keep every other row and every line outside the table as it is.
+**4b. Load current state.** If `~/.claude/rules/orbit-models.md` exists, read it. Its `other-family` row is the current choice. A trailing `inherit` in its `other-family` or `verifier` row is the user's earlier yes to a native fallback, so keep it unless the user's new answer drops it. Keep every other row and every line outside the table as it is.
 
 **4c. Show the providers and ask.** Show every provider in `providers`, in listed order, with its `providerInstanceId` and `driverKind`:
 
@@ -78,13 +78,16 @@ Read `../../docs/harness/t3-code.md`, sections Probe and Seats on another family
 - A disabled provider, marked disabled.
 - The session's family, marked as the session's.
 
-Then ask one question: which providers, in order, fill the `other-family` seat. This question is its own step, before step 5. Say in the question that the chosen providers also run the pre-land verifier, and that `inherit` in the file's `verifier` row keeps it native. Offer each enabled provider with `canRunCrossProviderChildTask` true. The recommended answer is all of them, in listed order. Name the current choice when 4b found one. Use your host's question tool, else a numbered question with the recommended option first.
+Then ask two questions in one question call. This call is its own step, before step 5. Use your host's question tool, else numbered questions with the recommended option first. Name the current choice for each when 4b found one.
 
-The answer is an ordered list. A seat tries only values from a family other than the parent's, in list order, so the session's own family may stay on the list for a thread that another family leads. An entry is a bare `<providerInstanceId>`, which takes that provider's first eligible model, or `<providerInstanceId>/<model>` when the user names a model. Ask nothing about the lead or about other roles.
+1. Which providers, in order, fill the `other-family` seat. Say in the question that the chosen providers also run the pre-land verifier. Say that they are fallbacks for one seat, not several reviewers, and that a seat tries at most three of them. Offer each enabled provider with `canRunCrossProviderChildTask` true and a non-empty `models` list. Rank those of five kinds as Claude (`claudeAgent`), Codex (`codex`), Muse (`muse`), Gemini (`gemini`), then Grok (`grok`), and within one kind by `providerInstanceId` in ascending order. For each enabled `driverKind` in `providers`, take the first three ranked providers outside that kind. The recommended answer is the union of those picks, in rank order, so every lead gets each entry that a seat would try. With all five kinds enabled, it is Claude, Codex, Muse and Gemini. Offer providers of other kinds too, but leave them out of the recommendation.
+2. If no listed provider can run the pre-land verifier, may orbit run its native verifier? Recommend yes. A yes writes `other-family, inherit` in the `verifier` row. A no writes `other-family`, and a PR whose every listed verifier fails then waits for the user.
+
+The answer to the first question is an ordered list. A seat tries only values from a family other than the parent's, in list order, so the session's own family may stay on the list for a thread that another family leads. An entry is a bare `<providerInstanceId>`, which takes that provider's first eligible model, or `<providerInstanceId>/<model>` when the user names a model. `inherit` may end the list, so a panel seat whose every entry fails runs on the session's family. Ask nothing about the lead or about other roles.
 
 For each chosen provider whose `driverKind` is not `grok` or `codex`, the non-Claude hosts whose load orbit has tested, and whose `providerInstanceId` is not `inheritedProviderInstanceId`, say "orbit has no tested load check for <driverKind> yet".
 
-**4d. Validate.** Every entry's provider is in `providers`, enabled, with `canRunCrossProviderChildTask` true. For a `<providerInstanceId>/<model>` entry, that provider lists the model. The first result is a short list, so before you call a model missing, call `orchestrator_capabilities` with `search` set to the model id. If an entry fails, name the check that failed and ask again.
+**4d. Validate.** Every entry's provider is in `providers`, enabled, with `canRunCrossProviderChildTask` true. No two entries name the same provider. `inherit` is valid only as the last entry, and a trailing `inherit` from 4b stays. For a `<providerInstanceId>/<model>` entry, that provider lists the model. The first result is a short list, so before you call a model missing, call `orchestrator_capabilities` with `search` set to the model id. A seat tries at most three entries outside its lead's `driverKind`. For each enabled `driverKind` in `providers`, find the first three entries outside it. Name any entry that falls after the third under every such lead kind, because no seat would ever try it. If an entry fails, name the check that failed and ask again.
 
 **4e. Show the file.** Show the whole new file. A new file has this shape:
 
@@ -94,10 +97,16 @@ Orbit's user-wide Models table, written by /orbit:setup. A cell in a project's A
 | Task | Use for | Model | Effort |
 | --- | --- | --- | --- |
 | other-family | Panel seat on another family under T3 Code | <entry>, <entry> | |
+| verifier | Pre-land verifier on another family under T3 Code | other-family, inherit | |
+```
+
+After a no to the second question, the `verifier` row reads:
+
+```
 | verifier | Pre-land verifier on another family under T3 Code | other-family | |
 ```
 
-No frontmatter. The Model cell holds the entries in order, separated by `, `. The Effort cell stays empty unless the user named an effort. Write the `verifier` row only when the list is not empty and 4b found no `verifier` row. The rows 4b kept follow the `other-family` row, verbatim.
+No frontmatter. The Model cell holds the entries in order, separated by `, `. The Effort cell stays empty unless the user named an effort. When 4b found no `verifier` row, write one only when the list is not empty. When 4b found a `verifier` row whose Model is `other-family` or `other-family, inherit`, set its Model from the second answer. Keep any other `verifier` row as it is. The rows 4b kept follow the `other-family` row, verbatim.
 
 An existing file keeps every line outside its Models table, such as the header line and the user's notes, byte for byte. Only the table changes. A file with no table gets the table after its last line. When the new file is byte-identical to the current one, say the file is current and make no offer. Otherwise the write is an offer for step 5.
 

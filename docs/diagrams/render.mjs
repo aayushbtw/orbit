@@ -344,8 +344,31 @@ function t3Lead(theme) {
   return k;
 }
 
+function providerSelection(theme) {
+  const k = canvas(theme, 1100, 810);
+  const box = (b) => { const r = B({ h: 88, ss: 15, kind: 'agent', ...b }); k.box(r); return r; };
+  const read = box({ x: 290, y: 20, w: 520, t: 'Read the other-family cell', s: 'project AGENTS.md, else ~/.claude/rules/orbit-models.md', kind: 'claude' });
+  const empty = box({ x: 20, y: 170, w: 460, t: 'Empty: no seat on another family', s: "the skill's own seat runs; reply says none is configured", kind: 'claude' });
+  const inherit = box({ x: 620, y: 170, w: 460, t: 'inherit: session-family seat', kind: 'claude' });
+  const main = [
+    { t: 'Check listed entries', s: "skip the lead's family; provider, model family, runtime" },
+    { t: 'Keep at most 3 providers', s: 'list order; one entry per provider' },
+    { t: 'Fill one seat, in order', s: 'next candidate on failure; never an unlisted one', kind: 'done' },
+    { t: 'All fail: skip and say so', s: 'native only when the list ends with inherit', kind: 'fail' },
+  ].map((b, i) => box({ x: 300, y: 320 + i * 120, w: 500, ...b }));
+  k.arrow([[read.x + 60, read.bot + 6], [empty.cx, empty.y - 6]]);
+  k.arrow([[read.r - 60, read.bot + 6], [inherit.cx, inherit.y - 6]]);
+  k.text(read.x - 30, read.bot + 26, 'empty or no row', 17, k.c.muted, 'end');
+  k.text(read.r + 30, read.bot + 26, 'inherit', 17, k.c.muted, 'start');
+  k.arrow([[read.cx, read.bot + 6], [main[0].cx, main[0].y - 6]]);
+  k.text(read.cx + 14, main[0].y - 24, 'a list', 17, k.c.muted, 'start');
+  main.slice(1).forEach((b, i) => k.arrow([[main[i].cx, main[i].bot + 6], [b.cx, b.y - 6]]));
+  k.text(main[3].cx + 14, main[3].y - 12, 'every candidate failed', 17, k.c.muted, 'start');
+  return k;
+}
+
 const font = readFileSync(new URL('./Excalifont-Regular.woff2', import.meta.url)).toString('base64');
-const scenes = { readme, docs, 'guide-arena': guideArena, 'guide-ship': guideShip, 'guide-autopilot': guideAutopilot, 'guide-stack': guideStack, 'guide-architect': guideArchitect, 'guide-models': guideModels, 't3-lead': t3Lead };
+const scenes = { readme, docs, 'guide-arena': guideArena, 'guide-ship': guideShip, 'guide-autopilot': guideAutopilot, 'guide-stack': guideStack, 'guide-architect': guideArchitect, 'guide-models': guideModels, 't3-lead': t3Lead, 'provider-selection': providerSelection };
 for (const [name, scene] of Object.entries(scenes)) {
   for (const t of ['light', 'dark']) writeFileSync(new URL(`./${name}-${t}.svg`, import.meta.url), scene(t).svg(font));
 }
