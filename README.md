@@ -50,12 +50,12 @@ A T3 thread led by Claude or another provider, such as Codex or Grok, runs orbit
 
 | Lead in T3 | Live result |
 | --- | --- |
-| Claude | 16 of 16 scenarios pass, 1 run each. |
-| Codex, code children on gpt-6.1-sol | 17 of 17 scenarios pass, 1 run each. The 5 that failed on the first run pass on a rerun after a fix. |
+| Claude | 16 of 16 scenarios pass at `34fdaae`, 1 run each. |
+| Codex, code children on gpt-6.1-sol | 17 of 17 scenarios pass, 1 run each. 12 pass at `34fdaae`. The other 5 pass on reruns at the branch commits of the fix in [#74](https://github.com/aayushbtw/orbit/pull/74). |
 | Grok | Not proven. Each of 4 runs at `34fdaae` stopped on T3's usage-balance error before the lead acted. The native code child has never run live. |
 | Other providers | Untested. |
 
-[What is verified](docs/t3-code.md#what-is-verified) lists each scenario, its commit and its date.
+No lane has run at the merged fix. [What is verified](docs/t3-code.md#what-is-verified) lists each scenario, its commit and its date.
 
 To load orbit's rules in every session, even without `/orbit:start`, add this line to the provider's own instruction file, such as `~/.grok/AGENTS.md` or `~/.codex/AGENTS.md`. Setup adds it only when you say yes.
 
