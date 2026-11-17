@@ -1,0 +1,9 @@
+name: swarm-p2b
+on:
+  pull_request:
+    branches-ignore: [main]
+jobs:
+  slow:
+    runs-on: ubuntu-latest
+    steps:
+      - run: sleep 60 && echo ok
