@@ -159,6 +159,10 @@ export function createLeads({ host, model, provider, keep, timeoutMs, maxTurns, 
     setTimeout(() => { try { process.kill(-pid, 'SIGKILL'); } catch {} }, graceMs).unref();
   };
 
+  const awaitLaneWorkerJson = async (outDir) => {
+    for (const end = Date.now() + timeoutMs; !existsSync(join(outDir, 'lane.json')) && Date.now() < end;) await new Promise((r) => setTimeout(r, 1000));
+  };
+
   const live = new Map();
   for (const signal of ['SIGINT', 'SIGTERM']) {
     process.on(signal, async () => {
@@ -216,8 +220,7 @@ export function createLeads({ host, model, provider, keep, timeoutMs, maxTurns, 
       child.on('exit', async (code) => {
         clearTimeout(timer);
         for (const fd of fds) closeSync(fd);
-        // lane.mjs's worker outlives its launcher and writes lane.json last, after its own cleanup.
-        for (const end = Date.now() + timeoutMs; host === 't3' && !existsSync(join(outDir, 'lane.json')) && Date.now() < end;) await new Promise((r) => setTimeout(r, 1000));
+        if (host === 't3') await awaitLaneWorkerJson(outDir);
         live.delete(child.pid);
         release(project);
         done({ outDir, project, exit: timedOut ? 'timeout' : `code ${code}` });

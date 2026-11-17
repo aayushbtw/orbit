@@ -47,8 +47,7 @@ const workerId = process.env.ORBIT_LANE_WORKER_ID;
 const id = workerId ?? randomBytes(4).toString('hex');
 const out = resolve(opts.out ?? join(tmpdir(), `orbit-lane-${slug}-${id}.json`));
 
-// The middle process exits at once, so the worker it starts is orphaned and a kill of the launcher's process tree misses it.
-const MIDDLE = `const { openSync } = require('node:fs');
+const ORPHANING_LAUNCHER = `const { openSync } = require('node:fs');
 const { spawn } = require('node:child_process');
 const [log, ...args] = process.argv.slice(1);
 const fd = openSync(log, 'w');
@@ -60,7 +59,7 @@ async function launch() {
   const log = `${out}.log`;
   mkdirSync(dirname(out), { recursive: true });
   rmSync(out, { force: true });
-  const pid = Number(run(process.execPath, ['-e', MIDDLE, log, fileURLToPath(import.meta.url), ...process.argv.slice(2), '--out', out], { env: { ...process.env, ORBIT_LANE_WORKER_ID: id } }));
+  const pid = Number(run(process.execPath, ['-e', ORPHANING_LAUNCHER, log, fileURLToPath(import.meta.url), ...process.argv.slice(2), '--out', out], { env: { ...process.env, ORBIT_LANE_WORKER_ID: id } }));
   console.error(`worker ${pid} runs the lane, logs to ${log} and writes ${out}`);
   for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
     process.on(signal, () => {
@@ -263,7 +262,6 @@ function buildLaneCommit() {
   const json = (value) => JSON.stringify(value, null, 2) + '\n';
   try {
     run('git', ['-C', project, 'read-tree', base], { env });
-    // Claude Code keys auto memory by the main checkout, so without this a lane writes into the operator's own memory folder.
     add('100644', '.claude/settings.local.json', json({ ...tracked('.claude/settings.local.json'), autoMemoryDirectory: memoryDir }));
     if (marketplace) {
       const settings = tracked('.claude/settings.json');
@@ -287,14 +285,13 @@ const runState = (threadId) => {
   const thread = JSON.parse(tryRun(cli, ['thread', 'show', '--json', threadId]) ?? 'null')?.thread;
   return !thread ? 'unknown' : thread.pendingRequestCount > 0 ? 'waiting' : thread.activeRunId ? 'running' : 'idle';
 };
-// A lane never answers a question, so a thread parked on one keeps its run but will not touch the worktree again.
-const settled = (state) => state === 'idle' || state === 'waiting';
+const doneWithWorktree = (state) => state === 'idle' || state === 'waiting';
 
 async function runStateAfterGrace({ threadId, link }) {
   const deadline = Date.now() + timeoutMs;
   let state = runState(threadId);
-  if (!settled(state)) console.error(`thread ${link} is ${state}, so cleanup waits up to ${opts.timeout} minutes for it to go idle`);
-  while (!settled(state) && Date.now() < deadline) {
+  if (!doneWithWorktree(state)) console.error(`thread ${link} is ${state}, so cleanup waits up to ${opts.timeout} minutes for it to go idle`);
+  while (!doneWithWorktree(state) && Date.now() < deadline) {
     await sleep(POLL_MS);
     state = runState(threadId);
   }
@@ -330,7 +327,7 @@ const cleanup = () => cleaning ??= (async () => {
   }
   if (result.thread) {
     const state = await runStateAfterGrace(result.thread);
-    if (!settled(state)) return keep(state);
+    if (!doneWithWorktree(state)) return keep(state);
   }
   await withLock(async () => {
     while (undo.length) {
