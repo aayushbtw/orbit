@@ -1,0 +1,7 @@
+name: sleep
+on: pull_request
+jobs:
+  sleep120:
+    runs-on: ubuntu-latest
+    steps:
+      - run: sleep 120
