@@ -100,9 +100,10 @@ describe("repository check presence", () => {
     rules: { nodes: [{ type: "COPILOT_CODE_REVIEW" }] },
   };
   const unchecked = { commit: { statusCheckRollup: null } };
-  const checkedBy = (...nodes: readonly unknown[]) => ({
-    commit: { statusCheckRollup: { contexts: { nodes } } },
+  const page = (hasNextPage: boolean, ...nodes: readonly unknown[]) => ({
+    commit: { statusCheckRollup: { contexts: { pageInfo: { hasNextPage }, nodes } } },
   });
+  const checkedBy = (...nodes: readonly unknown[]) => page(false, ...nodes);
   const checkRun = (slug: string | null) => ({
     __typename: "CheckRun",
     checkSuite: { app: slug === null ? null : { slug } },
@@ -305,6 +306,25 @@ on:
         "main"
       )
     ).toBe(false);
+  });
+
+  it("finds checks when a past rollup has more contexts than the first page", () => {
+    const truncated = page(true, ...Array(100).fill(checkRun("github-actions")));
+    expect(parseRunsChecks(response({ commits: [truncated, unchecked] }), "main")).toBe(
+      true
+    );
+    expect(
+      parseRunsChecks(
+        response({ recentPullRequests: [uncheckedPr, { commits: { nodes: [truncated] } }] }),
+        "main"
+      )
+    ).toBe(true);
+  });
+
+  it("finds checks from a pull request workflow with an empty branch filter", () => {
+    for (const event of ["pull_request", "pull_request_target"])
+      for (const filter of ["branches", "branches-ignore"])
+        expect(runsOn(`on:\n  ${event}:\n    ${filter}: []\n`, "main")).toBe(true);
   });
 
   it("finds checks from a past commit status or a check run without an app", () => {
