@@ -68,7 +68,7 @@ A T3 run differs from a `claude -p` run in four ways, so compare the two with ca
 
 ## Flow selection
 
-`flows.mjs` proves which route `/orbit:start` picks for each of the 14 prompts in `flows.json`. The prompts come from the table in `docs/guide/01-start-a-task.md`, one per route, and each row names the route it expects in `expect`.
+`flows.mjs` proves which route `/orbit:start` picks for each of the 14 prompts in `flows.json`. Each prompt targets one row of the table in `docs/guide/01-start-a-task.md`. Each row of `flows.json` names the route it expects in `expect`.
 
 Each route runs one lead on its own scratch project, the same project `run.mjs` builds, with at most 12 turns and a 12-minute timeout:
 
@@ -79,7 +79,7 @@ Each route runs one lead on its own scratch project, the same project `run.mjs` 
 
 The route id is `orbit:playbook <first word of args>` for a playbook call, such as `orbit:playbook bug`, and the bare skill name otherwise, such as `orbit:ship`. A row passes when its route id equals `expect`. A `--prompt` run has no `expect`, so it prints N/A.
 
-Each route writes to `$TMPDIR/orbit-flows-<timestamp>/<route>/`. `run.json` holds the prompt, `expect`, `sha`, `dirty`, host and model, and after the run the measured `turns`, `cost`, `cache_read` and `cache_creation`. `spawns.jsonl` is the hook log and `stream.jsonl` is the lead's output. A live run also writes `summary.json` at the root, with one row per route and the total cost.
+Each route writes to `$TMPDIR/orbit-flows-<timestamp>/<route>/`. `run.json` holds the prompt, `expect`, `sha`, `dirty`, host and model, and after the run the measured `turns`, `cost`, `cache_read` and `cache_creation`. `spawns.jsonl` is the hook log and `stream.jsonl` is the lead's output. A live run also writes `summary.json` at the root, with one row per route and the total cost. Under `--host t3` there is no `stream.jsonl`, so these fields are null and the cost is reported as unknown. A route with no cost prints `cost=-`, and when any route lacks a cost, the total line prints `cost unknown` and `summary.json` records `"cost": null`.
 
 ```sh
 node tests/routing/flows.mjs                              # all 14 routes, opus lead, 4 at a time
@@ -94,7 +94,7 @@ node tests/routing/flows.mjs --host t3 --route bug        # lead in a T3 Code th
 
 `--host t3` needs `--route` or `--prompt`. Each route is its own T3 lane thread, and a PR may run at most 4.
 
-It exits 0 only when every row meets its `want`, which defaults to PASS. N/A rows always meet it. A fixture's `run.json` carries `want`, so a fixture can require a FAIL. `fixtures/flows/` holds one real refactor capture graded two ways. `pass/` expects `orbit:playbook refactor`, and `fail/` expects `orbit:playbook feature` with `want: "FAIL"`. This command regrades both with no session:
+It exits 0 only when every row meets its `want`, which defaults to PASS. N/A rows always meet it. A fixture's `run.json` carries `want`, so a fixture can require a FAIL. `fixtures/flows/` holds one refactor capture, its hook line rebuilt from a real probe's output, graded three ways. `pass/` expects `orbit:playbook refactor`, and `fail/` expects `orbit:playbook feature` with `want: "FAIL"`. `t3/` is the `pass/` capture with null `turns` and `cost`, as a T3 run records it, so the total prints `cost unknown`. This command regrades all three with no session:
 
 ```sh
 node tests/routing/flows.mjs --grade-only tests/routing/fixtures
