@@ -26,7 +26,7 @@ What opens next depends on the Land line in your project's Workflow block. Leave
 
 ## The verifier runs your change like a user
 
-Shipping spawns one `verifier` per PR, fresh, in its own worktree. It has Read, Grep, Glob, Bash and Write. It uses Write only for scratch scripts under `/tmp`. It has no Edit, so it can't patch the change and then pass its own patch. It commits nothing. In T3 Code it also has a named set of T3 read and preview tools, which it loads when the host serves them.
+Shipping spawns one `verifier` per PR, fresh, in its own worktree. It has Read, Grep, Glob, Bash and Write. It uses Write only for scratch scripts under `/tmp`. It has no Edit, so it can't patch the change and then pass its own patch. It commits nothing. In T3 Code it also has two named T3 read tools, which it loads when the host serves them. It never uses T3's preview browser, which the user shares, and drives a UI through the control skill's own headless browser.
 
 Its brief holds the head SHA, the parent SHA, a paragraph on what the change is for, the changed paths, and the skill that drives your app. It checks out the head, runs the change, then checks out the parent and runs the same steps again. That second run is what turns an observation into evidence. "The export prints 40 rows" says little. "The parent printed 52 rows and the head prints 40, and the 12 missing rows are older than `--since`" says the change did its job.
 
