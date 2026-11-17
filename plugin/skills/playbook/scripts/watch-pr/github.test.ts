@@ -100,7 +100,15 @@ describe("repository check presence", () => {
     rules: { nodes: [{ type: "COPILOT_CODE_REVIEW" }] },
   };
   const unchecked = { commit: { statusCheckRollup: null } };
-  const checked = { commit: { statusCheckRollup: { state: "SUCCESS" } } };
+  const page = (hasNextPage: boolean, ...nodes: readonly unknown[]) => ({
+    commit: { statusCheckRollup: { contexts: { pageInfo: { hasNextPage }, nodes } } },
+  });
+  const checkedBy = (...nodes: readonly unknown[]) => page(false, ...nodes);
+  const checkRun = (slug: string | null) => ({
+    __typename: "CheckRun",
+    checkSuite: { app: slug === null ? null : { slug } },
+  });
+  const checked = checkedBy(checkRun("vercel"));
   const uncheckedPr = { commits: { nodes: [unchecked] } };
   const response = ({
     headWorkflows = null,
@@ -250,6 +258,90 @@ on:
     expect(
       parseRunsChecks(response({ recentPullRequests: [uncheckedPr, checkedPr] }), "main")
     ).toBe(true);
+  });
+
+  const runsOn = (text: string, base: string) =>
+    parseRunsChecks(response({ headWorkflows: workflows(["ci.yml", text]) }), base);
+
+  it("finds no checks from a pull request workflow filtered to another base branch", () => {
+    for (const event of ["pull_request", "pull_request_target"]) {
+      const text = `on:\n  ${event}:\n    branches: [main]\n`;
+      expect(runsOn(text, "scratch/p2-base")).toBe(false);
+      expect(runsOn(text, "main")).toBe(true);
+    }
+  });
+
+  it("finds no checks from a pull request workflow that ignores the base branch", () => {
+    const text = "on:\n  pull_request:\n    branches-ignore: [main]\n";
+    expect(runsOn(text, "main")).toBe(false);
+    expect(runsOn(text, "develop")).toBe(true);
+  });
+
+  it("matches pull request branch filters with * and ** globs", () => {
+    const release = "on:\n  pull_request:\n    branches: ['release/**']\n";
+    expect(runsOn(release, "release/1")).toBe(true);
+    expect(runsOn(release, "main")).toBe(false);
+    const feature = "on:\n  pull_request:\n    branches: ['feature/*']\n";
+    expect(runsOn(feature, "feature/a/b")).toBe(false);
+    expect(runsOn(feature, "feature/a")).toBe(true);
+  });
+
+  it("finds checks from a pull request branch filter it cannot match", () => {
+    for (const text of [
+      "on:\n  pull_request:\n    branches: ['rel?ase']\n",
+      "on:\n  pull_request:\n    branches: ['!main']\n",
+      "on:\n  pull_request:\n    branches-ignore: ['ma+in']\n",
+    ])
+      expect(runsOn(text, "main")).toBe(true);
+  });
+
+  it("finds no checks when the only past check came from GitHub Actions", () => {
+    const actions = checkedBy(checkRun("github-actions"));
+    expect(parseRunsChecks(response({ commits: [actions, unchecked] }), "main")).toBe(
+      false
+    );
+    expect(
+      parseRunsChecks(
+        response({ recentPullRequests: [uncheckedPr, { commits: { nodes: [actions] } }] }),
+        "main"
+      )
+    ).toBe(false);
+  });
+
+  it("finds checks when a past rollup has more contexts than the first page", () => {
+    const truncated = page(true, ...Array(100).fill(checkRun("github-actions")));
+    expect(parseRunsChecks(response({ commits: [truncated, unchecked] }), "main")).toBe(
+      true
+    );
+    expect(
+      parseRunsChecks(
+        response({ recentPullRequests: [uncheckedPr, { commits: { nodes: [truncated] } }] }),
+        "main"
+      )
+    ).toBe(true);
+  });
+
+  it("finds checks from a pull request workflow with an empty branch filter", () => {
+    for (const event of ["pull_request", "pull_request_target"])
+      for (const filter of ["branches", "branches-ignore"])
+        expect(runsOn(`on:\n  ${event}:\n    ${filter}: []\n`, "main")).toBe(true);
+  });
+
+  it("finds checks from a past commit status or a check run without an app", () => {
+    for (const commit of [
+      checkedBy({ __typename: "StatusContext" }),
+      checkedBy(checkRun(null)),
+    ]) {
+      expect(parseRunsChecks(response({ commits: [commit, unchecked] }), "main")).toBe(
+        true
+      );
+      expect(
+        parseRunsChecks(
+          response({ recentPullRequests: [uncheckedPr, { commits: { nodes: [commit] } }] }),
+          "main"
+        )
+      ).toBe(true);
+    }
   });
 });
 
