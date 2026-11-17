@@ -75,6 +75,7 @@ function measured(outDir) {
 
 const header = (run) => `${run.sha ? `orbit ${run.sha}${run.dirty ? ' (dirty)' : ''}` : 'orbit unrecorded'} host=${run.host ?? '-'} model=${run.model ?? '-'}`;
 const money = (n) => `$${n.toFixed(2)}`;
+const totalCost = (runs) => runs.some((r) => r.cost == null) ? null : runs.reduce((sum, r) => sum + r.cost, 0);
 
 function report(graded) {
   let last;
@@ -84,8 +85,8 @@ function report(graded) {
     console.log(`  ${status.padEnd(4)} ${run.route.padEnd(16)} expect=${run.expect} got=${got} turns=${run.turns ?? '-'} cost=${cost}${run.want ? ` want=${run.want}` : ''}`);
   }
   const scored = graded.filter((g) => g.status !== 'N/A');
-  const total = graded.reduce((sum, g) => sum + (g.run.cost ?? 0), 0);
-  console.log(`${scored.filter((g) => g.status === 'PASS').length}/${scored.length} pass, ${money(total)}`);
+  const total = totalCost(graded.map((g) => g.run));
+  console.log(`${scored.filter((g) => g.status === 'PASS').length}/${scored.length} pass, ${total == null ? 'cost unknown' : money(total)}`);
   process.exitCode = graded.every((g) => g.status === 'N/A' || g.status === (g.run.want ?? 'PASS')) ? 0 : 1;
 }
 
@@ -136,6 +137,5 @@ if (opts['grade-only']) {
   });
   report(graded);
   const rows = graded.map(({ run, got, status }) => ({ route: run.route, expect: run.expect, got, status, turns: run.turns, cost: run.cost }));
-  const cost = rows.reduce((sum, r) => sum + (r.cost ?? 0), 0);
-  writeFileSync(join(outRoot, 'summary.json'), JSON.stringify({ ...rev, host: opts.host, model: opts.model ?? null, rows, cost }, null, 2) + '\n');
+  writeFileSync(join(outRoot, 'summary.json'), JSON.stringify({ ...rev, host: opts.host, model: opts.model ?? null, rows, cost: totalCost(rows) }, null, 2) + '\n');
 }

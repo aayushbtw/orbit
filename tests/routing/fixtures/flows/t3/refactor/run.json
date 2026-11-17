@@ -1,0 +1,14 @@
+{
+  "route": "refactor",
+  "prompt": "/orbit:start rename UserRecord to Account across the server package. no behavior change.",
+  "expect": "orbit:playbook refactor",
+  "note": "The pass capture as a T3 run records it: no stream.jsonl, so turns and cost are null and the total cost must print as unknown.",
+  "sha": "578223b9965d0758cdaabfad14db68b5f80dde96",
+  "dirty": true,
+  "host": "t3",
+  "model": null,
+  "turns": null,
+  "cost": null,
+  "cache_read": null,
+  "cache_creation": null
+}
