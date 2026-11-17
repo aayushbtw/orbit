@@ -1,0 +1,7 @@
+name: sleeplong
+on: pull_request
+jobs:
+  sleep900:
+    runs-on: ubuntu-latest
+    steps:
+      - run: sleep 900
