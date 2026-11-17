@@ -108,12 +108,13 @@ With no reader for the provider, or no session file for the lead, `session`, `to
 | `verifier-seat` | `verifier-ran`, `seat-other-family` | A verifier runs, and it is a `delegate_task` seat on another family in a worktree |
 | `review-seat` | `seat-other-family`, `request-id` | The lead calls `delegate_task` with `role: "review"`, `mode: "async"`, no `runtimeMode` and a provider of another family, and that same call has a `clientRequestId` |
 | `watch-pr-wait` | `lead-watches`, `no-child-watches` | The lead calls `watch_pull_request` on a PR URL, and no child does |
+| `babysit-wait` | `once-read`, `no-sleeping-watcher`, `lead-watches`, `unwatch-at-ready`, `no-child-watches` | The lead runs `watch-pr` once with `--once`, and no call runs `watch-pr` without `--once` or `--status-only`. The lead calls `watch_pull_request` on a PR URL and, after the wake at `READY`, `unwatch_pull_request`. No child watches |
 | `schedule-loop` | `bound-to-thread`, `interval-min-60s` | `schedule_task` has `bindToCurrentThread: true`, and no interval is under 60000 ms |
 | `schedule-only` | `scheduled`, `prompt-not-run`, `no-run-now` | The lead calls `schedule_task` with `bindToCurrentThread: true`. It never counts the commits itself, with `git rev-list` or `git log` piped to `wc -l`, and never calls `run_scheduled_task_now` |
 | `parallel-units` | `own-checkout-children`, `no-worktree-agent`, `no-shell-worktree`, `cherry-picked`, `children-settled` | The lead starts at least two `delegate_task` children with `isolation: "worktree"`, `mode: "async"` and a `clientRequestId`. No `Agent` call passes `isolation: "worktree"`, which is N/A off Claude, and no shell runs `git worktree add`. At least two `git cherry-pick` commands run, and the lead settles at least two threads with `t3_thread_organize` |
 | `autopilot-owners` | `owners-are-children`, `no-worktree-agent`, `no-shell-worktree`, `tick-bound` | Each of the two owners is a `delegate_task` child as in `parallel-units`, with the same two worktree checks. The lead arms `schedule_task` with `bindToCurrentThread: true` |
 
-The `gitops-native` and `code-child` prompts are the ones the Codex lanes ran. The `watch-pr-wait` prompt is the hillclimb wake lane's, with its PR URL replaced. The rest are drafts that live lanes may tune.
+The `gitops-native` and `code-child` prompts are the ones the Codex lanes ran. The `watch-pr-wait` prompt is the hillclimb wake lane's, with its PR URL replaced. The `babysit-wait` prompt holds `<PR URL>`, and the lane does not fill it in. Run it with `--message` set to the prompt with a scratch PR's URL whose checks are still pending, and with `--wake`, so the wake at `READY` and its `unwatch_pull_request` land in the lane. The rest are drafts that live lanes may tune.
 
 ```sh
 node tests/t3/grade.mjs tests/t3/fixtures/*.json
