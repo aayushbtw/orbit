@@ -15,10 +15,13 @@ const seat = (kind) => ({ role: 'review', mode: 'async', runtimeMode: ABSENT, ta
 const verifierSeat = (kind) => ({ isolation: 'worktree', target: { providerInstanceId: otherFamily(kind) } });
 const countsCommits = /rev-list|\bgit\b[^|]*\blog\b[^|]*\|\s*wc\s+-l/;
 const onceRead = /\/watch-pr\s[^|;&]*--once\b/;
+const prefix = /^(\w+=\S*|env|exec|nohup|time|command)$/;
 const watcherArgs = (segment) => {
-  const words = segment.trim().split(/\s+/).map((word) => word.replace(/^["']|["']$/g, ''));
-  const at = words.findIndex((word) => /(^|\/)watch-pr$/.test(word));
-  return at < 0 || words[0] === 'cd' ? null : words.slice(at + 1);
+  const words = segment.trim().split(/\s+/).map((word) => word.replace(/^["'(]+|["')]+$/g, ''));
+  let at = 0;
+  while (prefix.test(words[at] ?? '')) at += 1;
+  if (/^(ba|z)?sh$/.test(words[at]) && /^-\w*c$/.test(words[at + 1] ?? '')) at += 2;
+  return /(^|\/)watch-pr$/.test(words[at] ?? '') ? words.slice(at + 1) : null;
 };
 const sleepingWatcher = (command) => typeof command === 'string' && command.split(/&&|\|\||[;|&\n]/).some((segment) => {
   const args = watcherArgs(segment);
