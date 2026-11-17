@@ -43,8 +43,51 @@ const lexists = (path) => { try { lstatSync(path); return true; } catch { return
 
 const slug = opts.scenario;
 const message = opts.message ?? SCENARIOS[slug]?.prompt;
-const id = randomBytes(4).toString('hex');
+const workerId = process.env.ORBIT_LANE_WORKER_ID;
+const id = workerId ?? randomBytes(4).toString('hex');
 const out = resolve(opts.out ?? join(tmpdir(), `orbit-lane-${slug}-${id}.json`));
+
+const ORPHANING_LAUNCHER = `const { openSync } = require('node:fs');
+const { spawn } = require('node:child_process');
+const [log, ...args] = process.argv.slice(1);
+const fd = openSync(log, 'w');
+const worker = spawn(process.execPath, args, { detached: true, stdio: ['ignore', fd, fd] });
+worker.unref();
+process.stdout.write(String(worker.pid));`;
+
+async function launch() {
+  const log = `${out}.log`;
+  mkdirSync(dirname(out), { recursive: true });
+  rmSync(out, { force: true });
+  const pid = Number(run(process.execPath, ['-e', ORPHANING_LAUNCHER, log, fileURLToPath(import.meta.url), ...process.argv.slice(2), '--out', out], { env: { ...process.env, ORBIT_LANE_WORKER_ID: id } }));
+  console.error(`worker ${pid} runs the lane, logs to ${log} and writes ${out}`);
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+    process.on(signal, () => {
+      console.error(`worker ${pid} keeps running and will write ${out}. Stop it with kill ${pid}.`);
+      process.exit(1);
+    });
+  }
+  let shown = 0;
+  const drain = () => {
+    const text = readFileSync(log);
+    process.stderr.write(text.subarray(shown));
+    shown = text.length;
+  };
+  for (; alive(pid); await sleep(200)) drain();
+  drain();
+  console.log(out);
+  let exit = 1;
+  try { exit = JSON.parse(readFileSync(out, 'utf8')).exit; } catch {}
+  process.exit(exit);
+}
+
+if (!opts.head || !slug) {
+  console.error('usage: node tests/t3/lane.mjs --head <ref> --scenario <slug> [--message <text>] [--out <file>] [--project <dir>] [--installed] [--provider <id> --model <slug>] [--timeout <minutes>] [--wake <minutes> [--wakes <n>]]');
+  process.exit(1);
+}
+if (!workerId) await launch();
+
+const memoryDir = `${out.replace(/\.json$/, '')}.memory`;
 const timeoutMs = Number(opts.timeout) * 60_000;
 const wakeMs = opts.wake === undefined ? 0 : Number(opts.wake) * 60_000;
 const wakeCount = Number(opts.wakes ?? 1);
@@ -58,19 +101,15 @@ const sessionCtx = { message, since: LANE_START, homes: HOMES };
 const result = {
   scenario: slug ?? null, message: message ?? null,
   head: { ref: opts.head ?? null, sha: null }, project: null, laneCommit: null,
-  orbit: opts.installed ? 'installed' : 'head', marketplace: null,
+  orbit: opts.installed ? 'installed' : 'head', marketplace: null, memoryDir,
   exit: 1, status: 'error', reply: null, error: null, wake: null, wakes: [],
   pendingQuestion: null, thread: null, threads: [], messages: [],
-  session: null, firstTurnInputTokens: null, toolCalls: null,
+  session: null, firstTurnInputTokens: null, toolCalls: null, kept: null,
 };
 
-let started = false;
 function finish() {
-  if (opts.out || started) {
-    mkdirSync(dirname(out), { recursive: true });
-    writeFileSync(out, JSON.stringify(result, null, 2) + '\n');
-    console.log(out);
-  }
+  mkdirSync(dirname(out), { recursive: true });
+  writeFileSync(out, JSON.stringify(result, null, 2) + '\n');
   process.exit(result.exit);
 }
 
@@ -80,7 +119,6 @@ function fail(error) {
   finish();
 }
 
-if (!opts.head || !slug) fail('usage: node tests/t3/lane.mjs --head <ref> --scenario <slug> [--message <text>] [--out <file>] [--project <dir>] [--installed] [--provider <id> --model <slug>] [--timeout <minutes>] [--wake <minutes> [--wakes <n>]]');
 if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) fail(`--scenario must be lowercase letters, digits and hyphens, got ${slug}`);
 if (!message) fail(`--scenario ${slug} is not built in (${Object.keys(SCENARIOS).join(', ')}), so it needs --message`);
 if (!(timeoutMs > 0)) fail(`--timeout must be a positive number of minutes, got ${opts.timeout}`);
@@ -216,36 +254,87 @@ function reap() {
 function buildLaneCommit() {
   const index = join(tmpdir(), `orbit-lane-${id}.index`);
   const env = { ...process.env, GIT_INDEX_FILE: index };
+  const tracked = (path) => JSON.parse(tryRun('git', ['-C', project, 'show', `${base}:${path}`]) ?? '{}');
+  const add = (mode, path, input) => {
+    const blob = run('git', ['-C', project, 'hash-object', '-w', '--stdin'], { input });
+    run('git', ['-C', project, 'update-index', '--add', '--cacheinfo', `${mode},${blob},${path}`], { env });
+  };
+  const json = (value) => JSON.stringify(value, null, 2) + '\n';
   try {
-    const existing = tryRun('git', ['-C', project, 'show', `${base}:.claude/settings.json`]);
-    const settings = existing ? JSON.parse(existing) : {};
-    const user = JSON.parse(tryRead(join(HOMES.claude, 'settings.json')) ?? '{}');
-    const enabledOrbits = [user, settings]
-      .flatMap((s) => Object.entries(s.enabledPlugins ?? {}))
-      .filter(([key, on]) => key.startsWith('orbit@') && on)
-      .map(([key]) => [key, false]);
-    settings.enabledPlugins = { ...settings.enabledPlugins, ...Object.fromEntries(enabledOrbits), [`orbit@${marketplace}`]: true };
     run('git', ['-C', project, 'read-tree', base], { env });
-    const blob = run('git', ['-C', project, 'hash-object', '-w', '--stdin'], { input: JSON.stringify(settings, null, 2) + '\n' });
-    run('git', ['-C', project, 'update-index', '--add', '--cacheinfo', `100644,${blob},.claude/settings.json`], { env });
-    if (codexLane) {
-      const link = run('git', ['-C', project, 'hash-object', '-w', '--stdin'], { input: join(runDir, 'plugin') });
-      run('git', ['-C', project, 'update-index', '--add', '--cacheinfo', `120000,${link},.agents/skills/orbit`], { env });
+    add('100644', '.claude/settings.local.json', json({ ...tracked('.claude/settings.local.json'), autoMemoryDirectory: memoryDir }));
+    if (marketplace) {
+      const settings = tracked('.claude/settings.json');
+      const user = JSON.parse(tryRead(join(HOMES.claude, 'settings.json')) ?? '{}');
+      const enabledOrbits = [user, settings]
+        .flatMap((s) => Object.entries(s.enabledPlugins ?? {}))
+        .filter(([key, on]) => key.startsWith('orbit@') && on)
+        .map(([key]) => [key, false]);
+      settings.enabledPlugins = { ...settings.enabledPlugins, ...Object.fromEntries(enabledOrbits), [`orbit@${marketplace}`]: true };
+      add('100644', '.claude/settings.json', json(settings));
     }
+    if (codexLane) add('120000', '.agents/skills/orbit', join(runDir, 'plugin'));
     const tree = run('git', ['-C', project, 'write-tree'], { env });
-    return run('git', ['-C', project, '-c', 'user.name=orbit lane', '-c', 'user.email=lane@orbit.invalid', 'commit-tree', tree, '-p', base, '-m', `orbit lane ${slug} ${id}: load orbit from ${marketplace}`]);
+    return run('git', ['-C', project, '-c', 'user.name=orbit lane', '-c', 'user.email=lane@orbit.invalid', 'commit-tree', tree, '-p', base, '-m', `orbit lane ${slug} ${id}${marketplace ? `: load orbit from ${marketplace}` : ''}`]);
   } finally {
     rmSync(index, { force: true });
   }
 }
 
+const runState = (threadId) => {
+  const thread = JSON.parse(tryRun(cli, ['thread', 'show', '--json', threadId]) ?? 'null')?.thread;
+  return !thread ? 'unknown' : thread.pendingRequestCount > 0 ? 'waiting' : thread.activeRunId ? 'running' : 'idle';
+};
+const doneWithWorktree = (state) => state === 'idle' || state === 'waiting';
+
+async function runStateAfterGrace({ threadId, link }) {
+  const deadline = Date.now() + timeoutMs;
+  let state = runState(threadId);
+  if (!doneWithWorktree(state)) console.error(`thread ${link} is ${state}, so cleanup waits up to ${opts.timeout} minutes for it to go idle`);
+  while (!doneWithWorktree(state) && Date.now() < deadline) {
+    await sleep(POLL_MS);
+    state = runState(threadId);
+  }
+  return state;
+}
+
+function laneWorktree() {
+  const worktrees = (tryRun('git', ['-C', project, 'worktree', 'list', '--porcelain']) ?? '').split('\n\n').map((b) => b.split('\n'));
+  const path = result.thread?.worktreePath
+    ?? worktrees.find((lines) => lines.includes(`branch refs/heads/${branch}`))?.[0].replace(/^worktree /, '');
+  const checkedOut = worktrees.find((lines) => lines[0] === `worktree ${path}`)?.find((l) => l.startsWith('branch '))?.slice('branch '.length);
+  return { path, checkedOut };
+}
+
+function keep(state) {
+  const { path, checkedOut } = laneWorktree();
+  result.kept = {
+    worktree: path ?? null,
+    branch: (checkedOut ?? `refs/heads/${branch}`).replace(/^refs\/heads\//, ''),
+    marketplace: result.marketplace,
+    runDir: existsSync(runDir) ? runDir : null,
+  };
+  const left = Object.values(result.kept).filter(Boolean).join(', ');
+  console.error(`warning: after ${opts.timeout} minutes thread ${result.thread.link} is ${state}, not idle, so cleanup undid nothing and kept ${left}. The next lane's reaper removes the marketplace once worker ${process.pid} is dead. Remove the worktree with git worktree remove and delete the branch by hand.`);
+}
+
 const undo = [];
 let cleaning;
-const cleanup = () => cleaning ??= withLock(async () => {
-  while (undo.length) {
-    try { await undo.pop()(); } catch (e) { console.error(`cleanup: ${e.message}`); }
+const cleanup = () => cleaning ??= (async () => {
+  if (!undo.length) return;
+  if (!result.thread) {
+    try { recordThreads(); } catch (e) { console.error(`cleanup: ${gitError(e)}`); }
   }
-});
+  if (result.thread) {
+    const state = await runStateAfterGrace(result.thread);
+    if (!doneWithWorktree(state)) return keep(state);
+  }
+  await withLock(async () => {
+    while (undo.length) {
+      try { await undo.pop()(); } catch (e) { console.error(`cleanup: ${e.message}`); }
+    }
+  });
+})();
 
 let live = null;
 for (const signal of ['SIGINT', 'SIGTERM']) {
@@ -370,25 +459,16 @@ async function holdForWake(threadId) {
 }
 
 async function lane() {
-  if (opts.installed) {
-    result.laneCommit = base;
-  } else {
-    await loadHead();
-    result.laneCommit = buildLaneCommit();
-  }
+  mkdirSync(memoryDir, { recursive: true });
+  if (!opts.installed) await loadHead();
+  result.laneCommit = buildLaneCommit();
 
   const before = listBranches(project);
   const laneRef = `refs/heads/${branch}`;
   const taken = clash(before, laneRef);
   if (taken) throw new Error(`the lane branch ${branch} matches the existing ${taken} when case is ignored, so the lane will not create it; run the lane again for a new id`);
   undo.push(() => {
-    if (!result.thread) {
-      try { recordThreads(); } catch (e) { console.error(`cleanup: ${gitError(e)}`); }
-    }
-    const worktrees = (tryRun('git', ['-C', project, 'worktree', 'list', '--porcelain']) ?? '').split('\n\n').map((b) => b.split('\n'));
-    const path = result.thread?.worktreePath
-      ?? worktrees.find((lines) => lines.includes(`branch refs/heads/${branch}`))?.[0].replace(/^worktree /, '');
-    const checkedOut = worktrees.find((lines) => lines[0] === `worktree ${path}`)?.find((l) => l.startsWith('branch '))?.slice('branch '.length);
+    const { path, checkedOut } = laneWorktree();
     if (path) {
       tryRun('git', ['-C', project, 'worktree', 'remove', '--force', path]);
       // T3 keeps one folder per project for its worktrees and never removes it.
@@ -412,7 +492,6 @@ async function lane() {
   result.error = reply?.error ?? (result.status === 'timeout' ? `no reply within ${opts.timeout} minutes` : result.status === 'failed' ? stderr.trim() || `t3 exited ${code}` : null);
   recordThreads(reply?.threadId);
   if (!result.thread) return;
-  if (timedOut) console.error(`timed out; the thread keeps running in T3: ${result.thread.link}`);
   if (wakeMs && result.status === 'completed') {
     await holdForWake(result.thread.threadId);
     recordThreads(result.thread.threadId);
@@ -420,7 +499,6 @@ async function lane() {
   if (result.thread.worktreePath) readSession(result.thread);
 }
 
-started = true;
 try {
   await lane();
 } catch (e) {
