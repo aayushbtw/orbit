@@ -84,6 +84,18 @@ test('a child that watches the PR fails no-child-watches; the lead watch still p
   assert.deepEqual(verdicts(lane({ scenario: 'watch-pr-wait', provider: 'claude', toolCalls })), { 'lead-watches': 'PASS', 'no-child-watches': 'FAIL' });
 });
 
+test('no-sleeping-watcher flags only a watcher run that polls', () => {
+  const watcher = '/p/skills/playbook/scripts/watch-pr/watch-pr';
+  const grade = (command) => verdicts(lane({ scenario: 'babysit-wait', provider: 'claude', toolCalls: [{ name: 'Bash', input: { command }, sidechain: false }] }))['no-sleeping-watcher'];
+  assert.equal(grade(`${watcher} --owner o --repo r --pr 7`), 'FAIL');
+  assert.equal(grade('cd /p/skills/playbook/scripts/watch-pr && ./watch-pr --pr 7'), 'FAIL');
+  assert.equal(grade(`${watcher} --owner o --repo r --pr 7 --once`), 'PASS');
+  assert.equal(grade('cd /p/skills/playbook/scripts/watch-pr && ./watch-pr --owner o --repo r --pr 7 --once'), 'PASS');
+  assert.equal(grade(`"${watcher}" --pr 7 --once 2>&1 | tail -5`), 'PASS');
+  assert.equal(grade(`${watcher} --pr 7 --status-only`), 'PASS');
+  assert.equal(grade(`${watcher} --help`), 'PASS');
+});
+
 test('a clientRequestId on a different call than the other-family seat fails request-id', () => {
   const seat = (input) => ({ name: 'mcp__t3-code__delegate_task', input: { role: 'review', mode: 'async', ...input }, sidechain: false });
   const toolCalls = [seat({ target: { providerInstanceId: 'codex' } }), seat({ clientRequestId: 'x', target: { providerInstanceId: 'claudeAgent' } })];
