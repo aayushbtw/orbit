@@ -14,6 +14,8 @@ const noChildThread = {
 const seat = (kind) => ({ role: 'review', mode: 'async', runtimeMode: ABSENT, target: { providerInstanceId: otherFamily(kind) } });
 const verifierSeat = (kind) => ({ isolation: 'worktree', target: { providerInstanceId: otherFamily(kind) } });
 const countsCommits = /rev-list|\bgit\b[^|]*\blog\b[^|]*\|\s*wc\s+-l/;
+const onceRead = /\/watch-pr\s[^|;&]*--once\b/;
+const sleepingWatcher = /\/watch-pr\s(?![^|;&]*--(once|status-only)\b)/;
 const shortInterval = { schedule: { type: 'interval', everyMs: (ms) => !(ms >= 60_000) } };
 
 // orbit's own AGENTS.md sets other-family to inherit, so a lead there rightly keeps every seat native.
@@ -162,6 +164,36 @@ export const SCENARIOS = {
         claude: some(t3('watch_pull_request'), { url: /\/pull\/\d+$/ }, 'lead'),
         codex: some(t3('watch_pull_request'), { url: /\/pull\/\d+$/ }, 'lead'),
         grok: some('use_tool', viaUseTool('watch_pull_request', { url: /\/pull\/\d+$/ }), 'lead'),
+      },
+      'no-child-watches': {
+        claude: none(t3('watch_pull_request'), undefined, 'child'),
+        codex: none(t3('watch_pull_request'), undefined, 'child'),
+        grok: none('use_tool', viaUseTool('watch_pull_request'), 'child'),
+      },
+    },
+  },
+  'babysit-wait': {
+    prompt: '/orbit:start babysit <PR URL> in drive mode. Make no file changes and push nothing.',
+    checks: {
+      'once-read': {
+        claude: some('Bash', { command: onceRead }, 'lead'),
+        codex: some('exec_command', { command: onceRead }, 'lead'),
+        grok: some('run_terminal_command', { command: onceRead }, 'lead'),
+      },
+      'no-sleeping-watcher': {
+        claude: none('Bash', { command: sleepingWatcher }),
+        codex: none('exec_command', { command: sleepingWatcher }),
+        grok: none('run_terminal_command', { command: sleepingWatcher }),
+      },
+      'lead-watches': {
+        claude: some(t3('watch_pull_request'), { url: /\/pull\/\d+$/ }, 'lead'),
+        codex: some(t3('watch_pull_request'), { url: /\/pull\/\d+$/ }, 'lead'),
+        grok: some('use_tool', viaUseTool('watch_pull_request', { url: /\/pull\/\d+$/ }), 'lead'),
+      },
+      'unwatch-at-ready': {
+        claude: some(t3('unwatch_pull_request'), undefined, 'lead'),
+        codex: some(t3('unwatch_pull_request'), undefined, 'lead'),
+        grok: some('use_tool', viaUseTool('unwatch_pull_request'), 'lead'),
       },
       'no-child-watches': {
         claude: none(t3('watch_pull_request'), undefined, 'child'),
