@@ -1,4 +1,8 @@
 import { describe, expect, it } from "bun:test";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { type CliRuntime, main, parseArgs } from "./cli.ts";
 import {
   type FakeReaderOptions,
@@ -297,9 +301,17 @@ describe("main", () => {
       exitCode: 5,
       reason: {
         kind: "status-unavailable",
+        pr: { number: 1 },
         failure: { kind: "checks-unavailable" },
       },
     };
+    const retryable = (): WatcherQueryError =>
+      new WatcherQueryError({
+        kind: "command-exit",
+        retryable: true,
+        code: 1,
+        detail: "rate limited",
+      });
 
     it("ends a retryable query failure in TIMEOUT without a RETRY line", async () => {
       const harness = testRuntime(fakeReader(noChecksYet));
@@ -308,6 +320,118 @@ describe("main", () => {
       );
       expect(harness.stdout).toHaveLength(1);
       expect(lastVerdict(harness.stdout)).toMatchObject(unavailable);
+    });
+
+    it("ends a retryable failure in TIMEOUT even with a one-error budget", async () => {
+      const harness = testRuntime(fakeReader(noChecksYet));
+      expect(
+        await main(
+          [...repo, "--pr", "1", "--once", "--max-query-errors", "1"],
+          harness.runtime
+        )
+      ).toBe(5);
+      expect(lastVerdict(harness.stdout)).toMatchObject(unavailable);
+    });
+
+    it("names the stack PR whose read failed", async () => {
+      const base = fakeReader({
+        openPullRequests: [
+          {
+            number: parsePrNumber(1),
+            isCrossRepository: false,
+            headRefName: "a",
+            baseRefName: "main",
+          },
+          {
+            number: parsePrNumber(2),
+            isCrossRepository: false,
+            headRefName: "b",
+            baseRefName: "a",
+          },
+        ],
+      });
+      const reader = {
+        ...base,
+        async pullRequest(pr: PrContext): Promise<PullRequestFacts> {
+          if (pr.number === 2) throw retryable();
+          return base.pullRequest(pr);
+        },
+      } satisfies GitHubReader;
+      const harness = testRuntime(reader);
+      expect(
+        await main([...repo, "--pr", "1", "--stack", "--once"], harness.runtime)
+      ).toBe(5);
+      expect(lastVerdict(harness.stdout)).toMatchObject({
+        kind: "TIMEOUT",
+        reason: { kind: "status-unavailable", pr: { number: 2 } },
+      });
+      const pretty = testRuntime(reader);
+      await main(
+        [...repo, "--pr", "1", "--stack", "--once", "--pretty"],
+        pretty.runtime
+      );
+      expect(pretty.stdout[pretty.stdout.length - 1]).toBe(
+        "TIMEOUT: GitHub status remained unavailable; pr=#2\n"
+      );
+    });
+
+    it("ends a missing PR or a branch with no PR in a status-query BLOCKER", () => {
+      const directory = mkdtempSync(join(tmpdir(), "watch-pr-missing-"));
+      try {
+        writeFileSync(
+          join(directory, "gh"),
+          `#!/bin/sh
+case "$*" in
+  *"pr view 999999 "*) echo 'GraphQL: Could not resolve to a PullRequest with the number of 999999. (repository.pullRequest)' >&2 ;;
+  *"pr view 502 "*) echo 'HTTP 502: Bad Gateway (https://api.github.com/graphql)' >&2 ;;
+  *) echo 'no pull requests found for branch "feature"' >&2 ;;
+esac
+exit 1
+`,
+          { mode: 0o755 }
+        );
+        const watch = (args: readonly string[]) => {
+          const program = `import { main } from ${JSON.stringify(import.meta.dir + "/cli.ts")};
+            process.exitCode = await main(${JSON.stringify(args)});`;
+          const child = spawnSync(process.execPath, ["-e", program], {
+            encoding: "utf8",
+            timeout: 5000,
+            env: { ...process.env, PATH: `${directory}:${process.env.PATH}` },
+          });
+          expect(child.error).toBeUndefined();
+          return { code: child.status, verdict: lastVerdict(child.stdout.trim().split("\n")) };
+        };
+        const blocker = (detail: string) => ({
+          code: 7,
+          verdict: {
+            kind: "BLOCKER",
+            blocker: {
+              kind: "status-query",
+              failure: { kind: "not-found", retryable: false, detail },
+            },
+          },
+        });
+        expect(watch([...repo, "--pr", "999999", "--once"])).toMatchObject(
+          blocker(
+            "GraphQL: Could not resolve to a PullRequest with the number of 999999. (repository.pullRequest)"
+          )
+        );
+        expect(watch(["--once"])).toMatchObject(
+          blocker('no pull requests found for branch "feature"')
+        );
+        expect(watch([...repo, "--pr", "502", "--once"])).toMatchObject({
+          code: 5,
+          verdict: {
+            kind: "TIMEOUT",
+            reason: {
+              kind: "status-unavailable",
+              failure: { kind: "command-exit", retryable: true },
+            },
+          },
+        });
+      } finally {
+        rmSync(directory, { recursive: true, force: true });
+      }
     });
 
     it("ends a retryable queued query failure in TIMEOUT", async () => {
@@ -322,12 +446,7 @@ describe("main", () => {
       const reader = {
         ...base,
         async openPullRequests(): Promise<readonly OpenPullRequest[]> {
-          throw new WatcherQueryError({
-            kind: "command-exit",
-            retryable: true,
-            code: 1,
-            detail: "rate limited",
-          });
+          throw retryable();
         },
       } satisfies GitHubReader;
       const harness = testRuntime(reader);
@@ -336,7 +455,11 @@ describe("main", () => {
       ).toBe(5);
       expect(lastVerdict(harness.stdout)).toMatchObject({
         kind: "TIMEOUT",
-        reason: { kind: "status-unavailable", failure: { kind: "command-exit" } },
+        reason: {
+          kind: "status-unavailable",
+          pr: { number: 1 },
+          failure: { kind: "command-exit" },
+        },
       });
     });
 
@@ -422,6 +545,20 @@ describe("main", () => {
           },
         },
       });
+    });
+
+    it("says when a required review has no requested reviewer on READY", async () => {
+      const harness = testRuntime(
+        fakeReader({ facts: { reviewDecision: "REVIEW_REQUIRED" } })
+      );
+      expect(
+        await main([...repo, "--pr", "1", "--once", "--pretty"], harness.runtime)
+      ).toBe(0);
+      const rendered = harness.stdout.join("");
+      expect(rendered).toContain(
+        "reviewDecision=REVIEW_REQUIRED\nnote=review required, none requested\n"
+      );
+      expect(rendered).not.toContain("requestedReviewers=");
     });
 
     it("says what an unmerged queued frontier waits on", async () => {

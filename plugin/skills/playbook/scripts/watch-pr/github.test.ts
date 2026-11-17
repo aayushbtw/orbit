@@ -465,6 +465,21 @@ describe("closed enum parsing", () => {
     ).toEqual(["octocat", "org/core"]);
   });
 
+  it("never reads a requested reviewer as an empty name", () => {
+    expect(
+      parsePullRequest(
+        {
+          ...rawPullRequest,
+          reviewRequests: [
+            { __typename: "Team", name: "Core", slug: "" },
+            { __typename: "Team", name: "", slug: "" },
+          ],
+        },
+        context
+      ).requestedReviewers
+    ).toEqual(["Core"]);
+  });
+
   it("accepts mergeStateStatus CONFLICTING", () => {
     expect(
       parsePullRequest(
