@@ -1,0 +1,69 @@
+{
+  "scenario": "parallel-units",
+  "message": "/orbit:start feature, just testing, don't ship: add two independent modules to this repo, each in its own file with a node:test test: `min.mjs` exporting min(values) and `max.mjs` exporting max(values). They share no file, so run them as two parallel delegates per the Delegate gate. Commit each unit on the task branch. No PR.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "hand-built",
+    "source": "none",
+    "relabeled": false,
+    "note": "Hand-built FAIL variant of the Delegate gate before T3 children. Two Agent calls with isolation worktree and no delegate_task, so own-checkout-children and no-worktree-agent fail, and with no child thread there is nothing to settle.",
+    "expect": {
+      "own-checkout-children": "FAIL",
+      "no-worktree-agent": "FAIL",
+      "no-shell-worktree": "PASS",
+      "cherry-picked": "PASS",
+      "children-settled": "FAIL"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Skill",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:poteto-agent",
+        "isolation": "worktree",
+        "run_in_background": false
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:poteto-agent",
+        "isolation": "worktree",
+        "run_in_background": false
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:gitops",
+        "run_in_background": false
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git cherry-pick 5d6e7f8"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git cherry-pick 9a0b1c2"
+      },
+      "sidechain": true
+    }
+  ]
+}

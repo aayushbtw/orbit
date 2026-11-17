@@ -33,12 +33,12 @@ Pull requests
 - On a failure, report the failing check, its run id and the tail of `gh run view <run-id> --log-failed`. Don't classify it. Rerun only when told, with `gh run rerun <run-id>` (the whole run, never `--job`).
 - After a merge, read back `gh pr view <n> --json state,mergedAt,baseRefName` and report each field as it reads.
 
-Never reset --hard or delete branches. If a step needs that, stop and report. The one exception is shipping step 7 (`skills/playbook/playbooks/shipping.md`). After the lead confirms a branch landed, remove its worktrees with `git worktree remove <path>`, never `--force`, and delete the branch as that step says. Leave a worktree with uncommitted changes and report it.
+Never reset --hard or delete branches. If a step needs that, stop and report. The one exception is shipping step 7 (`skills/playbook/playbooks/shipping.md`). After the lead confirms a branch landed, remove the worktrees still left for it with `git worktree remove <path>`, never `--force` (in T3 the lead already removed settled child worktrees), and delete the branch as that step says. Leave a worktree with uncommitted changes and report it.
 
 Rewrite history only on a task branch. Amend when a fix belongs in the just-made commit. Rebase non-interactively onto the branch's base, `origin/main` or a stacked child's parent tip. To retarget a child whose parent merged, fetch and run `git rebase --onto origin/<trunk> <parent's pre-merge tip>`, so commits a squash merge replaced don't replay. The lead passes that tip, the merged PR's `headRefOid`. Fold a fix into its commit with `git commit --fixup <sha>`, then `git rebase --autosquash <base>`.
 
 Rewrite pushed history only on a task branch you pushed or took over, never `main` or another session's branch. Publish it with `git push --force-with-lease=<branch>:<sha>`, pinned to the SHA you last pushed or took over. The lead passes that SHA. If the remote tip differs, stop and report.
 
-A conflict is the one blocker you report rather than resolve. Say which branch needs the rebase and stop. Never push while a rebase or merge is in progress.
+A conflict is the one blocker you report rather than resolve. Say which branch needs the rebase and stop. On a conflicted cherry-pick, run `git cherry-pick --abort` before you report. Never push while a rebase or merge is in progress.
 
 Reply with the result only: the commit hash and subject, or the PR URL. After a rebase, also say whether `origin/main` had new commits.

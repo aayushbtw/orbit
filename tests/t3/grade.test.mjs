@@ -102,6 +102,18 @@ test('a lead Agent call without run_in_background: false fails every-agent-foreg
   assert.equal(grade([agent({ run_in_background: false })]), 'PASS');
 });
 
+test('an expectation with min passes only when that many calls match, naming each', () => {
+  const child = (clientRequestId) => ({ name: 'mcp__t3-code__delegate_task', input: { isolation: 'worktree', mode: 'async', clientRequestId }, sidechain: false });
+  const grade = (toolCalls) => gradeLane(lane({ scenario: 'parallel-units', provider: 'claude', toolCalls })).find((r) => r.check === 'own-checkout-children');
+  const two = grade([{ name: 'Read', input: {} }, child('min-try1'), child('max-try1')]);
+  assert.equal(two.verdict, 'PASS');
+  assert.match(two.why, /^call 2 .*; call 3 /);
+  const one = grade([child('min-try1'), child('')]);
+  assert.equal(one.verdict, 'FAIL');
+  assert.match(one.why, /^1 of 2 needed lead call .*; matched call 1 /);
+  assert.match(grade([]).why, /^0 of 2 needed lead call/);
+});
+
 test('parseLane rejects a lane it cannot grade, naming the file', () => {
   const base = { scenario: 'probe', status: 'completed', thread: { providerInstanceId: 'codex' }, toolCalls: [] };
   const cases = [

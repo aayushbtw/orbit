@@ -48,14 +48,15 @@ function evaluate(expect, toolCalls) {
     const results = expect.anyOf.map((e) => evaluate(e, toolCalls));
     return results.find((r) => r.ok) ?? { ok: false, why: results.map((r) => r.why).join('; or ') };
   }
-  const { want, name, input, by } = expect;
+  const { want, name, input, by, min = 1 } = expect;
   const calls = toolCalls.map((call, i) => ({ call, i })).filter(({ call }) => matches(name, call.name));
-  const hit = calls.find(({ call }) => BY[by](call) && (input === undefined || matches(input, call.input)));
+  const hits = calls.filter(({ call }) => BY[by](call) && (input === undefined || matches(input, call.input)));
   const wanted = `${by === 'any' ? '' : `${by} `}call ${String(name)}${input === undefined ? '' : ` with ${show(input)}`}`;
-  if (want === 'none') return hit ? { ok: false, why: describe(hit, input) } : { ok: true, why: `no ${wanted}` };
-  if (hit) return { ok: true, why: describe(hit, input) };
+  if (want === 'none') return hits.length ? { ok: false, why: describe(hits[0], input) } : { ok: true, why: `no ${wanted}` };
+  if (hits.length >= min) return { ok: true, why: (min > 1 ? hits : hits.slice(0, 1)).map((h) => describe(h, input)).join('; ') };
+  if (hits.length) return { ok: false, why: `${hits.length} of ${min} needed ${wanted}; matched ${hits.map((h) => describe(h, input)).join('; ')}` };
   const near = calls.find(({ call }) => BY[by](call)) ?? calls[0];
-  return { ok: false, why: `no ${wanted}${near ? `; saw ${describe(near, input)}` : ''}` };
+  return { ok: false, why: `${min > 1 ? `0 of ${min} needed` : 'no'} ${wanted}${near ? `; saw ${describe(near, input)}` : ''}` };
 }
 
 export function gradeLane({ scenario, provider, status, toolCalls }) {

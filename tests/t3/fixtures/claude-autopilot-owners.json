@@ -1,0 +1,178 @@
+{
+  "scenario": "autopilot-owners",
+  "message": "/orbit:start autopilot-stack, Land main, two queue items, each a one-line doc fix: (1) in README.md change 'teh' to 'the'; (2) in NOTES.md change 'recieve' to 'receive'. Arm the audit tick every 1 minute bound to this thread. Stop each item at code-ready and skip the step 4 swarm; this is a lane test.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "orbit-lane-autopilot-ow-cff988755608d4fb",
+    "relabeled": false,
+    "note": "A Claude lead runs two autopilot-stack owners as same-provider delegate_task worktree children, arms a 1-minute tick bound to the thread, and the tick fires while one owner runs",
+    "expect": {
+      "owners-are-children": "PASS",
+      "no-worktree-agent": "PASS",
+      "no-shell-worktree": "PASS",
+      "tick-bound": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Skill",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat $TMPDIR/orbit-lane-238e1609/plugin/skills/playbook/playbooks/autopilot-stack.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat $TMPDIR/orbit-lane-238e1609/plugin/skills/playbook/playbooks/autopilot-full.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat $TMPDIR/orbit-lane-238e1609/plugin/docs/harness/t3-code.md; ls -la; rg -n \"teh|recieve\" ."
+      },
+      "sidechain": false
+    },
+    {
+      "name": "ToolSearch",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git remote -v; git branch -a; git log --oneline -3 main; echo TMP=$TMPDIR"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__orchestrator_capabilities",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "mkdir -p $TMPDIR/orbit-autopilot/docs-typos"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "role": "implementation",
+        "isolation": "worktree",
+        "mode": "async",
+        "clientRequestId": "autopilot-readme-teh-d849b7f-try1",
+        "target": {
+          "providerInstanceId": "claudeAgent",
+          "model": "claude-opus-5-5"
+        }
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "role": "implementation",
+        "isolation": "worktree",
+        "mode": "async",
+        "clientRequestId": "autopilot-notes-recieve-d849b7f-try1",
+        "target": {
+          "providerInstanceId": "claudeAgent",
+          "model": "claude-opus-5-5"
+        }
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Write",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__schedule_task",
+      "input": {
+        "bindToCurrentThread": true,
+        "schedule": {
+          "type": "interval",
+          "everyMs": 60000
+        },
+        "clientRequestId": "autopilot-docs-typos-audit-tick"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cd $TMPDIR/orbit-autopilot/docs-typos && for f in *; do echo…[340 chars]"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__task_status",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git show --stat --patch db2554a"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__t3_thread_organize",
+      "input": {
+        "action": "settle"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Edit",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__task_status",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git show --stat --patch 96d4630"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__schedule_task",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__t3_thread_organize",
+      "input": {
+        "action": "settle"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Edit",
+      "input": {},
+      "sidechain": false
+    }
+  ]
+}
