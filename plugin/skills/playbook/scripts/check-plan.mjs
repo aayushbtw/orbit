@@ -28,13 +28,21 @@ const HOW_TO_READ_MARKERS = [
 const PERF_ITEMS = ["Metric.", "Probe.", "Baseline.", "Rule."];
 const BOX = /^\s*- \[[ x]\] (.*)$/;
 
-const file = process.argv[2];
-if (!file) {
+const usage = () => {
 	console.error("Usage: node check-plan.mjs <plan.md>");
 	process.exit(2);
-}
+};
+const file = process.argv[2];
+if (!file || file === "--help" || file === "-h") usage();
 
-const raw = fs.readFileSync(file, "utf8").split(/\r?\n/);
+let source;
+try {
+	source = fs.readFileSync(file, "utf8");
+} catch (error) {
+	console.error(`Cannot read ${file}: ${error.code ?? error.message}`);
+	usage();
+}
+const raw = source.split(/\r?\n/);
 const problems = [];
 const fail = (line, message) => problems.push(`${file}:${line}: ${message}`);
 
