@@ -1,16 +1,16 @@
 {
   "scenario": "seat-all-fail",
-  "message": "/orbit:interrogate Scope: commit 99184637efe30a8b8ab51153db268ec3e786ac42 (it adds scratch/median.mjs) against its parent. Intent: median(values) returns the median of an array of numbers.",
+  "message": "/orbit:interrogate Scope: the commit that adds median.mjs, against its parent. Intent: median(values) returns the median of an array of numbers. Make no edits.",
   "status": "completed",
   "thread": {
     "providerInstanceId": "claudeAgent",
     "model": "claude-opus-5-5"
   },
   "fixture": {
-    "relabeled": true,
-    "origin": "hand-built",
-    "source": "claude-seat-empty-pre-p9.json",
-    "note": "Hand-built PASS variant. The grok seat removed with no native code adversary in its place, so only the opus adversary runs, and the calls on the seat's worktree and thread dropped. A real fixture from a live seat-all-fail lane replaces this one.",
+    "origin": "real",
+    "source": "orbit-lane-seat-all-fail-6e36596a",
+    "relabeled": false,
+    "note": "A live seat-all-fail lane at 41b1c74. Every listed entry, cursor and muse, is unavailable, so the lead starts no seat and no native code adversary. Only the opus adversary runs.",
     "expect": {
       "no-seat": "PASS",
       "no-native-replacement": "PASS",
@@ -21,7 +21,7 @@
     {
       "name": "Bash",
       "input": {
-        "command": "git show 99184637efe30a8b8ab51153db268ec3e786ac42"
+        "command": "git show --stat HEAD~1; git show HEAD~1 -- ; ls; cat AGENTS.md"
       },
       "sidechain": false
     },
@@ -41,6 +41,13 @@
       "sidechain": false
     },
     {
+      "name": "Bash",
+      "input": {
+        "command": "node --test"
+      },
+      "sidechain": false
+    },
+    {
       "name": "mcp__t3-code__orchestrator_capabilities",
       "input": {},
       "sidechain": false
@@ -50,14 +57,15 @@
       "input": {
         "subagent_type": "general-purpose",
         "model": "opus",
-        "isolation": "worktree"
+        "isolation": "worktree",
+        "run_in_background": false
       },
       "sidechain": false
     },
     {
       "name": "Bash",
       "input": {
-        "command": "node ~/Projects/orbit/.claude/worktrees/agent-a14dee995f26d3859/scratch/repro-median.mjs"
+        "command": "cd $TMPDIR/orbit-lane-project-seats-all-fail-50aecdc2/.claud…[306 chars]"
       },
       "sidechain": false
     },
@@ -71,26 +79,33 @@
     {
       "name": "Bash",
       "input": {
-        "command": "git worktree remove --force ~/Projects/orbit/.claude/worktrees/agent-a14dee995f26d3859"
+        "command": "git worktree remove --force $TMPDIR/orbit-lane-project-seats-all-fail-50aecdc2/.claude/worktrees/agent-acd2830b3a55cbaf6"
       },
       "sidechain": false
     },
     {
       "name": "Bash",
       "input": {
-        "command": "git branch -D worktree-agent-a14dee995f26d3859"
+        "command": "git branch -D worktree-agent-acd2830b3a55cbaf6"
       },
       "sidechain": false
     },
     {
       "name": "Bash",
       "input": {
-        "command": "git -C ~/Projects/orbit/.claude/worktrees/agent-a14dee995f26d3859 checkout 99184637efe30a8b8ab51153db268ec3e786ac42"
+        "command": "git checkout -q --detach d5e565e5387e00cdfb10d614f4e0680e3aa0f89d && pwd && git status | head -1 && git diff 9f9570e d5e565e && ls -a"
       },
       "sidechain": true
     },
     {
-      "name": "Read",
+      "name": "Bash",
+      "input": {
+        "command": "mkdir -p repro && cat > repro/overflow.test.mjs <<'EOF'\nimpo…[976 chars]"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Write",
       "input": {},
       "sidechain": true
     },
@@ -102,14 +117,33 @@
     {
       "name": "Bash",
       "input": {
-        "command": "node ~/Projects/orbit/.claude/worktrees/agent-a14dee995f26d3859/scratch/repro-median.mjs"
+        "command": "node --test median.test.mjs 2>&1 | tail -8"
       },
       "sidechain": true
     },
     {
       "name": "Bash",
       "input": {
-        "command": "pwd"
+        "command": "node --test repro/overflow.test.mjs 2>&1"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node repro/probe.mjs"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Write",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node repro/nan-order.mjs"
       },
       "sidechain": true
     }

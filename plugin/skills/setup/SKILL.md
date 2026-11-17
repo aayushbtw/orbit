@@ -87,7 +87,9 @@ The answer to the first question is an ordered list. A seat tries only values fr
 
 For each chosen provider whose `driverKind` is not `grok` or `codex`, the non-Claude hosts whose load orbit has tested, and whose `providerInstanceId` is not `inheritedProviderInstanceId`, say "orbit has no tested load check for <driverKind> yet".
 
-**4d. Validate.** Every entry's provider is in `providers`, enabled, with `canRunCrossProviderChildTask` true. No two entries name the same provider. `inherit` is valid only as the last entry, and a trailing `inherit` from 4b stays. For a `<providerInstanceId>/<model>` entry, that provider lists the model. The first result is a short list, so before you call a model missing, call `orchestrator_capabilities` with `search` set to the model id. A seat tries at most three entries outside its lead's `driverKind`. For each enabled `driverKind` in `providers`, find the first three entries outside it. Name any entry that falls after the third under every such lead kind, because no seat would ever try it. If an entry fails, name the check that failed and ask again.
+**4d. Validate.** Every entry's provider is in `providers`, enabled, with `canRunCrossProviderChildTask` true. No two entries name the same provider. `inherit` is valid only as the last entry, and a trailing `inherit` from 4b stays. For a `<providerInstanceId>/<model>` entry, that provider lists the model. The first result is a short list, so before you call a model missing, call `orchestrator_capabilities` with `search` set to the model id. If an entry fails, name the check that failed and ask again.
+
+A seat tries at most three candidates, and it counts them after its own checks, such as the runtime mode and the family check. For each enabled `driverKind` in `providers`, find the first three entries outside it. An entry that falls after the third under every such lead kind runs only when an earlier entry fails a seat's checks. Name each such entry with that condition, and accept the list. Do not ask again for that reason.
 
 **4e. Show the file.** Show the whole new file. A new file has this shape:
 

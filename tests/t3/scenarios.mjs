@@ -11,8 +11,11 @@ const noChildThread = {
   codex: none(t3('delegate_task')),
   grok: none('use_tool', viaUseTool('delegate_task')),
 };
-const seatOn = (providerInstanceId) => ({ role: 'review', mode: 'async', runtimeMode: ABSENT, target: { providerInstanceId } });
-const seat = (kind) => seatOn(otherFamily(kind));
+const seatOn = (target) => ({ role: 'review', mode: 'async', runtimeMode: ABSENT, target });
+const seat = (kind) => seatOn({ providerInstanceId: otherFamily(kind) });
+const modelFamily = { claude: /claude/i, codex: /gpt/i, grok: /grok/i };
+const listedSeat = (lead, providerInstanceId) => seatOn({ providerInstanceId, model: (m) => typeof m === 'string' && !modelFamily[lead].test(m) });
+const unlistedSeat = { target: { providerInstanceId: /^(?!codex|grok)/ } };
 const verifierSeat = (kind) => ({ isolation: 'worktree', target: { providerInstanceId: otherFamily(kind) } });
 const codeAdversary = { subagent_type: 'general-purpose', model: (m) => m !== 'opus' };
 const judgmentAdversary = { subagent_type: 'general-purpose', model: 'opus' };
@@ -100,7 +103,6 @@ test('median of odd and even lengths', () => {
   ],
 });
 
-// orbit's own AGENTS.md sets other-family to inherit, so a lead there rightly keeps every seat native.
 const seatProject = seatsProject('seats', 'codex, claudeAgent');
 
 const unitsProject = {
@@ -242,9 +244,19 @@ export const SCENARIOS = {
     project: seatsProject('seats-listed', 'codex, grok'),
     checks: {
       'seat-on-first-listed': {
-        claude: some(t3('delegate_task'), seatOn(/^codex/), 'lead'),
-        codex: some(t3('delegate_task'), seatOn(/^grok/), 'lead'),
-        grok: some('use_tool', viaUseTool('delegate_task', seatOn(/^codex/)), 'lead'),
+        claude: some(t3('delegate_task'), listedSeat('claude', /^codex/), 'lead'),
+        codex: some(t3('delegate_task'), listedSeat('codex', /^grok/), 'lead'),
+        grok: some('use_tool', viaUseTool('delegate_task', listedSeat('grok', /^codex/)), 'lead'),
+      },
+      'only-listed-seats': {
+        claude: none(t3('delegate_task'), unlistedSeat, 'lead'),
+        codex: none(t3('delegate_task'), unlistedSeat, 'lead'),
+        grok: none('use_tool', viaUseTool('delegate_task', unlistedSeat), 'lead'),
+      },
+      'no-native-code-adversary': {
+        claude: none('Agent', codeAdversary, 'lead'),
+        codex: none('spawn_agent', { model: 'gpt-6.1-sol' }, 'lead'),
+        na: { grok: 'spawn_subagent cannot tell the code adversary from the judgment one' },
       },
     },
   },

@@ -78,6 +78,8 @@ A Claude or Grok lead takes the `codex` seat. A Codex lead skips the entry of it
 
 `seat-all-fail` assumes the `cursor` and `muse` providers are disabled on the machine that runs the lane, as they were on 2026-11-17. On a machine where either holds, the lead rightly takes that seat and `no-seat` fails.
 
+`seat-empty` assumes the user file `~/.claude/rules/orbit-models.md` has no `other-family` row. A project with no Models table falls through to that file, and `lane.mjs` does not move it aside. On a machine whose file has the row, the lead rightly takes that seat and `no-seat` fails.
+
 A project's spec is a name and a list of commits, each a message and its files. The lane builds it once at `$TMPDIR/orbit-lane-project-<name>-<hash>`, where the hash covers the commits, so a changed spec gets a new folder. It builds the repo in a sibling folder and renames it into place, so a crashed build never leaves a half-made project. It then runs `t3 project add` when `t3 thread list --project <dir>` does not find the project. Both steps run under the lock. The folder and the T3 project stay for the next lane, because removing a T3 project also deletes its threads.
 
 ## Output
@@ -117,7 +119,7 @@ With no reader for the provider, or no session file for the lead, `session`, `to
 | `foreground` | `delegate-ran`, `every-agent-foreground` | The code child runs native, as `orbit:poteto-agent`, or on Codex with `fork_turns: "none"`. Every lead `Agent` call passes `run_in_background: false`, and no Grok `spawn_subagent` passes `background: true`. That check is N/A on Codex, whose `spawn_agent` has no background field |
 | `verifier-seat` | `verifier-ran`, `seat-other-family` | A verifier runs, and it is a `delegate_task` seat on another family in a worktree |
 | `review-seat` | `seat-other-family`, `request-id` | The lead calls `delegate_task` with `role: "review"`, `mode: "async"`, no `runtimeMode` and a provider of another family, and that same call has a `clientRequestId` |
-| `seat-listed` | `seat-on-first-listed` | The lead's review seat targets the first listed provider outside its family. That is `codex` for a Claude or Grok lead and `grok` for a Codex lead |
+| `seat-listed` | `seat-on-first-listed`, `only-listed-seats`, `no-native-code-adversary` | The lead's review seat targets the first listed provider outside its family. That is `codex` for a Claude or Grok lead and `grok` for a Codex lead. The seat's `target.model` is set and is not of the lead's family, so it holds no `claude` token under a Claude lead, no `gpt` under Codex and no `grok` under Grok. No lead `delegate_task` targets a provider outside `codex` and `grok`. No native code adversary runs, an `Agent` `general-purpose` whose `model` is not `opus`, or on Codex a `spawn_agent` with `model: "gpt-6.1-sol"`. That check is N/A on Grok, whose `spawn_subagent` cannot tell the two adversaries apart |
 | `seat-empty` | `no-seat`, `session-family-seat` | No `delegate_task`. The lead spawns the native code adversary, an `Agent` `general-purpose` whose `model` is not `opus`, or on Codex a `spawn_agent` with `model: "gpt-6.1-sol"`. A Grok lead passes with any `spawn_subagent`, since its spawns do not name a model |
 | `seat-all-fail` | `no-seat`, `no-native-replacement`, `judgment-adversary-ran` | No `delegate_task` and no native code adversary. The judgment adversary still runs, an `Agent` `general-purpose` with `model: "opus"`, or any lead `spawn_agent` or `spawn_subagent`. `no-native-replacement` is N/A on Grok, whose `spawn_subagent` cannot tell the two adversaries apart |
 | `watch-pr-wait` | `lead-watches`, `no-child-watches` | The lead calls `watch_pull_request` on a PR URL, and no child does |
@@ -128,6 +130,8 @@ With no reader for the provider, or no session file for the lead, `session`, `to
 | `autopilot-owners` | `owners-are-children`, `no-worktree-agent`, `no-shell-worktree`, `tick-bound` | Each of the two owners is a `delegate_task` child as in `parallel-units`, with the same two worktree checks. The lead arms `schedule_task` with `bindToCurrentThread: true` |
 
 The `gitops-native` and `code-child` prompts are the ones the Codex lanes ran. The `watch-pr-wait` prompt is the hillclimb wake lane's, with its PR URL replaced. The `babysit-wait` prompt holds `<PR URL>`, and the lane does not fill it in. Run it with `--message` set to the prompt with a scratch PR's URL whose checks are still pending, and with `--wake`, so the wake at `READY` and its `unwatch_pull_request` land in the lane. The rest are drafts that live lanes may tune.
+
+The grader tells interrogate's two adversaries apart by `model` only. The judgment adversary passes `model: "opus"`, and any other lead `Agent` `general-purpose` counts as the code adversary. So a native code adversary spawned with `model: "opus"` passes `no-native-replacement` and `no-native-code-adversary`. A model-less `general-purpose` spawn for other work, such as a gitops helper, counts as the code adversary, so it passes `session-family-seat` and fails the two `no-native-*` checks. The grader does not count spawns.
 
 A check sees only tool calls, so it cannot grade what the reply says. For `seat-empty` and `seat-all-fail`, read the lane's `reply` field by hand. It must say that no seat on another family is configured (`seat-empty`), or that every listed entry failed and the seat was skipped (`seat-all-fail`).
 
@@ -171,10 +175,10 @@ It reads the calls with the reader `lane.mjs` uses, and the message and model fr
 | `claude-review-seat.json` | hand-built | the fixture above | The same seat call with a `clientRequestId` |
 | `claude-rules-load.json` | hand-built | none | `rules-read` is N/A on a Claude lead |
 | `claude-schedule-loop.json` | real, relabeled | `orbit-lane-hillclimb-wa-2d6d996f1cc0dfc1` | A `once` `schedule_task` bound to the thread |
-| `claude-seat-all-fail.json` | hand-built | `claude-seat-empty-pre-p9.json` | The seat removed with no native code adversary, so only the opus adversary runs |
+| `claude-seat-all-fail.json` | real | `orbit-lane-seat-all-fail-6e36596a` | With `cursor, muse` listed, the lead starts no seat and no native code adversary. Only the opus adversary runs |
 | `claude-seat-empty-pre-p9.json` | real, relabeled | `orbit-lane-interrogate--5b3974d12a498483` | A lead that started a seat on Grok. The source does not record its Models cell. Under the rule an empty cell starts no seat. `p9` is replaced by the rule's commit at merge. Both checks fail, since the only native adversary is the opus one |
-| `claude-seat-empty.json` | hand-built | the fixture above | The seat replaced by the native code adversary, an `Agent` with `model` omitted |
-| `claude-seat-listed.json` | hand-built | `claude-review-seat.json` | The same seat call on `codex`, the first listed entry |
+| `claude-seat-empty.json` | real | `orbit-lane-seat-empty-f1cb6630` | With no Models table, the lead starts no seat and spawns the native code adversary, an `Agent` with `model` omitted |
+| `claude-seat-listed.json` | hand-built | `claude-review-seat.json` | The same seat call on `codex` with `model: "gpt-6.1-sol"`, the first listed entry, and only the opus adversary native |
 | `claude-verifier-seat-pre-79ebe0b.json` | real, relabeled | `orbit-lane-verifier-t3--018b867cd5f861e4` | The native verifier, before 79ebe0b put it on another family. `seat-other-family` fails |
 | `claude-verifier-seat.json` | hand-built | the fixture above | A verifier seat on Codex in a worktree |
 | `claude-watch-pr-wait.json` | real, relabeled | `orbit-lane-hillclimb-wa-8d91928f07af12fb` | The lead arms `watch_pull_request` |

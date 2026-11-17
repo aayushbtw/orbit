@@ -10,9 +10,11 @@
     "relabeled": true,
     "origin": "hand-built",
     "source": "claude-review-seat.json",
-    "note": "Hand-built PASS variant. The same seat call moved from grok to codex, the first entry of seat-listed's list. A real fixture from a live seat-listed lane replaces this one.",
+    "note": "Hand-built PASS variant. The same seat call moved from grok to codex/gpt-6.1-sol, the first entry of seat-listed's list on a model outside the lead's family, with only the opus adversary native. A real fixture from a live seat-listed lane replaces this one.",
     "expect": {
-      "seat-on-first-listed": "PASS"
+      "seat-on-first-listed": "PASS",
+      "only-listed-seats": "PASS",
+      "no-native-code-adversary": "PASS"
     }
   },
   "toolCalls": [
