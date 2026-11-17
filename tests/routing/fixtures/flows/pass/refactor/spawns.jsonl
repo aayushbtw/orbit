@@ -1,0 +1,1 @@
+{"ts":"2026-11-17T12:44:00.000Z","event":"PreToolUse","tool_name":"Skill","tool_use_id":null,"agent_id":null,"session_id":"17283a63-806b-40df-ad32-ad9894d60cc3","tool_input":{"skill":"orbit:playbook","args":"refactor"}}
