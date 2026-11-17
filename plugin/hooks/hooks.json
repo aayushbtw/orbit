@@ -5,11 +5,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/load-rules.sh\" head"
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/load-rules.sh\" head"
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/load-rules.sh\" tail"
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/load-rules.sh\" tail"
           }
         ]
       }
@@ -20,7 +20,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/no-claude-trailer.sh\""
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/no-claude-trailer.sh\""
           }
         ]
       }
