@@ -59,7 +59,7 @@ Outside a git repo, print `Skipped: Workflow block. Not in a git repo.` and go o
 In a repo, the Check defaults to `vpr check` (`../../rules.md` Workflow Defaults). With `workflow block: present`, say so and go on. With `workflow block: missing` and `vpr: found`, say the defaults hold and go on. With the block missing and `vpr: missing`, every verify step would fail, so offer a block:
 
 1. Read `workflow-block.md`, next to this file.
-2. Find the project's Check command. Use the `check`, `test` or `build` scripts in the root `package.json`, run with the package manager its lockfile names, or the `check` or `test` target in a root `Makefile`. With none, the step 5 question asks the user for the command.
+2. Find the project's Check command. Use the `check`, `test` or `build` scripts in the root `package.json`, run with the package manager its lockfile names, or the `check` or `test` target in a root `Makefile`. Read these files to find the command, and never run it. With none, the step 5 question asks the user for the command.
 3. Propose a filled block with only the lines that differ from the defaults, such as ``- Check: `bun run check && bun test`.`` Never append the template as it is, with its placeholders.
 
 The block goes at the end of the repo root's AGENTS.md. When the root has no AGENTS.md, the offer is to create it with the block alone. Never write the block to a project's `CLAUDE.md`.
