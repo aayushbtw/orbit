@@ -107,9 +107,13 @@ const result = {
   session: null, firstTurnInputTokens: null, toolCalls: null, kept: null,
 };
 
-function finish() {
+function save() {
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, JSON.stringify(result, null, 2) + '\n');
+}
+
+function finish() {
+  save();
   process.exit(result.exit);
 }
 
@@ -286,6 +290,7 @@ const runState = (threadId) => {
   return !thread ? 'unknown' : thread.pendingRequestCount > 0 ? 'waiting' : thread.activeRunId ? 'running' : 'idle';
 };
 const doneWithWorktree = (state) => state === 'idle' || state === 'waiting';
+const END_ACTION = { idle: 'settle', waiting: 'archive' };
 
 async function runStateAfterGrace({ threadId, link }) {
   const deadline = Date.now() + timeoutMs;
@@ -336,13 +341,69 @@ const cleanup = () => cleaning ??= (async () => {
   });
 })();
 
+// The CLI reaches the server's /mcp tools with an mcp-client session but has no organize command, so the lane does the same.
+async function organize(calls) {
+  const issued = JSON.parse(run(cli, ['auth', 'session', 'issue', '--subject', 'mcp-client', '--scope', 'orchestration:read', '--scope', 'orchestration:operate', '--ttl', '5m', '--label', title, '--json']));
+  try {
+    const { origin } = JSON.parse(readFileSync(join(process.env.T3CODE_HOME ?? join(homedir(), '.t3'), 'userdata', 'server-runtime.json'), 'utf8'));
+    let session = null;
+    let n = 0;
+    const rpc = async (method, params, notify = false) => {
+      const res = await fetch(new URL('/mcp', origin), {
+        method: 'POST',
+        headers: { authorization: `Bearer ${issued.token}`, 'content-type': 'application/json', accept: 'application/json, text/event-stream', ...(session && { 'mcp-session-id': session }) },
+        body: JSON.stringify({ jsonrpc: '2.0', method, params, ...(!notify && { id: ++n }) }),
+      });
+      session ??= res.headers.get('mcp-session-id');
+      const text = await res.text();
+      if (!res.ok) throw new Error(`${method} got HTTP ${res.status} ${text}`);
+      if (notify) return null;
+      const reply = JSON.parse(text.trimStart().startsWith('{') ? text : text.split('\n').findLast((l) => l.startsWith('data:')).slice(5));
+      if (reply.error) throw new Error(`${method}: ${reply.error.message}`);
+      return reply.result;
+    };
+    await rpc('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'orbit-lane', version: '1' } });
+    await rpc('notifications/initialized', {}, true);
+    for (const call of calls) {
+      try {
+        const done = await rpc('tools/call', { name: 't3_thread_organize', arguments: call });
+        if (done.isError) throw new Error(done.content?.find((c) => c.text)?.text ?? 'tool error');
+        console.error(`${call.action}d thread ${call.threadId}`);
+      } catch (e) {
+        console.error(`warning: could not ${call.action} thread ${call.threadId}: ${e.message}`);
+      }
+    }
+  } finally {
+    tryRun(cli, ['auth', 'session', 'revoke', issued.sessionId]);
+  }
+}
+
+async function endThreads() {
+  const calls = result.threads.flatMap(({ threadId }) => {
+    const action = END_ACTION[runState(threadId)];
+    return action ? [{ threadId, action }] : [];
+  });
+  if (!calls.length) return;
+  try {
+    await organize(calls);
+  } catch (e) {
+    console.error(`warning: could not settle or archive ${calls.map((c) => c.threadId).join(', ')}: ${gitError(e)}`);
+  }
+}
+
+async function end() {
+  save();
+  await endThreads();
+  process.exit(result.exit);
+}
+
 let live = null;
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, async () => {
     live?.kill('SIGTERM');
     Object.assign(result, { status: 'interrupted', exit: 1, error: `interrupted by ${signal}` });
     await cleanup();
-    finish();
+    await end();
   });
 }
 
@@ -509,4 +570,4 @@ try {
 } finally {
   await cleanup();
 }
-finish();
+await end();
