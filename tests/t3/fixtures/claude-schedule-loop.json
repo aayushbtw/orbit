@@ -1,0 +1,84 @@
+{
+  "scenario": "schedule-loop",
+  "message": "Hillclimb wake step test. Load the orbit hillclimb flow with /orbit:playbook hillclimb only to read it, and do not start a hillclimb. Assume an unattended hillclimb run whose next iteration waits on CI for PR https://github.com/aayushbtw/orbit-t3-lane-ci/pull/11. Apply only the step 5 wake mechanism to that PR event: arm the wake, say which tools you used, then end your turn. Make no file changes.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "orbit-lane-hillclimb-wa-2d6d996f1cc0dfc1/7a96cad9.jsonl",
+    "relabeled": true,
+    "note": "Hillclimb wake step lane. Relabeled: the lead bound a once schedule_task heartbeat to its thread.",
+    "expect": {
+      "bound-to-thread": "PASS",
+      "interval-min-60s": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Skill",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "ToolSearch",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "$TMPDIR/orbit-lane-67a9fb00/plugin/skills/playbook/scripts/watch-pr/watch-pr https://github.com/aayushbtw/orbit-t3-lane-ci/pull/11 --timeout 120"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "$TMPDIR/orbit-lane-67a9fb00/plugin/skills/playbook/scripts/watch-pr/watch-pr --help"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "$TMPDIR/orbit-lane-67a9fb00/plugin/skills/playbook/scripts/watch-pr/watch-pr --owner aayushbtw --repo orbit-t3-lane-ci --pr 11 --timeout 120"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__watch_pull_request",
+      "input": {
+        "url": "https://github.com/aayushbtw/orbit-t3-lane-ci/pull/11"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__schedule_task",
+      "input": {
+        "schedule": {
+          "type": "once"
+        },
+        "bindToCurrentThread": true
+      },
+      "sidechain": false
+    }
+  ]
+}

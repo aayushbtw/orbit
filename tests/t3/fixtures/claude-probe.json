@@ -1,0 +1,28 @@
+{
+  "scenario": "probe",
+  "message": "Probe. Make no edits and load no skills. Run pwd, then list every skill whose name starts with orbit: with its description quoted verbatim.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "orbit-lane-probe-fa8172",
+    "relabeled": false,
+    "note": "Live lane at head on claude-opus-5-5, 52787 first-turn input tokens.",
+    "expect": {
+      "ran-pwd": "PASS",
+      "loaded-no-skill": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Bash",
+      "input": {
+        "command": "pwd"
+      },
+      "sidechain": false
+    }
+  ]
+}

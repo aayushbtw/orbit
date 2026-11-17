@@ -1,0 +1,53 @@
+{
+  "scenario": "gitops-native",
+  "message": "/orbit:start investigate: which pull requests are linked to this T3 thread? Have orbit's gitops agent check it with T3's list_thread_pull_requests tool, then answer. Make no edits.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "orbit-lane-gitops-native-c1ab0a",
+    "relabeled": false,
+    "note": "Live lane at head on claude-opus-5-5 with the built-in prompt.",
+    "expect": {
+      "gitops-native-child": "PASS",
+      "no-child-thread": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Skill",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:gitops"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "ToolSearch",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "mcp__t3-code__list_thread_pull_requests",
+      "input": {},
+      "sidechain": true
+    }
+  ]
+}

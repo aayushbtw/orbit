@@ -48,6 +48,8 @@ jobs:
         run: bash tests/diagrams-drift.sh
       - name: Links
         run: node tests/links.mjs
+      - name: T3 lane grader tests
+        run: node --test tests/t3/*.test.mjs
       - name: Version bump tests
         run: bash tests/version-bump.test.sh
       - name: Version bump

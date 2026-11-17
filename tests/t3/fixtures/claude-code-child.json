@@ -1,0 +1,353 @@
+{
+  "scenario": "code-child",
+  "message": "/orbit:start the camera jitters when you zoom in past 4x, and goblins die way too fast, bump their HP to 40. I'll land it.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "orbit-lane-routing-8524-8094ae89ae7d6368",
+    "relabeled": true,
+    "note": "Routing eval run in T3 on a scratch game repo; its prompt asked for a bug fix and a tweak, so the code children it spawned stand in for this scenario.",
+    "expect": {
+      "code-native-child": "PASS",
+      "no-child-thread": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Skill",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git ls-files"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Write",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node $TMPDIR/80445381-799c-4129-b2ef-010aa472395e/scratchpad/repro.mjs ~/.t3/worktrees/skyforge-54be6b/orbit-lane-routing-8524-8094ae89ae7d6368/src/camera.js"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:poteto-agent",
+        "model": "opus"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C ~/.t3/worktrees/skyforge-54be6b/orbit-lane-routing-8524-8094ae89ae7d6368 diff"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:gitops"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:poteto-agent",
+        "model": "opus"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C ~/.t3/worktrees/skyforge-54be6b/orbit-lane-routing-8524-8094ae89ae7d6368 diff --stat"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node $TMPDIR/80445381-799c-4129-b2ef-010aa472395e/scratchpad/repro.mjs ~/.t3/worktrees/skyforge-54be6b/orbit-lane-routing-8524-8094ae89ae7d6368/src/camera.js"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "npm test --prefix ~/.t3/worktrees/skyforge-54be6b/orbit-lane-routing-8524-8094ae89ae7d6368"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:gitops"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:poteto-agent",
+        "model": "sonnet",
+        "isolation": "worktree"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C /private$TMPDIR/skyforge-54be6b/.claude/worktrees/agent-a07aab3798ae1060a diff"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:gitops"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C ~/.t3/worktrees/skyforge-54be6b/orbit-lane-routing-8524-8094ae89ae7d6368 log --oneline -5 --stat"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Skill",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Skill",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Skill",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:comment-sicko"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Edit",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node -e \"const e=JSON.parse(require('fs').readFileSync('/pri…[225 chars]"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "npm test --prefix /private$TMPDIR/skyforge-54be6b/.claude/worktrees/agent-a07aab3798ae1060a"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C /private$TMPDIR/skyforge-54be6b/.claude/worktrees/agent-a07aab3798ae1060a status --short"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git status --short && git diff -- src/camera.js"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git add -- src/camera.js && git commit -q -m \"fix(camera): r…[287 chars]"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C /private$TMPDIR/skyforge-54be6b/.claude/worktrees/age…[514 chars]"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C /private$TMPDIR/skyforge-54be6b/.claude/worktrees/age…[629 chars]"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Edit",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "npm test"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git status --short"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git diff 16845b0..HEAD -- test/camera.test.js src/camera.js …[220 chars]"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Edit",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "npm --prefix ~/.t3/worktrees/skyforge-54be6b/orbit-lane-routing-8524-8094ae89ae7d6368 test"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C ~/.t3/worktrees/skyforge-54be6b/orbit-lane-routing-8524-8094ae89ae7d6368 status --short"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git status --short && git diff -- test/camera.test.js | head -c 4000 && git branch --show-current"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git add -- test/camera.test.js && git commit -m \"test(camera…[259 chars]"
+      },
+      "sidechain": true
+    }
+  ]
+}

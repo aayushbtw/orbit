@@ -1,0 +1,85 @@
+{
+  "scenario": "gitops-native",
+  "message": "/orbit:start investigate: which pull requests are linked to this T3 thread? Have orbit's gitops agent check it with T3's list_thread_pull_requests tool, then answer. Make no edits.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "codex",
+    "model": "gpt-6.1-sol"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "rollout-2026-11-16T22-39-02-01a1e5a7-cdfe-7c32-bea9-d65373efc2a8.jsonl",
+    "relabeled": false,
+    "note": "The lead's adapter already said fork_turns none, but its spawn_agent call omitted fork_turns, which Codex defaults to all.",
+    "expect": {
+      "gitops-native-child": "FAIL",
+      "no-child-thread": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/skills/rules/SKILL.md .agents/skills/orbit/skills/start/SKILL.md"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/rules.md .agents/skills/orbit/docs/harness/t3-code.md .agents/skills/orbit/skills/playbook/SKILL.md"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/agents/gitops.md .agents/skills/orb…[248 chars]"
+        ]
+      },
+      "sidechain": false
+    },
+    {
+      "name": "spawn_agent",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "wait_agent",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "wait_agent",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "exec_command",
+      "input": {
+        "command": [
+          "/bin/zsh",
+          "-lc",
+          "cat .agents/skills/orbit/agents/gitops.md"
+        ]
+      },
+      "sidechain": true
+    },
+    {
+      "name": "mcp__t3-code__list_thread_pull_requests",
+      "input": {},
+      "sidechain": true
+    }
+  ]
+}

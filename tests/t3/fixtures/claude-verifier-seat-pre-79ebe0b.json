@@ -1,0 +1,38 @@
+{
+  "scenario": "verifier-seat",
+  "message": "Tooling check. Make no file edits and open no preview tab. Spawn the orbit:verifier agent with this brief: \"Tooling check, not a verification; reply PASS+NOTES. Call the T3 tool t3_preview_list with no arguments (load it with ToolSearch if needed) and report its raw result or the exact error. Open no preview.\" Report what it returned verbatim.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "orbit-lane-verifier-t3--018b867cd5f861e4/585e7585.jsonl",
+    "relabeled": true,
+    "note": "A Tooling check prompt that ran before 79ebe0b put the verifier on another family. The native verifier ran, so seat-other-family fails by design.",
+    "expect": {
+      "verifier-ran": "PASS",
+      "seat-other-family": "FAIL"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:verifier"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "ToolSearch",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "mcp__t3-code__t3_preview_list",
+      "input": {},
+      "sidechain": true
+    }
+  ]
+}
