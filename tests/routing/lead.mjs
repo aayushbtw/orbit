@@ -213,10 +213,12 @@ export function createLeads({ host, model, provider, keep, timeoutMs, maxTurns, 
         timedOut = true;
         stop(child.pid);
       }, timeoutMs);
-      child.on('exit', (code) => {
+      child.on('exit', async (code) => {
         clearTimeout(timer);
-        live.delete(child.pid);
         for (const fd of fds) closeSync(fd);
+        // lane.mjs's worker outlives its launcher and writes lane.json last, after its own cleanup.
+        for (const end = Date.now() + timeoutMs; host === 't3' && !existsSync(join(outDir, 'lane.json')) && Date.now() < end;) await new Promise((r) => setTimeout(r, 1000));
+        live.delete(child.pid);
         release(project);
         done({ outDir, project, exit: timedOut ? 'timeout' : `code ${code}` });
       });

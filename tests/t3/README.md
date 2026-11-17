@@ -1,12 +1,12 @@
 # T3 lane harness
 
-`lane.mjs` starts one T3 Code thread at a commit, with orbit loaded from that commit instead of the installed plugin. It sends one scenario message, waits for the reply, writes the transcript and tool calls as JSON, and removes everything it set up. Later PRs use it to prove orbit live in a T3 thread loaded from a PR head. `grade.mjs` then grades the saved JSON from its tool calls, with no session and no T3 (see Grade a lane).
+`lane.mjs` starts one T3 Code thread at a commit, with orbit loaded from that commit instead of the installed plugin. It sends one scenario message, waits for the reply, writes the transcript and tool calls as JSON, and removes everything it set up once the thread is idle. Later PRs use it to prove orbit live in a T3 thread loaded from a PR head. `grade.mjs` then grades the saved JSON from its tool calls, with no session and no T3 (see Grade a lane).
 
 ## How a lane loads orbit from the head
 
 1. `git archive <head> plugin` goes into a run directory, `$TMPDIR/orbit-lane-<id>/`, next to a copy of the head's `.claude-plugin/marketplace.json` renamed `orbit-head-<id>`. The run directory also holds `lane.pid`.
 2. `claude plugin marketplace add` registers the run directory. `claude plugin install orbit@orbit-head-<id> --scope user`, then `claude plugin disable` at user scope, so no other session loads it.
-3. A lane commit on top of the base adds `.claude/settings.json`, merged into the base's own file if it has one. Every `orbit@*` plugin enabled in the user settings or the base's project settings is set to `false`, and `orbit@orbit-head-<id>` is set to `true`. A temporary `GIT_INDEX_FILE` and `git commit-tree` build it, so no checkout or branch moves.
+3. A lane commit on top of the base adds `.claude/settings.json`, merged into the base's own file if it has one. Every `orbit@*` plugin enabled in the user settings or the base's project settings is set to `false`, and `orbit@orbit-head-<id>` is set to `true`. The commit also adds `.claude/settings.local.json` (see Memory). A temporary `GIT_INDEX_FILE` and `git commit-tree` build it, so no checkout or branch moves.
 4. `t3 thread start <project> - --worktree <lane commit> --branch orbit-lane/<slug>-<id> --title "orbit lane <slug> <id>" --wait --json` reads the message on stdin.
 
 T3 honored every step. In probe thread `mcp:5e8c67e4-fc75-4904-925f-7a9ebe2f3eed`, the agent quoted a marker that existed only in the head's `orbit:how` description and listed 19 orbit skills with no duplicates. After teardown, the user's `settings.json`, `known_marketplaces.json` and `installed_plugins.json` matched their backups except for key order.
@@ -28,6 +28,10 @@ Without `--provider`, the thread runs on the project's default provider, which t
 
 The plan named one marketplace, `orbit-head`, whose run directory each run refreshes. Live lanes run in parallel at different SHAs, so a shared directory would be overwritten under a running lane. A marketplace per run also lets each run restore user settings on exit without counting how many lanes still use it.
 
+## Memory
+
+Claude Code keys auto memory by the main checkout, not the worktree. So a lane's thread writes into the operator's own memory folder, `~/.claude/projects/<project>/memory`, unless the lane moves it. A P10 lane wrote a resume note there. Every lane, `--installed` included, builds a lane commit that adds `.claude/settings.local.json`, merged into the base's tracked copy if it has one, with `autoMemoryDirectory` set to the lane's memory folder. Claude Code 2.1.326 reads that key from the local file in a non-interactive session. It ignores the key in the project's `.claude/settings.json`, and the user settings would move the operator's own sessions too, so the lane uses the local file only. The memory folder is `<out without .json>.memory`, next to the output JSON. The lane creates it before the thread starts and keeps it after the lane, because it is evidence.
+
 ## Run it
 
 ```sh
@@ -47,13 +51,17 @@ node tests/t3/lane.mjs --head HEAD --scenario parallel-units --wake 20 --wakes 2
 | `--message <text>` | Message to send. It replaces the scenario's prompt |
 | `--out <file>` | Output JSON. Default `$TMPDIR/orbit-lane-<slug>-<id>.json` |
 | `--project <dir>` | Run in another repo that is already a T3 project. The worktree base is that repo's `HEAD`. Default is the scenario's project when it has one (see Scenario projects), else orbit's main checkout, based on the head |
-| `--installed` | Skip head loading, so orbit comes from the installed plugin |
+| `--installed` | Skip head loading, so orbit comes from the installed plugin. The lane commit still adds the memory setting (see Memory) |
 | `--provider <id>`, `--model <slug>` | Passed to `t3` only when given. Otherwise the project default runs. A Codex id also links the head orbit into `.agents/skills` (see How a Codex lane loads orbit). A Codex thread started without one reports `orbit: "installed"` |
 | `--timeout <minutes>` | Default 30 |
 | `--wake <minutes>` | After the lead completes, keep polling `t3 thread show` until a later run of the lead posts a reply, such as the wake after an async `delegate_task` child finishes, or until this many minutes pass. Off by default |
 | `--wakes <n>` | With `--wake`, keep polling until `n` later runs have posted a reply, such as one wake per child of `parallel-units`. Default 1 |
 
-The CLI is `T3CODE_CLI_PATH`, else `t3` on `PATH`. stdout is the output path. The exit code is 0 when the agent completed, 2 when it asked a question back, and 1 otherwise. If no T3 CLI runs or the ref does not resolve, the harness prints the cause, writes the JSON when `--out` is given, and exits 1 before it starts a thread or touches settings. On SIGINT or SIGTERM, it runs cleanup, writes the JSON with status `interrupted` and `threads` filled in, and exits 1.
+The CLI is `T3CODE_CLI_PATH`, else `t3` on `PATH`.
+
+`node tests/t3/lane.mjs` is the launcher. It starts the worker, which runs the lane, through a middle process that exits at once. So the worker has no parent left to stop with it. The launcher prints the worker's pid, streams the worker's log, `<out>.log`, to its own stderr and waits for the worker to exit. It then prints the output path on stdout and exits with the JSON's `exit`, or 1 when there is no JSON. The exit code is 0 when the agent completed, 2 when it asked a question back, and 1 otherwise. With no `--head` or `--scenario`, the launcher prints usage and exits 1 before it starts a worker. If another option is invalid, no T3 CLI runs or the ref does not resolve, the worker prints the cause, writes the JSON and exits 1 before it starts a thread or touches settings.
+
+A SIGINT, SIGTERM or SIGHUP to the launcher does not touch the lane. The launcher prints that the worker keeps running and will write the JSON, and exits 1. Stopping a Bash command in Claude Code signals its whole process tree, and the worker is outside that tree, so a stopped subagent stops only the launcher. To stop the worker, run `kill <pid>` with the pid the launcher printed. The worker then stops waiting on `t3 thread start`, sets status `interrupted`, runs cleanup and writes the JSON with `threads` filled in. The thread keeps running in T3, so cleanup still waits for it to go idle (see Cleanup).
 
 ## Scenario projects
 
@@ -87,14 +95,17 @@ A project's spec is a name and a list of commits, each a message and its files. 
 ## Output
 
 ```
-{ scenario, message, head: { ref, sha }, project, laneCommit, orbit: "head" | "installed", marketplace,
+{ scenario, message, head: { ref, sha }, project, laneCommit, orbit: "head" | "installed", marketplace, memoryDir,
   exit, status: "completed" | "failed" | "waiting" | "timeout" | "interrupted" | "error", reply, error,
   wake: null | "arrived" | "none", wakes: [{ at, text }],
   pendingQuestion: [{ name, input }] | null,
   thread: { threadId, link, providerInstanceId, model, runtimeMode, branch, worktreePath } | null,
   threads: [{ threadId, link | null, waiting, parentThreadId | null }],
-  messages: [{ role, text }], session, firstTurnInputTokens, toolCalls: [{ name, input, sidechain }] }
+  messages: [{ role, text }], session, firstTurnInputTokens, toolCalls: [{ name, input, sidechain }],
+  kept: { worktree, branch, marketplace, runDir } | null }
 ```
+
+`memoryDir` is the lane's memory folder (see Memory). `kept` is `null` unless cleanup found the thread still running and undid nothing (see Cleanup). Then it names what the lane left, with `marketplace` and `runDir` `null` for an `--installed` lane.
 
 `t3 thread show` returns message text only. Tool calls, token usage and a pending question come from the lead's session file. A table in `sessions.mjs`, `READERS`, holds one reader per provider kind, and the thread's `providerInstanceId` picks the reader. `lane.mjs`, `grade.mjs` and `fixtures/make.mjs` all use it.
 
@@ -207,7 +218,11 @@ A real session that ran before a rule landed is named for the commit that added 
 
 ## Cleanup
 
-Each step pushes its undo before it runs, and every undo ignores a step that never happened. One cleanup function runs the undos in reverse from `finally` and on SIGINT or SIGTERM. The `--wake` hold runs before `finally`, so cleanup waits for it to end. When the thread is not yet known, it finds the thread by title with `t3 thread list --project <project> --json` and reads its `worktreePath` with `t3 thread show --json`. It removes that worktree with `git worktree remove --force`, or the worktree on `orbit-lane/<slug>-<id>` when no thread was found. It may delete that branch and whatever branch the worktree had checked out, since orbit's Worktree gate renames it to `<type>/<slug>`. Before `t3 thread start` it records every branch, and it refuses to start when `orbit-lane/<slug>-<id>` matches one of them with case ignored. It then deletes a branch only when all of these hold, so a thread that checks out an existing branch never loses it:
+Each step pushes its undo before it runs, and every undo ignores a step that never happened. One cleanup function runs from `finally` and on a SIGINT or SIGTERM to the worker. The `--wake` hold runs before `finally`, so cleanup waits for it to end. When the thread is not yet known, it finds the thread by title with `t3 thread list --project <project> --json` and reads its `worktreePath` with `t3 thread show --json`.
+
+Before any undo, cleanup reads the thread's run state from `t3 thread show --json`. The state is `running` while `thread.activeRunId` is set, `idle` when it is not, and `unknown` when the show fails. A thread outlives `t3 thread start --wait`, and the CLI cannot interrupt one, so a lane that times out or is interrupted would otherwise remove the worktree under a running thread. Cleanup reads the state again every 10 seconds, or every `ORBIT_LANE_POLL_MS` milliseconds when that is set, until the thread is idle, for at most `--timeout` minutes. When the thread goes idle, or no thread was found, the undos run in reverse. When it is still not idle at the end, cleanup runs no undo at all, because the running thread still loads the head plugin and the Codex skills from the run directory. It sets `kept` to the worktree, branch, marketplace and run directory it left, and prints one warning that names them. The next lane's reaper removes the marketplace once this worker's pid is dead. The worktree and branch need `git worktree remove` and a branch delete by hand. Cleanup never removes a worktree whose thread is running.
+
+The worktree undo removes the thread's worktree with `git worktree remove --force`, or the worktree on `orbit-lane/<slug>-<id>` when no thread was found. It may delete that branch and whatever branch the worktree had checked out, since orbit's Worktree gate renames it to `<type>/<slug>`. Before `t3 thread start` it records every branch, and it refuses to start when `orbit-lane/<slug>-<id>` matches one of them with case ignored. It then deletes a branch only when all of these hold, so a thread that checks out an existing branch never loses it:
 
 - The ref starts with `refs/heads/`, so a `HEAD` pointed at `refs/tags/v1` deletes nothing.
 - `git for-each-ref refs/heads` lists the ref by that exact name. On a case-insensitive disk, git resolves `refs/heads/Main` to the file of `refs/heads/main`, but lists only `main`.
@@ -220,7 +235,9 @@ It deletes with `git update-ref --no-deref -d <ref> <sha>`, so a symbolic ref lo
 
 Only one Codex lane at a time may hold the user-level orbit folders. Under the lock, a Codex lane fails before it starts a thread when another live lane's run directory holds `codex-skills.json`. A second Codex lane would otherwise find the folders already gone, and the first lane's cleanup would put them back mid-run.
 
-The thread outlives the lane. A follow-up message after exit runs without the head orbit, because the worktree, branch and marketplace are gone. A thread that times out or is interrupted keeps running in T3. On timeout, stderr prints its link.
+The thread outlives the lane. A follow-up message after exit runs without the head orbit, because the worktree, branch and marketplace are gone. A thread that times out or is interrupted keeps running in T3. While cleanup waits on it, stderr prints its link.
+
+`lane.test.mjs` also covers the launcher and the idle gate against the stub `t3`. Its stub starts the agent in the background and reports `activeRunId` until the agent ends. A lane whose launcher is killed still completes, and a lane that times out removes the worktree only after the agent ends. A lane whose agent outlasts the grace keeps the worktree and branch.
 
 The `t3` CLI has no settle command. `t3 thread` has only `list`, `start`, `send` and `show`. So the agent that ran the lane settles each thread in `threads`, children included, with the T3 tool `t3_thread_organize`, action `settle`. Settle refuses a thread that waits on a question, so a thread whose `waiting` is true gets action `archive` instead. That keeps every thread listed in `threads` out of the operator's sidebar.
 
