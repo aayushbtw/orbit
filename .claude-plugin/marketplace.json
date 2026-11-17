@@ -4,12 +4,12 @@
     "name": "Aayush",
     "url": "https://github.com/aayushbtw"
   },
-  "description": "Shared Claude Code workflow for the team.",
+  "description": "Claude Code on steroids. It plans, builds, tests and ships on its own. You just name the goal.",
   "plugins": [
     {
       "name": "orbit",
       "source": "./plugin",
-      "description": "Commands, agents, skills and working rules for the team."
+      "description": "Claude Code on steroids. It plans, builds, tests and ships on its own. You just name the goal."
     }
   ]
 }

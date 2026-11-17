@@ -15,7 +15,7 @@ A lookup reference for orbit's commands, agents and defaults. To learn how a tas
 | Build and verify a queue of PRs you land yourself | `/orbit:start build the stack, I'll land it: <items>` |
 | Plan work that spans phases or several PRs, to run on your go | `/orbit:start multi-PR plan: <goal>` |
 | Large or cross-cutting work, or work you step away from | `/orbit:figure-it-out <goal>` (`/orbit:start` routes there too) |
-| Get an open PR green, answer its review threads, or check its status | `/orbit:playbook babysit` (`/orbit:start` routes "babysit this" there) |
+| Get an open PR green, wait on its CI, answer its review threads, or check its status | `/orbit:playbook babysit` (`/orbit:start` routes "babysit this" there) |
 | Build a change but land it yourself | `/orbit:start <goal>, don't ship` (or "I'll land it") |
 | Change is ready, land it | `/orbit:ship`. A fresh verifier runs the change first. |
 | Stop mid-task, switch model, step away | `/orbit:pause-safely`, then `/orbit:session-pickup` in a new session. See [Stop cleanly, pick up later](guide/06-hands-off.md#stop-cleanly-pick-up-later). |
@@ -23,7 +23,7 @@ A lookup reference for orbit's commands, agents and defaults. To learn how a tas
 | Catch up on what changed since your last message | `/orbit:ketchup` |
 | Disk is tight, or worktrees have piled up | `/orbit:worktree-cleanup` |
 | Check what orbit needs on this machine and in this project | `/orbit:setup`, on any host. It changes nothing without a yes. |
-| Choose which T3 providers fill each panel's seat on another family, for every project | `/orbit:setup`, in a T3 thread. Setup skips this step outside T3. |
+| Choose which T3 providers fill each panel's seat on another family and run the pre-land verifier, for every project | `/orbit:setup`, in a T3 thread. Setup skips this step outside T3. The same step asks whether orbit may run its native verifier when every listed provider fails. |
 
 Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh one.
 
@@ -60,14 +60,14 @@ Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh
 
 ## What runs in the background
 
-Claude runs these itself. You can also ask for the advisor. A Models table in your Workflow block routes each unit to one of your work types. A row named after a role (`gitops`, `verifier`, `advisor`, `judgment` or `code`) changes that role's model and effort. No row changes comment-sicko ([Route work by work type](guide/08-make-it-fit.md#route-work-by-work-type)).
+Claude runs these itself. You can also ask for the advisor. A Models table in your Workflow block routes each unit to one of your work types. A row named after a role (`gitops`, `verifier`, `advisor`, `judgment` or `code`) changes that role's model and effort. Under T3 Code, an `other-family` row lists the providers that fill each panel's seat on another family. No row changes comment-sicko ([Route work by work type](guide/08-make-it-fit.md#route-work-by-work-type)).
 
 | Agent | Model | Job |
 | --- | --- | --- |
 | poteto-agent | The row of the unit's work type. With no work type that fits, the `judgment` model (Opus by default) for prose and the hardest changes, else the `code` model (by default your session's model, or `CLAUDE_CODE_SUBAGENT_MODEL` when set). When a `code` row is `sonnet` or `haiku`, only trivial mechanical edits take it, and the rest run on your session model. Runs at `medium` effort when Claude passes no effort. Claude still passes `high` for a hard unit. | Writes the code for each unit of a change, so no code is reviewed by the agent that wrote it. |
 | gitops | Sonnet at `low` effort, or the `gitops` row | Commits, pushes, PRs and merges. |
 | comment-sicko | Your session's model, or `CLAUDE_CODE_SUBAGENT_MODEL` when set, at `medium` effort | Deletes comments outside its keep list and flags the code they excuse, before review. |
-| verifier | Your session's model, or `CLAUDE_CODE_SUBAGENT_MODEL` when set, at `high` effort, or the `verifier` row. No Edit or Write tools, in its own worktree. | Runs the change the way a user would before it lands, and returns PASS, PASS+NOTES or FAIL. It is never the agent that wrote the change. |
+| verifier | Your session's model, or `CLAUDE_CODE_SUBAGENT_MODEL` when set, at `high` effort, or the `verifier` row. No Edit tool, and Write only for scratch scripts, in its own worktree. Under T3 Code, when the `verifier` row's Model is `other-family` or `other-family, inherit`, it runs as a seat on a provider you listed. | Runs the change the way a user would before it lands, and returns PASS, PASS+NOTES or FAIL. It is never the agent that wrote the change. |
 | advisor | Fable at `high` effort, or the `advisor` row. Read-only. | Gives a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Ask for it any other time. |
 
 When each runs:

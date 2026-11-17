@@ -4,7 +4,7 @@ T3 Code runs orbit under a Claude lead and under a lead on another provider, suc
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="diagrams/t3-lead-dark.svg">
-  <img alt="You run /orbit:start. The lead checks whether Non-negotiables is already in its context. Yes for a Claude lead, because the SessionStart hook printed the rules. No for another provider, so the lead loads the rules skill, which reads rules.md. Both paths then run the playbook. The lead spawns three kinds of child. An orbit agent runs as a native subagent, nested in the same thread. A code child runs on the lead's provider, as a native subagent, or as a same-provider delegate_task child when it needs its own checkout. A panel seat runs on another family through delegate_task. Under a Codex lead, code children run on gpt-6.1-sol." src="diagrams/t3-lead-light.svg">
+  <img alt="You run /orbit:start. The lead checks whether Non-negotiables is already in its context. Yes for a Claude lead, because the SessionStart hook printed the rules. No for another provider, so the lead loads the rules skill, which reads rules.md. Both paths then run the playbook. The lead spawns three kinds of child. An orbit agent runs as a native subagent, nested in the same thread. A code child runs on the lead's provider. A panel seat runs through delegate_task, only on providers you listed in /orbit:setup. A child that needs its own checkout, or runs while the lead works, goes through delegate_task. Under a Codex lead, code children run on gpt-6.1-sol." src="diagrams/t3-lead-light.svg">
 </picture>
 
 ## How orbit loads

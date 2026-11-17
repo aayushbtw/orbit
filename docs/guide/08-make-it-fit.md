@@ -41,11 +41,11 @@ Each line does one job:
 | Land | `pr` to land through pull requests, plus the merge method if it isn't squash | Opening a PR opens the PR, Babysit drives it to merge-ready, and Shipping merges it. Under either setting, a fresh verifier passes the change before it lands. |
 | Before code | Guidance for writing code under a path, as `<path>: <source>` entries separated by `;`. A source is a file to read, or a command that prints a skill or its path. | Each code delegate under that path, copied word for word into its brief. Also the plan gate and `/orbit:interrogate`. |
 | Review also checks | Docs to read before planning and at review only. Scope one to a path with `src/server/: <source>`. | The plan gate and `/orbit:interrogate` |
-| Models | A `### Models` table with Task, Use for, Model and Effort columns. Each row is a work type of your own, or one of orbit's roles: `gitops`, `verifier`, `advisor`, `judgment` and `code`. An empty cell keeps the default. | Every subagent Claude spawns, except Comment Sicko and a step that names its own model or effort, such as `/orbit:recall`. [Route work by work type](#route-work-by-work-type) explains how Claude picks a row. |
+| Models | A `### Models` table with Task, Use for, Model and Effort columns. Each row is a work type of your own or one of orbit's six roles, `gitops`, `verifier`, `advisor`, `judgment`, `code` and `other-family`. An empty cell takes the same cell from `~/.claude/rules/orbit-models.md`, else the default. | Every subagent Claude spawns, except Comment Sicko and a step that names its own model or effort, such as `/orbit:recall`. [Route work by work type](#route-work-by-work-type) explains how Claude picks a row. |
 
 Before code is the line that goes into the brief of the agent writing the code. Put guidance there that code under a path must follow. Put a doc in Review also checks when it matters for the plan and the review but not for each edit.
 
-Your own CLAUDE.md and `settings.json` stay yours. Orbit's rules load on their own at the start of every session, and the Workflow block adjusts them for one project.
+Your own CLAUDE.md and `settings.json` stay yours. Under Claude Code, orbit's rules load on their own at the start of every session. A Codex or Grok lead loads them at `/orbit:start`, or in every session through the always-on line in the [README](../../README.md#run-on-any-provider-in-t3). The Workflow block adjusts the rules for one project.
 
 ## Route work by work type
 
@@ -67,12 +67,12 @@ Without work types, Claude decides which units are hard, and only those go to th
 
 Each column does one job:
 
-- **Task** names the row in kebab case. Five names belong to orbit's roles: `gitops`, `verifier`, `advisor`, `judgment` and `code`. A row with one of those names changes only that role. Every other row is a work type.
+- **Task** names the row in kebab case. Six names are orbit's roles, which are `gitops`, `verifier`, `advisor`, `judgment`, `code` and `other-family`. A row with one of those names changes only that role. Every other row is a work type.
 - **Use for** names the work the row covers. Claude reads it to match a unit to a row.
-- **Model** is `opus`, `sonnet`, `haiku`, `fable` or `inherit`. `inherit` passes no model, so the spawn runs on `CLAUDE_CODE_SUBAGENT_MODEL` when it is set, else on your session model. On the `gitops` and `advisor` rows, `inherit` keeps the model in the agent file. `fable` is Fable 5.2 from Claude Code 2.1.321 on, and Fable 5.1 before it. Fable's safeguards block most cybersecurity work, such as penetration testing and exploit generation, and an older Opus answers in its place. On a security project, set the `advisor` row's Model to `opus` and keep `fable` off rows whose work is security.
+- **Model** is `opus`, `sonnet`, `haiku`, `fable` or `inherit`. `inherit` passes no model, so the spawn runs on `CLAUDE_CODE_SUBAGENT_MODEL` when it is set, else on your session model. On the `gitops` and `advisor` rows, `inherit` keeps the model in the agent file. `fable` is Fable 5.2 from Claude Code 2.1.321 on, and Fable 5.1 before it. Fable's safeguards block most cybersecurity work, such as penetration testing and exploit generation, and an older Opus answers in its place. On a security project, set the `advisor` row's Model to `opus` and keep `fable` off rows whose work is security. Under T3 Code, the `other-family` row's Model is an ordered list of providers, and the `verifier` row's Model may be `other-family` or `other-family, inherit` ([Give the panels a second family in T3 Code](#give-the-panels-a-second-family-in-t3-code)).
 - **Effort** is `low`, `medium`, `high`, `xhigh` or `max`.
 
-An empty cell keeps the default. The game has no role rows, so its roles keep orbit's defaults. Commits already run on Sonnet at `low` from gitops's agent file. A role row changes only the cells it fills, as the `code` row in [Give the panels a second model](#give-the-panels-a-second-model) shows.
+Each cell comes from the project's table, else from the same cell of `~/.claude/rules/orbit-models.md`, which `/orbit:setup` writes, else from the default. An empty cell, a missing row and a missing table all fall through to the next source. The game has no role rows, so its roles keep orbit's defaults. Commits already run on Sonnet at `low` from gitops's agent file. A role row changes only the cells it fills, as the `code` row in [Give the panels a second model](#give-the-panels-a-second-model) shows.
 
 ### See which row a spawn takes
 
@@ -80,11 +80,11 @@ Before each spawn, Claude asks three questions in order. The first yes decides t
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../diagrams/guide-models-dark.svg">
-  <img alt="Claude asks three questions before each spawn, with a fallback when every answer is no. If the step picks its own model or effort, such as recall's haiku or the trail reviewer's tier, the spawn keeps it. Else, if the spawn names a role (gitops, verifier, advisor, judgment or code), it takes that role's row, where an empty cell keeps the default. Else, if a work type fits the poteto-agent unit, it takes that work type's row, which can step up after n failed tries. Else Claude tiers by difficulty, with the hardest change or prose on judgment and the rest on code, and when the project has work types the reply names the unit so you can add a row." src="../diagrams/guide-models-light.svg">
+  <img alt="Claude asks three questions before each spawn, with a fallback when every answer is no. If the step picks its own model or effort, such as recall's haiku or the trail reviewer's tier, the spawn keeps it. Else, if the spawn names a role (gitops, verifier, advisor, judgment, code or other-family), it takes that role's row, where an empty cell falls through to the user file, else the default. Else, if a work type fits the poteto-agent unit, it takes that work type's row, which can step up after n failed tries. Else Claude tiers by difficulty, with the hardest change or prose on judgment and the rest on code, and when the project has work types the reply names the unit so you can add a row." src="../diagrams/guide-models-light.svg">
 </picture>
 
 1. A step that names its own model or effort keeps it. `/orbit:recall` runs on Haiku, and the trail reviewer in `show-me-your-work` picks its own tier.
-2. A spawn that names a role takes that role's row. gitops, the verifier and the advisor each take their own row. Interrogate's adversaries, arena's runners, swarm workers, autopilot owners, the `/orbit:how` explainer and `/orbit:recall`'s source investigators each name `judgment` or `code`. A skill that spawns with `model: "opus"` names the `judgment` role, so a `judgment` row reaches it. A two-model panel never takes a work type, so its sides follow only the `judgment` and `code` rows. Comment Sicko takes no row, so it keeps its agent file's effort and runs on the default subagent model.
+2. A spawn that names a role takes that role's row. gitops, the verifier and the advisor each take their own row. Under T3 Code, a panel's seat on another family takes the `other-family` row. Interrogate's adversaries, arena's runners, swarm workers, autopilot owners, the `/orbit:how` explainer and `/orbit:recall`'s source investigators each name `judgment` or `code`. A skill that spawns with `model: "opus"` names the `judgment` role, so a `judgment` row reaches it. A two-model panel never takes a work type, so its sides follow only the `judgment` and `code` rows. Comment Sicko takes no row, so it keeps its agent file's effort and runs on the default subagent model.
 3. Any other `orbit:poteto-agent` spawn takes the work type whose Use for fits its unit. That covers code delegates and their fix rounds.
 4. A unit that no work type fits runs as it does with no table. A prose unit, such as docs or a written explanation, runs on the `judgment` model. A code unit tiers by difficulty. The hardest change, such as a cross-cutting design or a subtle algorithm, runs on the `judgment` model, and the rest run on the `code` model. When a `code` row sets that model to `sonnet` or `haiku`, only trivial mechanical edits go to it, and the rest run on your session model. When the project has work types, Claude's reply names each unit that none of them fit, so you can add a row.
 
@@ -119,6 +119,31 @@ In an Opus session under the defaults, the `judgment` and `code` models are both
 The row moves every spawn on the `code` role to Sonnet. That covers one side of each panel, swarm workers and `/orbit:recall`'s source investigators. In an Opus session, the same row makes all of those spawns cheaper. The row doesn't move gitops, the verifier, the advisor or Comment Sicko.
 
 Code delegates are the catch. Without a guard, a Sonnet `code` row would also move every code delegate that no work type fits and isn't the hardest, so most of your code would be written on Sonnet. Orbit guards it. When the `code` row is `sonnet` or `haiku`, only trivial mechanical edits go to it, and every other code delegate runs on your session model. To put more code on Sonnet on purpose, add a work type for that kind of work.
+
+### Give the panels a second family in T3 Code
+
+Under T3 Code, a panel can fill one seat on another model family, such as a Codex model, instead of a second Claude model. Five seats work this way. They are arena's judge, interrogate's second adversary, the trail reviewer in `show-me-your-work`, the audit seat in `autopilot-full`, and the verifier when its own row says so. `/orbit:setup` writes the `other-family` row to `~/.claude/rules/orbit-models.md` for every project. A project can set its own row:
+
+```md
+| `other-family` | | codex, claudeAgent | |
+```
+
+The Model cell is an ordered list of T3 provider ids. Each entry is a fallback for the one seat, not another reviewer. A seat skips the entry of the lead's own family and tries at most three of the rest, in list order. It never runs on a provider the list leaves out.
+
+- `codex, claudeAgent` works under either lead. A Claude lead takes the `codex` seat, and a Codex lead takes `claudeAgent`.
+- `codex/gpt-6.1-sol` names one model. A bare `codex` takes the first model the provider lists outside the lead's family, skipping `auto` and `default`.
+- `inherit` keeps the seat on the lead's family.
+- `codex, inherit` falls back to the lead's family when `codex` fails.
+
+An empty cell, or no row, runs the skill's own seat, and the reply says that no seat on another family is configured. When every listed entry fails, the seat is skipped, and the reply says so. The Effort cell maps onto the model's own effort option.
+
+The verifier follows its own row. A `verifier` row whose Model is `other-family` sends each verifier to the same list. Setup writes that row when the list is not empty, unless the file already has a `verifier` row with another Model. When every entry fails, Claude asks you before the native verifier runs, or holds the PR. `other-family, inherit` runs the native verifier in that case without asking. Setup asks which one you want and recommends `other-family`. A trailing `inherit` on the `other-family` row covers panel seats, not the verifier.
+
+Setup ranks providers Claude, Codex, Muse, Gemini, then Grok. With all five enabled, it recommends Claude, Codex, Muse and Gemini.
+
+The lead's provider changes the other roles too. Under a Codex lead, an empty `code` cell runs code children on gpt-6.1-sol, and `inherit` keeps the lead's model. Every other role runs on the lead's model. Under a Grok lead, every native subagent runs on the lead's model, and a cell that names a Claude model is skipped. The Grok code child has not run live.
+
+[Provider selection](../t3-code.md#provider-selection) explains the family check, which reads each model's id, not only its provider.
 
 ### Run the lead on Fable
 
