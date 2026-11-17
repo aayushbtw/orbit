@@ -6,4 +6,4 @@ jobs:
   trivial:
     runs-on: ubuntu-latest
     steps:
-      - run: sleep 45 && echo ok
+      - run: sleep 20 && exit 1
