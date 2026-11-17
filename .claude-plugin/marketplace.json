@@ -4,12 +4,12 @@
     "name": "Aayush",
     "url": "https://github.com/aayushbtw"
   },
-  "description": "Claude Code on steroids. It plans, builds, tests and ships on its own. You just name the goal.",
+  "description": "A Claude Code plugin that plans, builds, verifies and ships the goal you name, in T3 Code or in Claude Code alone.",
   "plugins": [
     {
       "name": "orbit",
       "source": "./plugin",
-      "description": "Claude Code on steroids. It plans, builds, tests and ships on its own. You just name the goal."
+      "description": "A Claude Code plugin that plans, builds, verifies and ships the goal you name, in T3 Code or in Claude Code alone."
     }
   ]
 }
