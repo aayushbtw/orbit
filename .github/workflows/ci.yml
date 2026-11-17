@@ -1,0 +1,9 @@
+name: swarm-p2a-ci
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  trivial:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ok
