@@ -49,6 +49,7 @@ export interface PullRequestFacts {
   readonly state: "OPEN" | "CLOSED" | "MERGED";
   readonly mergedAt: string | null;
   readonly isDraft: boolean;
+  readonly requestedReviewers: readonly string[];
 }
 export interface OpenPullRequest {
   readonly number: PrNumber;
@@ -169,6 +170,7 @@ export interface ReadyPr {
     readonly gate: {
       readonly state: "OPEN";
       readonly reviewDecision: Exclude<ReviewDecision, "CHANGES_REQUESTED">;
+      readonly requestedReviewers: readonly string[];
       readonly draft: "not-draft" | "draft-allowed";
     };
   };
@@ -253,6 +255,16 @@ export type PrDecision =
   | WaitingDecision
   | { readonly kind: "ready"; readonly pr: ReadyPr }
   | { readonly kind: "merged"; readonly pr: MergedPr };
+export type FrontierWait =
+  | {
+      readonly kind: "pending-checks";
+      readonly pending: NonEmpty<PendingCheck>;
+    }
+  | {
+      readonly kind: "review-required";
+      readonly requestedReviewers: readonly string[];
+    }
+  | { readonly kind: "merge" };
 export type StackDecision =
   | { readonly kind: "blocker"; readonly blocker: MergeBlocker }
   | WaitingDecision
@@ -337,6 +349,7 @@ export type TimeoutVerdict = Terminal<"TIMEOUT", 5> & {
   readonly reason:
     | {
         readonly kind: "pending-checks";
+        readonly frontier: PrContext;
         readonly pending: NonEmpty<PendingCheck>;
       }
     | { readonly kind: "status-unavailable"; readonly failure: QueryFailure }
@@ -344,6 +357,7 @@ export type TimeoutVerdict = Terminal<"TIMEOUT", 5> & {
         readonly kind: "queued-stack";
         readonly frontier: PrContext;
         readonly unmergedCount: number;
+        readonly waitingOn: FrontierWait;
       };
 };
 export type TerminalVerdict =

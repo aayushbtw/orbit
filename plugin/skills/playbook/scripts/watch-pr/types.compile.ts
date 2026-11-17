@@ -47,6 +47,7 @@ const readyPr = {
     gate: {
       state: "OPEN",
       reviewDecision: "APPROVED",
+      requestedReviewers: [],
       draft: "not-draft",
     },
   },

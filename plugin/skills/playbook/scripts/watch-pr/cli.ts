@@ -15,6 +15,7 @@ import {
   runQueued,
   runSimple,
   statusQueryVerdict,
+  statusUnavailableVerdict,
   verdictFactory,
   type WatchClock,
 } from "./policy.ts";
@@ -154,7 +155,7 @@ export function parseArgs(
       interval: raw.interval,
       sweepInterval: raw.sweepInterval,
       timeout: raw.timeout,
-      maxQueryErrors: raw.once ? 1 : raw.maxQueryErrors,
+      maxQueryErrors: raw.maxQueryErrors,
       allowDraft: raw.allowDraft,
       once: raw.once,
     },
@@ -209,11 +210,11 @@ export async function main(
         : await discoverStack(runtime.reader, seed));
   } catch (error) {
     if (!(error instanceof WatcherQueryError)) throw error;
-    const verdict = statusQueryVerdict(
-      verdictFactory(runtime.clock, options.mode),
-      1,
-      error.failure
-    );
+    const stamp = verdictFactory(runtime.clock, options.mode);
+    const verdict =
+      options.polling.once && error.failure.retryable
+        ? statusUnavailableVerdict(stamp, error.failure)
+        : statusQueryVerdict(stamp, 1, error.failure);
     runtime.stdout(render(verdict));
     return verdict.exitCode;
   }
