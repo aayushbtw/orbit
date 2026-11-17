@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Setup orbit
 
-Setup checks orbit's prerequisites on any host, so a missing tool shows up here and not mid-flow. Every check only reads. Setup collects each change it could make as an offer and asks about all of them in one question at the end. A headless run stops at its first question, so it still prints every finding.
+Setup checks orbit's prerequisites on any host, so a missing tool shows up here and not mid-flow. Setup changes none of your files or settings without a yes. Host CLIs it calls (gh, grok, codex, vp shims) may write their own logs or caches. Setup collects each change it could make as an offer and asks about all of them in one question at the end. A headless run stops at its first question, so it still prints every finding.
 
 Under T3 Code, setup also writes `~/.claude/rules/orbit-models.md`, a user-wide Models table that sets which providers fill the `other-family` seat (`../../rules.md` Workflow Defaults, Models). Claude Code loads every `.md` file in `~/.claude/rules/` into each new session. A lead on another provider reads the file through the `rules` skill. A cell in a project's AGENTS.md Models table wins over the same cell in this file.
 
@@ -23,7 +23,7 @@ Under T3 Code, setup also writes `~/.claude/rules/orbit-models.md`, a user-wide 
 
 ### 1. Doctor
 
-Run `${CLAUDE_SKILL_DIR}/scripts/doctor.sh` as one Bash call from the project folder. A lead that is not Claude Code runs `scripts/doctor.sh` from this skill's base directory. The script reads only, needs no network and always exits 0.
+Run `"${CLAUDE_SKILL_DIR}/scripts/doctor.sh"` as one Bash call from the project folder. A lead that is not Claude Code runs `scripts/doctor.sh` from this skill's base directory. The script writes no files, needs no network and always exits 0.
 
 Relay its lines to the user nearly verbatim. Each missing tool comes with its install command. Keep going whatever is missing. The later steps use these lines:
 
@@ -35,7 +35,7 @@ Relay its lines to the user nearly verbatim. Each missing tool comes with its in
 
 **Install.** With `no orbit install record`, orbit runs from a folder Claude Code did not install, such as `--plugin-dir`. Say so and skip the drift and Codex link checks. Never link Codex to the folder orbit runs from. With `install drift`, the record and the local marketplace copy differ, so Claude Code children and Codex can run different versions. Offer `claude plugin marketplace update <marketplace>`, then `claude plugin update orbit@<marketplace>`. When the record matches, say it matches the local marketplace copy. Upstream may still be ahead. When the `claude` command is not found, print the update commands for the user instead of offering them.
 
-**codex.** Codex does not read Claude Code's install record. It loads orbit through one symlink to the folder Claude Code installs orbit from, the target the doctor names as the local marketplace copy. Run this case when the doctor printed `codex:` lines. If the target has no `skills/rules/SKILL.md`, say so and skip the rest of the codex case.
+**codex.** Codex does not read Claude Code's install record. It loads orbit through one symlink to the folder Claude Code installs orbit from, the target the doctor names as the local marketplace copy. Run this case when the doctor printed `codex: found`. If the target has no `skills/rules/SKILL.md`, say so and skip the rest of the codex case.
 
 - Link. If it is missing, offer to create it with the command the doctor printed. If it is a link to the target, say that the link is in place. If it is a link to another folder or a real folder, report what it is and print the commands that replace it with a link to the target, for the user to run. Do not touch it.
 - Duplicates. Codex skips a second link to a folder it already loads. If the doctor says `~/.agents/skills/orbit` resolves somewhere other than the target, or `codex plugin list` shows orbit installed, tell the user that Codex then loads two copies of orbit. Print the command that removes the extra copy, `rm ~/.agents/skills/orbit` or `codex plugin remove orbit@<codex marketplace>`, for the user to run. Do not run it.
@@ -43,7 +43,8 @@ Relay its lines to the user nearly verbatim. Each missing tool comes with its in
 **grok.** Run this case when the doctor printed `grok: found`. Grok loads the record's `installPath`, so the record's version is the one Grok runs.
 
 - Shadowing install. Run `grok plugin list --json`. If it lists `orbit`, tell the user that Grok's own install shadows Claude Code's copy, so `claude plugin update orbit@orbit` no longer reaches Grok. Print `grok plugin uninstall orbit` as a command for the user to run. Do not run it.
-- Stale copy. With no shadowing install, run `grok inspect --json`. If it has no skill named `rules` whose `source.plugin_name` is `orbit`, Grok loads a copy of orbit older than the `rules` skill. Offer to run `claude plugin update orbit@orbit`, once, alongside any update offer above. If it lists no plugin named `orbit` at all, tell the user that Grok loads orbit only when orbit is enabled in Claude Code's user settings.
+- Not loaded. With no shadowing install, run `grok inspect --json`. If it lists no plugin named `orbit`, tell the user that Grok loads orbit only when orbit is enabled in Claude Code's user settings. Offer nothing for Grok.
+- Stale copy. If it lists orbit but no skill named `rules` whose `source.plugin_name` is `orbit`, Grok loads a copy of orbit older than the `rules` skill. Offer to run `claude plugin update orbit@orbit`, once, alongside any update offer above.
 
 **Always-on rules line.** When `codex` or `grok` is found, offer to add orbit's always-on rules line to that provider's own instruction file, `~/.codex/AGENTS.md` or `~/.grok/AGENTS.md`, when the file lacks it. The recommended answer is no. The line is:
 
@@ -81,7 +82,7 @@ Then ask one question: which providers, in order, fill the `other-family` seat. 
 
 The answer is an ordered list. A seat tries only values from a family other than the parent's, in list order, so the session's own family may stay on the list for a thread that another family leads. An entry is a bare `<providerInstanceId>`, which takes that provider's first eligible model, or `<providerInstanceId>/<model>` when the user names a model. Ask nothing about the lead or about other roles.
 
-For each chosen provider whose `driverKind` is not `grok` or `codex`, the non-Claude hosts whose load orbit has tested, say "orbit has no tested load check for <driverKind> yet".
+For each chosen provider whose `driverKind` is not `grok` or `codex`, the non-Claude hosts whose load orbit has tested, and whose `providerInstanceId` is not `inheritedProviderInstanceId`, say "orbit has no tested load check for <driverKind> yet".
 
 **4d. Validate.** Every entry's provider is in `providers`, enabled, with `canRunCrossProviderChildTask` true. For a `<providerInstanceId>/<model>` entry, that provider lists the model. The first result is a short list, so before you call a model missing, call `orchestrator_capabilities` with `search` set to the model id. If an entry fails, name the check that failed and ask again.
 
