@@ -30,7 +30,7 @@ T3 serves its tools as MCP tools, and a step probes each tool before its first c
 
 A review panel fills one seat on a model family other than the session's.
 
-- The lead calls `orchestrator_capabilities` once per thread and reuses the result, and calls it again only after an error or a user-named provider change.
+- The lead calls `orchestrator_capabilities` once per thread and reuses the result, and calls it again only after an error or a user-named provider change, or with `search` for a model the Models table names.
 - The roster is every enabled provider that can run a cross-provider child task and has a family other than the session's.
 - The empty-cell default takes the first roster provider's first model, and skips a model of the session's own family that another provider hosts.
 - The `other-family` row comes from the project's AGENTS.md, else from `~/.claude/rules/orbit-models.md`, which `/orbit:setup` writes. Its Model cell can list providers in order. The seat tries only listed providers outside the session's family, then the session-family seat, never a provider the list leaves out.

@@ -30,7 +30,7 @@ Remaining triggers:
 
 Delegate code-writing to the `poteto-agent` subagent (`orbit:poteto-agent`) per the playbook's Delegate gate. Delegate commits and PR work (create, read, edit) to the `gitops` subagent (`orbit:gitops`), with the `gitops` row's model and effort when the project's Models table has that row. The shipping playbook (`/orbit:ship`) spawns the `verifier` subagent (`orbit:verifier`) to run the change before it lands. **Use `subagent_type: "orbit:poteto-agent"` for any subagent you spawn inside a playbook step** (code-writing delegates, ad-hoc helpers). The chat that runs `/orbit:start` runs the playbook. Never spawn a `poteto-agent` to run the playbook itself. Routed workflow skills (`how`, `interrogate`, `swarm`) set their own `subagent_type`. Respect what the skill prescribes, don't override to `poteto-agent`.
 
-**Defaults for every `Agent` call.** Agent mode (`general-purpose` or an `orbit:` agent, not `Explore`), `run_in_background: false`, file pointers not inlined context. Parallel spawns go as several calls in one message.
+**Defaults for every `Agent` call.** Agent mode (`general-purpose` or an `orbit:` agent, not `Explore`), file pointers not inlined context. When any `mcp__t3-code__` tool is in your tool list, pass `run_in_background: false` and send parallel spawns as several calls in one message.
 
 **One plain command per Bash call.** Claude Code's worktree guard refuses heredocs, `&&` chains around git, shell variables and `$(...)` in arguments, and loops as too complex to verify. Write a script with the Write tool and run it, use `git -C <path>`, and split the rest into separate calls.
 
@@ -87,7 +87,7 @@ Write the reply clean as you draft it. A cleanup pass after drafting does not re
 - **Terse is not an excuse to drop content.** Short sentences, but every section the playbook's reply names stays: details, tradeoffs, choices, open decisions.
 - **Frame impact for the consumer and the maintainer.** Name who the work is for (an end user, a colleague importing the library) and what changes for them before any implementation detail. Then what the next engineer who owns this code inherits. If you can't say what either would notice, the work or the explanation is off.
 - **Never fabricate a link, citation, or transcript reference.** Link only artifacts you produced or read this session.
-- **Link each file you cite or produce by its absolute path**, as in `[http.ts:42](/abs/path/http.ts:42)`.
+- **Embed images, video and audio with Markdown image syntax and an absolute path.** Link every other file you cite or produce by its absolute path, as in `[http.ts:42](/abs/path/http.ts:42)`.
 - **Every claim carries its evidence or its label in the same sentence.** Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
 
 Every playbook ends with a reply written this way, PR link as `https://github.com/<owner>/<repo>/pull/<number>`. Each playbook's own reply lines name only the content unique to that playbook.
