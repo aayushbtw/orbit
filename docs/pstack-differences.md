@@ -16,6 +16,12 @@ In the **orbit.** lines, paths under `agents/`, `hooks/` and `skills/`, and `rul
 - **orbit.** `skills/start`, `skills/ship`, `skills/correct` and `skills/playbook/SKILL.md` are orbit's text, with no `skills.json` entry. The playbook `SKILL.md` holds the gates, Principles, Stack rules and the index. poteto-mode's other sections live in `rules.md`. `correct` keeps pstack's order (architecture, then a type or lint, then a test, then a doc) and its rule table, but handles one named mistake with one guard. It drops the class sweep, the exception rule and the **Reply:**.
 - **Why.** `start` and `ship` are entry commands that pstack's single `/poteto-mode` doesn't need. The Worktree, Plan and Delegate gates are orbit's. `rules.md` loads every session, so the always-on sections go there. `correct`'s rewrite has no recorded reason.
 
+### Native task progress
+
+- **pstack.** Orbit's `start` entry point has no upstream counterpart ([Orbit-written skills](#orbit-written-skills)).
+- **orbit.** `skills/start/SKILL.md` uses Claude's `TaskCreate` / `TaskUpdate` / `TaskList` or `TodoWrite`, Codex's `update_plan`, or another provider's native task tools. It falls back to a list in the reply only when no native task tool is available. Steps update as they start and finish, skipped steps retain their reason and complete, and a resumed task reuses its list. `docs/harness/t3-code.md` maps the Claude task tools for other leads.
+- **Why.** The previous instruction named only `TodoWrite`, so Codex and Claude sessions offering newer task tools fell back to text. Native updates let T3 display the flow's steps and progress in its task UI (operator request, 2026-11-17).
+
 ### Trigger list
 
 - **pstack.** e1cc031 cuts poteto-mode's Non-negotiables to ten short lines and adds one. "Starting any agent, whether a Task subagent or a Project worker → the first line of its kickoff is `Read <path>/worker.md before anything else.`" `worker.md` holds the operator's rules for every started agent, among them "The bar in your kickoff is the whole bar. Add no check, gate, sign-off or review round above it." (`poteto-mode/SKILL.md`, `poteto-mode/worker.md`)
