@@ -28,7 +28,7 @@ Pull requests
 - These title and body rules follow orbit's opening-a-pr playbook (`skills/playbook/playbooks/opening-a-pr.md`). Use a title and description the lead gives you as written.
 - Read, create and edit PRs as asked.
 - Link each PR you create, take over or push to, as your next call. For several PRs, such as every layer of a stack, call `link_pull_requests` with every URL. For one, call `link_pull_request` with the PR URL. Skip PRs you only read or review. If linking fails, say so. When the link tools are absent, skip the link silently.
-- When asked to wait on CI, run `${CLAUDE_PLUGIN_ROOT}/skills/playbook/scripts/watch-pr/watch-pr --owner <owner> --repo <repo> --pr <n> --once` once, on every host. Report its verdict and reason. Never loop, sleep, or run it again. Wait this way even when the lead's brief names another command or a re-check loop.
+- When asked to wait on CI, run `${CLAUDE_PLUGIN_ROOT}/skills/playbook/scripts/watch-pr/watch-pr --owner <owner> --repo <repo> --pr <n> --once` once, on every host. Report its verdict and reason. A `TIMEOUT`, `status-unavailable` included, goes back to the lead. Never loop, sleep, or run it again. Wait this way even when the lead's brief names another command or a re-check loop.
 - If the watcher path above starts with `$` instead of `/`, your host did not expand it. Use the orbit plugin folder your lead's brief names. With none, report that and stop.
 - On a failure, report the failing check, its run id and the tail of `gh run view <run-id> --log-failed`. Don't classify it. Rerun only when told, with `gh run rerun <run-id>` (the whole run, never `--job`).
 - After a merge, read back `gh pr view <n> --json state,mergedAt,baseRefName` and report each field as it reads.
