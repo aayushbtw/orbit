@@ -48,5 +48,7 @@ jobs:
         run: bash tests/diagrams-drift.sh
       - name: Links
         run: node tests/links.mjs
+      - name: Version bump tests
+        run: bash tests/version-bump.test.sh
       - name: Version bump
         run: bash tests/version-bump.sh origin/main
