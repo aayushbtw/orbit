@@ -211,6 +211,7 @@ function readyContribution(
       gate: {
         state: "OPEN",
         reviewDecision,
+        requestedReviewers: row.facts.requestedReviewers,
         draft: row.facts.isDraft ? "draft-allowed" : "not-draft",
       },
     },
@@ -340,6 +341,17 @@ export function statusQueryVerdict(
     blocker: { kind: "status-query", failures, failure },
   });
 }
+export function statusUnavailableVerdict(
+  stamp: VerdictStamp,
+  failure: T.QueryFailure
+): T.TimeoutVerdict {
+  return stamp({
+    kind: "TIMEOUT",
+    terminal: true,
+    exitCode: 5,
+    reason: { kind: "status-unavailable", failure },
+  });
+}
 export interface WatchClock {
   now(): number;
   observedAt(): string;
@@ -392,22 +404,18 @@ async function pollUntilTerminal<V>(args: {
         args.options.interval,
         failures
       );
-      args.dependencies.emit(
-        args.stamp({
-          kind: "RETRY",
-          terminal: false,
-          failure: error.failure,
-          consecutiveFailures: failures,
-          retryInSeconds,
-        })
-      );
+      if (!args.options.once)
+        args.dependencies.emit(
+          args.stamp({
+            kind: "RETRY",
+            terminal: false,
+            failure: error.failure,
+            consecutiveFailures: failures,
+            retryInSeconds,
+          })
+        );
       if (deadlinePassed(started, args.options, args.dependencies.clock.now()))
-        return args.stamp({
-          kind: "TIMEOUT",
-          terminal: true,
-          exitCode: 5,
-          reason: { kind: "status-unavailable", failure: error.failure },
-        });
+        return statusUnavailableVerdict(args.stamp, error.failure);
       await sleep(retryInSeconds);
       continue;
     }
@@ -515,7 +523,11 @@ export async function runSimple(args: {
           kind: "TIMEOUT",
           terminal: true,
           exitCode: 5,
-          reason: { kind: "pending-checks", pending: decision.pending },
+          reason: {
+            kind: "pending-checks",
+            frontier: decision.frontier,
+            pending: decision.pending,
+          },
         }),
     };
   };
@@ -639,6 +651,7 @@ export type QueueEvaluation =
       readonly state: QueueState;
       readonly frontier: T.PrContext;
       readonly unmergedCount: number;
+      readonly waitingOn: T.FrontierWait;
     }
   | {
       readonly kind: "waiting";
@@ -652,6 +665,16 @@ export type QueueEvaluation =
         | { readonly kind: "merge-queue"; readonly unmergedCount: number };
       readonly emit: boolean;
     };
+function frontierWait(row: T.PrSnapshot): T.FrontierWait {
+  if (row.kind === "open" && row.ci.kind === "ci-pending")
+    return { kind: "pending-checks", pending: row.ci.pending };
+  return row.facts.reviewDecision === "REVIEW_REQUIRED"
+    ? {
+        kind: "review-required",
+        requestedReviewers: row.facts.requestedReviewers,
+      }
+    : { kind: "merge" };
+}
 export function evaluateQueue(
   state: QueueState,
   now: number,
@@ -689,20 +712,19 @@ export function evaluateQueue(
       frontier,
       remaining: active.length,
     };
+  const waitingOn = frontierWait(rows[0]);
   if (deadlinePassed(state.startedAt, options, now))
     return {
       kind: "timeout",
       state: { ...state, frontier },
       frontier,
       unmergedCount: active.length,
+      waitingOn,
     };
-  const row = rows[0];
-  const pending =
-    row.kind === "open" && row.ci.kind === "ci-pending" ? row.ci.pending : null;
   const reason =
-    pending === null
-      ? ({ kind: "merge-queue", unmergedCount: active.length } as const)
-      : ({ kind: "pending-checks", pending } as const);
+    waitingOn.kind === "pending-checks"
+      ? ({ kind: "pending-checks", pending: waitingOn.pending } as const)
+      : ({ kind: "merge-queue", unmergedCount: active.length } as const);
   const key =
     reason.kind === "pending-checks"
       ? `pending:${frontier.number}:${reason.pending.length}`
@@ -818,6 +840,7 @@ export async function runQueued(args: {
               kind: "queued-stack",
               frontier: evaluation.frontier,
               unmergedCount: evaluation.unmergedCount,
+              waitingOn: evaluation.waitingOn,
             },
           }),
         };

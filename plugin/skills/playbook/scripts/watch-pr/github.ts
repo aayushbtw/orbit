@@ -573,6 +573,14 @@ export function parsePullRequest(
     ),
     mergedAt: optionalString(object.mergedAt, "pull request.mergedAt"),
     isDraft: object.isDraft,
+    requestedReviewers: list(
+      object.reviewRequests,
+      "pull request.reviewRequests"
+    ).flatMap((request) => {
+      if (!isRecord(request)) return [];
+      const name = request.login ?? request.slug ?? request.name;
+      return typeof name === "string" ? [name] : [];
+    }),
   };
 }
 function graphqlArgs(
@@ -620,7 +628,7 @@ export class GhGitHubReader implements T.GitHubReader {
         "--repo",
         `${context.owner}/${context.repo}`,
         "--json",
-        "mergeable,mergeStateStatus,reviewDecision,headRefOid,headRefName,baseRefName,state,mergedAt,isDraft",
+        "mergeable,mergeStateStatus,reviewDecision,headRefOid,headRefName,baseRefName,state,mergedAt,isDraft,reviewRequests",
       ]),
       context
     );
