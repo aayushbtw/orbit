@@ -1,0 +1,28 @@
+{
+  "scenario": "verifier-all-fail",
+  "message": "/orbit:ship the commit that adds median.mjs, verifier step only. Do not land.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "hand-built",
+    "source": "claude-verifier-seat-pre-79ebe0b.json",
+    "relabeled": false,
+    "note": "Hand-built FAIL variant. The other-family list ends with inherit, but the verifier row is other-family, the user's no to a native verifier. Every listed entry fails and the lead still spawns the native verifier, so no-native-verifier fails.",
+    "expect": {
+      "no-seat": "PASS",
+      "no-native-verifier": "FAIL"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:verifier"
+      },
+      "sidechain": false
+    }
+  ]
+}

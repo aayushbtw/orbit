@@ -59,6 +59,7 @@ const workflow = `## Workflow
 - Land: \`main\`.
 `;
 const interrogateMedian = '/orbit:interrogate Scope: the commit that adds median.mjs, against its parent. Intent: median(values) returns the median of an array of numbers. Make no edits.';
+const verifierMedian = '/orbit:ship the commit that adds median.mjs, verifier step only. Do not land.';
 
 const seatsProject = (name, otherFamilyCell) => ({
   name,
@@ -208,7 +209,7 @@ export const SCENARIOS = {
     },
   },
   'verifier-seat': {
-    prompt: '/orbit:ship the commit that adds median.mjs, verifier step only. Do not land.',
+    prompt: verifierMedian,
     project: seatProject,
     checks: {
       'verifier-ran': {
@@ -286,6 +287,18 @@ export const SCENARIOS = {
         claude: some('Agent', judgmentAdversary, 'lead'),
         codex: some('spawn_agent', undefined, 'lead'),
         grok: some('spawn_subagent', undefined, 'lead'),
+      },
+    },
+  },
+  'verifier-all-fail': {
+    prompt: verifierMedian,
+    project: seatsProject('seats-verifier-all-fail', 'cursor, muse, inherit'),
+    checks: {
+      'no-seat': noChildThread,
+      'no-native-verifier': {
+        claude: none('Agent', { subagent_type: 'orbit:verifier' }, 'lead'),
+        grok: none('spawn_subagent', { subagent_type: 'orbit:verifier' }, 'lead'),
+        na: { codex: 'spawn_agent takes no agent type, so the grader cannot tell a verifier child' },
       },
     },
   },

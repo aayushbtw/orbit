@@ -348,7 +348,7 @@ function providerSelection(theme) {
   const k = canvas(theme, 1100, 810);
   const box = (b) => { const r = B({ h: 88, ss: 15, kind: 'agent', ...b }); k.box(r); return r; };
   const read = box({ x: 290, y: 20, w: 520, t: 'Read the other-family cell', s: 'project AGENTS.md, else ~/.claude/rules/orbit-models.md', kind: 'claude' });
-  const empty = box({ x: 20, y: 170, w: 460, t: 'Empty: no seat on another family', s: "the skill's own seat runs; reply says none is configured", kind: 'claude' });
+  const empty = box({ x: 20, y: 170, w: 460, t: "Empty: the skill's own seat", s: 'reply says no other-family seat is configured', kind: 'claude' });
   const inherit = box({ x: 620, y: 170, w: 460, t: 'inherit: session-family seat', kind: 'claude' });
   const main = [
     { t: 'Check listed entries', s: "skip the lead's family; provider, model family, runtime" },

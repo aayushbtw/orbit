@@ -1,0 +1,20 @@
+{
+  "scenario": "verifier-all-fail",
+  "message": "/orbit:ship the commit that adds median.mjs, verifier step only. Do not land.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "hand-built",
+    "source": "claude-verifier-all-fail-leak.json",
+    "relabeled": false,
+    "note": "Hand-built PASS variant. The native verifier spawn is dropped, so the lead starts no seat and no native verifier and asks the user instead. A real fixture from a live verifier-all-fail lane replaces this one.",
+    "expect": {
+      "no-seat": "PASS",
+      "no-native-verifier": "PASS"
+    }
+  },
+  "toolCalls": []
+}
