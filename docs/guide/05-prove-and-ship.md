@@ -84,7 +84,6 @@ Opening a PR doesn't start a babysit. Claude posts the URL and keeps building un
 Babysit declares a mode before it polls:
 
 - `drive` loops until the PR is merge-ready. "babysit this" and "get it green" ask for it.
-- `background` triages without blocking, for a plan that is still running.
 - `threads-only` answers review comments and touches nothing else.
 - `check` is one status pass and a report.
 
@@ -96,11 +95,11 @@ check on PR 214. anything outstanding?
 address the review comments on PR 214, nothing else
 ```
 
-It works the lowest unmerged PR first. It clears conflicts first, then review threads, then CI. A conflict is the one blocker it reports instead of fixing, because a babysit never rebases or force-pushes. CI failures get classified first. A flake earns one fresh build, and only one. A second identical failure means it was never a flake. Babysit stops at merge-ready and never merges. Under Land `main` there is no PR to watch, so it says so and stops.
+It clears one PR at a time. It clears conflicts first, then review threads, then CI. A conflict is the one blocker it reports instead of fixing, because a babysit never rebases or force-pushes. A flake earns one fresh build, and only failures in the diff's own code get a commit. Babysit stops at merge-ready and never merges. Under Land `main` there is no PR to watch, so it says so and stops.
 
 ## Read bot reviews with suspicion
 
-Bugbot and the agentic security review catch real bugs, and they also file noise. Babysit triages each comment against the code as `fix`, `dismiss` or `ask`, per the playbook's `references/bugbot-triage.md`. A real finding gets a fix in the lowest PR that owns the code. Noise gets a reply on the thread with the concrete reason it doesn't apply. A finding about security, auth, billing, data or migrations is never dismissed on Claude's own judgment. Claude fixes it or asks you. It never churns code just to quiet a bot. When a dismissal pattern looks useful to the team, Babysit offers it as a new entry in that rubric, in its own PR.
+Bugbot and the agentic security review catch real bugs, and they also file noise. Babysit triages each comment against the code as `fix`, `dismiss` or `ask`, per the playbook's `references/bugbot-triage.md`. A real finding gets a fix in the lowest PR that owns the code. Noise gets a reply on the thread with the concrete reason it doesn't apply. A finding about security, auth, billing, data or migrations is never dismissed on Claude's own judgment. Claude fixes it or asks you. It never churns code just to quiet a bot.
 
 ## Shipping lands only the verified run
 

@@ -2,7 +2,7 @@
   "typescript-best-practices": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/typescript-best-practices",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Set the frontmatter description to: TypeScript rules for the /orbit:start flow. Not for direct use.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1 of SKILL.md.",
@@ -12,7 +12,7 @@
   "unslop": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/unslop",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Set the frontmatter description to: Cut AI tells from written content: docs pages, READMEs, PR descriptions, blog and site copy, and chat replies. Not for code.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
@@ -23,7 +23,7 @@
   "technical-writing": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/technical-writing",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Set the frontmatter description's `Use for /technical-writing` to `Use for /orbit:technical-writing`.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
@@ -33,7 +33,7 @@
   "interrogate": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/interrogate",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Set the frontmatter description to: Adversaries try to break a change or design, and only findings a run proves survive. Never fixes its findings. Use for /orbit:interrogate.",
       "In the intro, `Report the findings. Do not apply fixes.` becomes `Report the findings. Do not fix them.`",
@@ -52,12 +52,12 @@
   "swarm": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/swarm",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Set the frontmatter description to: Fan out N parallel workers, drain them, and return one report. Use for /orbit:swarm, 'swarm this', or parallel coverage, races, gauntlets, and exploration.",
       "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook flows can run it through the Skill tool.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "In Phase A step 3, replace the pstack-models line, the grok default, the auto / inherit-parent, rejected-slug and family-fallback sentences, and fast or standard speed with: Workers run on the `code` model (rules.md Workflow Defaults, Models). For a model race, name each arm's model up front. Pick each worker's `effort` for the job per \"Match the model to the job\" in orbit's rules.",
+      "In Phase A step 3, replace the pstack-models line, the default slug, the auto / inherit-parent, rejected-slug and family-fallback sentences, and the poteto-mode Subagents sentence with: Workers run on the `code` model (rules.md Workflow Defaults, Models). For a model race, name each arm's model up front. Pick each worker's `effort` for the job per \"Match the model to the job\" in orbit's rules.",
       "In Phase B, replace the first paragraph with: Spawn the workers as `Agent` calls with `subagent_type: \"general-purpose\"`, `isolation: \"worktree\"`, and the step 3 model and effort, under the Parallel cap (rules.md Workflow Defaults). Spawn up to the cap in one message, then start the next as one finishes. Name the branch or commit each worker checks out. Omit `isolation` only when the worker needs something a fresh worktree lacks, such as the parent's uncommitted files.",
       "In Phase B, after `how to verify, and what to report.` add: Every brief also carries this line verbatim, \"You run on the user's machine, not a VM. Run the app headless or windowless when the project allows it, and never open a window that takes focus or plays sound unless the user agreed.\"",
       "In Phase B, replace the `cloud_base_branch` paragraph with: When a worker must start from another branch or commit, tell it to check out that ref first."
@@ -66,34 +66,29 @@
   "architect": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/architect",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
-      "Set the frontmatter description to: Sketch types, signatures and module structure before code, from two parallel design runners, then implement against the chosen sketch. Use for /orbit:architect, or the architect step of an /orbit:playbook flow.",
+      "Set the frontmatter description to: Sketch two shapes for a change's types, signatures and module structure before code and pick one, or run /orbit:arena for a large or contested design. Use for /orbit:architect, or the architect step of an /orbit:playbook flow.",
       "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook can invoke it.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "In Phase A, the **how** / **why** skills become `/orbit:how` / `/orbit:why`, and add after the how sentence: Reuse the flow's earlier `/orbit:how` output when it already covers these subsystems.",
-      "In Phase B, the arena paragraph becomes: Run `/orbit:arena` with the design-sketch task and the Phase A grounding artifacts. Pass `${CLAUDE_SKILL_DIR}/references/runner-prompt.md` as each runner's prompt. Each runner's brief also gives the absolute paths `${CLAUDE_SKILL_DIR}/SKILL.md`, `${CLAUDE_SKILL_DIR}/references/rationale-template.md` and the principle leaves under `${CLAUDE_SKILL_DIR}/../principle-<name>/SKILL.md`. (`Run the **arena** skill` becomes `Run /orbit:arena`, the runner-prompt path gets the `${CLAUDE_SKILL_DIR}/` prefix, and the absolute-paths sentence is added because runners read the architect files by path.) The architect-runners / pstack-models paragraph becomes: Use arena's default runners, one on `model: \"opus\"` (the `judgment` model) and one on the `code` model.",
-      "In Phase B, prefix the design-red-flags link target with `${CLAUDE_SKILL_DIR}/`.",
-      "In Phase C, `/architect with checkpoint` becomes `/orbit:architect with checkpoint`; after the foundational-thinking sentence add: In an /orbit:playbook flow, that scaffold commit goes through the Delegate gate. The **interrogate** skill becomes `/orbit:interrogate`.",
-      "In Phase D, after `The synthesized sketch is the contract.` add: In an /orbit:playbook flow, the Delegate gate's poteto-agent implements, briefed with the sketch as the contract.",
-      "In Phase E, the **how** skill becomes `/orbit:how`.",
-      "In Outputs, prefix the template path with `${CLAUDE_SKILL_DIR}/` and append: It goes in the PR body when the project lands by PR, else in the reply; never as a file in the repo root.",
-      "In references/runner-prompt.md, `Read the **architect** skill in full first.` becomes `Read the architect SKILL.md at the path in your brief in full first.`"
+      "Append to the first paragraph: In an /orbit:playbook flow, reuse the flow's earlier `/orbit:how` output for the trace when it covers those systems.",
+      "`run the **arena** skill` becomes `run `/orbit:arena``.",
+      "Append to the first paragraph, after the `/orbit:how` sentence: Keep the sketches in your reply, and send any stub code through the playbook's Delegate gate."
     ]
   },
   "arena": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/arena",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "In Phase B, `Spawn all N subagents in one message,` becomes `Spawn the subagents under the Parallel cap (rules.md Workflow Defaults), up to the cap in one message and the next as one finishes,`.",
       "Set the frontmatter description to: Spawn N parallel candidates at the same task, pick a base, graft the strongest parts of the losers into it. Use for /orbit:arena, 'arena this', 'throw it in the arena', the arena step of /orbit:architect, or when one attempt at a non-trivial artifact would lock in the wrong shape.",
       "Remove the `disable-model-invocation` frontmatter key so /orbit:architect and the feature flow can invoke it with the Skill tool.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "In Phase A step 3, replace the sentences from \"Use the `arena runners` line\" through \"when none remain, and say so.\" with: Default to two runners, each an `Agent` call with `subagent_type: \"orbit:poteto-agent\"`, one with `model: \"opus\"` (the `judgment` model) and one on the `code` model (rules.md Workflow Defaults, Models). Keep the more-runners and same-model sentences. The poteto-mode Subagents sentence becomes: Pick each runner's `effort` for the job, per \"Match the model to the job\" in orbit's rules.md.",
+      "In Phase A step 3, replace from `Pick the runners from the `arena runners` line` through `its text before the first hyphen.` with: Pick the runners. Default to two runners, each an `Agent` call with `subagent_type: \"orbit:poteto-agent\"`, one with `model: \"opus\"` (the `judgment` model) and one on the `code` model (rules.md Workflow Defaults, Models). Keep the `Spawn more for multiple design directions` sentence. `Pick each subagent's reasoning level per the Subagents section of the **poteto-mode** skill.` becomes: Pick each runner's `effort` for the job, per \"Match the model to the job\" in orbit's rules.md.",
       "In Phase A step 4, append: A worktree runner is spawned with `isolation: \"worktree\"`, per the playbook Delegate gate's parallel exception.",
       "In Phase B (Claude Code subagents run in the background by default), drop ` with `run_in_background: true``.",
-      "In Phase C, replace the sentences from \"choose one model from the `arena cross-judge pool` line\" through \"say that the family check did not run.\" with: spawn one judge. The judge is never from the parent's family. When the host adapter's Models section (rules.md Delegation, **Host tools.**) has a roster, the judge is its seat on another family, briefed with the rubric and each candidate's absolute path. Otherwise choose the judge's model from the `judgment` and `code` models (rules.md Workflow Defaults, Models). The judge never runs on the parent's model. Without a roster only Claude models run, so a different model stands in for a different family. If both resolve to the parent's model, as in an Opus session under the defaults, skip the judge, pick the base alone in Phase D, and say so. Otherwise spawn one judge as an `Agent` call with `subagent_type: \"Explore\"` on the first of them that differs. Its brief says \"do not edit files\", and you check `git status` afterward. If the `Agent` tool rejects that model, skip the judge and say so. If you do not know the parent's model, use the `judgment` model and say that the model check did not run.",
+      "In Phase C, replace from `spawn one readonly judge from the `arena cross-judge pool` line` through `or skip the judge, and say so.` with: spawn one judge. The judge is never from the parent's family. When the host adapter's Models section (rules.md Delegation, **Host tools.**) has a roster, the judge is its seat on another family, briefed with the rubric and each candidate's absolute path. Otherwise choose the judge's model from the `judgment` and `code` models (rules.md Workflow Defaults, Models). The judge never runs on the parent's model. Without a roster only Claude models run, so a different model stands in for a different family. If both resolve to the parent's model, as in an Opus session under the defaults, skip the judge, pick the base alone in Phase D, and say so. Otherwise spawn one judge as an `Agent` call with `subagent_type: \"Explore\"` on the first of them that differs. Its brief says \"do not edit files\", and you check `git status` afterward. If the `Agent` tool rejects that model, skip the judge and say so. If you do not know the parent's model, use the `judgment` model and say that the model check did not run.",
       "In Phase D, `per the Laziness Protocol.` becomes `per the **laziness-protocol** principle skill.`",
       "In Phase E, append to the graft paragraph (the parent writes no code under the Delegate gate): In an /orbit:playbook flow, gitops commits the base candidate in its worktree and cherry-picks it onto the task branch, and a fresh `orbit:poteto-agent` folds in the grafts, per the Delegate gate."
     ]
@@ -101,7 +96,7 @@
   "figure-it-out": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/figure-it-out",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Set the frontmatter description to: Design an auditable playbook when no narrower one fits: a large migration, an ambitious multi-part change, or work a human reviews after stepping away. Scales rigor to the task, runs a hypothesis loop, and logs decisions. Use for /orbit:figure-it-out, or when /orbit:start routes here.",
       "Remove the `disable-model-invocation` frontmatter key so /orbit:start can invoke it.",
@@ -114,7 +109,7 @@
   "deslop": {
     "repo": "cursor/plugins",
     "path": "cursor-team-kit/skills/deslop",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Set the frontmatter description to: Remove AI-generated code slop from the current diff. Run by the opening-a-pr playbook before commit.",
       "Add the line `Source: cursor/plugins, cursor-team-kit (MIT).` under the H1.",
@@ -124,7 +119,7 @@
   "control-ui": {
     "repo": "cursor/plugins",
     "path": "cursor-team-kit/skills/control-ui",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Add the line `Source: cursor/plugins, cursor-team-kit (MIT).` under the H1.",
       "In What It Is Used For, `verify-this` becomes the `orbit:verifier` agent, since orbit does not vendor cursor-team-kit's verify-this."
@@ -133,7 +128,7 @@
   "control-cli": {
     "repo": "cursor/plugins",
     "path": "cursor-team-kit/skills/control-cli",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Add the line `Source: cursor/plugins, cursor-team-kit (MIT).` under the H1."
     ]
@@ -141,271 +136,311 @@
   "reflect": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/reflect",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Set the frontmatter description to: Mine this session's transcript for durable learnings and route each to an edit on a skill it used. Use for /orbit:reflect.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "In step 1, replace the first two sentences with `Before fanning out, find this conversation's transcript by its session id. Do not read other sessions' transcripts.`; replace the code block with `ls ~/.claude/projects/*/${CLAUDE_SESSION_ID}.jsonl; ls ~/.claude/projects/*/${CLAUDE_SESSION_ID}/subagents/*.jsonl 2>/dev/null` (two commands: zsh aborts a line on an unmatched glob); replace the layouts paragraph with `That covers the session (`<id>.jsonl`) and its subagents (`<id>/subagents/<child>.jsonl`). If none matches, pass a tight digest of the session instead.`",
-      "In step 2's first sentence, `three spawns: `Agent` calls, except the roster seat`; in steps 2 and 3, use `Agent` calls with `subagent_type: general-purpose` instead of `Task`/`generalPurpose`/readonly, drop the pstack-models paragraph, replace the Role line and Default `model` columns with one Model column (`judgment` for Judgment and Divergent, `seat on another family, else `code`` for Tooling), add `Each runs on the model the table names (rules.md Workflow Defaults, Models).` to step 2's first paragraph, put the step 3 synthesizer on the `judgment` model, and prefix each template path with `${CLAUDE_SKILL_DIR}/`.",
-      "In step 2, after the reviewer table add: The seat on another family comes from the host adapter's Models section (rules.md Delegation, **Host tools.**) when it has a roster. It runs with its own provider's MCP tools, since a child on another provider has its own MCP config.",
-      "In step 5 and 6, list Backlog items as `/orbit:correct <pattern>` candidates instead of filing to a devex tracker; route create-skill work to `skill-creator` if installed, else the parent does it; add: edit a plugin skill in its source repo, never `~/.claude/plugins/cache/`, and add the change to `skills.json` `edits` when vendored.",
-      "In references/synthesizer.md, replace `The parent files each to whatever devex / backlog tracker the team uses.` with `The parent lists each as a `/orbit:correct <pattern>` candidate.`",
-      "In the three reviewer references, count a skill as used on a `Skill` tool call or `<command-name>` tag naming it, a `Read` of its SKILL.md under `.claude/skills/`, `~/.claude/skills/` or `~/.claude/plugins/`, an `Agent` prompt naming its path, or a matching Bash/Grep/MCP call."
+      "After the first paragraph, add: `Find this conversation's transcript by its session id. Do not read other sessions' transcripts. Run each line as its own command, because zsh aborts a line on an unmatched glob:`, then a bash block with `ls ~/.claude/projects/*/${CLAUDE_SESSION_ID}.jsonl` and `ls ~/.claude/projects/*/${CLAUDE_SESSION_ID}/subagents/*.jsonl` on separate lines, then `That covers the session (`<id>.jsonl`) and its subagents (`<id>/subagents/<child>.jsonl`). If neither matches, work from the conversation in your context.`",
+      "In the Present sentence, after `Rejected (reason) and Backlog,` add `each Backlog item as a `/orbit:correct <pattern>` candidate,` (orbit has no devex tracker).",
+      "Replace the last paragraph (`Never edit a skill under `plugins/cache/`.` through `Never open a PR or push.`) with: After approval, make each small edit yourself. Hand a new section, an edit over ~10 lines or a description tune to the `skill-creator` skill if installed, else make it yourself. Edit a plugin skill in its source repo, never the copy under `~/.claude/plugins/cache/`, which updates overwrite. If the skill is vendored (listed in that repo's `skills.json`), also add the change to its `edits`. (Claude Code has no `.cursor/skills/` copy, and orbit fixes its own skills in a PR, rules.md Non-negotiables.)"
     ]
   },
   "poteto-agent": {
     "repo": "cursor/plugins",
     "path": "pstack/agents/poteto-agent.md",
     "dest": "agents/poteto-agent.md",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "Set the frontmatter description to orbit's flow: a delegate spawned during an /orbit:start flow, fresh per unit of work, that reads orbit's playbook SKILL.md and rules.md first; drop `is_background`.",
       "After the playbook read, add that it reads orbit's `rules.md` (`${CLAUDE_PLUGIN_ROOT}/rules.md`, the plugin folder's root) in full alongside it, that rules.md's routing, shipping and delegation rules are for the lead, and that it never runs the playbook itself or ships.",
       "Point the read at orbit's playbook: `poteto-mode's full agent style` becomes `orbit's full agent style`, `receives `/poteto-mode`` becomes `runs `/orbit:start``, `Task` becomes `Agent`, the `poteto-mode` skill becomes orbit's playbook, `inline Principles index` becomes `Principles index`, `generalPurpose` becomes `general-purpose`, the search is `~/.claude/plugins/` for `skills/playbook/SKILL.md` under a folder whose `.claude-plugin/plugin.json` has name `orbit`, highest version wins, and drop the hidden-catalog sentence.",
       "Append a paragraph: work only in the worktree path and unit the parent scoped; before writing, load every entry the brief lists under Before code (Read each file whole with the Read tool, run each command on its own then Read whole any file path it prints, output that is cut, filtered or saved to a file counts as unread) and follow any \"read X first\" an AGENTS.md you open gives; don't commit or push, since the parent reviews and gitops commits; before returning, run `git status --short` and report changed paths, what was built, and the check run with its result.",
-      "Add `effort: medium` to the frontmatter."
+      "Replace the frontmatter's `model: claude-opus-5-5-xhigh-fast` with `effort: medium`. Orbit's Models roles pick each delegate's model, and the effort ceiling is high."
     ]
   },
   "comment-sicko": {
     "repo": "cursor/plugins",
     "path": "pstack/agents/comment-sicko.md",
     "dest": "agents/comment-sicko.md",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "Replace the sentence that runs the how and why skills with: I read the named symbol's callers and its history with `git log -L` or `git blame`. (Comment Sicko runs as a subagent and can't spawn the agents how and why need; no-comments runs them from the parent.)",
+      "Replace `I trace the named symbol or call, run `/why` from the **why** skill on it, or both.` with: I read the named symbol's callers and its history with `git log -L` or `git blame`. (Comment Sicko reads the history itself, so its hunt needs no skill call; no-comments runs `/orbit:why` from the parent.)",
       "Add `effort: medium` to the frontmatter."
     ]
   },
   "how": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/how",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
-      "Set the frontmatter description to: Explain how a subsystem works (architecture, runtime flow, where things live, where new code belongs) from parallel read-only explorers. Use for /orbit:how; use /orbit:why for motivation.",
-      "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook and no-comments can invoke it.",
+      "Set the frontmatter description to: Explain how a subsystem works (architecture, runtime flow, where things live, where new code belongs) from one read-only explainer. Use for /orbit:how; use /orbit:why for motivation.",
+      "Remove the `disable-model-invocation` frontmatter key so the lead can invoke it on rules.md's nontrivial-change trigger.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "Replace the Task / generalPurpose / readonly / pstack-models / poteto-mode paragraph with: Every spawn is an `Agent` call with `subagent_type: \"Explore\"`. Explorers run on the `code` model, and every explainer on the `judgment` model (rules.md Workflow Defaults, Models). Explore keeps `Bash`, so every brief says \"do not edit files\", and you check `git status --short` after they return.",
-      "In step 2 (Explore), append: When the host adapter's Models section (rules.md Delegation, **Host tools.**) has a roster, the second explorer, and only it, is its seat on another family with the same prompt.",
-      "Prefix each `references/` path with `${CLAUDE_SKILL_DIR}/`."
+      "In step 1, `Spawn one Task subagent with `subagent_type: generalPurpose` and `readonly: true`` becomes `Spawn one `Agent` call with `subagent_type: \"Explore\"` on the `judgment` model (rules.md Workflow Defaults, Models)`, and after the brief add: Explore keeps `Bash`, so the brief also says \"do not edit files\", and you check `git status --short` after it returns."
     ]
   },
   "why": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/why",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
-      "Set the frontmatter description to: Explain why code is the way it is (design rationale, regressions, postmortems, thresholds) from git, PRs and every connected MCP, with cited, confidence-tiered findings. Use for /orbit:why; use /orbit:how for runtime behavior.",
-      "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook, /orbit:recall and no-comments can invoke it.",
-      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "Replace the pstack-models / poteto-mode paragraph and the generalPurpose / readonly paragraph with: Every spawn is an `Agent` call with `subagent_type: \"general-purpose\"`, so investigators keep MCP access and the synthesizer can spot-check citations. Investigators still shouldn't write anything. Investigators run on the `code` model and the synthesizer on the `judgment` model (rules.md Workflow Defaults, Models). Drop the per-spawn `model` sentences in steps 3 and 4.",
-      "In step 1, drop `cursor location` from the context list.",
-      "In Discovery, replace the Cursor `mcps/` sentence with: list the MCP servers available in this session from its tools: the `mcp__<server>__<tool>` names, including deferred tools, and any MCP server instructions in the system prompt.",
-      "Prefix each `references/` path in SKILL.md with `${CLAUDE_SKILL_DIR}/`. Leave the reference files as upstream: the variable only expands in SKILL.md."
+      "Set the frontmatter description to: Explain why code is the way it is (design rationale, regressions, postmortems, thresholds) from the commits and PR discussions behind it, plus other sources when that trail is thin, citing the record and marking inferences. Use for /orbit:why; use /orbit:how for runtime behavior.",
+      "Remove the `disable-model-invocation` frontmatter key so /orbit:playbook's investigate and bug flows and no-comments can invoke it.",
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
     ]
   },
   "no-comments": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/no-comments",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Set the frontmatter description to: Spawn Comment Sicko over a diff, fix its accepted findings, and offer encodings for claimed constraints. Run by the opening-a-pr playbook before review.",
       "Remove the `disable-model-invocation` frontmatter key; the opening-a-pr playbook invokes it.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "In step 1, spawn an `Agent` with `subagent_type: \"orbit:comment-sicko\"` instead of `Task` / `comment-sicko`, and drop the poteto-mode Subagents sentence.",
-      "In step 2, replace `/how` or `/why` with `/orbit:how` or `/orbit:why`, and `/no-comments` with `/orbit:no-comments`.",
+      "In step 2, replace `/why` with `/orbit:why`, and `/no-comments` with `/orbit:no-comments`.",
       "In step 3, replace the `/architect` run with: sketch it once for the accepted set and surrounding code, then implement it in step 4. In step 6, `architect sketch` becomes `shape sketch`."
     ]
   },
   "principle-laziness-protocol": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-laziness-protocol",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-subtract-before-you-add": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-subtract-before-you-add",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-minimize-reader-load": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-minimize-reader-load",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-model-the-domain": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-model-the-domain",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-boundary-discipline": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-boundary-discipline",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-type-system-discipline": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-type-system-discipline",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-attack-the-premise": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-attack-the-premise",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-prove-it-works": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-prove-it-works",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-fix-root-causes": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-fix-root-causes",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-test-behavior-not-implementation": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-test-behavior-not-implementation",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-explain-the-number": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-explain-the-number",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "benchmark-checklist": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/benchmark-checklist",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "Rename the pstack playbooks to orbit's: `, per the **Opening a PR** playbook` is dropped (orbit has no one-primary-number rule to point at); `the **Perf issue** playbook's baseline` becomes `the perf flow's baseline (`/orbit:playbook perf`)`; `the **Hillclimb** playbook's harness` becomes `the hillclimb flow's harness (`/orbit:playbook hillclimb`)`."
+      "Rename the pstack playbooks to orbit's: `the **Perf issue** playbook's baseline` becomes `the perf flow's baseline (`/orbit:playbook perf`)`; `the **Hillclimb** playbook's harness` becomes `the hillclimb flow's harness (`/orbit:playbook hillclimb`)`."
     ]
   },
   "tdd": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/tdd",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-never-block-on-the-human": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-never-block-on-the-human",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-guard-the-context-window": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-guard-the-context-window",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-build-the-lever": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-build-the-lever",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-encode-lessons-in-structure": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-encode-lessons-in-structure",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-exhaust-the-design-space": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-exhaust-the-design-space",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-experience-first": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-experience-first",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-foundational-thinking": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-foundational-thinking",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-make-operations-idempotent": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-make-operations-idempotent",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-migrate-callers-then-delete-legacy-apis": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-migrate-callers-then-delete-legacy-apis",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-outcome-oriented-execution": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-outcome-oriented-execution",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-redesign-from-first-principles": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-redesign-from-first-principles",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-separate-before-serializing-shared-state": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-separate-before-serializing-shared-state",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "principle-sequence-verifiable-units": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/principle-sequence-verifiable-units",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "edits": ["Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."]
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "edits": [
+      "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1."
+    ]
   },
   "show-me-your-work": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/show-me-your-work",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "Prefix the `references/decision-log-template.tsv` and `scripts/log.sh` paths with `${CLAUDE_SKILL_DIR}/`.",
       "In the transcript audit, replace the `agent-transcripts/` sentence and the `~/.cursor/projects/*/` warning with: Read this run's transcript: `ls ~/.claude/projects/*/${CLAUDE_SESSION_ID}.jsonl`. Don't read other sessions' transcripts.",
-      "In the cross-model review, drop the poteto-mode Subagents sentence and add: When the host adapter's Models section (rules.md Delegation, **Host tools.**) has a roster, use its seat on another family. Otherwise only Claude models are available, so use an `Agent` call (`subagent_type: general-purpose`) with `model` set to a different Claude tier than yours (Sonnet if you are Opus, else Opus).",
+      "In the cross-model review, `another vendor's model than` becomes `a different model family from` (without a roster only Claude models run), drop the poteto-mode Subagents sentence, and add: When the host adapter's Models section (rules.md Delegation, **Host tools.**) has a roster, use its seat on another family. Otherwise only Claude models are available, so use an `Agent` call (`subagent_type: general-purpose`) with `model` set to a different Claude tier than yours (Sonnet if you are Opus, else Opus).",
       "In the Attention paragraph, `(`reviewed by <model>`)` becomes `(`reviewed by <model>`, with its provider when the roster seat ran)`."
     ]
   },
   "recall": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/recall",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
-      "In the shared-record sentence, name the **why** skill as the `/orbit:why` skill.",
       "Replace the `~/.cursor/projects/<slug>/agent-transcripts/` paragraph with: Transcripts are the top-level `*.jsonl` files in this project's folder, found with `ls ~/.claude/projects/*/${CLAUDE_SESSION_ID}.jsonl`.",
       "In step 1, route to `/orbit:session-pickup` and `/orbit:automate-me`.",
       "In step 3, spawn `Agent` subagents with `subagent_type: general-purpose`, `model: haiku`, and drop the poteto-mode Subagents sentence.",
-      "In step 4, name the **why** skill as the `/orbit:why` skill."
+      "In step 4, `in agent mode because readonly strips MCP access` becomes `as an `Agent` call with `subagent_type: general-purpose` on the `code` model (rules.md Workflow Defaults, Models), so it keeps MCP access`."
     ]
   },
   "automate-me": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/automate-me",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "Replace Cursor's `create-skill` with the `skill-creator` skill (or direct authoring if it isn't installed); `AskQuestion` with `AskUserQuestion` and `allow_multiple` with `multiSelect`; `.cursor/skills` and `~/.cursor/skills` with `.claude/skills` and `~/.claude/skills`.",
@@ -416,7 +451,7 @@
   "create-verification-skill": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/create-verification-skill",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "In the frontmatter description, `/create-verification-skill` becomes `/orbit:create-verification-skill`.",
@@ -428,7 +463,7 @@
   "maintain-verification-skill": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/maintain-verification-skill",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
       "`/create-verification-skill` becomes `/orbit:create-verification-skill` (intro, step 0), and `/maintain-verification-skill` in the frontmatter description becomes `/orbit:maintain-verification-skill`.",
@@ -444,7 +479,7 @@
     "repo": "cursor/plugins",
     "path": "pstack/skills/poteto-mode/references/bugbot-triage.md",
     "dest": "skills/playbook/references/bugbot-triage.md",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1, above the intro paragraph."
     ]
@@ -453,22 +488,21 @@
     "repo": "cursor/plugins",
     "path": "harness/pstack/claude-code/skills/poteto-mode/scripts",
     "dest": "skills/playbook/scripts",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "skip": ["worktree-audit.sh"],
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "skip": [
+      "worktree-audit.sh"
+    ],
     "edits": [
       "Add `.gitignore` holding `node_modules/`, so the dependencies `bootstrap.ts` installs stay untracked.",
       "In `watch-pr/`, when both check sources are empty, `resolveChecks` asks GitHub whether the repository runs checks (`runsChecks`, `PR_RUNS_CHECKS_QUERY`: a `.yml` or `.yaml` file in `.github/workflows` on the PR head or the base branch whose `on` names a `pull_request*` event, or a `push` unless its `branches` lists only the base branch or it has only `tags` or `tags-ignore` filters, or whose triggers `Bun.YAML` cannot read, a check on an earlier commit of the PR, a check on one of the repository's 10 most recently updated pull requests, or a protection rule or ruleset that requires checks). With none, the read is `source: \"no-ci\"` with zero checks, and the status table shows `✅ no CI`.",
       "In `watch-pr/policy.ts`, `runSimple` runs a `--status-only` read with `maxQueryErrors: 1`, so a query error returns the `status-query` blocker at once instead of retrying.",
-      "In `check-plan.mjs`, the Verify, live error names `<code model>` in place of `<swarm workers model>`, matching multi-phase-plan.md's template.",
-      "In `check-plan.mjs`, `--help`, `-h`, no argument, and a file `readFileSync` cannot read (after a `Cannot read <file>: <code>` line) print the usage line to stderr and exit 2, with no stack trace.",
-      "In `package.json`, pin the devDependencies `bun-types` to `1.3.14` and `typescript` to `7.0.2` in place of `latest`, and match `bun.lock`'s workspace specifiers.",
-      "In `check-plan.test.ts`, add usage and unreadable-file cases, a `test.each` table with one negative case per structure rule, and a case that the multi-phase-plan.md skeleton fails only on Verify, live until `<code model>` is filled in."
+      "In `package.json`, pin the devDependencies `bun-types` to `1.3.14` and `typescript` to `7.0.2` in place of `latest`, and match `bun.lock`'s workspace specifiers."
     ]
   },
   "ketchup": {
     "repo": "cursor/plugins",
     "path": "pstack/skills/ketchup",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Set the frontmatter description's `Use for /ketchup.` to `Use for /orbit:ketchup.` Keep `disable-model-invocation`: the autopilot playbooks read it by path.",
       "Add the line `Source: cursor/plugins, pstack (MIT).` under the H1.",
@@ -480,7 +514,7 @@
     "repo": "cursor/plugins",
     "path": "pstack/skills/poteto-mode/playbooks/pause-safely.md",
     "dest": "skills/pause-safely/SKILL.md",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Replace the `### Pause safely` heading with frontmatter (`name: pause-safely`, description: Stop cleanly and leave a resume note a fresh session can pick up. Use when the user asks to pause, stop for now or go offline, before switching model, or before imminent context compaction. Not on \"keep going\" or \"don't stop\".), then `# Pause safely` and the line `Source: cursor/plugins, pstack (MIT).` above the intro paragraph.",
       "In step 3, `Commit uncommitted edits` becomes `Have gitops commit uncommitted edits`, and append `Leave a task worktree in place.`",
@@ -492,7 +526,7 @@
     "repo": "cursor/plugins",
     "path": "pstack/skills/poteto-mode/playbooks/session-pickup.md",
     "dest": "skills/session-pickup/SKILL.md",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Replace the `### Session pickup` heading with frontmatter (`name: session-pickup`, description: Resume a prior session's work in this project from its transcript, branch or resume note., `disable-model-invocation: true`), then `# Session pickup`, the line `Source: cursor/plugins, pstack (MIT).`, and the line !`git status --short` above the intro.",
       "In step 1, replace the `agent-transcripts/` / cloud-agent locate sentence with: find this project's transcript folder with `ls ~/.claude/projects/*/${CLAUDE_SESSION_ID}.jsonl`, take its newest other top-level `*.jsonl` by `ls -t`, never read another project's transcripts, also use a pushed branch the user names and the `resume-<slug>.md` memory note for the task slug the user names, else the one whose `originSessionId` matches; add `If that session was trivial (only a pickup), step back to the one before.`; drop the guard-the-context-window skill reference and the Subagents sentence.",
@@ -505,7 +539,7 @@
     "repo": "cursor/plugins",
     "path": "pstack/skills/poteto-mode/playbooks/worktree-cleanup.md",
     "dest": "skills/worktree-cleanup/SKILL.md",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Replace the `### Worktree and simulator cleanup` heading with frontmatter (`name: worktree-cleanup`, description: Reclaim local disk by pruning merged or abandoned git worktrees and stale iOS simulators. Use on \"what's using my disk\", \"clean up worktrees\", \"prune safe-to-prune worktrees\", \"free up space\" or \"delete old simulators\".), then `# Worktree and simulator cleanup` and the line `Source: cursor/plugins, pstack (MIT).`",
       "In step 1, prefix `scripts/worktree-audit.sh` with `${CLAUDE_SKILL_DIR}/`, and `.cursor/worktrees/myrepo/x` becomes `.claude/worktrees/x`.",
@@ -521,7 +555,7 @@
     "repo": "cursor/plugins",
     "path": "pstack/skills/poteto-mode/scripts/worktree-audit.sh",
     "dest": "skills/worktree-cleanup/scripts/worktree-audit.sh",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
     "edits": [
       "Drop the Origin CLI branch of the PR lookup; PR state comes from `gh pr list` only, and the comment says so.",
       "Replace the `~/.cursor/projects/<slug>/agent-transcripts` lookup with Claude Code's `~/.claude/projects/<slug>/**/*.jsonl`, where `slugify` replaces every non-alphanumeric char with `-`; scan the main worktree's slug as a prefix (`repo_transcripts`) so sibling-worktree sessions count, and per worktree take the newest of its own slug dir's `*.jsonl` and any repo transcript naming its path.",
@@ -532,27 +566,37 @@
     "repo": "cursor/plugins",
     "path": "pstack/skills/poteto-mode/playbooks",
     "dest": "skills/playbook/playbooks",
-    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
-    "skip": ["authoring-a-skill.md", "autonomous-run.md", "eval.md", "pause-safely.md", "runtime-forensics.md", "session-pickup.md", "trace-forensics.md", "visual-parity.md", "worktree-cleanup.md"],
+    "sha": "e1cc03121a0e71129a4fb730d7c5528a0a3e43c8",
+    "skip": [
+      "authoring-a-skill.md",
+      "autonomous-run.md",
+      "eval.md",
+      "pause-safely.md",
+      "runtime-forensics.md",
+      "session-pickup.md",
+      "trace-forensics.md",
+      "visual-parity.md",
+      "worktree-cleanup.md"
+    ],
     "edits": [
-      "All files: skill references become orbit commands (`how`/**how** -> `/orbit:how`, **why** -> `/orbit:why`, `architect` -> `/orbit:architect`, `interrogate` -> `/orbit:interrogate`, **arena** -> `/orbit:arena`, **swarm** -> `/orbit:swarm`, **figure-it-out** -> `/orbit:figure-it-out`, **unslop** -> `/orbit:unslop`, `/deslop` -> `/orbit:deslop`, `/no-comments` -> `/orbit:no-comments`, `/technical-writing` -> `/orbit:technical-writing`), and read-by-path skills become relative paths (**tdd** -> `../tdd/SKILL.md`, **benchmark-checklist** -> `../benchmark-checklist/SKILL.md`, **show-me-your-work** -> `../show-me-your-work/SKILL.md`, **ketchup** -> `../ketchup/SKILL.md`). Playbook names in prose become orbit flow names (Feature -> feature, Bug fix -> bug, Hillclimb -> `playbooks/hillclimb.md`), the word `playbook` becomes `flow` in `This playbook` (refactoring.md), `this playbook` (babysit.md), `every other playbook` (opening-a-pr.md line 3) and `execution playbook` (multi-phase-plan.md), and `../references/bugbot-triage.md` becomes `references/bugbot-triage.md`.",
-      "All files: every `Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section.` becomes `Pick each subagent's reasoning level for the job, per the Delegation section of rules.md.`; replace every `Delegate ... to a subagent using your configured <flow> model (default `grok-4.7-xhigh-fast`)` with `Delegate ... to a fresh `orbit:poteto-agent` per the Delegate gate`.",
+      "All files: skill references become orbit commands (**why** -> `/orbit:why`, `architect` -> `/orbit:architect`, `interrogate` -> `/orbit:interrogate`, **arena** -> `/orbit:arena`, **swarm** -> `/orbit:swarm`, **figure-it-out** -> `/orbit:figure-it-out`, **unslop** -> `/orbit:unslop`, `/deslop` -> `/orbit:deslop`, `/no-comments` -> `/orbit:no-comments`), and read-by-path skills become relative paths (**tdd** -> `../tdd/SKILL.md`, **benchmark-checklist** -> `../benchmark-checklist/SKILL.md`, **show-me-your-work** -> `../show-me-your-work/SKILL.md`, **ketchup** -> `../ketchup/SKILL.md`). Playbook names in prose become orbit flow names (Feature -> feature, Bug fix -> bug, Hillclimb -> `playbooks/hillclimb.md`), the word `playbook` becomes `flow` in `This playbook` (refactoring.md) and `every other playbook` (opening-a-pr.md line 3), and `../references/bugbot-triage.md` becomes `references/bugbot-triage.md`.",
+      "All files: every `Pick each subagent's reasoning level for the job, per the Subagents section.` becomes `Pick each subagent's reasoning level for the job, per the Delegation section of rules.md.`; replace every `Delegate ... to a subagent using your configured <flow> model (default `<model slug>`)` with `Delegate ... to a fresh `orbit:poteto-agent` per the Delegate gate`, so no upstream default slug ships (rules.md Workflow Defaults, Models picks the model).",
       "All files: the control skill (`via the control skill`, `control-ui`/`control-cli` from `cursor-team-kit`) becomes the project's `verify-*` skill when it has one, else `/orbit:control-ui` (UI) or `/orbit:control-cli` (CLI or TUI). Forge resolution (Origin `origin pr ...`, Graphite, built-in PR tool) is dropped: `gh` is the forge.",
       "investigation.md: `No PR` becomes `No commit, no PR`; re-route to bug or feature via `/orbit:start <goal>`; drop `(see Autonomy)`.",
       "bug-fix.md: `Cursor's `/loop` command` becomes `/loop`; step 3 adds `The failing repro is its own unit, committed before the fix unit (step 5).`",
-      "feature.md: step 4 cites model-the-domain and laziness-protocol by name, Comments per **Comments** in orbit's rules.md, and `Commit liberally.` becomes `gitops commits each reviewed unit, per the gate.`; step 6 adds after `Rebase into small, ordered commits.`: `gitops does it before Shipping, with fixup and autosquash on unpushed units, and never rewrites a pushed commit.`; the owner paragraph adds one `orbit:poteto-agent` per unit under the Delegate gate and that parent-level fan-out writes no code, so runs read-only outside the gate.",
+      "feature.md: step 4 cites model-the-domain and laziness-protocol by name, and `Commit liberally.` becomes `gitops commits each reviewed unit, per the gate.`; step 6 adds after `Rebase into small, ordered commits.`: `gitops does it before Shipping, with fixup and autosquash on unpushed units, and never rewrites a pushed commit.`; the owner paragraph adds one `orbit:poteto-agent` per unit under the Delegate gate and that parent-level fan-out writes no code, so runs read-only outside the gate.",
       "refactoring.md: move the numbered steps up under the redesign paragraph; step 5 delegates in step 8's order; step 8 adds before `Run **Opening a PR**.`: `gitops does the rebase before Shipping, with fixup and autosquash on unpushed units, and never rewrites a pushed commit.`; principle names drop the `principle-` prefix for subtract-before-you-add, laziness-protocol, prove-it-works, minimize-reader-load, model-the-domain.",
       "perf-issue.md: step 5 cites the measurement in the PR body when Land is `pr`, else in the reply; the hillclimb pointer adds `(`/orbit:playbook hillclimb`)`.",
       "prototype.md: feature routes via `/orbit:start <goal>`; step 5 screenshots via `verify-*` else `/orbit:control-ui`.",
       "hillclimb.md: merge the intro and core-discipline paragraphs and cite prove-it-works, guard-the-context-window and laziness-protocol by name; parallel hypotheses go to delegates per the Delegate gate's parallel exception; `One commit per accepted fix, staging only ...` becomes `One gitops commit per accepted fix, by path. A rejected attempt is reverted in full and only logged.`; replace the autonomous-run wake pointer with the inline wake rule (`/loop`, a `Monitor` watcher on events with a long heartbeat fallback, else a fixed-interval heartbeat).",
-      "opening-a-pr.md: add a **Land** paragraph (Workflow block Land line, default `main`; `pr` pushes `<type>/<slug>` and opens the PR via gitops; `main` pushes nothing and leaves reviewed units on the task branch until `/orbit:ship`); **Worktree** points at the Worktree and Delegate gates; **Commits** becomes gitops committing each reviewed unit by path, with fixup/autosquash for unpushed units; `: ` lead-ins in Descriptions bullets become `. ` and `–` ranges become `to`, the squash note is conditional on a squash merge, and perf links the arena directory only; drop **Built-in PR tool**; **Size and stacks** uses `gh` only and adds the Land `main` stack form; **Readiness** uses `gh` only; **Babysit** also starts under Ship by default; in the subagent paragraph, `starts the loop after its code-ready report` becomes `writes its `code-ready` trail row, starts the loop once its PR is open`; add **Ship by default** (babysit `drive` then Shipping, opt-outs, a multi-phase plan running autopilot-full, and the opt-out picking autopilot-stack) and a **Reply:** line.",
+      "opening-a-pr.md: add a **Land** paragraph after line 3 (Workflow block Land line, default `main`; `pr` pushes `<type>/<slug>` and opens the PR via gitops; `main` pushes nothing and leaves reviewed units on the task branch until `/orbit:ship`); the worktree sentence adds `per the Worktree gate`; `Rebase into small, landable commits.` becomes `gitops commits each reviewed unit by path, per the Delegate gate, and rebases them into small, landable commits, folding a later fix into its unpushed unit with fixup and autosquash.`; the deslop sentence adds `and `/orbit:no-comments` before review`; after `Stack follow-ups by base branch.` add the Land `main` stack form (a chain of unpushed task branches, each child on its parent's exact tip); after `Opening a PR does not start a babysit.` add `**Ship by default** below starts it once the whole stack exists.`; add **Ship by default** (babysit `drive` then Shipping, opt-outs, a multi-phase plan running autopilot-full, the opt-out picking autopilot-stack, and a subagent that opens a PR returning without babysitting while an autopilot owner babysits and stops where its brief says) and a **Reply:** line.",
       "hillclimb.md: in step 5, you check each wake tool on its own per the host adapter (rules.md Delegation, **Host tools.**) and say which tools you used. The loop and every heartbeat run on `schedule_task` bound to this thread when that tool is present, else under `/loop`; a PR event (CI, a review, a merge) gets `watch_pull_request` when present, else a `Monitor` watcher; any other event, such as a ref advancing, gets a `Monitor` watcher; a background task gets `t3_background_wait` when present, else `Monitor` or its finish notification. The long heartbeat fallback and the no-event fixed-interval heartbeat stay.",
-      "opening-a-pr.md: **Forge.** adds `After `gh pr create`, gitops links the PR to this session's thread per the host adapter's built-in PR tool row (rules.md Delegation, **Host tools.**), and skips the link where `link_pull_request` is absent.`",
-      "babysit.md: drop the Cursor built-in babysit sentence; shipping is `/orbit:ship`; add Ship by default starting `drive`, the Land `main` stop, and fixes through the Delegate gate; step 1 drops forge resolution and `bugbot` from `threads-only`, and Ship by default always runs `drive`; step 4 drops `stack-wide submit`, has gitops rebase and push with `--force-with-lease=<branch>:<sha>`; steps 6-7 drop the Origin paths and say `/loop` with no interval; step 8 replies through gitops, writing the payload with the Write tool; step 9 adds orbit's standing ship default; add a **Reply:** line.",
-      "babysit.md: in step 6, after the bare-command sentence, add the host-watcher rule (run the bare command first, never only `--status-only`; pick the wait by whether `watch_pull_request` is present, checked per the host adapter; when present, pass `--timeout 120`, act on `READY`, `BLOCKER`, `COMPLETE` or a `WAITING`/`merge-queue` stop and arm nothing, and arm `watch_pull_request` in place of `/loop` only on `TIMEOUT` with reason `pending-checks`, or `queued-stack` in queued mode; when absent, run `drive` and `background` under `/loop` with no interval, per the adapter's `/loop` row; report a `status-unavailable` timeout as a query failure); the **Reply:** names what a wait waits on and what is armed to wake on it.",
+      "opening-a-pr.md: the PR-tool sentences become `Open PRs ready. gitops runs `gh pr create` without `--draft`, then links the PR to this session's thread per the host adapter's built-in PR tool row (rules.md Delegation, **Host tools.**), and skips the link where `link_pull_request` is absent.`",
+      "babysit.md: the stance line adds `A request to land or ship is Shipping (`/orbit:ship`), which begins where this flow ends.`; add a paragraph after it (the user's request or Ship by default starts it, in `drive`; under Land `main` say there is no PR and stop; a fix goes through the Delegate gate in the worktree that holds the PR's branch); the forge bullet drops the Origin and Graphite clauses and `On GitHub, `, leaving `Use `gh` by default.`; the Bugbot bullet replies through gitops with the `gh api` command only and writes the payload with the Write tool; the last bullet adds `Only a request to land does, and orbit's standing default is that request.` and the Ship-by-default opt-outs; add a **Reply:** line.",
+      "babysit.md: after the forge bullet add a **Host watcher.** bullet (in `drive`, run the bare watcher, which polls until a terminal verdict, never only `--status-only`, because only it reaches `READY`; a host's own PR watcher such as `watch_pull_request` wakes only on events; pick the wait by whether `watch_pull_request` is present, checked per the host adapter (rules.md Delegation, **Host tools.**); when present, pass `--timeout 120`, act on `READY`, `BLOCKER`, `COMPLETE` or a `WAITING`/`merge-queue` stop and arm nothing, and arm `watch_pull_request` in place of `/loop` only on `TIMEOUT` with reason `pending-checks`, or `queued-stack` in queued mode; when absent, run `drive` under `/loop` with no interval, per the adapter's `/loop` row; report a `status-unavailable` timeout as a query failure); the **Reply:** names what a wait waits on and what is armed to wake on it.",
       "shipping.md: add the Ship-by-default intro line and a Land `main` paragraph (verify unpushed branches in worktrees, rebase, Check, patch-id, gitops pushes `HEAD:main` bottom-up); step 1 spawns a fresh `orbit:verifier` with the `verifier` row's model and effort (rules.md Workflow Defaults, Models) and `isolation: \"worktree\"`, spells out its brief, and has gitops post a one-line verdict with SHA and patch-id via `gh pr comment`; step 3 `lane` becomes `verifier run`; step 4 merges through gitops with the Land line's method and rebases the next PR with `git rebase --onto origin/<trunk> <tip>` before a pinned `--force-with-lease`; step 5 drops Origin; Reply says `verdict line`.",
       "shipping.md: in step 1, the verifier brief names the path of the project's `.claude/skills/verify-*/SKILL.md` when it has one, else the absolute path of `../control-ui/SKILL.md` or `../control-cli/SKILL.md`.",
-      "shipping.md: in step 5, the queued watcher runs `under /loop, or per the host-watcher rule in playbooks/babysit.md step 6,`.",
+      "shipping.md: in step 5, the queued watcher runs `under `/loop`, or per **Host watcher** in `playbooks/babysit.md`,`.",
       "shipping.md: step 4's `gh pr merge <pr>` adds `--delete-branch`; add step 7 (once a branch lands, meaning its `HEAD:main` push succeeded or `gh pr view <pr> --json state` reads `MERGED`, gitops removes the task's worktree and the verifier and owner worktrees made for it with `git worktree remove <path>`, never `--force`; the session leaves its own with `ExitWorktree` and `remove`, or with `keep` and a gitops removal when the tool refuses over commits the landing put on trunk or the worktree was entered by `path`; a worktree with uncommitted changes stays and the reply names it; then gitops deletes a local branch that is left, with `git branch -d` under Land `main` and `git branch -D` after the `MERGED` read-back under Land `pr`, only when the local tip equals the PR's `headRefOid`, else the branch stays and the reply names it); the Reply adds the worktrees and branches removed and any worktree left with uncommitted changes.",
       "autopilot-full.md: in step 2, after the fresh-agent replacement sentence add that the agent starts pinned to the root's working directory and cannot run git in the prior worktree, so its brief says to call `EnterWorktree` with `path` set to the prior worktree before any other work, and that a pinned subagent may switch into a worktree under `.claude/worktrees/` of the same repo; step 3 adds `They run under the Parallel cap (rules.md Workflow Defaults). Spawn up to the cap, then start the next owner as one finishes.`; step 5's merge-round owner is also briefed with the verifier worktree paths, runs steps 3, 4 and 7 of `playbooks/shipping.md` (`, and the cleanup`), and under Land `main` `then runs step 7` after the `HEAD:main` push.",
       "autopilot-full.md: map PRs to task branches under Land `main`; owners are `Agent` calls (`general-purpose`, `model: \"opus\"` (the `judgment` model), `isolation: \"worktree\"`) running `/orbit:start <item>` with a spelled-out brief and a fresh-agent replacement rule; owners report `code-ready <sha>` and `head <sha>` as trail rows in `$TMPDIR/orbit-autopilot/<slug>/`, and `push each finished unit before you start the next` becomes `commit each finished unit before you start the next`; step 4 lanes are each a swarm worker on the `code` model (rules.md Workflow Defaults, Models), briefed as shipping step 1 briefs one, re-run the Check line, and under Land `pr` gitops posts the verdict line on the PR; step 5 spawns a fresh merge-round owner running shipping steps 3, 4 and 7; the loop tick reads trails and starts swarms, and an owner that has neither committed nor written a trail row is stuck.",
@@ -560,8 +604,21 @@
       "autopilot-full.md: at the end of step 4's first paragraph add: When the host adapter's Models section (rules.md Delegation, **Host tools.**) has a roster, you, never an owner or worker, also spawn its seat on another family as one read-only audit seat per full swarm. It reads the diff and the receipts and distrusts the PR body. It is additive, so a clean verdict never waits on it, and you check each of its findings before it blocks.",
       "autopilot-stack.md: `Run the Autopilot-full playbook` becomes ``Run `playbooks/autopilot-full.md` ``.",
       "autopilot-stack.md: in step 2, after the `Base the PR on the other PR's branch` sentence add: Its owner's brief names that branch and its exact tip SHA as the base, in place of `origin/main`, and the owner starts its own branch at that SHA before any work.",
-      "multi-phase-plan.md: map PRs under Land `main`; explorers are `orbit:poteto-agent` on the `code` model; the plan file goes under `$TMPDIR/orbit-autopilot/<slug>/docs/`; after the two pick sentences add `Per **Ship by default** in `playbooks/opening-a-pr.md`, the run may merge unless the operator said \"don't ship\" or \"I'll land it\".`; run `node scripts/check-plan.mjs`; pstack trunk paths (`pstack/skills/poteto-mode/...`, `git show origin/main:...`) and `playbooks/shipping.md` become `<orbit playbook dir>/...` resolved from `${CLAUDE_SKILL_DIR}`; swarm workers run on the `code` model at high, and the Verify, live template's `<swarm workers model>` becomes `<code model>`; lanes run as swarm workers in worktrees, not cloud VMs, on distinct ports, and the boot recipe drops `git fetch origin <head-branch> &&`; `gh` only; `One gates lane.` becomes `One gates lane re-runs the Check line.`; in the review gate `Post the screenshots` becomes `Post the paths of the screenshots`, and the owner that `squash-merges` becomes one that `merges its own PR with the Land line's method`.",
-      "multi-phase-plan.md: in the skeleton's Boot recipe, after the live-lane worktree paragraph, add the lane placement paragraph (pick where each lane runs; a subagent drives every lane and reports to the coordinator thread; a lane tests a fresh session or app loaded from the head, never a subagent told to read the head's files; a T3 thread only when the behavior calls a T3 tool and T3's tools are present), the three-row table (no T3 tool: the control skill or a headless `claude -p --plugin-dir <worktree>/<plugin dir>`, no T3 thread; a claim that the change calls a T3 tool: one T3 thread per claim through `<project's T3 thread command>`, settled on return, only when T3's tools are present; a panel seat on another family: a `delegate_task` child when present) and the closing `No other case starts a T3 thread, including throwaway probes, which run headless.` line.",
+      "multi-phase-plan.md: after the stance paragraph add `Under Land `main`, a PR in the plan is a task branch, as `playbooks/autopilot-full.md` maps it.`; in step 3 after `Write the plan file.` add `Unless the operator names a path, write it under `$TMPDIR/orbit-autopilot/<slug>/docs/`.`; step 5 adds after `Execution starts on the operator's explicit go.`: `Per **Ship by default** in `playbooks/opening-a-pr.md`, it runs `playbooks/autopilot-full.md`, or `playbooks/autopilot-stack.md` when the operator said \"don't ship\" or \"I'll land it\".`",
+      "autopilot-full.md: in step 2, the upstream sentence `Where that playbook says to report a rebase, ...` moves after `The role merges once steps 4 and 5 clear it, through the fresh owner step 5 spawns.` and becomes `Where `playbooks/babysit.md` says to report a rebase, the owner has gitops rebase its own branch and publish it with `git push --force-with-lease=<branch>:<sha>`, pinned to the SHA it last pushed or took over.`",
+      "bug-fix.md, hillclimb.md, investigation.md, perf-issue.md: step 1 follows the paragraph above it with no blank line, as in refactoring.md.",
+      "shipping.md: in step 1, add the T3 seat paragraph: under T3 Code with a roster, when the `verifier` row's Model is `other-family`, each verifier is a seat on another family (`../../docs/harness/t3-code.md`, Seats on another family), filled only by the agent whose turn end returns to the user, as one `delegate_task` child per PR with `isolation: \"worktree\"`, briefed with the absolute path of `../../agents/verifier.md`, its `tools` limit, the step 1 brief, a `pwd` and starting-branch report for step 7, and the `BLOCKED: <reason>` first line; on `BLOCKED` try the next seat entry, then a native `orbit:verifier`; a `FAIL` stands; settle each child thread after reading its verdict; the children count toward the Parallel cap.",
+      "opening-a-pr.md: append to the Body sentence: Put evidence logs, run histories and long tables in a file or a PR comment, and link to them from the body. (Upstream moved this rule into `worker.md`, which orbit does not ship.)",
+      "babysit.md: append to the mode bullet: \"Check on X\", \"is it green\" and \"anything outstanding\" ask for `check`. \"Babysit this\" and \"get it green\" ask for `drive`. \"Address the review comments\" asks for `threads-only`. Undeclared defaults to `drive`.",
+      "babysit.md: in the forge bullet, `Status comes from the mode's watcher at `scripts/watch-pr/watch-pr`. In `check` mode pass `--status-only`.` becomes `Status comes from the mode's watcher, `scripts/watch-pr/watch-pr --owner <owner> --repo <repo> --pr <n>`, with `--stack` added for a stack. It takes no PR URL. In `check` mode pass `--status-only` for one read.`"
+    ]
+  },
+  "playbook-orchestrate": {
+    "repo": "cursor/plugins",
+    "path": "pstack/skills/poteto-mode/playbooks/orchestrate.md",
+    "dest": "skills/playbook/playbooks/orchestrate.md",
+    "sha": "de8ee15dd1194627d21eb5fcd41cb1873208dabb",
+    "edits": [
       "orchestrate.md: Autonomous run becomes a normal flow under a session override (\"run until done\"), and figure-it-out becomes `/orbit:figure-it-out`; add the Land `main` paragraph (a PR is a task branch, its merge is gitops pushing `HEAD:main` per `playbooks/shipping.md`, the Check run stands in for green CI); `Task` becomes the `Agent` tool; state lives in `notes.md` in `<git common dir>/orbit-orchestrate/<slug>/` (`git rev-parse --path-format=absolute --git-common-dir`) in place of the Project tracker and store; the no-scripts sentence binds you, and owners still run their babysit watcher per `playbooks/babysit.md`; the owner's `Agent` settings, brief, trail, `agents.tsv` row (in this store), fresh-agent rounds and `Never message an owner that returned` point at autopilot-full step 2, and a stacked owner's base at autopilot-stack step 2; workers are `Agent` calls with `isolation: \"worktree\"` (omitted only for what a fresh worktree lacks), runtime checks use `verify-*` else `/orbit:control-ui` or `/orbit:control-cli`, each kickoff carries the machine line, and the reasoning line drops speed and points at rules.md Delegation; drop the sub-coordinator bullet and its kickoff-sampling sentence, and about ten workers per coordinator becomes the Parallel cap (rules.md Workflow Defaults) as its own bullet; the fork bullet becomes a fresh agent briefed with the worker's report that calls `EnterWorktree` with `path`, drops `or a running process` from the built-state examples and drops `Message a worker only for a follow-up on the same work.`, and messaging is only ever banned for checking on an agent; the verifier is a fresh `orbit:verifier` per shipping step 1, not a different model family; the live-state check drops `or your forge's equivalents` and adds the Land `main` reading (branch tip against `origin/main` plus the Check run); a stalled worker is judged by its pushes and PR activity, `or under Land `main` its commits and trail rows`."
     ]
   }

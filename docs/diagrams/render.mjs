@@ -269,23 +269,20 @@ function guideStack(theme) {
 }
 
 function guideArchitect(theme) {
-  const W = 1100, H = 480;
+  const W = 1100, H = 330;
   const k = canvas(theme, W, H);
-  const box = (b) => { const r = B({ y: 100, w: 210, h: 84, ...b }); k.box(r); return r; };
-  const ground = box({ x: 25, t: 'Ground', s: 'how + why', kind: 'claude' });
-  const sketch = box({ x: 295, t: 'Sketch', s: 'arena, 2 runners', kind: 'claude' });
-  const agree = box({ x: 565, t: 'Agree', s: 'checkpoint if asked', kind: 'you', optional: true });
-  const impl = box({ x: 835, t: 'Implement', s: 'fill in the bodies', kind: 'claude' });
-  const scrap = box({ x: 835, y: 310, t: 'Scrap', s: 'throw the sketch out', kind: 'fail' });
-  k.link(ground, sketch);
-  k.link(sketch, agree);
-  k.link(agree, impl);
-  k.arrow([[sketch.cx + 40, sketch.y - 6], [sketch.r + 30, 58], [impl.x - 30, 58], [impl.cx - 40, impl.y - 6]], true);
-  k.text(agree.cx, 40, 'Agree is off by default', 17, k.c.muted);
-  k.arrow([[impl.cx, impl.bot + 6], [scrap.cx, scrap.y - 6]], true);
-  k.text(impl.cx - 14, 256, 'a pattern of friction', 17, k.c.muted, 'end');
-  k.arrow([[scrap.x - 6, scrap.cy], [620, 400], [420, 360], [sketch.cx, sketch.bot + 6]]);
-  k.text(560, 432, 'smaller sketch', 17, k.c.muted);
+  const box = (b) => { const r = B({ y: 100, w: 210, h: 84, kind: 'claude', ...b }); k.box(r); return r; };
+  const trace = box({ x: 25, t: 'Trace', s: 'every system it touches' });
+  const sketch = box({ x: 295, t: 'Sketch', s: 'two different shapes' });
+  const pick = box({ x: 565, t: 'Pick', s: 'callers know least' });
+  const build = box({ x: 835, t: 'Build', s: 'against the pick', kind: 'done' });
+  k.link(trace, sketch);
+  k.link(sketch, pick);
+  k.link(pick, build);
+  k.arrow([[trace.cx + 40, trace.y - 6], [trace.r + 30, 58], [build.x - 30, 58], [build.cx - 40, build.y - 6]], true);
+  k.text(W / 2, 40, 'large or contested: /orbit:arena instead', 17, k.c.muted);
+  k.arrow([[build.cx, build.bot + 6], [build.cx - 60, 262], [sketch.cx + 60, 262], [sketch.cx, sketch.bot + 6]], true);
+  k.text((sketch.cx + build.cx) / 2, 298, 'workarounds repeat: redesign', 17, k.c.muted);
   return k;
 }
 
@@ -300,7 +297,7 @@ function guideModels(theme) {
     ask(310, 'A work type fits?', 'any other poteto-agent unit'),
   ];
   const picks = [
-    pick(30, 'Keep it', "recall's haiku, live lanes at high"),
+    pick(30, 'Keep it', "recall's haiku, trail reviewer"),
     pick(170, "The role's row", 'an empty cell keeps the default'),
     pick(310, "The work type's row", 'after <n> failed tries steps up'),
   ];

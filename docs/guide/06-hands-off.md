@@ -53,9 +53,9 @@ A large change goes better as a plan you can read before anything runs.
 
 The `multi-phase-plan` flow writes the plan and does not implement it. If the change is one or two files with an obvious approach, it says so and stops. Otherwise it settles open questions with throwaway prototypes first, so the plan rests on what a run showed. It asks you only about product or preference calls that no run can settle.
 
-The plan is a checklist with one section per PR. Each section names the files, what to build, what you should see, and the boxes that prove it. A PR counts as verified only when its unit, live and perf boxes are all checked, because tests alone are not sufficient verification. A PR that changes an interaction is review-gated, so you see screenshots and a video in chat before it merges.
+The plan is a checklist with one section per PR. Each section names the files, what to build, what you should see, and the boxes that prove it. A PR counts as verified only when its unit, live and perf boxes are all checked, because tests alone are not sufficient verification. A PR that changes an interaction is review-gated, so it waits for your review before it merges.
 
-The flow lints the plan with `check-plan.mjs`, posts the plan's path, and stops. On your explicit go, it runs under `autopilot-full` or `autopilot-stack`. It picks `autopilot-full` when the run may merge, and `autopilot-stack` when you said "don't ship" or "I'll land it".
+The flow posts the plan's path and stops. On your explicit go, it runs under `autopilot-full` or `autopilot-stack`. It picks `autopilot-full` when the run may merge, and `autopilot-stack` when you said "don't ship" or "I'll land it".
 
 ## Run a whole program from one chat
 
