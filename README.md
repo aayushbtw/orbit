@@ -115,3 +115,4 @@ Defaults assume [Vite+](https://viteplus.dev), a worktree per change, and fast-f
 - `/orbit:interrogate` may ask once to read the plugin folder. Allow `Read(~/.claude/plugins/**)` to skip the prompt.
 - To release, bump `version` in `plugin/.claude-plugin/plugin.json`.
 <!-- swarm-p6b scratch s1 -->
+<!-- swarm-p6b scratch s2 -->
