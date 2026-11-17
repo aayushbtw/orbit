@@ -68,7 +68,7 @@ A T3 run differs from a `claude -p` run in four ways, so compare the two with ca
 
 ## Flow selection
 
-`flows.mjs` proves which route `/orbit:start` picks for each of the 14 prompts in `flows.json`. Each prompt targets one row of the table in `docs/guide/01-start-a-task.md`. Each row of `flows.json` names the route it expects in `expect`.
+`flows.mjs` proves which route `/orbit:start` picks for each of the 13 prompts in `flows.json`. Each prompt targets one row of the table in `docs/guide/01-start-a-task.md`. Each row of `flows.json` names the route it expects in `expect`.
 
 Each route runs one lead on its own scratch project, the same project `run.mjs` builds, with at most 12 turns and a 12-minute timeout:
 
@@ -82,7 +82,7 @@ The route id is `orbit:playbook <first word of args>` for a playbook call, such 
 Each route writes to `$TMPDIR/orbit-flows-<timestamp>/<route>/`. `run.json` holds the prompt, `expect`, `sha`, `dirty`, host and model, and after the run the measured `turns`, `cost`, `cache_read` and `cache_creation`. `spawns.jsonl` is the hook log and `stream.jsonl` is the lead's output. A live run also writes `summary.json` at the root, with one row per route and the total cost. Under `--host t3` there is no `stream.jsonl`, so these fields are null and the cost is reported as unknown. A route with no cost prints `cost=-`, and when any route lacks a cost, the total line prints `cost unknown` and `summary.json` records `"cost": null`.
 
 ```sh
-node tests/routing/flows.mjs                              # all 14 routes, opus lead, 4 at a time
+node tests/routing/flows.mjs                              # all 13 routes, opus lead, 4 at a time
 node tests/routing/flows.mjs --route bug,ship             # only these routes
 node tests/routing/flows.mjs --prompt "/orbit:start ..."  # one ad hoc prompt, graded N/A
 node tests/routing/flows.mjs --model haiku                # opus, sonnet, fable or haiku
@@ -106,7 +106,7 @@ Only Claude leads are graded. Codex and Grok leads fire no `Skill` hook, so thei
 
 Each `run.mjs` run is a real session of up to 25 minutes, and under `--host claude` up to 80 turns. The lead runs on the chosen model. Every `Agent` child is forced to haiku at low effort.
 
-A `flows.mjs` route measured on opus costs $0.17 to $0.18, so all 14 cost about $2.50. Each session writes about 20.6k tokens to the cache at the 1-hour TTL and reads about 24.1k. The cache write is the first user message, which holds the skills list, the SessionStart rules and the expanded start skill. Routes don't share it, so each route pays for it again.
+A `flows.mjs` route measured on opus costs $0.17 to $0.18, so all 13 cost about $2.30. Each session writes about 20.6k tokens to the cache at the 1-hour TTL and reads about 24.1k. The cache write is the first user message, which holds the skills list, the SessionStart rules and the expanded start skill. Routes don't share it, so each route pays for it again.
 
 Neither eval is part of Check.
 
