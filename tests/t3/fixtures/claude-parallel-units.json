@@ -7,10 +7,10 @@
     "model": "claude-opus-5-5"
   },
   "fixture": {
-    "origin": "hand-built",
-    "source": "none",
+    "origin": "real",
+    "source": "orbit-lane-parallel-uni-d6e0bf5348221ec2",
     "relabeled": false,
-    "note": "Hand-built pending the real lane. Two same-provider delegate_task children in their own worktrees, gitops cherry-picks each commit, and the lead settles both children. Every check passes.",
+    "note": "A Claude lead runs two units as same-provider delegate_task children in their own worktrees, gitops cherry-picks both commits, and the lead settles both children",
     "expect": {
       "own-checkout-children": "PASS",
       "no-worktree-agent": "PASS",
@@ -26,6 +26,53 @@
       "sidechain": false
     },
     {
+      "name": "Bash",
+      "input": {
+        "command": "git ls-files"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "ToolSearch",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat ~/.claude/rules/orbit-models.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:advisor",
+        "run_in_background": false
+      },
+      "sidechain": false
+    },
+    {
       "name": "mcp__t3-code__orchestrator_capabilities",
       "input": {},
       "sidechain": false
@@ -33,26 +80,26 @@
     {
       "name": "mcp__t3-code__delegate_task",
       "input": {
+        "isolation": "worktree",
+        "mode": "async",
+        "role": "implementation",
+        "clientRequestId": "feature-min-6fdb3d6-try1",
         "target": {
           "providerInstanceId": "claudeAgent"
-        },
-        "role": "implementation",
-        "mode": "async",
-        "isolation": "worktree",
-        "clientRequestId": "feature-min-1a2b3c4-try1"
+        }
       },
       "sidechain": false
     },
     {
       "name": "mcp__t3-code__delegate_task",
       "input": {
+        "isolation": "worktree",
+        "mode": "async",
+        "role": "implementation",
+        "clientRequestId": "feature-max-6fdb3d6-try1",
         "target": {
           "providerInstanceId": "claudeAgent"
-        },
-        "role": "implementation",
-        "mode": "async",
-        "isolation": "worktree",
-        "clientRequestId": "feature-max-1a2b3c4-try1"
+        }
       },
       "sidechain": false
     },
@@ -64,14 +111,7 @@
     {
       "name": "Bash",
       "input": {
-        "command": "git show 5d6e7f8"
-      },
-      "sidechain": false
-    },
-    {
-      "name": "Bash",
-      "input": {
-        "command": "git show 9a0b1c2"
+        "command": "git show --stat -p b5d050e23da171134a19c2c5dace5dbc86fce32c"
       },
       "sidechain": false
     },
@@ -80,27 +120,6 @@
       "input": {
         "subagent_type": "orbit:gitops",
         "run_in_background": false
-      },
-      "sidechain": false
-    },
-    {
-      "name": "Bash",
-      "input": {
-        "command": "git cherry-pick 5d6e7f8"
-      },
-      "sidechain": true
-    },
-    {
-      "name": "Bash",
-      "input": {
-        "command": "git cherry-pick 9a0b1c2"
-      },
-      "sidechain": true
-    },
-    {
-      "name": "mcp__t3-code__t3_thread_organize",
-      "input": {
-        "action": "settle"
       },
       "sidechain": false
     },
@@ -117,6 +136,96 @@
         "command": "git worktree list"
       },
       "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git worktree remove ~/.t3/worktrees/orbit-lane-project-units-d0f67404/t3-0b8873d9-56c91260221a7a03"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git branch -D t3/add-min-module-tests"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__task_status",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git show --stat -p c84be1f64a0746b583325a6778da3bf14c9f5c95"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:gitops",
+        "run_in_background": false
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__t3_thread_organize",
+      "input": {
+        "action": "settle"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node --test"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git worktree remove ~/.t3/worktrees/orbit-lane-project-units-d0f67404/t3-91fde08a-e75528af0f423785"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git branch -D t3/add-max-module-tests"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git status --short"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "ls -a && cat AGENTS.md sum.mjs sum.test.mjs && cat package.json 2>/dev/null; git status --short; git branch --show-current; node --version"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git cherry-pick c84be1f64a0746b583325a6778da3bf14c9f5c95 && git rev-parse HEAD && git log --oneline -4"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git cherry-pick b5d050e23da171134a19c2c5dace5dbc86fce32c && git rev-parse HEAD && git log --oneline -3"
+      },
+      "sidechain": true
     }
   ]
 }

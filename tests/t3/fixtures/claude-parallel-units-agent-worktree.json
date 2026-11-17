@@ -8,7 +8,7 @@
   },
   "fixture": {
     "origin": "hand-built",
-    "source": "claude-parallel-units.json",
+    "source": "none",
     "relabeled": false,
     "note": "Hand-built FAIL variant of the Delegate gate before T3 children. Two Agent calls with isolation worktree and no delegate_task, so own-checkout-children and no-worktree-agent fail, and with no child thread there is nothing to settle.",
     "expect": {

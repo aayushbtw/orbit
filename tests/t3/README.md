@@ -145,9 +145,9 @@ It reads the calls with the reader `lane.mjs` uses, and the message and model fr
 
 | File | Origin | Source | Shows |
 | --- | --- | --- | --- |
-| `claude-autopilot-owners.json` | hand-built | none | Two owners as `delegate_task` worktree children and a tick bound to the thread. Pending the real lane |
-| `claude-parallel-units.json` | hand-built | none | Two `delegate_task` worktree children, two cherry-picks by gitops and two settles. Pending the real lane |
-| `claude-parallel-units-agent-worktree.json` | hand-built | the fixture above | Two `Agent` calls with `isolation: "worktree"` and no child thread. `own-checkout-children`, `no-worktree-agent` and `children-settled` fail |
+| `claude-autopilot-owners.json` | real | `orbit-lane-autopilot-ow-cff988755608d4fb` | Two owners as `delegate_task` worktree children and a 1-minute tick bound to the thread, which fired once while an owner ran |
+| `claude-parallel-units.json` | real | `orbit-lane-parallel-uni-d6e0bf5348221ec2` | Two `delegate_task` worktree children, two cherry-picks by gitops and two settles |
+| `claude-parallel-units-agent-worktree.json` | hand-built | none | Two `Agent` calls with `isolation: "worktree"` and no child thread. `own-checkout-children`, `no-worktree-agent` and `children-settled` fail |
 | `claude-probe.json` | real | `orbit-lane-probe-fa8172` | A Claude lead runs `pwd` and loads no skill |
 | `claude-gitops-native.json` | real | `orbit-lane-gitops-native-c1ab0a` | A Claude lead spawns `orbit:gitops` as an `Agent` |
 | `claude-code-child.json` | real, relabeled | `orbit-lane-routing-8524-8094ae89ae7d6368` | A Claude lead spawns `orbit:poteto-agent` as an `Agent` |
