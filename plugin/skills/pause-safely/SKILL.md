@@ -9,10 +9,10 @@ Source: cursor/plugins, pstack (MIT).
 
 **You own a clean stop. Leave a checkpoint a cold-start agent can resume from.** This is explicit only. On "keep going", "going to bed, keep going", or "don't stop", do not pause.
 
-1. Stop at a safe boundary. Finish the current atomic step or back out of it. Start nothing new, and cancel any nested subagents.
+1. Stop at a safe boundary. Finish the current atomic step or back out of it. Start nothing new, and cancel any nested subagents. When the pause hands the thread back to the user (pause, stop, offline, model switch), list the PRs this thread watches (`list_thread_pull_requests`, entries with `watching: true`) and call `unwatch_pull_request` on each, when those tools are present, per the host adapter's Stop row (`../../docs/harness/t3-code.md`). Before imminent context compaction, keep the watches.
 2. Take no irreversible action to pause. No PR and no push unless you already had one out.
 3. Make the work durable. Have gitops commit uncommitted edits as one clear `wip:` commit on the current branch so nothing is lost. If the tree is broken, say so in the commit body in one line. Leave a task worktree in place.
-4. Write the resume note off-context. Capture intent, what you were doing, progress and what's verified, current state (with the worktree path and branch), next steps, key files, and gotchas. Write it to the memory file `resume-<slug>.md` in your auto memory directory (type project, one file per paused task slug, with its own line in MEMORY.md), never the repo. A pause in another session writes its own file and never overwrites this one.
-**Reply:** where you are in the loop, what's on disk versus still in your head (paths, no diff dumps), the commits you made and whether the tree is clean, and the first action on resume. This is a pause, not a final report.
+4. Write the resume note off-context. Capture intent, what you were doing, progress and what's verified, current state (with the worktree path and branch), next steps, key files, gotchas, and each PR this thread watched, whether or not step 1 unwatched it. Write it to the memory file `resume-<slug>.md` in your auto memory directory (type project, one file per paused task slug, with its own line in MEMORY.md), never the repo. A pause in another session writes its own file and never overwrites this one.
+**Reply:** where you are in the loop, what's on disk versus still in your head (paths, no diff dumps), the commits you made and whether the tree is clean, each PR you unwatched, and the first action on resume. This is a pause, not a final report.
 
 Focus: $ARGUMENTS
