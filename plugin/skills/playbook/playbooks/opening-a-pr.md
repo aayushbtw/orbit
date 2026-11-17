@@ -6,7 +6,7 @@ Invoked at the end of every other flow.
 
 Work from a git worktree off trunk, per the Worktree gate, and keep unrelated work out of it. gitops commits each reviewed unit by path, per the Delegate gate, and rebases them into small, landable commits, folding a later fix into its unpushed unit with fixup and autosquash. Run `/orbit:deslop` over the diff before commit and `/orbit:no-comments` before review.
 
-Title: `type(scope): subject`, naming a real symbol when one carries the change. Body: a one-minute briefing under 40 lines with these `##` headings in order, dropping empty ones: `## Why`, `## What changed`, `## Scope`, `## Tradeoffs` (only rejected alternatives a reviewer would otherwise ask about), `## Blast Radius`, `## Verification`.
+Title: `type(scope): subject`, naming a real symbol when one carries the change. Body: a one-minute briefing under 40 lines with these `##` headings in order, dropping empty ones: `## Why`, `## What changed`, `## Scope`, `## Tradeoffs` (only rejected alternatives a reviewer would otherwise ask about), `## Blast Radius`, `## Verification`. Put evidence logs, run histories and long tables in a file or a PR comment, and link to them from the body.
 
 Stack follow-ups by base branch. Under Land `main` no PR opens, so a stack is a chain of unpushed task branches, each child on its parent's exact tip. Open PRs ready. gitops runs `gh pr create` without `--draft`, then links the PR to this session's thread per the host adapter's built-in PR tool row (rules.md Delegation, **Host tools.**), and skips the link where `link_pull_request` is absent. Opening a PR does not start a babysit. **Ship by default** below starts it once the whole stack exists.
 
