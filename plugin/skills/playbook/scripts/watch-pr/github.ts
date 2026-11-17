@@ -8,7 +8,7 @@ export const PR_COMMIT_STATUS_QUERY =
 export const PR_CHECK_ROLLUP_QUERY =
   "\nquery PrCheckRollup($owner: String!, $repo: String!, $pr: Int!, $after: String) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      commits(last: 1) {\n        nodes {\n          commit {\n            statusCheckRollup {\n              contexts(first: 100, after: $after) {\n                pageInfo {\n                  hasNextPage\n                  endCursor\n                }\n                nodes {\n                  __typename\n                  ... on CheckRun {\n                    name\n                    status\n                    conclusion\n                    detailsUrl\n                  }\n                  ... on StatusContext {\n                    context\n                    state\n                    targetUrl\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
 export const PR_RUNS_CHECKS_QUERY =
-  "\nquery PrRunsChecks($owner: String!, $repo: String!, $pr: Int!, $headWorkflows: String!, $baseWorkflows: String!) {\n  repository(owner: $owner, name: $repo) {\n    headWorkflows: object(expression: $headWorkflows) {\n      ...WorkflowFiles\n    }\n    baseWorkflows: object(expression: $baseWorkflows) {\n      ...WorkflowFiles\n    }\n    pullRequest(number: $pr) {\n      baseRef {\n        branchProtectionRule {\n          requiresStatusChecks\n        }\n        rules(first: 100) {\n          nodes {\n            type\n          }\n        }\n      }\n      commits(last: 50) {\n        nodes {\n          commit {\n            ...RollupApps\n          }\n        }\n      }\n    }\n    recentPullRequests: pullRequests(first: 10, states: [OPEN, MERGED, CLOSED], orderBy: {field: UPDATED_AT, direction: DESC}) {\n      nodes {\n        commits(last: 1) {\n          nodes {\n            commit {\n              ...RollupApps\n            }\n          }\n        }\n      }\n    }\n  }\n}\nfragment RollupApps on Commit {\n  statusCheckRollup {\n    contexts(first: 100) {\n      nodes {\n        __typename\n        ... on CheckRun {\n          checkSuite {\n            app {\n              slug\n            }\n          }\n        }\n      }\n    }\n  }\n}\nfragment WorkflowFiles on GitObject {\n  __typename\n  ... on Tree {\n    entries {\n      name\n      type\n      object {\n        ... on Blob {\n          text\n        }\n      }\n    }\n  }\n}\n";
+  "\nquery PrRunsChecks($owner: String!, $repo: String!, $pr: Int!, $headWorkflows: String!, $baseWorkflows: String!) {\n  repository(owner: $owner, name: $repo) {\n    headWorkflows: object(expression: $headWorkflows) {\n      ...WorkflowFiles\n    }\n    baseWorkflows: object(expression: $baseWorkflows) {\n      ...WorkflowFiles\n    }\n    pullRequest(number: $pr) {\n      baseRef {\n        branchProtectionRule {\n          requiresStatusChecks\n        }\n        rules(first: 100) {\n          nodes {\n            type\n          }\n        }\n      }\n      commits(last: 50) {\n        nodes {\n          commit {\n            ...RollupApps\n          }\n        }\n      }\n    }\n    recentPullRequests: pullRequests(first: 10, states: [OPEN, MERGED, CLOSED], orderBy: {field: UPDATED_AT, direction: DESC}) {\n      nodes {\n        commits(last: 1) {\n          nodes {\n            commit {\n              ...RollupApps\n            }\n          }\n        }\n      }\n    }\n  }\n}\nfragment RollupApps on Commit {\n  statusCheckRollup {\n    contexts(first: 100) {\n      pageInfo {\n        hasNextPage\n      }\n      nodes {\n        __typename\n        ... on CheckRun {\n          checkSuite {\n            app {\n              slug\n            }\n          }\n        }\n      }\n    }\n  }\n}\nfragment WorkflowFiles on GitObject {\n  __typename\n  ... on Tree {\n    entries {\n      name\n      type\n      object {\n        ... on Blob {\n          text\n        }\n      }\n    }\n  }\n}\n";
 
 interface CommandResult {
   readonly code: number;
@@ -314,15 +314,17 @@ function isNonActionsCheck(context: unknown): boolean {
   const app = at(context, ["checkSuite", "app"]);
   return app === null || at(app, ["slug"]) !== "github-actions";
 }
+// Contexts past the first page go unread, so a truncated rollup counts as a non-Actions check.
 const anyNonActionsCheck = (commits: unknown): boolean =>
   list(commits, "commits.nodes").some((node) => {
     const rollup = at(node, ["commit", "statusCheckRollup"]);
     return (
       rollup !== null &&
-      list(
-        at(rollup, ["contexts", "nodes"]),
-        "statusCheckRollup.contexts.nodes"
-      ).some(isNonActionsCheck)
+      (at(rollup, ["contexts", "pageInfo", "hasNextPage"]) !== false ||
+        list(
+          at(rollup, ["contexts", "nodes"]),
+          "statusCheckRollup.contexts.nodes"
+        ).some(isNonActionsCheck))
     );
   });
 type BranchMatch = "match" | "miss" | "unsupported";
@@ -343,7 +345,7 @@ function branchMatch(pattern: unknown, branch: string): BranchMatch {
 function pullRequestMayTargetBase(config: unknown, baseRefName: string): boolean {
   if (!isRecord(config)) return true;
   const { branches, "branches-ignore": ignore } = config;
-  if (Array.isArray(branches) && ignore === undefined)
+  if (Array.isArray(branches) && branches.length > 0 && ignore === undefined)
     return branches.some((pattern) => branchMatch(pattern, baseRefName) !== "miss");
   if (Array.isArray(ignore) && branches === undefined)
     return !ignore.some((pattern) => branchMatch(pattern, baseRefName) === "match");
