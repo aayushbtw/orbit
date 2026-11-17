@@ -1,16 +1,15 @@
 import { spawn, execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, readlinkSync, renameSync, rmdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, renameSync, rmdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { HOMES, READERS, kindOf } from './sessions.mjs';
 
 const ORBIT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const CLAUDE_DIR = process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude');
-const CODEX_HOME = process.env.CODEX_HOME ?? join(homedir(), '.codex');
 const CODEX_USER_ORBITS = [
-  { path: join(CODEX_HOME, 'skills', 'orbit'), saved: 'codex-skills-orbit' },
+  { path: join(HOMES.codex, 'skills', 'orbit'), saved: 'codex-skills-orbit' },
   { path: join(homedir(), '.agents', 'skills', 'orbit'), saved: 'agents-skills-orbit' },
 ];
 const LOCK = join(tmpdir(), 'orbit-lane.lock');
@@ -40,7 +39,6 @@ const tryRead = (path) => { try { return readFileSync(path, 'utf8'); } catch { r
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const alive = (pid) => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
 const gitError = (e) => (e.stderr?.toString().trim() || e.message);
-const readJsonl = (path) => (tryRead(path) ?? '').split('\n').filter(Boolean).flatMap((line) => { try { return [JSON.parse(line)]; } catch { return []; } });
 const lexists = (path) => { try { lstatSync(path); return true; } catch { return false; } };
 
 const slug = opts.scenario;
@@ -53,6 +51,7 @@ const marketplace = opts.installed ? null : `orbit-head-${id}`;
 const runDir = join(tmpdir(), `orbit-lane-${id}`);
 const title = `orbit lane ${slug} ${id}`;
 const branch = `orbit-lane/${slug}-${id}`;
+const sessionCtx = { message, since: LANE_START, homes: HOMES };
 
 const result = {
   scenario: slug ?? null, message: message ?? null,
@@ -198,7 +197,7 @@ function buildLaneCommit() {
   try {
     const existing = tryRun('git', ['-C', project, 'show', `${base}:.claude/settings.json`]);
     const settings = existing ? JSON.parse(existing) : {};
-    const user = JSON.parse(tryRead(join(CLAUDE_DIR, 'settings.json')) ?? '{}');
+    const user = JSON.parse(tryRead(join(HOMES.claude, 'settings.json')) ?? '{}');
     const enabledOrbits = [user, settings]
       .flatMap((s) => Object.entries(s.enabledPlugins ?? {}))
       .filter(([key, on]) => key.startsWith('orbit@') && on)
@@ -277,96 +276,6 @@ function startThread(args) {
   });
 }
 
-const sessionDir = (worktreePath) => join(CLAUDE_DIR, 'projects', worktreePath.replace(/[^a-zA-Z0-9]/g, '-'));
-const sessionFiles = (dir, recursive = false) => existsSync(dir)
-  ? readdirSync(dir, { recursive }).filter((f) => f.endsWith('.jsonl')).map((f) => join(dir, f))
-  : [];
-
-const childIdIn = (text) => { try { return [JSON.parse(text).childThreadId].filter((id) => typeof id === 'string'); } catch { return []; } };
-const codexItems = (entries) => entries.filter((e) => e.type === 'event_msg' && e.payload?.type === 'item_completed' && e.payload.item);
-const CODEX_CALLS = {
-  McpToolCall: ({ server, tool, arguments: input }) => ({ name: `mcp__${server}__${tool}`, input }),
-  CommandExecution: ({ command, cwd }) => ({ name: 'exec_command', input: { command, cwd } }),
-  SubAgentActivity: ({ kind, agent_path, agent_thread_id, model, reasoning_effort }) => (kind === 'started' ? { name: 'spawn_agent', input: { agent_path, agent_thread_id, model, reasoning_effort } } : null),
-  CollabAgentToolCall: ({ tool, receiver_thread_ids }) => ({ name: tool.endsWith('_agent') ? tool : `${tool}_agent`, input: { receiver_thread_ids } }),
-  UserMessage: () => null,
-  AgentMessage: () => null,
-  Reasoning: () => null,
-};
-
-const SESSIONS = {
-  claude: {
-    where: sessionDir,
-    sessions: (worktreePath) => sessionFiles(sessionDir(worktreePath), true).map((f) => [f, readJsonl(f)]),
-    lead(sessions, worktreePath) {
-      const [, command, args] = message.match(/^\/(\S+)\s*([\s\S]*)$/) ?? [];
-      // Claude records a slash command message in this form, not as typed.
-      const opening = command ? `<command-message>${command}</command-message>\n<command-name>/${command}</command-name>\n<command-args>${args}</command-args>` : message;
-      const [file, entries] = sessions.find(([f, entries]) => {
-        const first = entries.find((e) => e.type === 'user')?.message?.content;
-        return dirname(f) === sessionDir(worktreePath) && (first === message || first === opening);
-      }) ?? [];
-      if (!file) return null;
-      const subDir = join(file.slice(0, -'.jsonl'.length), 'subagents');
-      const usage = entries.find((e) => e.type === 'assistant' && e.message?.usage)?.message.usage;
-      const seen = new Set();
-      const toolUses = (list, sidechain) => list
-        .filter((e) => e.type === 'assistant' && Array.isArray(e.message?.content))
-        .flatMap((e) => e.message.content.filter((c) => c.type === 'tool_use'))
-        .filter((c) => !seen.has(c.id) && seen.add(c.id))
-        .map((c) => ({ id: c.id, name: c.name, input: c.input, sidechain }));
-      const mainCalls = toolUses(entries, false);
-      const answered = new Set(entries
-        .filter((e) => e.type === 'user' && Array.isArray(e.message?.content))
-        .flatMap((e) => e.message.content.filter((c) => c.type === 'tool_result').map((c) => c.tool_use_id)));
-      return {
-        file,
-        firstTurnInputTokens: usage ? (usage.input_tokens ?? 0) + (usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0) : null,
-        toolCalls: [...mainCalls, ...sessions.filter(([f]) => dirname(f) === subDir).flatMap(([, sub]) => toolUses(sub, true))].map(({ id: _, ...call }) => call),
-        pending: mainCalls.filter((c) => !answered.has(c.id)).map(({ name, input }) => ({ name, input })),
-      };
-    },
-    childIds: (sessions) => sessions
-      .flatMap(([, entries]) => entries)
-      .filter((e) => e.type === 'user' && Array.isArray(e.message?.content))
-      .flatMap((e) => e.message.content.filter((c) => c.type === 'tool_result'))
-      .flatMap((c) => childIdIn(typeof c.content === 'string' ? c.content : c.content?.[0]?.text)),
-  },
-  codex: {
-    where: () => join(CODEX_HOME, 'sessions'),
-    sessions: (worktreePath) => sessionFiles(join(CODEX_HOME, 'sessions'), true)
-      .filter((f) => statSync(f).mtimeMs >= LANE_START)
-      .map((f) => [f, readJsonl(f)])
-      .filter(([, [meta]]) => meta?.type === 'session_meta' && meta.payload?.cwd === worktreePath),
-    lead(sessions) {
-      const [file, entries] = sessions.toSorted(([, [a]], [, [b]]) => a.payload.timestamp.localeCompare(b.payload.timestamp))[0] ?? [];
-      if (!file) return null;
-      const leadId = entries[0].payload.id;
-      const family = new Set([leadId]);
-      for (let grew = true; grew;) {
-        const next = sessions.filter(([, [meta]]) => family.has(meta.payload.parent_thread_id) && !family.has(meta.payload.id));
-        for (const [, [meta]] of next) family.add(meta.payload.id);
-        grew = next.length > 0;
-      }
-      const subagents = sessions.filter(([f, [meta]]) => f !== file && family.has(meta.payload.id));
-      const usage = entries.find((e) => e.type === 'token_usage_record')?.payload?.usage;
-      return {
-        file,
-        firstTurnInputTokens: usage?.input_tokens ?? null,
-        toolCalls: [entries, ...subagents.map(([, sub]) => sub)].flatMap(codexItems).flatMap(({ payload: { thread_id, item } }) => {
-          const call = (CODEX_CALLS[item.type] ?? (() => ({ name: item.type, input: item })))(item);
-          return call ? [{ ...call, sidechain: thread_id !== leadId }] : [];
-        }),
-        pending: [],
-      };
-    },
-    childIds: (sessions) => sessions
-      .flatMap(([, entries]) => codexItems(entries))
-      .filter((e) => e.payload.item.type === 'McpToolCall')
-      .flatMap((e) => childIdIn(e.payload.item.result?.content?.[0]?.text)),
-  },
-};
-const kindOf = (providerInstanceId) => Object.keys(SESSIONS).find((kind) => providerInstanceId?.toLowerCase().startsWith(kind));
 const codexLane = !opts.installed && kindOf(opts.provider) === 'codex';
 
 function recordThreads(threadId) {
@@ -387,7 +296,7 @@ function recordThreads(threadId) {
   lead.waiting ||= pendingRequestCount > 0;
   if (!worktreePath) return;
 
-  const childIds = new Set(Object.values(SESSIONS).flatMap((reader) => reader.childIds(reader.sessions(worktreePath))));
+  const childIds = new Set(Object.values(READERS).flatMap((reader) => reader.childIds(reader.sessions(worktreePath, sessionCtx))));
   const children = [...childIds].flatMap((id) => {
     const child = JSON.parse(tryRun(cli, ['thread', 'show', '--json', id]) ?? 'null')?.thread;
     return child ? [{ threadId: id, link: child.link ?? null, waiting: child.pendingRequestCount > 0, parentThreadId: child.parentThreadId ?? null }] : [];
@@ -402,10 +311,10 @@ function recordThreads(threadId) {
 
 function readSession({ providerInstanceId, worktreePath }) {
   const kind = kindOf(providerInstanceId);
-  const reader = SESSIONS[kind];
-  const lead = reader?.lead(reader.sessions(worktreePath), worktreePath);
+  const reader = READERS[kind];
+  const lead = reader?.lead(reader.sessions(worktreePath, sessionCtx), worktreePath, sessionCtx);
   if (!lead) {
-    console.error(`warning: ${reader ? `no ${kind} session for the lead in ${reader.where(worktreePath)}` : `no session reader for provider ${providerInstanceId}`}, so session, toolCalls and firstTurnInputTokens are null`);
+    console.error(`warning: ${reader ? `no ${kind} session for the lead in ${reader.where(worktreePath, sessionCtx)}` : `no session reader for provider ${providerInstanceId}`}, so session, toolCalls and firstTurnInputTokens are null`);
     return;
   }
   result.session = lead.file;
