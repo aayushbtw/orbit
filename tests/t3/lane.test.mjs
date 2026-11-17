@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
-import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawn } from 'node:child_process';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, sep } from 'node:path';
 import { test } from 'node:test';
@@ -28,6 +29,11 @@ const state = process.env.STUB_STATE;
 const done = state + '.done';
 const flag = (name) => args[args.indexOf(name) + 1];
 if (args[0] === '--version') { console.log('stub'); process.exit(0); }
+if (args[0] === 'auth' && args[1] === 'session') {
+  writeFileSync(state + '.auth', args[2] + ' ' + (args[2] === 'issue' ? flag('--subject') : args[3]) + '\\n', { flag: 'a' });
+  if (args[2] === 'issue') console.log(JSON.stringify({ sessionId: 'stub-session', token: 'stub-token' }));
+  process.exit(0);
+}
 if (args[0] === 'thread' && args[1] === 'start') {
   readFileSync(0);
   const project = args[2];
@@ -67,9 +73,39 @@ async function killLauncher(argv, env) {
   await until(() => !alive(worker), `worker ${worker} exited`);
 }
 
+async function t3Server() {
+  const organized = [];
+  const server = createServer((req, res) => {
+    let body = '';
+    req.on('data', (d) => { body += d; });
+    req.on('end', () => {
+      const { id, method, params } = JSON.parse(body);
+      if (req.headers.authorization !== 'Bearer stub-token') { res.writeHead(401).end(); return; }
+      if (method === 'tools/call') organized.push(params.arguments);
+      if (id === undefined) { res.writeHead(202).end(); return; }
+      res.writeHead(200, { 'content-type': 'application/json', 'mcp-session-id': 'stub-mcp' });
+      res.end(JSON.stringify({ jsonrpc: '2.0', id, result: method === 'tools/call' ? { content: [], structuredContent: {} } : {} }));
+    });
+  });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  return { organized, origin: `http://127.0.0.1:${server.address().port}`, close: () => server.close() };
+}
+
+function runLane(argv, env) {
+  return new Promise((done) => {
+    const lane = spawn(process.execPath, argv, { env, stdio: ['ignore', 'ignore', 'pipe'] });
+    let stderr = '';
+    lane.stderr.on('data', (d) => { stderr += d; });
+    lane.on('close', (status) => done({ status, stderr }));
+  });
+}
+
 async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0, kill = false, inspect = () => null } = {}) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'orbit-lane-test-')));
+  const t3 = await t3Server();
   try {
+    mkdirSync(join(root, 't3home', 'userdata'), { recursive: true });
+    writeFileSync(join(root, 't3home', 'userdata', 'server-runtime.json'), JSON.stringify({ origin: t3.origin }));
     const project = join(root, 'project');
     git(root, 'init', '-q', '-b', 'main', project);
     git(project, 'commit', '-q', '--allow-empty', '-m', 'base');
@@ -82,14 +118,14 @@ async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0,
     const env = {
       ...process.env,
       T3CODE_CLI_PATH: stub, STUB_STATE: join(root, 'state.json'), STUB_WORKTREES: join(root, 'worktrees'), STUB_AGENT: agent, STUB_SAW: join(root, 'saw'),
-      CLAUDE_CONFIG_DIR: join(root, 'claude'), CODEX_HOME: join(root, 'codex'), GROK_HOME: join(root, 'grok'),
+      CLAUDE_CONFIG_DIR: join(root, 'claude'), CODEX_HOME: join(root, 'codex'), GROK_HOME: join(root, 'grok'), T3CODE_HOME: join(root, 't3home'),
       ...extra,
     };
     const argv = [join(here, 'lane.mjs'), '--head', 'HEAD', '--scenario', 'probe', '--project', project, '--installed', '--out', join(root, 'out.json'), ...args];
     if (kill) {
       await killLauncher(argv, env);
     } else {
-      const lane = spawnSync(process.execPath, argv, { encoding: 'utf8', env });
+      const lane = await runLane(argv, env);
       assert.equal(lane.status, exit, lane.stderr);
     }
     const out = JSON.parse(readFileSync(join(root, 'out.json'), 'utf8'));
@@ -97,8 +133,9 @@ async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0,
     const after = branches(project);
     const seen = await inspect({ project, out });
     await until(() => existsSync(`${env.STUB_STATE}.done`), 'the stub agent finished');
-    return { root, base, before, after, worktrees, out, seen, saw: tryRead(env.STUB_SAW)?.trim() };
+    return { root, base, before, after, worktrees, out, seen, saw: tryRead(env.STUB_SAW)?.trim(), organized: t3.organized, auth: tryRead(`${env.STUB_STATE}.auth`) };
   } finally {
+    t3.close();
     rmSync(root, { recursive: true, force: true });
   }
 }
@@ -204,6 +241,31 @@ test('a lane whose thread waits on a question cleans up at once, though the run 
   assert.equal(out.kept, null);
   assert.equal(after, before);
   assert.equal(worktrees.split('\n\n').length, 1, worktrees);
+});
+
+test('a lane whose run completed settles its thread and revokes the session it used', async () => {
+  const { out, organized, auth } = await withProject([], 'true');
+  assert.equal(out.status, 'completed');
+  assert.deepEqual(organized, [{ threadId: 'stub-thread', action: 'settle' }]);
+  assert.equal(auth, 'issue mcp-client\nrevoke stub-session\n');
+});
+
+test('a lane whose thread waits on its own question archives the thread', async () => {
+  const { out, organized, auth } = await withProject([], 'true', {
+    args: ['--timeout', '0.05'], env: { ORBIT_LANE_POLL_MS: '20', STUB_ASKS: '1' }, exit: 2,
+  });
+  assert.equal(out.status, 'waiting');
+  assert.deepEqual(organized, [{ threadId: 'stub-thread', action: 'archive' }]);
+  assert.equal(auth, 'issue mcp-client\nrevoke stub-session\n');
+});
+
+test('a lane whose thread still runs at the deadline leaves the thread alone', async () => {
+  const { out, organized, auth } = await withProject([], sees(3), {
+    args: ['--timeout', '0.01'], env: { ORBIT_LANE_POLL_MS: '20' }, exit: 1,
+  });
+  assert.equal(out.status, 'timeout');
+  assert.deepEqual(organized, []);
+  assert.equal(auth, null);
 });
 
 test('a lane branch name that differs from an existing branch only in case clashes', () => {
