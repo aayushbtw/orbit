@@ -1,0 +1,52 @@
+name: check
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - name: Install ripgrep
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ripgrep
+      - name: Install claude CLI
+        run: npm install -g @anthropic-ai/claude-code@2.1.325
+      - name: Validate marketplace
+        run: claude plugin validate .
+      - name: Validate plugin
+        run: claude plugin validate plugin
+      - name: Install script deps
+        working-directory: plugin/skills/playbook/scripts
+        run: bun install --frozen-lockfile
+      - name: Script tests
+        working-directory: plugin/skills/playbook/scripts
+        run: bun test
+      - name: Script typecheck
+        working-directory: plugin/skills/playbook/scripts
+        run: bun run typecheck
+      - name: SessionStart hook test
+        run: bash tests/hooks/session-start.test.sh
+      - name: Trailer hook test
+        run: bash tests/hooks/no-claude-trailer.test.sh
+      - name: Worktree audit test
+        run: bash tests/worktree-audit.test.sh
+      - name: Diagram drift
+        run: bash tests/diagrams-drift.sh
+      - name: Links
+        run: node tests/links.mjs
+      - name: Version bump
+        run: bash tests/version-bump.sh origin/main
