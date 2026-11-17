@@ -11,6 +11,7 @@ work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 printf 'fix: thing\n\nCo-Authored-By: Claude <noreply@anthropic.com>\n' > "$work/msg.txt"
 printf 'fix: thing\n' > "$work/plain.txt"
+mkdir "$work/tests"
 
 trim() {
 	local s=$1
@@ -26,7 +27,7 @@ while IFS='|' read -r name expect cmd; do
 	expect=$(trim "$expect")
 	cmd=$(trim "$cmd")
 	total=$((total + 1))
-	input=$(jq -cn --arg c "$cmd" --arg d "$work" '{tool_name: "Bash", tool_input: {command: ($c | gsub("\\\\n"; "\n"))}, cwd: $d}')
+	input=$(jq -cn --arg c "$cmd" --arg d "$work" '{tool_name: "Bash", tool_input: {command: ($c | gsub("\\\\n"; "\n") | gsub("\\\\t"; "\t"))}, cwd: $d}')
 	code=0
 	err=$(cd "$work" && printf '%s' "$input" | "$hook" 2>&1 >/dev/null) || code=$?
 	case "$expect:$code" in

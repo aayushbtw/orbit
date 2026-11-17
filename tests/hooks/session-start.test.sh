@@ -56,5 +56,18 @@ for i in 0 1; do
 done
 chmod 644 "$root/rules.md"
 
+root="$tmp/noexec/plugin"
+mkdir -p "$tmp/noexec"
+cp -R "$plugin" "$root"
+chmod -x "$root"/hooks/*.sh
+for i in 0 1; do
+	out=$(CLAUDE_PLUGIN_ROOT="$root" sh -c "${cmds[$i]}" 2>/dev/null) || fail "SessionStart hook $((i + 1)) exited non-zero with load-rules.sh not executable"
+	[ -n "$out" ] || fail "SessionStart hook $((i + 1)) printed nothing with load-rules.sh not executable"
+done
+trailer_cmd=$(node -e 'process.stdout.write(require(process.argv[1]).hooks.PreToolUse[0].hooks[0].command)' "$plugin/hooks/hooks.json")
+code=0
+printf '%s' '{"tool_input":{"command":"git commit -m \"x\" -m \"Co-Authored-By: Claude <n@a.com>\""}}' | CLAUDE_PLUGIN_ROOT="$root" sh -c "$trailer_cmd" 2>/dev/null || code=$?
+[ "$code" = 2 ] || fail "PreToolUse trailer hook exited $code with no-claude-trailer.sh not executable, expected 2"
+
 [ "$failed" = 0 ] || exit 1
-echo "ok: 2 SessionStart hooks split rules.md at '$heading', expand odd plugin paths, warn on unreadable rules.md"
+echo "ok: 2 SessionStart hooks split rules.md at '$heading', expand odd plugin paths, warn on unreadable rules.md, run without the exec bit"
