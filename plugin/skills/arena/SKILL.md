@@ -36,7 +36,7 @@ Pick the base a future maintainer can extend most easily without breaking invari
 
 ## Phase E: Graft
 
-Walk each losing candidate once more for what is worth porting into the base, usually one or two things per candidate, not most of it. Fold each graft in by hand, per the **redesign-from-first-principles** principle skill, so the result stays coherent under one mental model. Don't paste mechanically. In an /orbit:playbook flow, gitops commits the base candidate in its worktree and cherry-picks it onto the task branch, and a fresh `orbit:poteto-agent` folds in the grafts, per the Delegate gate. In T3 Code, each runner commits its candidate in its own checkout, gitops cherry-picks the base's commit, and you settle the runners only after the grafts are in.
+Walk each losing candidate once more for what is worth porting into the base, usually one or two things per candidate, not most of it. Fold each graft in by hand, per the **redesign-from-first-principles** principle skill, so the result stays coherent under one mental model. Don't paste mechanically. In an /orbit:playbook flow, each runner commits its candidate in its own checkout, gitops cherry-picks the base's commit onto the task branch, and a fresh `orbit:poteto-agent` folds in the grafts, per the Delegate gate. In T3 Code, you settle the runners only after the grafts are in.
 
 If the candidates converge on one shape, that is strong agreement. Note it and ship the consensus shape. No graft is needed. If they wildly diverge, Phase A was under-specified. Reframe and re-run rather than averaging the divergence.
 

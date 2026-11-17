@@ -246,7 +246,7 @@ The thread outlives the lane. A follow-up message after exit runs without the he
 
 `lane.test.mjs` also covers the launcher and the idle gate against the stub `t3`. Its stub starts the agent in the background and reports `activeRunId` until the agent ends. A lane whose launcher is killed still completes, and a lane that times out removes the worktree only after the agent ends. A lane whose agent outlasts the grace keeps the worktree and branch.
 
-The `t3` CLI has no settle command. `t3 thread` has only `list`, `start`, `send` and `show`. So the agent that ran the lane settles each thread in `threads`, children included, with the T3 tool `t3_thread_organize`, action `settle`. Settle refuses a thread that waits on a question, so a thread whose `waiting` is true gets action `archive` instead. That keeps every thread listed in `threads` out of the operator's sidebar.
+After it writes the JSON, the lane ends each thread in `threads`, children included, with the T3 tool `t3_thread_organize`. It settles an idle thread, archives one that waits on a question, which dismisses the question unanswered because settle refuses it, and leaves a running one alone. The `t3` CLI has no organize command, so the lane calls the server's `/mcp` endpoint the way `t3 thread` does, with a 5-minute `mcp-client` session from `t3 auth session issue` that it revokes after, and prints a warning instead of failing when that does not work.
 
 ## Cost
 
