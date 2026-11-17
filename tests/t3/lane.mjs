@@ -285,14 +285,16 @@ function buildLaneCommit() {
 
 const runState = (threadId) => {
   const thread = JSON.parse(tryRun(cli, ['thread', 'show', '--json', threadId]) ?? 'null')?.thread;
-  return !thread ? 'unknown' : thread.activeRunId ? 'running' : 'idle';
+  return !thread ? 'unknown' : thread.pendingRequestCount > 0 ? 'waiting' : thread.activeRunId ? 'running' : 'idle';
 };
+// A lane never answers a question, so a thread parked on one keeps its run but will not touch the worktree again.
+const settled = (state) => state === 'idle' || state === 'waiting';
 
 async function runStateAfterGrace({ threadId, link }) {
   const deadline = Date.now() + timeoutMs;
   let state = runState(threadId);
-  if (state !== 'idle') console.error(`thread ${link} is ${state}, so cleanup waits up to ${opts.timeout} minutes for it to go idle`);
-  while (state !== 'idle' && Date.now() < deadline) {
+  if (!settled(state)) console.error(`thread ${link} is ${state}, so cleanup waits up to ${opts.timeout} minutes for it to go idle`);
+  while (!settled(state) && Date.now() < deadline) {
     await sleep(POLL_MS);
     state = runState(threadId);
   }
@@ -328,7 +330,7 @@ const cleanup = () => cleaning ??= (async () => {
   }
   if (result.thread) {
     const state = await runStateAfterGrace(result.thread);
-    if (state !== 'idle') return keep(state);
+    if (!settled(state)) return keep(state);
   }
   await withLock(async () => {
     while (undo.length) {

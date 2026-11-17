@@ -36,7 +36,7 @@ if (args[0] === 'thread' && args[1] === 'start') {
   execFileSync('git', ['-C', project, 'worktree', 'add', '-q', '-b', flag('--branch'), worktreePath, flag('--worktree')]);
   writeFileSync(state, JSON.stringify({ threadId: 'stub-thread', title: flag('--title'), worktreePath }));
   const agent = spawn('sh', ['-c', process.env.STUB_AGENT + '\\ntouch "$STUB_DONE"'], { cwd: worktreePath, detached: true, stdio: 'ignore', env: { ...process.env, STUB_DONE: done } });
-  const reply = () => { console.log(JSON.stringify({ threadId: 'stub-thread', reply: 'done' })); process.exit(0); };
+  const reply = () => { console.log(JSON.stringify({ threadId: 'stub-thread', reply: 'done' })); process.exit(process.env.STUB_ASKS ? 2 : 0); };
   if (args.includes('--wait')) agent.on('exit', reply);
   else { agent.unref(); reply(); }
   return;
@@ -47,8 +47,9 @@ if (args[0] === 'thread' && args[1] === 'show') {
   const shows = JSON.parse(process.env.STUB_SHOWS ?? '[[]]');
   const n = s.shows ?? 0;
   writeFileSync(state, JSON.stringify({ ...s, shows: n + 1 }));
-  const activeRunId = existsSync(done) ? null : 'stub-run';
-  console.log(JSON.stringify({ thread: { threadId: s.threadId, link: 't3://stub', providerInstanceId: 'stub', model: 'stub', runtimeMode: 'full-access', worktreePath: s.worktreePath, pendingRequestCount: 0, activeRunId }, messages: shows[Math.min(n, shows.length - 1)] }));
+  const asks = Boolean(process.env.STUB_ASKS);
+  const activeRunId = asks || !existsSync(done) ? 'stub-run' : null;
+  console.log(JSON.stringify({ thread: { threadId: s.threadId, link: 't3://stub', providerInstanceId: 'stub', model: 'stub', runtimeMode: 'full-access', worktreePath: s.worktreePath, pendingRequestCount: asks ? 1 : 0, activeRunId }, messages: shows[Math.min(n, shows.length - 1)] }));
   process.exit(0);
 }
 process.exit(1);
@@ -193,6 +194,16 @@ test('a lane whose thread still runs after the grace keeps the worktree and bran
   assert.match(out.kept.branch, /^orbit-lane\/probe-[0-9a-f]{8}$/);
   assert.ok(worktrees.includes(`worktree ${out.kept.worktree}`), worktrees);
   assert.equal(saw, 'kept');
+});
+
+test('a lane whose thread waits on a question cleans up at once, though the run stays open', async () => {
+  const { before, after, worktrees, out } = await withProject([], 'true', {
+    args: ['--timeout', '0.05'], env: { ORBIT_LANE_POLL_MS: '20', STUB_ASKS: '1' }, exit: 2,
+  });
+  assert.equal(out.status, 'waiting');
+  assert.equal(out.kept, null);
+  assert.equal(after, before);
+  assert.equal(worktrees.split('\n\n').length, 1, worktrees);
 });
 
 test('a lane branch name that differs from an existing branch only in case clashes', () => {
