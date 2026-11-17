@@ -8,7 +8,7 @@ rules-load	grok	grok-4.7-build-fast	34fdaae	1	failed	BLOCKED	rules-read=FAIL		13
 gitops-native	claude	claude-opus-5-5	34fdaae	1	completed	PASS	gitops-native-child=PASS no-child-thread=PASS	53905	31	1	2026-11-17	
 gitops-native	codex	gpt-6.1-sol	34fdaae	1	completed	PASS	gitops-native-child=PASS no-child-thread=PASS	21666	43	1	2026-11-17	
 gitops-native	grok	grok-4.7-build-fast	34fdaae	1	failed	BLOCKED	gitops-native-child=FAIL no-child-thread=FAIL		14	1	2026-11-17	provider error 402 Grok Build usage balance exhausted before the lead acted; T3 default effort (high)
-code-child	claude	claude-opus-5-5	34fdaae	1	completed	PASS	code-native-child=PASS no-child-thread=PASS	53909	44	1	2026-11-17	lead passed effort low to poteto-agent
+code-child	claude	claude-opus-5-5	cfc882d	1	completed	PASS	code-native-child=PASS no-child-thread=PASS	53959	43	1	2026-11-17	lead passed effort low for one fixed line, which the rule allows for an edit that writes no logic
 code-child	codex	gpt-6.1-sol	34fdaae	1	completed	PASS	code-native-child=PASS no-child-thread=PASS	21662	69	1	2026-11-17	
 code-child	grok	grok-4.7-build-fast	34fdaae	1	failed	BLOCKED	code-native-child=FAIL no-child-thread=FAIL		15	1	2026-11-17	provider error 402 Grok Build usage balance exhausted before the lead acted; T3 default effort (high)
 foreground	claude	claude-opus-5-5	34fdaae	1	completed	PASS	delegate-ran=PASS every-agent-foreground=PASS	53893	40	1	2026-11-17	lead passed effort low to poteto-agent
@@ -18,18 +18,18 @@ verifier-seat	claude	claude-opus-5-5	34fdaae	1	completed	PASS	verifier-ran=PASS 
 verifier-seat	codex	gpt-6.1-sol	34fdaae	1	completed	PASS	verifier-ran=PASS seat-other-family=PASS	21270	100	2	2026-11-17	
 verifier-seat	grok	grok-4.7-build-fast	34fdaae	0	not rerun							
 review-seat	claude	claude-opus-5-5	34fdaae	1	completed	PASS	seat-other-family=PASS request-id=PASS	52144	94	3	2026-11-17	
-review-seat	codex	gpt-6.1-sol	34fdaae	1	completed	FAIL	seat-other-family=PASS request-id=FAIL	21266	81	2	2026-11-17	seat delegate_task has no clientRequestId
+review-seat	codex	gpt-6.1-sol	cfc882d	1	completed	PASS	seat-other-family=PASS request-id=PASS	21254	121	3	2026-11-17	seat on claudeAgent with clientRequestId interrogate-roster-4243f54-try1; fails at d47c833 and 561ded7 before the rules skill named the field
 review-seat	grok	grok-4.7-build-fast	34fdaae	0	not rerun							
 seat-listed	claude	claude-opus-5-5	34fdaae	1	completed	PASS	seat-on-first-listed=PASS only-listed-seats=PASS one-seat=PASS no-native-code-adversary=PASS	52148	102	3	2026-11-17	
 seat-listed	codex	gpt-6.1-sol	34fdaae	1	completed	PASS	seat-on-first-listed=PASS only-listed-seats=PASS one-seat=PASS no-native-code-adversary=PASS	21261	96	3	2026-11-17	
 seat-listed	grok	grok-4.7-build-fast	34fdaae	0	not rerun							
 seat-empty	claude	claude-opus-5-5	34fdaae	1	completed	PASS	no-seat=PASS session-family-seat=PASS	52090	106	3	2026-11-17	
-seat-empty	codex	gpt-6.1-sol	34fdaae	1	completed	FAIL	no-seat=PASS session-family-seat=FAIL	21232	42	1	2026-11-17	code adversary spawn_agent omitted model gpt-6.1-sol; no judgment adversary ran
+seat-empty	codex	gpt-6.1-sol	cfc882d	1	completed	PASS	no-seat=PASS session-family-seat=PASS	21228	118	3	2026-11-17	both adversaries are same-provider review delegate_task children with target.model gpt-6.1-sol
 seat-empty	grok	grok-4.7-build-fast	34fdaae	0	not rerun							
 seat-all-fail	claude	claude-opus-5-5	34fdaae	1	completed	PASS	caps-read=PASS no-seat=PASS no-native-replacement=PASS judgment-adversary-ran=PASS	52173	89	2	2026-11-17	
-seat-all-fail	codex	gpt-6.1-sol	34fdaae	1	completed	FAIL	caps-read=PASS no-seat=FAIL no-native-replacement=PASS judgment-adversary-ran=FAIL	21288	64	2	2026-11-17	with cursor and muse disabled the judgment adversary went to claudeAgent, another family
+seat-all-fail	codex	gpt-6.1-sol	cfc882d	1	completed	PASS	caps-read=PASS no-seat=PASS no-native-replacement=PASS judgment-adversary-ran=PASS	21292	105	2	2026-11-17	judgment adversary runs on codex, no claudeAgent child; also PASS at d47c833
 seat-all-fail	grok	grok-4.7-build-fast	34fdaae	0	not rerun							
-verifier-all-fail	claude	claude-opus-5-5	34fdaae	1	waiting	PASS	caps-read=PASS no-seat=PASS no-native-verifier=PASS	50564	1655	1	2026-11-17	waits on its own AskUserQuestion; hand read: names both entries in one sentence, not one unavailable line each, and marks no option recommended; wall time includes the cleanup wait fixed in 44d10c5
+verifier-all-fail	claude	claude-opus-5-5	cfc882d	1	waiting	PASS	caps-read=PASS no-seat=PASS no-native-verifier=PASS	50596	37	1	2026-11-17	waits on its own AskUserQuestion; hand read: send_to_user gives 'cursor unavailable' and 'muse unavailable' on their own lines before the question, no option marked recommended; same at d47c833 and 561ded7
 verifier-all-fail	codex	gpt-6.1-sol	34fdaae	1	completed	PASS	caps-read=PASS no-seat=PASS no-native-verifier=PASS	21273	27	1	2026-11-17	hand read: one unavailable line per entry, then asks before a native verifier
 verifier-all-fail	grok	grok-4.7-build-fast	34fdaae	0	not rerun							
 watch-pr-wait	claude	claude-opus-5-5	34fdaae	1	completed	PASS	lead-watches=PASS no-child-watches=PASS	52454	42	1	2026-11-17	
@@ -44,9 +44,9 @@ schedule-loop	grok	grok-4.7-build-fast	34fdaae	0	not rerun
 schedule-only	claude	claude-opus-5-5	34fdaae	1	completed	PASS	scheduled=PASS prompt-not-run=PASS no-run-now=PASS	53911	23	1	2026-11-17	
 schedule-only	codex	gpt-6.1-sol	34fdaae	1	completed	PASS	scheduled=PASS prompt-not-run=PASS no-run-now=PASS	21661	31	1	2026-11-17	
 schedule-only	grok	grok-4.7-build-fast	34fdaae	0	not rerun							
-parallel-units	claude	claude-opus-5-5	34fdaae	1	completed	PASS	own-checkout-children=PASS no-worktree-agent=PASS no-shell-worktree=PASS cherry-picked=PASS children-settled=PASS	51917	158	3	2026-11-17	lead passed effort low to both implementation children
-parallel-units	codex	gpt-6.1-sol	34fdaae	1	completed	FAIL	own-checkout-children=FAIL no-worktree-agent=N/A no-shell-worktree=PASS cherry-picked=PASS children-settled=PASS	20611	110	3	2026-11-17	both delegate_task calls lack mode and clientRequestId; cherry-picks and settles ran
+parallel-units	claude	claude-opus-5-5	083c25e	1	completed	PASS	own-checkout-children=PASS no-worktree-agent=PASS no-shell-worktree=PASS cherry-picked=PASS children-settled=PASS	51966	135	3	2026-11-17	lead passed effort medium to both implementation children
+parallel-units	codex	gpt-6.1-sol	083c25e	1	completed	PASS	own-checkout-children=PASS no-worktree-agent=N/A no-shell-worktree=PASS cherry-picked=PASS children-settled=PASS	21251	187	3	2026-11-17	both delegate_task calls carry mode async and a clientRequestId; implementation children at reasoningEffort medium
 parallel-units	grok	grok-4.7-build-fast	34fdaae	0	not rerun							
 autopilot-owners	claude	claude-opus-5-5	34fdaae	1	completed	PASS	owners-are-children=PASS no-worktree-agent=PASS no-shell-worktree=PASS tick-bound=PASS	51956	233	3	2026-11-17	
-autopilot-owners	codex	gpt-6.1-sol	34fdaae	1	completed	FAIL	owners-are-children=FAIL no-worktree-agent=N/A no-shell-worktree=PASS tick-bound=PASS	21258	149	3	2026-11-17	both owner delegate_task calls lack clientRequestId
-autopilot-owners	grok	grok-4.7-build-fast	34fdaae	0	not rerun							
+autopilot-owners	codex	gpt-6.1-sol	cfc882d	1	completed	PASS	owners-are-children=PASS no-worktree-agent=N/A no-shell-worktree=PASS tick-bound=PASS	21266	120	3	2026-11-17	both owners carry clientRequestId; typo-fix owners at reasoningEffort low, which the rule allows for an edit that writes no logic
+autopilot-owners	grok	grok-4.7-build-fast	34fdaae	0	not rerun
