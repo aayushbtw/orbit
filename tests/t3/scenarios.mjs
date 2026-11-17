@@ -107,6 +107,21 @@ export const SCENARIOS = {
       'no-child-thread': noChildThread,
     },
   },
+  foreground: {
+    prompt: "/orbit:start just testing: create the file scratch/lane-fg.txt containing the single line 'lane fg'. Run the Delegate gate for the edit. No commit, no PR.",
+    checks: {
+      'delegate-ran': {
+        claude: some('Agent', { subagent_type: 'orbit:poteto-agent' }, 'lead'),
+        codex: some('spawn_agent', { fork_turns: 'none' }, 'lead'),
+        grok: some('spawn_subagent', { subagent_type: 'orbit:poteto-agent' }, 'lead'),
+      },
+      'every-agent-foreground': {
+        claude: none('Agent', { run_in_background: (v) => v !== false }, 'lead'),
+        grok: none('spawn_subagent', { background: true }, 'lead'),
+        na: { codex: 'spawn_agent has no background field' },
+      },
+    },
+  },
   'verifier-seat': {
     prompt: '/orbit:ship the commit that adds median.mjs, verifier step only. Do not land.',
     project: seatProject,
@@ -166,6 +181,21 @@ export const SCENARIOS = {
         claude: none(t3('schedule_task'), shortInterval),
         codex: none(t3('schedule_task'), shortInterval),
         grok: none('use_tool', viaUseTool('schedule_task', shortInterval)),
+      },
+    },
+  },
+  'schedule-only': {
+    prompt: '/orbit:start schedule a one-time report of `git rev-list --count HEAD` in this thread for tomorrow at 09:00. Make no file changes and push nothing.',
+    checks: {
+      scheduled: {
+        claude: some(t3('schedule_task'), { bindToCurrentThread: true }, 'lead'),
+        codex: some(t3('schedule_task'), { bindToCurrentThread: true }, 'lead'),
+        grok: some('use_tool', viaUseTool('schedule_task', { bindToCurrentThread: true }), 'lead'),
+      },
+      'prompt-not-run': {
+        claude: none('Bash', { command: /rev-list/ }, 'lead'),
+        codex: none('exec_command', { command: /rev-list/ }, 'lead'),
+        grok: none('run_terminal_command', { command: /rev-list/ }, 'lead'),
       },
     },
   },

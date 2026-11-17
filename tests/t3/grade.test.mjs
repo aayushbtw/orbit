@@ -95,6 +95,13 @@ test('a schedule_task interval under 60 s fails', () => {
   assert.deepEqual(verdicts(lane({ scenario: 'schedule-loop', provider: 'codex', toolCalls })), { 'bound-to-thread': 'PASS', 'interval-min-60s': 'FAIL' });
 });
 
+test('a lead Agent call without run_in_background: false fails every-agent-foreground', () => {
+  const agent = (input) => ({ name: 'Agent', input: { subagent_type: 'orbit:poteto-agent', ...input }, sidechain: false });
+  const grade = (toolCalls) => verdicts(lane({ scenario: 'foreground', provider: 'claude', toolCalls }))['every-agent-foreground'];
+  assert.equal(grade([agent({})]), 'FAIL');
+  assert.equal(grade([agent({ run_in_background: false })]), 'PASS');
+});
+
 test('parseLane rejects a lane it cannot grade, naming the file', () => {
   const base = { scenario: 'probe', status: 'completed', thread: { providerInstanceId: 'codex' }, toolCalls: [] };
   const cases = [

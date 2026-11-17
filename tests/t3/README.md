@@ -100,10 +100,12 @@ With no reader for the provider, or no session file for the lead, `session`, `to
 | `rules-load` | `rules-read` | A Codex lead reads `rules.md`. A Grok lead reads the `rules` skill or `rules.md`. N/A on Claude, whose SessionStart hook prints the rules |
 | `gitops-native` | `gitops-native-child`, `no-child-thread` | gitops runs as a native child, `Agent` or `spawn_subagent` with `orbit:gitops`, or `spawn_agent` with `fork_turns: "none"`. No `delegate_task` |
 | `code-child` | `code-native-child`, `no-child-thread` | The code child runs native, as `orbit:poteto-agent`, or on Codex with `fork_turns: "none"` and `model: "gpt-6.1-sol"`. No `delegate_task` |
+| `foreground` | `delegate-ran`, `every-agent-foreground` | The code child runs native, as `orbit:poteto-agent`, or on Codex with `fork_turns: "none"`. Every lead `Agent` call passes `run_in_background: false`, and no Grok `spawn_subagent` passes `background: true`. That check is N/A on Codex, whose `spawn_agent` has no background field |
 | `verifier-seat` | `verifier-ran`, `seat-other-family` | A verifier runs, and it is a `delegate_task` seat on another family in a worktree |
 | `review-seat` | `seat-other-family`, `request-id` | The lead calls `delegate_task` with `role: "review"`, `mode: "async"`, no `runtimeMode` and a provider of another family, and that same call has a `clientRequestId` |
 | `watch-pr-wait` | `lead-watches`, `no-child-watches` | The lead calls `watch_pull_request` on a PR URL, and no child does |
 | `schedule-loop` | `bound-to-thread`, `interval-min-60s` | `schedule_task` has `bindToCurrentThread: true`, and no interval is under 60000 ms |
+| `schedule-only` | `scheduled`, `prompt-not-run` | The lead calls `schedule_task` with `bindToCurrentThread: true` and never runs the scheduled `git rev-list` itself |
 
 The `gitops-native` and `code-child` prompts are the ones the Codex lanes ran. The `watch-pr-wait` prompt is the hillclimb wake lane's, with its PR URL replaced. The rest are drafts that live lanes may tune.
 
