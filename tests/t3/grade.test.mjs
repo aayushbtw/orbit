@@ -94,6 +94,11 @@ test('no-sleeping-watcher flags only a watcher run that polls', () => {
   assert.equal(grade(`"${watcher}" --pr 7 --once 2>&1 | tail -5`), 'PASS');
   assert.equal(grade(`${watcher} --pr 7 --status-only`), 'PASS');
   assert.equal(grade(`${watcher} --help`), 'PASS');
+  assert.equal(grade(`FOO=1 ${watcher} --pr 7`), 'FAIL');
+  assert.equal(grade(`bash -c "${watcher} --pr 7"`), 'FAIL');
+  assert.equal(grade(`ls ${watcher}`), 'PASS');
+  assert.equal(grade(`cat ${watcher}`), 'PASS');
+  assert.equal(grade(`test -x ${watcher} && echo ok`), 'PASS');
 });
 
 test('a clientRequestId on a different call than the other-family seat fails request-id', () => {
