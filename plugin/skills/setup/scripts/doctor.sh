@@ -31,9 +31,8 @@ for tool in git gh node bun jq; do
 	fi
 done
 
-# gh auth status calls the GitHub API; gh auth token only reads local config.
 if command -v gh >/dev/null 2>&1; then
-	if gh auth token >/dev/null 2>&1; then
+	if gh auth status >/dev/null 2>&1; then
 		echo "ok gh logged in"
 	else
 		echo "gh not logged in. Run: gh auth login"
