@@ -4,4 +4,16 @@ heredoc message | block | git commit -m "$(cat <<'EOF'\nfix: thing\n\nCo-Authore
 double spaces | block | git  commit -m "fix: thing" -m "Co-Authored-By:  Claude <noreply@anthropic.com>"
 plain commit | allow | git commit -m "fix: thing"
 echo of trailer | allow | echo "Co-Authored-By: Claude <noreply@anthropic.com>"
-commit -F file (known limit) | allow | git commit -F msg.txt
+commit -F file with trailer | block | git commit -F msg.txt
+commit --file= with trailer | block | git commit --file=msg.txt
+commit -F file without trailer | allow | git commit -F plain.txt
+echo of both strings | allow | echo "run git commit -m x then add Co-Authored-By: Claude"
+printf trailer to file then commit -F | block | printf 'x\n\nCo-Authored-By: Claude <c@a.com>\n' > m.txt && git commit -F m.txt
+lowercase trailer | block | git commit -m "x" -m "co-authored-by: claude <n@a.com>"
+git -c key=val commit | block | git -c user.name=x commit -m "x" -m "Co-Authored-By: Claude <n@a.com>"
+/usr/bin/git commit | block | /usr/bin/git commit -m "x" -m "Co-Authored-By: Claude <n@a.com>"
+git log grep | allow | git log --grep "Co-Authored-By: Claude" && git status
+commit-tree | block | git commit-tree HEAD^{tree} -m "Co-Authored-By: Claude <n@a.com>"
+Claude Code name | block | git commit -m "x" -m "Co-Authored-By: Claude Code <n@a.com>"
+cd then commit | block | cd repo && git commit -m "x" -m "Co-Authored-By: Claude <n@a.com>"
+rg piped to grep | allow | rg "git commit" notes.md | grep "Co-Authored-By: Claude"
