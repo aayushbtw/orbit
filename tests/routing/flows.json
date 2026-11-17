@@ -9,7 +9,6 @@
   { "route": "figure-it-out", "prompt": "/orbit:start migrate the whole codebase from plain JS to TypeScript. I'm stepping away for the day, so leave a trail I can trust when I'm back.", "expect": "orbit:figure-it-out" },
   { "route": "autopilot-full", "prompt": "/orbit:start full autopilot on this queue, each one merged: 1) fix the camera jitter past 4x zoom, 2) bump goblin HP to 40, 3) add a mana bar to the HUD.", "expect": "orbit:playbook autopilot-full" },
   { "route": "autopilot-stack", "prompt": "/orbit:start build the stack and I'll land it: 1) fix the camera jitter past 4x zoom, 2) bump goblin HP to 40, 3) add a mana bar to the HUD.", "expect": "orbit:playbook autopilot-stack" },
-  { "route": "orchestrate", "prompt": "/orbit:start run this whole project: own the move to online co-op multiplayer until it lands. it's multi-day, dozens of stacked PRs, and I won't be around much.", "expect": "orbit:playbook orchestrate" },
   { "route": "multi-phase-plan", "prompt": "/orbit:start write a plan for a save system that spans phases and stacked PRs. don't build anything yet.", "expect": "orbit:playbook multi-phase-plan" },
   { "route": "babysit", "prompt": "/orbit:start babysit PR 42 and get it green.", "expect": "orbit:playbook babysit" },
   { "route": "ship", "prompt": "/orbit:start PRs 42 and 43 are green. land them.", "expect": "orbit:ship" }

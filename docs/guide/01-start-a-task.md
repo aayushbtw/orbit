@@ -31,15 +31,14 @@ The first thing `/orbit:start` does is sort the goal by what you ask for. Each k
 | A measured slowness, fixed once | `perf` | A shipped change, measured against a baseline |
 | One metric moved toward a target over many rounds | `hillclimb` | One commit per accepted win |
 | A call between designs | `prototype` | A recommendation and a throwaway sketch. Nothing ships. |
-| Large or cross-cutting work, work you step away from, or work no flow fits | `/orbit:figure-it-out` | Phases it designs itself, with a decision log |
+| Large or cross-cutting work, "run this whole project", work you step away from, or work no flow fits | `/orbit:figure-it-out` | Phases it designs itself, with a decision log |
 | "autopilot this queue" | `autopilot-full` | Each item merged by its own owner |
 | "build the stack, I'll land it" | `autopilot-stack` | Verified PRs that you land |
-| "run this whole project" or "own this migration until it lands" | `orchestrate` | A multi-day program of verified PRs, landed |
 | A plan for work across phases or PRs | `multi-phase-plan` | A plan that waits for your go |
 | "babysit this", "get it green" or "check on PR 42" | `babysit` | A merge-ready PR. It never merges. |
 | Landing a green stack | `/orbit:ship` | The verified PRs, landed |
 
-[Work while you're away](./06-hands-off.md) covers the autopilot flows, orchestrate and figure-it-out. [Prove it works, then ship](./05-prove-and-ship.md) covers Babysit and Shipping.
+[Work while you're away](./06-hands-off.md) covers the autopilot flows and figure-it-out. [Prove it works, then ship](./05-prove-and-ship.md) covers Babysit and Shipping.
 
 ```text
 /orbit:start rename UserRecord to Account across the server package. no behavior change.
