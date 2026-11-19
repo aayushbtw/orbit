@@ -1,6 +1,6 @@
 # Orbit in T3 Code
 
-T3 Code runs orbit under a Claude lead and under a lead on another provider, such as Grok or Codex. This record says how orbit loads, finds T3's tools, fills panel seats, spawns subagents and resolves paths in each case. The [host adapter](../plugin/docs/harness/t3-code.md) holds the rules a lead follows. The [README](../README.md#run-on-any-provider-in-t3) holds the setup.
+T3 Code runs orbit under a Claude lead and under a lead on another provider, such as Grok or Codex. This record says how orbit loads, finds T3's tools, fills panel seats, spawns subagents and resolves paths in each case. The [host adapter](../plugin/docs/harness/t3-code.md) holds the rules a lead follows. The [README](../README.md#install) holds the setup.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="diagrams/t3-lead-dark.svg">

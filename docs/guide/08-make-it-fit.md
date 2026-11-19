@@ -45,7 +45,7 @@ Each line does one job:
 
 Before code is the line that goes into the brief of the agent writing the code. Put guidance there that code under a path must follow. Put a doc in Review also checks when it matters for the plan and the review but not for each edit.
 
-Your own CLAUDE.md and `settings.json` stay yours. Under Claude Code, orbit's rules load on their own at the start of every session. A Codex or Grok lead loads them at `/orbit:start`, or in every session through the always-on line in the [README](../../README.md#run-on-any-provider-in-t3). The Workflow block adjusts the rules for one project.
+Your own CLAUDE.md and `settings.json` stay yours. Under Claude Code, orbit's rules load on their own at the start of every session. A Codex or Grok lead loads them at `/orbit:start`, or in every session through the always-on line in the [README](../../README.md#install). The Workflow block adjusts the rules for one project.
 
 ## Route work by work type
 

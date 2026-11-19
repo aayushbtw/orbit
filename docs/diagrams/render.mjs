@@ -70,33 +70,34 @@ ${out.join('\n')}
 const B = (b) => ({ ...b, cx: b.x + b.w / 2, cy: b.y + b.h / 2, r: b.x + b.w, bot: b.y + b.h });
 
 function readme(theme) {
-  const W = 1210, H = 440;
+  const W = 1340, H = 410;
   const k = canvas(theme, W, H);
-  const lanes = [['You', 20, 140], ['Lead', 140, 260], ['Subagents', 260, 440]];
-  for (const [name, y0, y1] of lanes) k.text(16, (y0 + y1) / 2 + 8 - (name === 'Subagents' ? 20 : 0), name, 24, k.c.ink, 'start');
+  for (const [name, y0, y1] of [['You', 20, 140], ['Orbit', 140, 270], ['Checks', 270, 400]]) k.text(16, (y0 + y1) / 2 + 8, name, 24, k.c.ink, 'start');
   k.line(10, 140, W - 10, 140);
-  k.line(10, 260, W - 10, 260);
+  k.line(10, 270, W - 10, 270);
 
-  const laneY = { you: 38, claude: 158, agent: 278 };
-  const seq = [
-    ['you', '/orbit:start', 'you name the goal'],
-    ['claude', 'Pick the flow', 'steps + worktree'],
-    ['agent', 'Write a unit', 'poteto-agent'],
-    ['claude', 'Review it', 'lead reads and runs it'],
-    ['agent', 'Commit', 'gitops'],
-    ['claude', 'Clean up', 'deslop, no-comments'],
-    ['agent', 'Verify', 'fresh verifier'],
-    ['you', 'Next: line', 'after it lands'],
-  ].map(([lane, t, s], i) => B({ x: 135 + i * 125, y: laneY[lane], w: 180, h: 84, t, s, ss: s.length > 20 ? 15 : 17, kind: i === 7 ? 'done' : lane }));
-  seq.forEach((b) => k.box(b));
-  for (let i = 0; i < seq.length - 1; i++) {
-    const a = seq[i], b = seq[i + 1];
-    k.arrow(b.y > a.y ? [[a.x + 150, a.bot + 6], [b.x + 32, b.y - 6]] : [[a.x + 150, a.y - 6], [b.x + 32, b.bot + 6]]);
-  }
-  const [w, , c] = [seq[2], seq[3], seq[4]];
-  k.arrow([[c.cx, c.bot + 6], [(c.cx + w.cx) / 2, c.bot + 42], [w.cx + 20, w.bot + 6]]);
-  k.text((c.cx + w.cx) / 2, c.bot + 66, 'next unit', 18, k.c.muted);
-  k.text(seq[6].x + 158, 214, 'PASS: lands', 18, k.c.muted, 'start');
+  const laneY = { you: 38, claude: 163, agent: 298 };
+  const box = (lane, x, w, t, s, extra = {}) => { const b = B({ x, y: laneY[lane], w, h: 84, t, s, kind: lane, ...extra }); k.box(b); return b; };
+  const start = box('you', 110, 170, '/orbit:start', 'you name a goal');
+  const plan = box('claude', 230, 190, 'Plan it', 'flow and worktree');
+  const write = box('claude', 460, 180, 'Write a unit', 'one small piece');
+  const review = box('agent', 570, 180, 'Review it', 'read and run it');
+  const commit = box('claude', 680, 170, 'Commit it', 'one per unit');
+  const verify = box('agent', 830, 230, 'Run it like a user', 'a fresh agent', { ts: 22 });
+  const land = box('claude', 1000, 170, 'Land it', 'on PASS', { kind: 'done' });
+  const fail = box('agent', 1120, 200, 'Nothing lands', 'on FAIL, with a repro', { kind: 'fail', ss: 16 });
+  const next = box('you', 1130, 180, 'Next: line', 'what to do next', { kind: 'done' });
+
+  k.arrow([[start.x + 140, start.bot + 6], [plan.x + 30, plan.y - 6]]);
+  k.arrow([[plan.r + 6, plan.cy], [write.x - 6, write.cy]]);
+  k.arrow([[write.x + 150, write.bot + 6], [review.x + 40, review.y - 6]]);
+  k.arrow([[review.x + 140, review.y - 6], [commit.x + 30, commit.bot + 6]]);
+  k.arrow([[commit.cx, commit.y - 6], [(commit.cx + write.cx) / 2, commit.y - 46], [write.cx + 10, write.y - 6]]);
+  k.text((commit.cx + write.cx) / 2, commit.y - 58, 'next unit', 18, k.c.muted);
+  k.arrow([[commit.x + 150, commit.bot + 6], [verify.x + 40, verify.y - 6]]);
+  k.arrow([[verify.x + 190, verify.y - 6], [land.x + 30, land.bot + 6]]);
+  k.arrow([[verify.r + 6, verify.cy], [fail.x - 6, fail.cy]]);
+  k.arrow([[land.x + 150, land.y - 6], [next.x + 30, next.bot + 6]]);
   return k;
 }
 
