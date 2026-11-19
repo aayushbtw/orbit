@@ -15,7 +15,7 @@ Released 2026-11-19.
 
 ### Breaking or behavior changes
 
-- Without a native task tool, the lead tracks the step list silently and never prints it ([#79](https://github.com/aayushbtw/orbit/pull/79), [#81](https://github.com/aayushbtw/orbit/pull/81)).
+- Without a native task tool, the lead tracks the step list silently and never prints it ([#81](https://github.com/aayushbtw/orbit/pull/81)).
 - The reply's task list shows your tasks, such as `[x] Fix the login redirect`, never the playbook's steps. It appears once at the start. After that, a task's line appears again only when its state changes, and the final reply shows the closed list ([#79](https://github.com/aayushbtw/orbit/pull/79), [#81](https://github.com/aayushbtw/orbit/pull/81)).
 - The reply shows a task list only when the goal holds two or more separate tasks. One change, built, reviewed and landed, gets a line of progress instead ([#82](https://github.com/aayushbtw/orbit/pull/82)).
 
