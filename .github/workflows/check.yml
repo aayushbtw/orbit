@@ -48,6 +48,10 @@ jobs:
         run: bash tests/diagrams-drift.sh
       - name: Links
         run: node tests/links.mjs
+      - name: References
+        run: node tests/refs.mjs
+      - name: References checker tests
+        run: node --test tests/refs.test.mjs
       - name: T3 lane grader tests
         run: node --test tests/t3/*.test.mjs
       - name: Version bump tests
