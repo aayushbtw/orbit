@@ -51,7 +51,7 @@ A large change goes better as a plan you can read before anything runs.
 /orbit:start multi-PR plan: move the job queue from Redis to Postgres without dropping in-flight jobs
 ```
 
-The `multi-phase-plan` flow writes the plan and does not implement it. If the change is one or two files with an obvious approach, it says so and stops. Otherwise it settles open questions with throwaway prototypes first, so the plan rests on what a run showed. It asks you only about product or preference calls that no run can settle.
+The `multi-phase-plan` flow writes the plan and does not implement it. If the change is one or two files with an obvious approach, it says so and stops. Otherwise it settles open questions with throwaway prototypes first, so the plan rests on what a run showed. A fork no run settles goes to the advisor, and Claude acts on its pick. It asks you only before an irreversible write, at a gate you named, or when the pick drops or changes what you asked for.
 
 The plan is a checklist with one section per PR. Each section names the files, what to build, what you should see, and the boxes that prove it. A PR counts as verified only when its unit, live and perf boxes are all checked, because tests alone are not sufficient verification. A PR that changes an interaction is review-gated, so it waits for your review before it merges.
 

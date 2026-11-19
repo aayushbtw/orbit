@@ -28,7 +28,9 @@ A plan that adds a module or touches more than 3 files goes through the plan gat
 
 Then it briefs the advisor with the plan and those sources. The advisor runs on Fable at `high` effort unless an `advisor` row in your Models table changes it, reads the repository itself, and edits nothing. It returns a verdict of `proceed`, `proceed with changes` or `stop`, with concrete recommendations, and Claude acts on it.
 
-The gate exists because a wrong shape is cheapest to fix before any code depends on it. A second model checks a multi-file plan against the project's own rules at that point, not after review. You can also ask for the advisor at any other time:
+The gate exists because a wrong shape is cheapest to fix before any code depends on it. A second model checks a multi-file plan against the project's own rules at that point, not after review.
+
+The advisor also decides forks. Before Claude asks you which approach to take, it briefs the advisor with every open fork, acts on the advisor's pick, and tells you what you could say to change it. Claude still asks you before an irreversible write, at a gate you named, when the pick drops or changes what you asked for, and for a skill's own questions. Shipping also has the advisor review each PR's diff ([Prove it works, then ship](./05-prove-and-ship.md#the-advisor-reviews-the-diff-first)). You can also ask for the advisor at any other time:
 
 ```text
 before you touch anything, get the advisor's read on this migration plan.

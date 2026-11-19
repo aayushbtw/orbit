@@ -94,7 +94,7 @@ The feature flow runs interrogate before shipping when a design is contested. Yo
 
 ## Run the question instead of asking it
 
-Some design questions have an answer you can observe. Examples are which layout reads better at phone width, whether streaming beats buffering for a large file, and how long a cold start takes. Orbit's rules say a question like that is not yours to answer. Before Claude asks you "which approach?", it checks whether running something would settle it. If so, it builds a prototype and lets the result decide. It asks you only about product or preference calls that no experiment can settle.
+Some design questions have an answer you can observe. Examples are which layout reads better at phone width, whether streaming beats buffering for a large file, and how long a cold start takes. Orbit's rules say a question like that is not yours to answer. Before Claude asks you "which approach?", it checks whether running something would settle it. If so, it builds a prototype and lets the result decide. Any other fork goes to the advisor, and Claude acts on its pick. It asks you only before an irreversible write, at a gate you named, when the pick drops or changes what you asked for, or for a skill's own questions.
 
 ```text
 /orbit:start prototype the settings page as a sidebar and as tabs. screenshot both at phone width.
