@@ -19,8 +19,8 @@ In the **orbit.** lines, paths under `agents/`, `hooks/` and `skills/`, and `rul
 ### Native task progress
 
 - **pstack.** Orbit's `start` entry point has no upstream counterpart ([Orbit-written skills](#orbit-written-skills)).
-- **orbit.** `skills/start/SKILL.md` uses Claude's `TaskCreate` / `TaskUpdate` / `TaskList` or `TodoWrite`, Codex's `update_plan`, or another provider's native task tools. It falls back to a list in the reply only when no native task tool is available. Steps update as they start and finish, skipped steps retain their reason and complete, and a resumed task reuses its list. `docs/harness/t3-code.md` maps the Claude task tools for other leads.
-- **Why.** The previous instruction named only `TodoWrite`, so Codex and Claude sessions offering newer task tools fell back to text. Native updates let T3 display the flow's steps and progress in its task UI (operator request, 2026-11-17).
+- **orbit.** `skills/start/SKILL.md` uses Claude's `TaskCreate` / `TaskUpdate` / `TaskList` or `TodoWrite`, Codex's `update_plan`, or another provider's native task tools. It falls back to a list in the reply only when no native task tool is available. That list shows in full once, then each finished step gets one checked line with only its name and any `skip: <reason>`, and the final reply shows the closed list. Steps update as they start and finish, skipped steps retain their reason and complete, and a resumed task reuses its list. `docs/harness/t3-code.md` maps the Claude task tools for other leads.
+- **Why.** The previous instruction named only `TodoWrite`, so Codex and Claude sessions offering newer task tools fell back to text. Native updates let T3 display the flow's steps and progress in its task UI (operator request, 2026-11-17). A text list opened once and never updated, or closed with a sentence of evidence per item, hid progress (operator request, 2026-11-19).
 
 ### Trigger list
 
