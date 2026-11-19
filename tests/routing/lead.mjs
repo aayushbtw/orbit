@@ -229,7 +229,11 @@ export function createLeads({ host, model, provider, keep, timeoutMs, maxTurns, 
         for (const fd of fds) closeSync(fd);
         if (host === 't3') await awaitLaneWorkerJson(outDir);
         live.delete(child.pid);
-        if (inspect) await inspect(project);
+        try {
+          if (inspect) await inspect(project);
+        } catch (e) {
+          console.error(`${outDir}: inspect failed: ${e.message}`);
+        }
         release(project);
         done({ outDir, project, exit: timedOut ? 'timeout' : `code ${code}` });
       });

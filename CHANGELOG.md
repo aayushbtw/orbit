@@ -12,8 +12,9 @@ Released 2026-11-20.
 
 - After a branch lands, Shipping first leaves the session's worktree with `ExitWorktree` and `keep`. Only then does gitops remove the task, verifier and owner worktrees and the local branch, by absolute path. The cleanup no longer trips Claude Code's worktree guard or a refused `ExitWorktree` `remove`.
 - The lead never passes `remove` or `discard_changes` to `ExitWorktree` in Shipping. Discarding work is your call.
-- A T3 thread whose worktree T3 bound at start keeps that worktree and its branch after the land, and the reply names them.
-- While a session is isolated in a worktree, it and its subagents run git only there. Git in another checkout waits until the session leaves with `ExitWorktree` and `keep`.
+- Under Land `main`, gitops deletes the landed branch with `git branch -D` only when `git merge-base --is-ancestor <branch> origin/main` succeeds. It never switches, merges or fast-forwards your main checkout. A branch with commits that did not land stays, and the reply names it.
+- A T3 thread whose working directory is the task worktree keeps that worktree and its branch after the land, and the reply names them. A session outside the worktree skips the exit, and gitops removes the worktree as usual.
+- While a session is isolated in a worktree, it and its subagents run git only there. Git in another checkout waits until Shipping step 7 leaves with `ExitWorktree` and `keep`.
 
 ## 0.64.0
 

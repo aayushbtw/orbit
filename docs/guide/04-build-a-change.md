@@ -16,7 +16,7 @@ Before the first edit, Claude calls `EnterWorktree` and moves into a new git wor
 
 A worktree exists so that parallel sessions never share a checkout. You can run two tasks at once, or keep working in your main checkout, and neither sees the other's half-finished edits. The worktrees stay out of your main checkout's `git status`.
 
-If the session is already in a clean worktree, Claude reuses it. If that worktree holds unrelated work or is in a bad state, Claude starts a fresh one with a new slug. When the change lands, Shipping removes its worktree and branch. `/orbit:worktree-cleanup` removes worktrees from tasks that never landed.
+If the session is already in a clean worktree, Claude reuses it. If that worktree holds unrelated work or is in a bad state, Claude starts a fresh one with a new slug. When the change lands, Claude leaves the worktree. Shipping then removes it, and deletes its branch when the branch holds nothing that did not land. A T3 thread that T3 bound to the worktree keeps it, and the reply names it. `/orbit:worktree-cleanup` removes worktrees from tasks that never landed.
 
 ## Check a large plan before writing it
 

@@ -3,5 +3,6 @@
   "no-discard": "PASS",
   "no-exit-refusal": "PASS",
   "no-guard-refusal": "PASS",
+  "root-untouched": "PASS",
   "clean-end": "PASS"
 }

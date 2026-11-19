@@ -237,7 +237,7 @@ A new worktree holds only tracked files. If your Check needs a gitignored file, 
 
 ## Clean up old worktrees
 
-Every change gets its own worktree under `.claude/worktrees/`, so parallel sessions never share a checkout. When a change lands, Shipping removes its worktree, the verifier's and owners' worktrees, and its branch. A worktree with uncommitted changes stays, and the reply names it. Worktrees from abandoned or unshipped tasks still add up on disk. `/orbit:worktree-cleanup` removes them, and it also runs when you ask Claude to clean up worktrees or free up space.
+Every change gets its own worktree under `.claude/worktrees/`, so parallel sessions never share a checkout. When a change lands, Shipping removes its worktree and the verifier's and owners' worktrees. It deletes the branch only when the branch holds nothing that did not land, and it never switches or updates your main checkout. A worktree with uncommitted changes stays, and so does the worktree of a T3 thread that T3 bound to it. The reply names each worktree and branch that stays. Worktrees from abandoned or unshipped tasks still add up on disk. `/orbit:worktree-cleanup` removes them, and it also runs when you ask Claude to clean up worktrees or free up space.
 
 ```text
 /orbit:worktree-cleanup

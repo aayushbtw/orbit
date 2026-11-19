@@ -15,6 +15,7 @@
 | `no-discard` | No `ExitWorktree` call passes `discard_changes: true` |
 | `no-exit-refusal` | No `ExitWorktree` result is an error or says it refuses |
 | `no-guard-refusal` | No tool result anywhere contains "is isolated in the worktree". A FAIL prints each call that caused one, with its command |
+| `root-untouched` | No tool result contains "is not fully merged", and no Bash call from the restored checkout runs `git merge`, `checkout`, `switch`, `reset` or `pull` unless `-C` or `cd` aims it under `.claude/worktrees/`. A call is from the restored checkout when the lead makes it after its first `ExitWorktree` that was not refused, or a subagent spawned after that exit makes it |
 | `clean-end` | `git worktree list` shows only the project root, and `main` is the only local branch. A FAIL prints each leftover |
 
 `landed` is the prerequisite. When it fails, every other check is N/A, and its detail says the fix did not land. INFO lines print how the lead ended, its turns and cost, its spawns, and each `ExitWorktree` call with its result.
@@ -36,11 +37,13 @@ Each run is a real session. Shipping runs an advisor review and a verifier, so a
 
 ## Grader test
 
-`grade.test.mjs` grades the saved fixtures in `fixtures/` with no session, and CI runs it. Each fixture holds a trimmed `stream.jsonl`, with scratch paths replaced by `/tmp/`, its `state.json` and the statuses it expects in `expect.json`. All three come from one real run at orbit `d840cd4` (`--ref origin/main`):
+`grade.test.mjs` grades the saved fixtures in `fixtures/` with no session, and CI runs it. Each fixture holds a trimmed `stream.jsonl`, with scratch paths replaced by `/tmp/`, its `state.json` and the statuses it expects in `expect.json`. Three come from one real run at orbit `d840cd4` (`--ref origin/main`):
 
-- `red-origin-main` is that run, trimmed to the worktree calls, the spawns and the cleanup subagent's commands. The lead's `ExitWorktree` `remove` was refused, and the gitops subagent hit two guard refusals.
-- `pass` is the same stream without the refused calls.
+- `red-origin-main` is that run, trimmed to the worktree calls, the spawns and the cleanup subagent's commands. The lead's `ExitWorktree` `remove` was refused, the gitops subagent hit two guard refusals, and after the exit gitops ran `git checkout main` and `git merge --ff-only origin/main` in the restored checkout.
+- `pass` is the same stream without the refused calls, with the cleanup command rewritten to step 7's shape: `git worktree remove <absolute path>`, then `git branch -D` behind `git merge-base --is-ancestor`.
 - `discard` is hand-built from it. It exits with `discard_changes: true`, and its end state leaves the verifier's worktree and branch behind.
+
+`not-fully-merged` is one of three runs at orbit `1e187da`, trimmed the same way. The lead exited with `keep`, then gitops's `git branch -d` was refused as not fully merged, and gitops ran `git merge --ff-only origin/main` in the restored checkout.
 
 ```sh
 node --test tests/ship/grade.test.mjs
