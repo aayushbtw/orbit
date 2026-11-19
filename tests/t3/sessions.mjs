@@ -18,7 +18,10 @@ const childIdIn = (text) => { try { return [JSON.parse(text).childThreadId].filt
 
 const claude = {
   where: (worktreePath, { homes = HOMES } = {}) => join(homes.claude, 'projects', worktreePath.replace(/[^a-zA-Z0-9]/g, '-')),
-  sessions: (worktreePath, ctx) => jsonlFiles(claude.where(worktreePath, ctx), true).map((f) => [f, readJsonl(f)]),
+  // A thread on the project root shares its folder with earlier lanes, so only files written since the lane started count.
+  sessions: (worktreePath, ctx = {}) => jsonlFiles(claude.where(worktreePath, ctx), true)
+    .filter((f) => statSync(f).mtimeMs >= (ctx.since ?? 0))
+    .map((f) => [f, readJsonl(f)]),
   lead(sessions, worktreePath, ctx) {
     const { message } = ctx;
     const [, command, args] = message.match(/^\/(\S+)\s*([\s\S]*)$/) ?? [];

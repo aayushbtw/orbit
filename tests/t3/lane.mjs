@@ -5,7 +5,7 @@ import { homedir, tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { clash, deleteLaneBranches, listBranches } from './branches.mjs';
+import { clash, deleteLaneBranches, isAncestor, laneBranches, listBranches, listWorktrees } from './branches.mjs';
 import { SCENARIOS } from './scenarios.mjs';
 import { HOMES, READERS, kindOf } from './sessions.mjs';
 
@@ -25,6 +25,7 @@ const { values: opts } = parseArgs({
     out: { type: 'string' },
     project: { type: 'string' },
     installed: { type: 'boolean', default: false },
+    root: { type: 'boolean', default: false },
     provider: { type: 'string' },
     model: { type: 'string' },
     timeout: { type: 'string', default: '30' },
@@ -82,7 +83,7 @@ async function launch() {
 }
 
 if (!opts.head || !slug) {
-  console.error('usage: node tests/t3/lane.mjs --head <ref> --scenario <slug> [--message <text>] [--out <file>] [--project <dir>] [--installed] [--provider <id> --model <slug>] [--timeout <minutes>] [--wake <minutes> [--wakes <n>]]');
+  console.error('usage: node tests/t3/lane.mjs --head <ref> --scenario <slug> [--message <text>] [--out <file>] [--project <dir>] [--installed] [--root] [--provider <id> --model <slug>] [--timeout <minutes>] [--wake <minutes> [--wakes <n>]]');
   process.exit(1);
 }
 if (!workerId) await launch();
@@ -104,7 +105,7 @@ const result = {
   orbit: opts.installed ? 'installed' : 'head', marketplace: null, memoryDir,
   exit: 1, status: 'error', reply: null, error: null, wake: null, wakes: [],
   pendingQuestion: null, thread: null, threads: [], messages: [],
-  session: null, firstTurnInputTokens: null, toolCalls: null, kept: null,
+  session: null, firstTurnInputTokens: null, toolCalls: null, branches: null, kept: null,
 };
 
 function save() {
@@ -182,15 +183,24 @@ const commonDir = (dir) => run('git', ['-C', dir, 'rev-parse', '--path-format=ab
 const orbitCommon = commonDir(ORBIT);
 const fixture = opts.project ? null : SCENARIOS[slug]?.project;
 let base;
+let rootBranch = null;
 try {
   result.project = opts.project ? resolve(opts.project) : fixture ? await withLock(() => scratchProject(fixture)) : dirname(orbitCommon);
-  base = commonDir(result.project) === orbitCommon
-    ? result.head.sha
-    : run('git', ['-C', result.project, 'rev-parse', '--verify', 'HEAD^{commit}']);
+  const isOrbit = commonDir(result.project) === orbitCommon;
+  if (opts.root && isOrbit) throw new Error('--root moves the project root to the lane commit, so it refuses orbit\'s own checkout; use a scenario project');
+  if (!isOrbit) {
+    const headRef = tryRun('git', ['-C', result.project, 'symbolic-ref', '-q', 'HEAD']);
+    if (headRef?.startsWith('refs/heads/orbit-lane/')) throw new Error(`the project root is on ${headRef}, so a --root lane is using it; wait for that lane to end`);
+    if (opts.root && !headRef) throw new Error('--root needs the project root on a branch, so cleanup can switch back to it');
+    if (opts.root && run('git', ['-C', result.project, 'status', '--porcelain'])) throw new Error('--root needs a clean project root, because the lane switches it to the lane commit');
+    rootBranch = opts.root ? headRef.slice('refs/heads/'.length) : null;
+  }
+  base = isOrbit ? result.head.sha : run('git', ['-C', result.project, 'rev-parse', '--verify', 'HEAD^{commit}']);
 } catch (e) {
   fail(fixture ? `scenario project ${fixture.name}: ${gitError(e)}` : `--project ${result.project}: ${gitError(e)}`);
 }
 const project = result.project;
+const prerequisite = SCENARIOS[slug]?.prerequisite;
 
 const unregister = (name) => {
   tryRun('claude', ['plugin', 'uninstall', `orbit@${name}`, '--scope', 'user']);
@@ -292,23 +302,48 @@ const runState = (threadId) => {
 const doneWithWorktree = (state) => state === 'idle' || state === 'waiting';
 const END_ACTION = { idle: 'settle', waiting: 'archive' };
 
-async function runStateAfterGrace({ threadId, link }) {
+// Children count too, because cleanup removes their worktrees.
+function laneState() {
+  for (const { threadId } of result.threads.length ? result.threads : [result.thread]) {
+    const state = runState(threadId);
+    if (!doneWithWorktree(state)) return state;
+  }
+  return 'idle';
+}
+
+async function runStateAfterGrace({ link }) {
   const deadline = Date.now() + timeoutMs;
-  let state = runState(threadId);
-  if (!doneWithWorktree(state)) console.error(`thread ${link} is ${state}, so cleanup waits up to ${opts.timeout} minutes for it to go idle`);
+  let state = laneState();
+  if (!doneWithWorktree(state)) console.error(`thread ${link} or a child is ${state}, so cleanup waits up to ${opts.timeout} minutes for them to go idle`);
   while (!doneWithWorktree(state) && Date.now() < deadline) {
     await sleep(POLL_MS);
-    state = runState(threadId);
+    state = laneState();
   }
   return state;
 }
 
 function laneWorktree() {
-  const worktrees = (tryRun('git', ['-C', project, 'worktree', 'list', '--porcelain']) ?? '').split('\n\n').map((b) => b.split('\n'));
-  const path = result.thread?.worktreePath
-    ?? worktrees.find((lines) => lines.includes(`branch refs/heads/${branch}`))?.[0].replace(/^worktree /, '');
-  const checkedOut = worktrees.find((lines) => lines[0] === `worktree ${path}`)?.find((l) => l.startsWith('branch '))?.slice('branch '.length);
-  return { path, checkedOut };
+  const worktrees = listWorktrees(project).filter((w) => w.path !== project);
+  const path = result.thread?.worktreePath ?? worktrees.find((w) => w.branch === `refs/heads/${branch}`)?.path;
+  return { path, checkedOut: worktrees.find((w) => w.path === path)?.branch };
+}
+
+const branchWatch = new Map();
+function watchBranches(before) {
+  for (const { ref, tip, born, renamedFrom } of laneBranches(project, { before, createdAt: result.laneCommit })) {
+    const old = renamedFrom.map((from) => branchWatch.get(from)).find(Boolean);
+    for (const from of renamedFrom) branchWatch.delete(from);
+    const seen = branchWatch.get(ref) ?? { ref, born, tip, worktree: old?.worktree ?? null, child: false };
+    seen.tip = tip;
+    seen.worktree = listWorktrees(project).find((w) => w.branch === ref)?.path ?? seen.worktree;
+    if (prerequisite) seen.adds = tryRun('git', ['-C', project, 'log', '--diff-filter=A', '--reverse', '--format=%H', tip, '--', prerequisite])?.split('\n')[0] || null;
+    branchWatch.set(ref, seen);
+  }
+}
+
+function recordBranches() {
+  const childWorktrees = new Set(result.threads.filter((t) => t.parentThreadId).map((t) => t.worktreePath).filter(Boolean));
+  result.branches = [...branchWatch.values()].map((b) => ({ ...b, child: childWorktrees.has(b.worktree) }));
 }
 
 function keep(state) {
@@ -324,16 +359,20 @@ function keep(state) {
 }
 
 const undo = [];
+let watching = null;
 let cleaning;
 const cleanup = () => cleaning ??= (async () => {
   if (!undo.length) return;
   if (!result.thread) {
     try { recordThreads(); } catch (e) { console.error(`cleanup: ${gitError(e)}`); }
   }
-  if (result.thread) {
-    const state = await runStateAfterGrace(result.thread);
-    if (!doneWithWorktree(state)) return keep(state);
+  const state = result.thread ? await runStateAfterGrace(result.thread) : 'idle';
+  if (watching) {
+    clearInterval(watching.timer);
+    try { watchBranches(watching.before); } catch (e) { console.error(`cleanup: ${gitError(e)}`); }
+    recordBranches();
   }
+  if (!doneWithWorktree(state)) return keep(state);
   await withLock(async () => {
     while (undo.length) {
       try { await undo.pop()(); } catch (e) { console.error(`cleanup: ${e.message}`); }
@@ -458,7 +497,7 @@ const codexLane = !opts.installed && kindOf(opts.provider) === 'codex';
 function recordThreads(threadId) {
   threadId ??= JSON.parse(tryRun(cli, ['thread', 'list', '--project', project, '--json']) ?? '[]').find((t) => t.title === title)?.threadId;
   if (!threadId) return;
-  const lead = { threadId, link: null, waiting: result.status === 'waiting', parentThreadId: null };
+  const lead = { threadId, link: null, waiting: result.status === 'waiting', parentThreadId: null, worktreePath: null };
   result.threads = [lead];
 
   const shown = JSON.parse(run(cli, ['thread', 'show', '--json', '--messages', '1000', threadId]));
@@ -471,12 +510,12 @@ function recordThreads(threadId) {
   result.messages = shown.messages.map(({ role, text }) => ({ role, text }));
   lead.link = link;
   lead.waiting ||= pendingRequestCount > 0;
-  if (!worktreePath) return;
+  lead.worktreePath = worktreePath ?? null;
 
-  const childIds = new Set(Object.values(READERS).flatMap((reader) => reader.childIds(reader.sessions(worktreePath, sessionCtx))));
+  const childIds = new Set(Object.values(READERS).flatMap((reader) => sessionDirs().flatMap((dir) => reader.childIds(reader.sessions(dir, sessionCtx)))));
   const children = [...childIds].flatMap((id) => {
     const child = JSON.parse(tryRun(cli, ['thread', 'show', '--json', id]) ?? 'null')?.thread;
-    return child ? [{ threadId: id, link: child.link ?? null, waiting: child.pendingRequestCount > 0, parentThreadId: child.parentThreadId ?? null }] : [];
+    return child ? [{ threadId: id, link: child.link ?? null, waiting: child.pendingRequestCount > 0, parentThreadId: child.parentThreadId ?? null, worktreePath: child.worktreePath ?? null }] : [];
   });
   for (let grew = true; grew;) {
     const listed = new Set(result.threads.map((t) => t.threadId));
@@ -486,12 +525,18 @@ function recordThreads(threadId) {
   }
 }
 
-function readSession({ providerInstanceId, worktreePath }) {
+// A thread on the project root has no worktreePath, and Claude Code moves its session to the folder of the worktree EnterWorktree makes.
+const sessionDirs = () => result.thread.worktreePath
+  ? [result.thread.worktreePath]
+  : [project, ...listWorktrees(project).map((w) => w.path).filter((path) => path.startsWith(join(project, '.claude', 'worktrees') + '/'))];
+
+function readSession({ providerInstanceId }) {
   const kind = kindOf(providerInstanceId);
   const reader = READERS[kind];
-  const lead = reader?.lead(reader.sessions(worktreePath, sessionCtx), worktreePath, sessionCtx);
+  const dirs = sessionDirs();
+  const lead = reader && dirs.map((dir) => reader.lead(reader.sessions(dir, sessionCtx), dir, sessionCtx)).find(Boolean);
   if (!lead) {
-    console.error(`warning: ${reader ? `no ${kind} session for the lead in ${reader.where(worktreePath, sessionCtx)}` : `no session reader for provider ${providerInstanceId}`}, so session, toolCalls and firstTurnInputTokens are null`);
+    console.error(`warning: ${reader ? `no ${kind} session for the lead in ${dirs.map((dir) => reader.where(dir, sessionCtx)).join(' or ')}` : `no session reader for provider ${providerInstanceId}`}, so session, toolCalls and firstTurnInputTokens are null`);
     return;
   }
   result.session = lead.file;
@@ -533,20 +578,35 @@ async function lane() {
   const laneRef = `refs/heads/${branch}`;
   const taken = clash(before, laneRef);
   if (taken) throw new Error(`the lane branch ${branch} matches the existing ${taken} when case is ignored, so the lane will not create it; run the lane again for a new id`);
+  const worktreesBefore = new Set(listWorktrees(project).map((w) => w.path));
   undo.push(() => {
-    const { path, checkedOut } = laneWorktree();
-    if (path) {
-      tryRun('git', ['-C', project, 'worktree', 'remove', '--force', path]);
-      // T3 keeps one folder per project for its worktrees and never removes it.
+    const made = listWorktrees(project)
+      .filter((w) => !worktreesBefore.has(w.path) && w.head && isAncestor(project, result.laneCommit, w.head))
+      .map((w) => w.path);
+    for (const path of new Set([laneWorktree().path, ...made].filter(Boolean))) {
+      // EnterWorktree locks its worktree, and only a second --force removes a locked one.
+      tryRun('git', ['-C', project, 'worktree', 'remove', '--force', '--force', path]);
+      // T3 keeps one folder per project for its worktrees, and EnterWorktree one under .claude; neither is removed.
       try { rmdirSync(dirname(path)); } catch {}
     }
-    deleteLaneBranches(project, { before, createdAt: result.laneCommit, refs: [laneRef, checkedOut] });
+    deleteLaneBranches(project, { before, createdAt: result.laneCommit });
     tryRun('git', ['-C', project, 'worktree', 'prune']);
+    if (rootBranch) try { rmdirSync(join(project, '.claude')); } catch {}
   });
+  if (rootBranch) {
+    const exclude = join(commonDir(project), 'info', 'exclude');
+    const excluded = tryRead(exclude);
+    undo.push(() => {
+      tryRun('git', ['-C', project, 'checkout', '-q', '-f', rootBranch]);
+      if (excluded !== null && tryRead(exclude) !== excluded) writeFileSync(exclude, excluded);
+    });
+    run('git', ['-C', project, 'checkout', '-q', '-b', branch, result.laneCommit]);
+  }
   if (result.status === 'interrupted') return;
-  const args = ['thread', 'start', project, '-', '--worktree', result.laneCommit, '--branch', branch, '--title', title, '--wait', '--json'];
+  const args = ['thread', 'start', project, '-', ...(rootBranch ? [] : ['--worktree', result.laneCommit, '--branch', branch]), '--title', title, '--wait', '--json'];
   if (opts.provider) args.push('--provider', opts.provider);
   if (opts.model) args.push('--model', opts.model);
+  watching = { before, timer: setInterval(() => { try { watchBranches(before); } catch {} }, Math.min(POLL_MS, 5000)) };
   const { code, stdout, stderr, timedOut } = await startThread(args);
   if (result.status === 'interrupted') return;
 
@@ -562,7 +622,7 @@ async function lane() {
     await holdForWake(result.thread.threadId);
     recordThreads(result.thread.threadId);
   }
-  if (result.thread.worktreePath) readSession(result.thread);
+  readSession(result.thread);
 }
 
 try {

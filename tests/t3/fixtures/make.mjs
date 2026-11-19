@@ -81,7 +81,8 @@ const { message, model } = SESSION_INFO[kind]();
 const { toolCalls } = readLead(kind, opts.session);
 const laneJson = opts.lane ? JSON.parse(readFileSync(opts.lane, 'utf8')) : {};
 const pendingQuestion = laneJson.pendingQuestion?.map(({ name }) => ({ name })) ?? null;
-const lane = { scenario: opts.scenario, provider: kind, status: laneJson.status ?? 'completed', pendingQuestion };
+const branches = laneJson.branches?.map((b) => ({ ...b, worktree: b.worktree && unhome(b.worktree) })) ?? null;
+const lane = { scenario: opts.scenario, provider: kind, status: laneJson.status ?? 'completed', pendingQuestion, branches };
 const raw = gradeLane({ ...lane, toolCalls });
 const slimCalls = toolCalls.map(({ name, input, sidechain }) => ({ name, input: slim(input), sidechain }));
 const graded = gradeLane({ ...lane, toolCalls: slimCalls });
@@ -105,6 +106,7 @@ const fixture = {
     expect: Object.fromEntries(graded.map((r) => [r.check, r.verdict])),
   },
   toolCalls: slimCalls,
+  ...(branches && { branches }),
 };
 writeFileSync(opts.out, JSON.stringify(fixture, null, 2) + '\n');
 for (const { check, verdict, why } of graded) console.log(`  ${verdict.padEnd(4)}  ${check}  ${why}`);

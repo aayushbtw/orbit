@@ -160,6 +160,25 @@ test('sum adds every value', () => {
   ],
 };
 
+const pinsBase = /\bgit\s+(-C\s+\S+\s+)?(reset\s+--hard|checkout|switch|merge\s+--ff-only)\b[^\n]*?\b[0-9a-f]{7,40}\b/;
+const unpinnedChild = { isolation: 'worktree', task: (task) => !pinsBase.test(task ?? '') };
+const pickConflict = { command: /\bcherry-pick\b[^\n]*--(abort|continue|skip|quit)\b/ };
+const short = (sha) => sha?.slice(0, 7) ?? 'none';
+const childrenOnPrerequisite = (path) => ({
+  state: ({ branches }) => {
+    if (!Array.isArray(branches)) return { ok: false, why: 'no branches recorded, so the lane did not watch git' };
+    const children = branches.filter((b) => b.child);
+    const leadAdds = new Set(branches.filter((b) => !b.child && b.adds).map((b) => b.adds));
+    const seen = children.map((b) => `${b.ref} born ${short(b.born)} tip ${short(b.tip)} ${b.adds ? `first adds ${path} in ${short(b.adds)}` : `has no ${path}`}`).join('; ');
+    if (!leadAdds.size) return { ok: false, why: `no lead branch adds ${path}${seen ? `; children: ${seen}` : ''}` };
+    const leads = `lead adds ${path} in ${[...leadAdds].map(short).join(', ')}`;
+    if (children.length < 2) return { ok: false, why: `${children.length} of 2 needed child branches recorded; ${leads}${seen ? `; ${seen}` : ''}` };
+    return { ok: children.every((b) => leadAdds.has(b.adds)), why: `${leads}; ${seen}` };
+  },
+});
+
+const roundPath = 'lib/round.mjs';
+
 const docsQueueProject = {
   name: 'docs-queue',
   commits: [
@@ -428,6 +447,29 @@ export const SCENARIOS = {
         claude: some(t3('t3_thread_organize'), { action: 'settle' }, 'lead', 2),
         codex: some(t3('t3_thread_organize'), { action: 'settle' }, 'lead', 2),
         grok: some('use_tool', viaUseTool('t3_thread_organize', { action: 'settle' }), 'lead', 2),
+      },
+    },
+  },
+  'child-base': {
+    prompt: "/orbit:start feature, just testing, don't ship: first add `lib/round.mjs` exporting round2(x), which rounds x to 2 decimals, with a node:test test, and commit it on the task branch. Then, as two parallel units per the Delegate gate, add `mean.mjs` exporting mean(values) and `median.mjs` exporting median(values), each returning round2 of its result and each with a node:test test. They share no file. Commit each unit on the task branch. No PR.",
+    project: { name: 'child-base', commits: unitsProject.commits },
+    prerequisite: roundPath,
+    checks: {
+      'own-checkout-children': ownCheckoutChildren,
+      'brief-pins-base': {
+        claude: none(t3('delegate_task'), unpinnedChild, 'lead'),
+        codex: none(t3('delegate_task'), unpinnedChild, 'lead'),
+        grok: none('use_tool', viaUseTool('delegate_task', unpinnedChild), 'lead'),
+      },
+      'no-pick-conflict': {
+        claude: none('Bash', pickConflict),
+        codex: none('exec_command', pickConflict),
+        grok: none('run_terminal_command', pickConflict),
+      },
+      'children-on-prerequisite': {
+        claude: childrenOnPrerequisite(roundPath),
+        codex: childrenOnPrerequisite(roundPath),
+        grok: childrenOnPrerequisite(roundPath),
       },
     },
   },

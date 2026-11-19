@@ -1,0 +1,62 @@
+{
+  "scenario": "child-base",
+  "message": "/orbit:start feature, just testing, don't ship: first add `lib/round.mjs` exporting round2(x), which rounds x to 2 decimals, with a node:test test, and commit it on the task branch. Then, as two parallel units per the Delegate gate, add `mean.mjs` exporting mean(values) and `median.mjs` exporting median(values), each returning round2 of its result and each with a node:test test. They share no file. Commit each unit on the task branch. No PR.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "hand-built",
+    "source": "none",
+    "relabeled": false,
+    "note": "A lead on the project root enters a worktree, commits round.mjs, and briefs each delegate_task child to reset its checkout to that commit. Both children's commits descend from it, and both cherry-picks apply",
+    "expect": {
+      "own-checkout-children": "PASS",
+      "brief-pins-base": "PASS",
+      "no-pick-conflict": "PASS",
+      "children-on-prerequisite": "PASS"
+    }
+  },
+  "toolCalls": [
+    { "name": "Skill", "input": {}, "sidechain": false },
+    { "name": "EnterWorktree", "input": {}, "sidechain": false },
+    { "name": "Bash", "input": { "command": "git branch -m feat/round-mean-median" }, "sidechain": false },
+    { "name": "Agent", "input": { "subagent_type": "orbit:poteto-agent", "run_in_background": false }, "sidechain": false },
+    { "name": "Agent", "input": { "subagent_type": "orbit:gitops", "run_in_background": false }, "sidechain": false },
+    { "name": "mcp__t3-code__orchestrator_capabilities", "input": {}, "sidechain": false },
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "isolation": "worktree",
+        "mode": "async",
+        "clientRequestId": "feature-mean-1a2b3c4-try1",
+        "task": "First run git reset --hard 1a2b3c4d5e6f in your checkout, so lib/round.mjs is there. Then add mean.mjs and its test, and commit them by path."
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "isolation": "worktree",
+        "mode": "async",
+        "clientRequestId": "feature-median-1a2b3c4-try1",
+        "task": "First run git reset --hard 1a2b3c4d5e6f in your checkout, so lib/round.mjs is there. Then add median.mjs and its test, and commit them by path."
+      },
+      "sidechain": false
+    },
+    { "name": "mcp__t3-code__task_status", "input": {}, "sidechain": false },
+    { "name": "Agent", "input": { "subagent_type": "orbit:gitops", "run_in_background": false }, "sidechain": false },
+    { "name": "mcp__t3-code__t3_thread_organize", "input": { "action": "settle" }, "sidechain": false },
+    { "name": "mcp__t3-code__task_status", "input": {}, "sidechain": false },
+    { "name": "Agent", "input": { "subagent_type": "orbit:gitops", "run_in_background": false }, "sidechain": false },
+    { "name": "mcp__t3-code__t3_thread_organize", "input": { "action": "settle" }, "sidechain": false },
+    { "name": "Bash", "input": { "command": "git cherry-pick 2b3c4d5e6f7a" }, "sidechain": true },
+    { "name": "Bash", "input": { "command": "git cherry-pick 3c4d5e6f7a8b" }, "sidechain": true }
+  ],
+  "branches": [
+    { "ref": "refs/heads/feat/round-mean-median", "born": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f", "tip": "4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e", "worktree": "$TMPDIR/orbit-lane-project-child-base-00000000/.claude/worktrees/feat-round-mean-median", "child": false, "adds": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b" },
+    { "ref": "refs/heads/t3/add-mean", "born": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f", "tip": "2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c", "worktree": "~/.t3/worktrees/orbit-lane-project-child-base-00000000/t3-mean", "child": true, "adds": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b" },
+    { "ref": "refs/heads/t3/add-median", "born": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f", "tip": "3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d", "worktree": "~/.t3/worktrees/orbit-lane-project-child-base-00000000/t3-median", "child": true, "adds": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b" }
+  ]
+}

@@ -132,6 +132,17 @@ test('an expectation with min passes only when that many calls match, naming eac
   assert.match(grade([]).why, /^0 of 2 needed lead call/);
 });
 
+test('children-on-prerequisite fails a child whose round.mjs is its own, and a lane with no branches', () => {
+  const branch = (ref, child, adds) => ({ ref, born: 'b'.repeat(40), tip: ref.padEnd(40, '0'), worktree: null, child, adds });
+  const grade = (branches) => gradeLane(lane({ scenario: 'child-base', provider: 'claude', branches })).find((r) => r.check === 'children-on-prerequisite');
+  const leadBranch = branch('feat', false, 'a'.repeat(40));
+  assert.equal(grade([leadBranch, branch('mean', true, 'a'.repeat(40)), branch('median', true, 'a'.repeat(40))]).verdict, 'PASS');
+  assert.equal(grade([leadBranch, branch('mean', true, 'a'.repeat(40)), branch('median', true, 'c'.repeat(40))]).verdict, 'FAIL');
+  assert.equal(grade([leadBranch, branch('mean', true, 'a'.repeat(40)), branch('median', true, null)]).verdict, 'FAIL');
+  assert.match(grade([leadBranch, branch('mean', true, 'a'.repeat(40))]).why, /^1 of 2 needed child branches/);
+  assert.match(grade(null).why, /no branches recorded/);
+});
+
 const call = (name, input = {}) => ({ name, input, sidechain: false });
 const caps = call('mcp__t3-code__orchestrator_capabilities');
 const opusAdversary = call('Agent', { subagent_type: 'general-purpose', model: 'opus' });
