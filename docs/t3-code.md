@@ -28,7 +28,7 @@ T3 serves its tools as MCP tools, and a step probes each tool before its first c
 
 ## Which children get a thread
 
-The provider picks where a child runs, not the model. Only `delegate_task` opens a thread, and that thread is a child thread under the lead.
+The provider picks where a child runs, not the model. Only `delegate_task` opens a child thread under the lead.
 
 - A child on the lead's provider runs native, nested in the lead's thread. That is `Agent` under a Claude lead, `spawn_agent` under a Codex lead and `spawn_subagent` under a Grok lead.
 - A child on the lead's provider that needs its own checkout, or runs while the lead keeps working, is a same-provider `delegate_task` child, as [Give a child its own checkout](#give-a-child-its-own-checkout) says.
