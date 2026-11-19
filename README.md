@@ -1,106 +1,71 @@
 # orbit
 
-Name the goal in T3 Code. Orbit plans, builds, verifies and ships it.
+Orbit runs software work inside [T3 Code](https://github.com/pingdotgg/t3code). You give a T3 thread a goal, and orbit plans it, builds it, has a second agent run it, and lands it.
 
-Orbit is mostly [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan, trimmed and ported to Claude Code. [Differences from pstack](docs/pstack-differences.md) lists where orbit departs and why.
+A coding agent can stop at code that compiles and never run it. Orbit uses T3's threads, providers and PR watching to split the work into small reviewed commits and test the change before anything lands.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/readme-dark.svg">
+  <img alt="Three swimlanes for you, orbit and checks. You name a goal with /orbit:start. Orbit picks a flow and opens a worktree. For each small unit, orbit writes it, a check reads and runs it, and orbit commits it. Then a fresh agent runs the change like a user. On PASS, orbit lands the change and you get a Next: line. On FAIL, nothing lands and you get a repro." src="docs/diagrams/readme-light.svg">
+</picture>
+
+## What orbit does in T3
+
+- A Claude or Codex lead can run a thread. Both passed every live test that applies to them. Grok is not proven, because its recent test runs stopped on a provider error before the lead acted.
+- Work that needs its own checkout runs as a child thread with its own worktree. That covers parallel units, review adversaries and the verifier. Every other helper stays nested in your thread.
+- Review panels and the verifier can use a second model family, such as Codex under a Claude lead. Orbit uses only the providers you list in `/orbit:setup`.
+- Before a change lands, an agent that did not write it runs it the way a user would. It returns `PASS`, `PASS+NOTES` or `FAIL`, and only a pass lands. Green CI is not a pass.
+- Orbit waits on a PR with T3's PR watch, so the thread wakes when checks finish or a review arrives.
+- Changes ship by default. Say "don't ship" to stop at the PR or branch, and land it later with `/orbit:ship`.
 
 ## Install
 
-Orbit needs `git`, `gh` logged in with `gh auth login`, `node`, `bun` and `jq`. The default Check also needs [Vite+](https://viteplus.dev), unless the project's AGENTS.md names its own Check.
+Orbit needs `git`, `node`, `bun`, `jq` and `gh` logged in with `gh auth login`. The default Check also needs [Vite+](https://viteplus.dev), unless your AGENTS.md names its own Check.
 
-Install orbit once, in Claude Code:
-
-```
-/plugin marketplace add aayushbtw/orbit
-/plugin install orbit@orbit
-```
-
-From a shell, run the same two steps with the `claude` command:
+Orbit installs once, through Claude Code's plugin marketplace. T3's Claude provider loads it from there.
 
 ```
 claude plugin marketplace add aayushbtw/orbit
 claude plugin install orbit@orbit
 ```
 
-Then run `/orbit:setup`, on any host. It reports each missing tool with its install command, checks the git repo and its Workflow block, compares the installed orbit with the marketplace copy, and checks what Codex and Grok load. When Codex is installed, setup offers to link it to the folder Claude Code installs orbit from, so Codex needs no install of its own. Setup asks once at the end before it changes anything.
+Then run `/orbit:setup` in a T3 thread. It lists missing tools, checks the project, links Codex to the same copy of orbit, and asks which providers to use for review. It asks before it changes anything.
 
-The provider step runs only in a T3 thread. It lists your T3 providers, asks which ones fill each panel's seat on another family, and saves your choice for every project in `~/.claude/rules/orbit-models.md`. A project's AGENTS.md Models rows still win. The same providers run the verifier that checks each change before it lands. A second question asks whether orbit may run its native verifier when every listed provider fails, and recommends no. With no, the lead asks you before the native verifier runs, or holds the PR when no one can answer. Run setup from a Claude thread, because a Grok thread may load an older copy of orbit that lacks the skill.
-
-Auto-update is off for third-party marketplaces. [Turn it on](docs/usage.md#auto-update) or run `claude plugin update orbit@orbit`.
-
-## A task, start to finish
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/readme-dark.svg">
-  <img alt="You run /orbit:start. The lead picks the flow and a worktree. For each unit, poteto-agent writes it, the lead reads and runs it, and gitops commits it. The lead cleans up, a fresh verifier runs the change, and on PASS it lands and you get a Next: line." src="docs/diagrams/readme-light.svg">
-</picture>
-
-- A question stops after the answer, with citations.
-- Large or cross-cutting work goes through `/orbit:figure-it-out`, which designs its own steps.
-- New to orbit? Read [the guide](docs/guide/README.md), which starts with the [full walkthrough](docs/guide/01-start-a-task.md).
-
-## Run on any provider in T3
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/t3-lead-dark.svg">
-  <img alt="You run /orbit:start. The lead checks whether Non-negotiables is already in its context. Yes for a Claude lead, because the SessionStart hook printed the rules. No for another provider, so the lead loads the rules skill, which reads rules.md. Both paths then run the playbook. The lead spawns three kinds of child. An orbit agent runs as a native subagent, nested in the same thread. A code child runs on the lead's provider. A panel seat runs through delegate_task, only on providers you listed in /orbit:setup. A child that needs its own checkout, or runs while the lead works, goes through delegate_task. Under a Codex lead, code children run on gpt-6.1-sol." src="docs/diagrams/t3-lead-light.svg">
-</picture>
-
-A T3 thread led by Claude or another provider, such as Codex or Grok, runs orbit. A review panel's seat on another family runs only on a provider you listed in `/orbit:setup`, never on one you left out. With no provider listed, the seat runs on the lead's family, and the reply says that no seat on another family is configured. When every listed provider fails, orbit skips the seat, and the reply says so, unless the list ends with `inherit`. [Orbit in T3 Code](plugin/docs/harness/t3-code.md) maps each step to T3's tools.
-
-| Lead in T3 | Live result |
-| --- | --- |
-| Claude | 16 of 16 scenarios pass at `34fdaae`, 1 run each. |
-| Codex, code children on gpt-6.1-sol | 17 of 17 scenarios pass, 1 passing run each. 12 pass at `34fdaae`. The other 5 pass on reruns at the branch commits of the fix in [#74](https://github.com/aayushbtw/orbit/pull/74). |
-| Grok | Not proven. Each of 4 runs at `34fdaae` stopped on the Grok provider's 402 usage-balance error, before the lead acted. The native code child has never run live. |
-| Other providers | Untested. |
-
-No lane has run at the merged fix. [What is verified](docs/t3-code.md#what-is-verified) lists each scenario, its commit and its date.
-
-To load orbit's rules in every session, even without `/orbit:start`, add this line to the provider's own instruction file, such as `~/.grok/AGENTS.md` or `~/.codex/AGENTS.md`. Setup adds it only when you say yes.
+To load orbit's rules in every Codex session, add this line to `~/.codex/AGENTS.md`:
 
 ```
 If Non-negotiables is not in your context, load the orbit `rules` skill before your first reply.
 ```
 
-[How orbit runs in T3](docs/t3-code.md) covers how Grok and Codex load and update orbit.
+Auto-update is off for third-party marketplaces. [Turn it on](docs/usage.md#auto-update) or run `claude plugin update orbit@orbit`.
 
-## What do I run?
+Outside T3, orbit still runs in Claude Code. It then runs on Claude models only, and runs child work as Claude Code subagents instead of child threads.
 
-| You want to | Run |
+## Use orbit
+
+| To | Run |
 | --- | --- |
 | Start a task or ask a question | `/orbit:start <goal>` |
 | Get an open PR green | `/orbit:playbook babysit` |
 | Land a ready change | `/orbit:ship` |
-| Stop or switch model | `/orbit:pause-safely`, then `/orbit:session-pickup` in a new session |
+| Stop or switch model | `/orbit:pause-safely`, then `/orbit:session-pickup` in a new thread |
 | Learn how or why code works | `/orbit:how` or `/orbit:why` |
 | Stop a repeated mistake | `/orbit:correct` |
 
-Every command: [docs/usage.md](docs/usage.md#every-command)
+[Every command](docs/usage.md#every-command) lists the rest. [The guide](docs/guide/README.md) walks through one task from start to finish. [Orbit in T3 Code](docs/t3-code.md) explains how each lead loads orbit and picks providers, and lists [each live result](docs/t3-code.md#what-is-verified).
 
-## The `Next:` line
+Each task ends with a `Next:` line that tells you what to run.
 
-Every task ends with one `Next:` line. Do what it says.
-
-| Line | Means | You do |
+| Line | Means | You run |
 | --- | --- | --- |
-| `Next: nothing pending.` | Done | `/orbit:start` your next goal |
-| `Next: /orbit:ship` | You said "don't ship" | Run it to verify and land |
-| `Next: /orbit:start <follow-up>` | Outside the goal, or your call | Run it when ready |
-| `Next: new session, then /orbit:session-pickup` | Work was paused | Run it in a new session |
-
-## Ships by default
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/guide-ship-dark.svg">
-  <img alt="A built change goes through Opening a PR. Under Land pr, the branch opens as a PR. Under Land main, the branch stays local. A dashed line right after that marks where a task stops when you said don't ship, and /orbit:ship resumes from there. Past the line, Babysit drives a PR to merge-ready, and both paths reach a fresh verifier. On PASS or PASS+NOTES the change lands. On FAIL nothing lands, and the reply carries a repro." src="docs/diagrams/guide-ship-light.svg">
-</picture>
-
-Don't land a change by hand. Say "don't ship" or "I'll land it" to stop at the PR or unpushed branch, then land it with `/orbit:ship`.
+| `Next: nothing pending.` | Done | `/orbit:start` with your next goal |
+| `Next: /orbit:ship` | You said "don't ship" | `/orbit:ship` to verify and land |
+| `Next: /orbit:start <follow-up>` | Work outside the goal, or a call for you | That line, when ready |
+| `Next: new session, then /orbit:session-pickup` | Work was paused | `/orbit:session-pickup` in a new thread |
 
 ## Make it fit a project
 
-Defaults assume [Vite+](https://viteplus.dev), a worktree per change, and fast-forward onto `main`. List only what differs in the project's AGENTS.md, not in chat.
+By default orbit uses [Vite+](https://viteplus.dev), a worktree per change, and a fast-forward onto `main` with no PR. Put only what differs in your AGENTS.md:
 
 ```md
 ## Workflow
@@ -110,14 +75,16 @@ Defaults assume [Vite+](https://viteplus.dev), a worktree per change, and fast-f
 - Review also checks: `docs/architecture.md`.
 ```
 
-- [Project defaults](docs/usage.md#project-defaults) and [folder rules](docs/guide/08-make-it-fit.md#put-folder-rules-next-to-the-code)
-- [Background agents](docs/usage.md#what-runs-in-the-background)
-- [Principles](docs/usage.md#principles) and [stack rules](docs/guide/04-build-a-change.md#follow-the-stack-rules-for-typescript)
+See [project defaults](docs/usage.md#project-defaults) and [Make orbit fit your project](docs/guide/08-make-it-fit.md).
+
+## Credits
+
+Orbit started as [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan. [Differences from pstack](docs/pstack-differences.md) lists each change and its reason.
 
 ## Maintain
 
-- Develop without installing with `claude --plugin-dir ~/Projects/orbit/plugin`.
-- Check with the Check line in AGENTS.md. On every push, CI runs the Check and the hook, worktree audit, diagram drift, link, T3 grader and version tests in `tests/`.
-- Update vendored files, tracked in `skills.json`, with `/update-skills [name]` from this repo.
-- `/orbit:interrogate` may ask once to read the plugin folder. Allow `Read(~/.claude/plugins/**)` to skip the prompt.
-- To release, bump `version` in `plugin/.claude-plugin/plugin.json`. CI fails a change to `plugin/` whose version is not above the one on `origin/main`.
+- Run orbit from source with `claude --plugin-dir ~/Projects/orbit/plugin`.
+- Run the Check line in AGENTS.md. On each push, CI runs it plus the hook, worktree audit, diagram drift, link, T3 grader and version tests in `tests/`.
+- Update vendored skills, listed in `skills.json`, with `/update-skills [name]`.
+- Allow `Read(~/.claude/plugins/**)` so `/orbit:interrogate` doesn't ask to read the plugin folder.
+- To release, bump `version` in `plugin/.claude-plugin/plugin.json`. CI fails a `plugin/` change without a higher version.
