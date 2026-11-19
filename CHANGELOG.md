@@ -4,6 +4,21 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.63.0
+
+Released 2026-11-19.
+
+### Task progress
+
+- `/orbit:start` tracks its step list with the session's native task tools. That is `TaskCreate` and `TaskUpdate` or `TodoWrite` under Claude, `update_plan` under Codex, and the native equivalent under another provider. In T3 Code, these updates show as task progress ([#77](https://github.com/aayushbtw/orbit/pull/77)).
+- A skipped or waived step stays in the list with its `skip: <reason>` and is marked completed. On resume, the lead updates the existing list and does not create a second one ([#77](https://github.com/aayushbtw/orbit/pull/77)).
+
+### Breaking or behavior changes
+
+- Without a native task tool, the lead tracks the step list silently and never prints it ([#81](https://github.com/aayushbtw/orbit/pull/81)).
+- The reply's task list shows your tasks, such as `[x] Fix the login redirect`, never the playbook's steps. It appears once at the start. After that, a task's line appears again only when its state changes, and the final reply shows the closed list ([#79](https://github.com/aayushbtw/orbit/pull/79), [#81](https://github.com/aayushbtw/orbit/pull/81)).
+- The reply shows a task list only when the goal holds two or more separate tasks. One change, built, reviewed and landed, gets a line of progress instead ([#82](https://github.com/aayushbtw/orbit/pull/82)).
+
 ## 0.62.0
 
 Released 2026-11-17.
