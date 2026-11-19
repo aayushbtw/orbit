@@ -12,7 +12,7 @@ In the Shipping playbook, green CI and an approving bot review are not verdicts,
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../diagrams/guide-ship-dark.svg">
-  <img alt="A built change goes through Opening a PR. Under Land pr, the branch opens as a PR. Under Land main, the branch stays local. A dashed line right after that marks where a task stops when you said don't ship, and /orbit:ship resumes from there. Past the line, Babysit drives a PR to merge-ready, and both paths reach a fresh verifier. On PASS or PASS+NOTES the change lands. On FAIL nothing lands, and the reply carries a repro." src="../diagrams/guide-ship-light.svg">
+  <img alt="A built change goes through Opening a PR. Under Land pr, the branch opens as a PR. Under Land main, the branch stays local. A dashed line right after that marks where a task stops when you said don't ship, and /orbit:ship resumes from there. Past the line, Babysit drives a PR to merge-ready, and both paths reach the advisor's diff review. A blocking finding gets a fix first. Then a fresh verifier runs the change. On PASS or PASS+NOTES the change lands. On FAIL nothing lands, and the reply carries a repro." src="../diagrams/guide-ship-light.svg">
 </picture>
 
 Every change ends in Opening a PR. It runs `/orbit:deslop` over the diff and `/orbit:no-comments` before review, and writes the title and description to a fixed shape. The title is a Conventional Commit such as `feat(export): add a --since flag`. The body is a one-minute briefing with sections such as `## Why`, `## Scope` and `## Verification`. [Build a change](./04-build-a-change.md) covers the commits that come before it.
@@ -26,9 +26,9 @@ What opens next depends on the Land line in your project's Workflow block. Leave
 
 ## The advisor reviews the diff first
 
-Before the verifier runs, Claude briefs the advisor once per PR with the diff, the change's intent and the project's guidance for the changed paths. The advisor runs on Fable unless an `advisor` row changes it, so under the defaults a different model from the one that wrote the code reads it. It returns blocking findings, meaning bugs, broken project rules and missed cases. A blocking finding gets a fix round first, so the verifier runs once, at the head that lands. Other findings go in the reply, with the model that reviewed the diff.
+Before the verifier runs, Claude briefs the advisor with each PR's diff, the change's intent and the project's guidance for the changed paths. Under a Claude lead, the advisor runs on Fable unless an `advisor` row changes it, so under the defaults a different model from the one that wrote the code reads it. It returns blocking findings, meaning bugs, broken project rules and missed cases. Claude checks each one against the code and drops one that doesn't hold, with its reason. A finding that holds gets a fix round first. Under Land `pr`, gitops pushes the fix and Babysit gets the PR and the stack above it back to merge-ready before the verifier runs. Other findings go in the reply, with the model that reviewed the diff.
 
-The review reads code and never runs it, so it is not a verdict. It never replaces the verifier.
+The review covers the patch it read. It runs again, on what changed since, only when the patch changes before it lands or a fix follows a FAIL. The review reads code and never runs it, so it is not a verdict. It never replaces the verifier.
 
 ## The verifier runs your change like a user
 

@@ -73,7 +73,7 @@ Claude runs these itself. You can also ask for the advisor. A Models table in yo
 When each runs:
 
 - poteto-agent and comment-sicko run only inside the flow you start. The verifier runs only inside Shipping (at task end or `/orbit:ship`), autopilot-full and autopilot-stack.
-- The advisor runs at the plan gate, before any question Claude would ask you, at Shipping's diff review, and when you ask for it.
+- The advisor runs at the plan gate, before a fork reaches you, at Shipping's diff review, and when you ask for it.
 - As in pstack, the rest is opt-in. `/orbit:setup`, `/orbit:correct`, `/orbit:session-pickup`, `/orbit:reflect`, `/orbit:recall`, `/orbit:automate-me`, `/orbit:create-verification-skill` and `/orbit:maintain-verification-skill` run only when you type them.
 - `/orbit:how` and `/orbit:why` run when you type them and when Claude matches a question to them. `/orbit:how` also runs before a nontrivial change, and `/orbit:why` inside the investigate and bug flows and `no-comments`.
 - `/orbit:arena` runs when you type it, inside `/orbit:architect` for a large or contested design, and in the feature flow on a choice with several valid shapes.

@@ -201,21 +201,25 @@ function guideArena(theme) {
 }
 
 function guideShip(theme) {
-  const W = 1125, H = 400;
+  const W = 1385, H = 400;
   const k = canvas(theme, W, H);
   const box = (b) => { const r = B({ h: 84, ...b }); k.box(r); return r; };
   const opening = box({ x: 20, y: 115, w: 210, t: 'Opening a PR', s: 'deslop, no-comments', kind: 'claude' });
   const pr = box({ x: 290, y: 25, w: 220, t: 'Open a PR', s: 'ready, not a draft', kind: 'claude' });
   const branch = box({ x: 290, y: 205, w: 220, t: 'Keep the branch', s: 'local, unpushed', kind: 'claude' });
-  const verifier = box({ x: 650, y: 115, w: 215, t: 'Verifier', s: 'fresh, runs it like a user', kind: 'agent' });
-  const lands = box({ x: 910, y: 25, w: 200, t: 'Lands', s: 'PASS or PASS+NOTES', ss: 16, kind: 'done' });
-  const waits = box({ x: 910, y: 205, w: 200, t: 'Nothing lands', s: 'FAIL, with a repro', ss: 16, kind: 'fail' });
+  const review = box({ x: 650, y: 115, w: 215, t: 'Diff review', s: 'advisor reads the diff', kind: 'agent' });
+  const verifier = box({ x: 910, y: 115, w: 215, t: 'Verifier', s: 'fresh, runs it like a user', kind: 'agent' });
+  const lands = box({ x: 1170, y: 25, w: 200, t: 'Lands', s: 'PASS or PASS+NOTES', ss: 16, kind: 'done' });
+  const waits = box({ x: 1170, y: 205, w: 200, t: 'Nothing lands', s: 'FAIL, with a repro', ss: 16, kind: 'fail' });
   k.link(opening, pr);
   k.link(opening, branch);
   k.text(222, 100, 'Land pr', 17, k.c.muted, 'end');
   k.text(222, 228, 'Land main', 17, k.c.muted, 'end');
-  k.link(pr, verifier);
-  k.link(branch, verifier);
+  k.link(pr, review);
+  k.link(branch, review);
+  k.link(review, verifier);
+  k.arrow([[review.cx + 40, review.bot + 6], [review.cx + 30, review.bot + 48], [review.cx - 30, review.bot + 48], [review.cx - 40, review.bot + 6]], true);
+  k.text(review.cx, review.bot + 74, 'a blocking finding gets a fix', 17, k.c.muted);
   k.link(verifier, lands);
   k.link(verifier, waits);
   k.line(545, 15, 545, 305);

@@ -13,6 +13,7 @@ Released 2026-11-20.
 - Before the lead asks you which approach to take, it briefs the advisor with every open fork, acts on the advisor's pick and reports it. The reply says in plain words what you could tell it to do instead.
 - The lead still asks you for an irreversible write, a gate you named, a pick that drops or changes what you asked for, and a skill's own questions, such as `/orbit:setup`'s. It finishes the work that doesn't depend on the answer first.
 - Before the verifier runs, Shipping has the advisor review each PR's diff, on Fable by default. A blocking finding gets a fix round first, and the reply names the model that reviewed the diff.
+- In a multi-phase plan, a fork that no prototype settles goes to the advisor, not to you.
 
 ## 0.63.0
 
