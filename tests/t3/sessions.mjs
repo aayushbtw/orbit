@@ -16,20 +16,23 @@ const jsonlFiles = (dir, recursive = false) => existsSync(dir)
   : [];
 const childIdIn = (text) => { try { return [JSON.parse(text).childThreadId].filter((id) => typeof id === 'string'); } catch { return []; } };
 
+const claudeStart = (entries) => Date.parse(entries.find((e) => e.type === 'user')?.timestamp);
+
 const claude = {
   where: (worktreePath, { homes = HOMES } = {}) => join(homes.claude, 'projects', worktreePath.replace(/[^a-zA-Z0-9]/g, '-')),
-  // A thread on the project root shares its folder with earlier lanes, so only files written since the lane started count.
+  // A thread on the project root shares its folder with earlier lanes, and Claude Code still appends to their files, so a file counts only when its first user entry is from after the lane started.
   sessions: (worktreePath, ctx = {}) => jsonlFiles(claude.where(worktreePath, ctx), true)
     .filter((f) => statSync(f).mtimeMs >= (ctx.since ?? 0))
-    .map((f) => [f, readJsonl(f)]),
+    .map((f) => [f, readJsonl(f)])
+    .filter(([, entries]) => claudeStart(entries) >= (ctx.since ?? 0)),
   lead(sessions, worktreePath, ctx) {
     const { message } = ctx;
     const [, command, args] = message.match(/^\/(\S+)\s*([\s\S]*)$/) ?? [];
     const opening = command ? `<command-message>${command}</command-message>\n<command-name>/${command}</command-name>\n<command-args>${args}</command-args>` : message;
-    const [file] = sessions.find(([f, entries]) => {
+    const [file] = sessions.filter(([f, entries]) => {
       const first = entries.find((e) => e.type === 'user')?.message?.content;
       return dirname(f) === claude.where(worktreePath, ctx) && (first === message || first === opening);
-    }) ?? [];
+    }).toSorted(([, a], [, b]) => claudeStart(b) - claudeStart(a))[0] ?? [];
     return file ? { file, ...claude.read(file) } : null;
   },
   read(file) {
@@ -85,7 +88,7 @@ const codex = {
   sessions: (worktreePath, { homes = HOMES, since = 0 } = {}) => jsonlFiles(join(homes.codex, 'sessions'), true)
     .filter((f) => statSync(f).mtimeMs >= since)
     .map((f) => [f, readJsonl(f)])
-    .filter(([, [meta]]) => meta?.type === 'session_meta' && meta.payload?.cwd === worktreePath),
+    .filter(([, [meta]]) => meta?.type === 'session_meta' && meta.payload?.cwd === worktreePath && Date.parse(meta.payload.timestamp) >= since),
   lead(sessions, _, ctx) {
     const [file] = sessions.toSorted(([, [a]], [, [b]]) => a.payload.timestamp.localeCompare(b.payload.timestamp))[0] ?? [];
     return file ? { file, ...codex.read(file, ctx, sessions) } : null;
