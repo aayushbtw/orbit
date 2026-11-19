@@ -4,6 +4,16 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.66.1
+
+Released 2026-11-20.
+
+### Token use
+
+- In T3 Code, a Claude lead with no providers listed for seats on another family now reads 3,429 words of the T3 adapter in place of 6,144. Nothing orbit does changes.
+- The seat rules moved to `plugin/docs/harness/t3-seats.md`. A session reads it only when the `other-family` Models row lists providers or the `verifier` row is `other-family` or `other-family, inherit`. The rules for a child's question, stopping and archiving stay in `t3-code.md`, because they hold for every child.
+- The tool map for a lead that is not Claude Code, such as Codex or Grok, moved to `plugin/docs/harness/t3-other-lead.md`. Only such a lead reads it, through the `rules` skill and rules.md **Host tools.**
+
 ## 0.66.0
 
 Released 2026-11-20.
