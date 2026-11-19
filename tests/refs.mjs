@@ -20,13 +20,14 @@ const skillDir = (file) => {
   return parts[0] === 'skills' && parts.length > 2 ? join(plugin, 'skills', parts[1]) : null;
 };
 
-// Each path resolves against the file's dir, its skill dir (playbooks/*.md are relative to it) and plugin/.
+// Each path resolves against the file's dir, its skill dir (playbooks/*.md are relative to it) and plugin/, and must land inside plugin/ since only plugin/ ships.
 // It is orbit's only if it starts with ./, ../, ${CLAUDE_SKILL_DIR}, ${CLAUDE_PLUGIN_ROOT} or <orbit-plugin>, or its first segment is a dir in one of those bases; the rest belong to the user's project.
 function pathBases(file, ref) {
   const anchored = ref.match(/^(\$\{CLAUDE_SKILL_DIR\}|\$\{CLAUDE_PLUGIN_ROOT\}|<orbit-plugin>)\/(.*)$/);
   if (anchored) {
     const base = anchored[1] === '${CLAUDE_SKILL_DIR}' ? skillDir(file) : plugin;
-    return base && !/[*<]/.test(anchored[2]) ? { path: anchored[2], bases: [base] } : null;
+    if (/[*<]/.test(anchored[2])) return null;
+    return { path: anchored[2], bases: base ? [base] : [] };
   }
   if (/[*<${~]/.test(ref) || ref.startsWith('/') || !ref.includes('/')) return null;
   const bases = [dirname(file), skillDir(file), plugin].filter(Boolean);
@@ -46,7 +47,7 @@ for (const file of files) {
   let fence = null;
   readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
     for (const [ref, slash, name] of line.matchAll(/(?<![\w./-])(\/?)orbit:([a-z][a-z0-9-]*)/g)) {
-      if (name.length < 2) continue;
+      if (name.length < 2 || name.endsWith('-')) continue;
       const kind = slash ? 'command' : 'name';
       refs[kind]++;
       if (!skills.has(name) && (slash || !agents.has(name))) fail(file, i, ref, kind);
@@ -65,7 +66,11 @@ for (const file of files) {
         const target = pathBases(file, ref);
         if (!target) continue;
         refs.path++;
-        if (!target.bases.some((b) => existsSync(resolve(b, target.path)))) fail(file, i, ref, 'path');
+        const resolves = (b) => {
+          const p = resolve(b, target.path);
+          return (p === plugin || p.startsWith(plugin + sep)) && existsSync(p);
+        };
+        if (!target.bases.some(resolves)) fail(file, i, ref, 'path');
       }
     }
   });
