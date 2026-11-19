@@ -4,6 +4,17 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.65.0
+
+Released 2026-11-20.
+
+### Breaking or behavior changes
+
+- After a branch lands, Shipping first leaves the session's worktree with `ExitWorktree` and `keep`. Only then does gitops remove the task, verifier and owner worktrees and the local branch, by absolute path. The cleanup no longer trips Claude Code's worktree guard or a refused `ExitWorktree` `remove`.
+- The lead never passes `remove` or `discard_changes` to `ExitWorktree` in Shipping. Discarding work is your call.
+- A T3 thread whose worktree T3 bound at start keeps that worktree and its branch after the land, and the reply names them.
+- While a session is isolated in a worktree, it and its subagents run git only there. Git in another checkout waits until the session leaves with `ExitWorktree` and `keep`.
+
 ## 0.64.0
 
 Released 2026-11-20.
