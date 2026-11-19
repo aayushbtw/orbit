@@ -104,7 +104,7 @@ An Effort cell is the level Claude passes, as written. Claude adds no judgment o
 
 A work type's cell can add a step with `after <n> failed tries`. A failed try is a delegate whose work on the unit fails Claude's review or the check, or that crashes or returns nothing. Parallel attempts, such as arena runners, count no tries, and each part of a split unit starts at zero. In the game, a `shader-math` unit runs at `high` for its first two delegates. If both fail, the third runs at `xhigh`. The unit's todo item carries its try count. The step works in a Model cell too, such as `sonnet, opus after 2 failed tries`. A cell of `opus, fable after 2 failed tries` keeps a work type on Opus and moves a unit to Fable once Opus has failed it twice.
 
-If the `Agent` tool rejects a row's model, Claude passes no model and says so. If the advisor can't run on Fable, because your account lacks it or its usage limit is reached, Claude retries it once on Opus and says so. If the tool rejects a level, Claude tries no other level. It uses the row's level or the one in the agent file, and says so.
+If the `Agent` tool rejects a row's model, Claude passes no model and says so. If the advisor can't run on Fable, because your account lacks it or its usage limit is reached, Claude retries it once on Opus and says so. It never sends the advisor's fork to you in its place. If the tool rejects a level, Claude tries no other level. It uses the row's level or the one in the agent file, and says so.
 
 If `CLAUDE_CODE_EFFORT_LEVEL` is set in your environment, Claude Code applies it to every spawn, over every Effort cell in the table.
 
@@ -159,7 +159,7 @@ Pick Fable for the session with `/model fable`, at `high` or `medium` effort. Do
 
 The `judgment` row repeats its default, so the variant below is a one-cell change. The `code` row is neither `sonnet` nor `haiku`, so the guard above leaves every code delegate on Opus, and none falls back to the Fable session. Leave each Effort cell empty on purpose. A row's effort is exact, so a filled cell would stop Claude from raising a hard unit to `high`.
 
-Two spawns stay on Fable. The advisor keeps Fable from its agent file. Comment Sicko takes no row, so it runs on the session model at `medium`, unless `CLAUDE_CODE_SUBAGENT_MODEL` is set. gitops keeps Sonnet from its agent file.
+Two spawns stay on Fable. The advisor keeps Fable from its agent file, so its diff review in Shipping reads code that Opus wrote. Comment Sicko takes no row, so it runs on the session model at `medium`, unless `CLAUDE_CODE_SUBAGENT_MODEL` is set. gitops keeps Sonnet from its agent file.
 
 With `code` and `judgment` both on Opus, interrogate's two adversaries and arena's two runners run on one model. To keep a second model in the panels, put `judgment` on Fable instead:
 

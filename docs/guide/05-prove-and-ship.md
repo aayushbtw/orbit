@@ -24,6 +24,12 @@ What opens next depends on the Land line in your project's Workflow block. Leave
 
 [Make orbit fit your project](./08-make-it-fit.md) shows where the Land line goes. Either way, the same verifier decides what lands.
 
+## The advisor reviews the diff first
+
+Before the verifier runs, Claude briefs the advisor once per PR with the diff, the change's intent and the project's guidance for the changed paths. The advisor runs on Fable unless an `advisor` row changes it, so under the defaults a different model from the one that wrote the code reads it. It returns blocking findings, meaning bugs, broken project rules and missed cases. A blocking finding gets a fix round first, so the verifier runs once, at the head that lands. Other findings go in the reply, with the model that reviewed the diff.
+
+The review reads code and never runs it, so it is not a verdict. It never replaces the verifier.
+
 ## The verifier runs your change like a user
 
 Shipping spawns one `verifier` per PR, fresh, in its own worktree. It has Read, Grep, Glob, Bash and Write. It uses Write only for scratch scripts under `/tmp`. It has no Edit, so it can't patch the change and then pass its own patch. It commits nothing. In T3 Code it also has two named T3 read tools, which it loads when the host serves them. It never uses T3's preview browser, which the user shares, and drives a UI through the control skill's own headless browser.
