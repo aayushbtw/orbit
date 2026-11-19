@@ -1,0 +1,17 @@
+{
+  "originReadme": "# greet\n\nA small library that says hello. Call `greet(name)` to get the greeting for a name.\n",
+  "originLog": [
+    "0dae0ea docs(readme): fix \"teh\" typo in greet usage line",
+    "48bbc50 Initial greet library"
+  ],
+  "worktrees": [
+    {
+      "path": ".",
+      "branch": "main",
+      "dirty": false
+    }
+  ],
+  "branches": [
+    "main"
+  ]
+}

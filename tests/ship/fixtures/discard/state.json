@@ -1,0 +1,23 @@
+{
+  "originReadme": "# greet\n\nA small library that says hello. Call `greet(name)` to get the greeting for a name.\n",
+  "originLog": [
+    "bb8f144 docs(readme): fix \"teh\" typo in greet(name) description",
+    "8ab2dca Initial greet library"
+  ],
+  "worktrees": [
+    {
+      "path": ".",
+      "branch": "main",
+      "dirty": false
+    },
+    {
+      "path": ".claude/worktrees/agent-a555cab5f1f5c4833",
+      "branch": "worktree-agent-a555cab5f1f5c4833",
+      "dirty": false
+    }
+  ],
+  "branches": [
+    "main",
+    "worktree-agent-a555cab5f1f5c4833"
+  ]
+}
