@@ -12,7 +12,8 @@ const isDir = (p) => existsSync(p) && statSync(p).isDirectory();
 const files = execFileSync('git', ['ls-files', '-co', '--exclude-standard', '-z', '--', 'plugin/*.md', 'plugin/**/*.md'], { cwd: root, encoding: 'utf8' })
   .split('\0')
   .filter(Boolean)
-  .map((f) => join(root, f));
+  .map((f) => join(root, f))
+  .filter((f) => existsSync(f));
 
 const skillDir = (file) => {
   const parts = relative(plugin, file).split(sep);
