@@ -4,6 +4,15 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.66.0
+
+Released 2026-11-20.
+
+### Breaking or behavior changes
+
+- In T3 Code, a child that gets its own checkout now starts from the commit its brief names. T3 starts that checkout at HEAD of the thread's bound checkout, else of the project root, so it could miss the work the lead committed on the task branch. Each brief names the start SHA, the task head or the fetched `origin/<trunk>`, and the child's first command is `git reset --hard <start sha>`.
+- On the wake, the lead cherry-picks a child's commit only when it descends from that start SHA. One that does not is a failed try.
+
 ## 0.65.0
 
 Released 2026-11-20.
