@@ -143,6 +143,15 @@ test('children-on-prerequisite fails a child whose round.mjs is its own, and a l
   assert.match(grade(null).why, /no branches recorded/);
 });
 
+test('no-pick-conflict fails a cherry-pick recovery that starts a command, not one behind ||', () => {
+  const grade = (command) => verdicts(lane({ scenario: 'child-base', provider: 'claude', toolCalls: [{ name: 'Bash', input: { command }, sidechain: true }] }))['no-pick-conflict'];
+  assert.equal(grade('git cherry-pick 49a14e9 || git cherry-pick --abort; git rev-parse HEAD'), 'PASS');
+  assert.equal(grade('git cherry-pick 49a14e9'), 'PASS');
+  assert.equal(grade('git cherry-pick --abort'), 'FAIL');
+  assert.equal(grade('git status; git -C /w cherry-pick --skip'), 'FAIL');
+  assert.equal(grade('git add mean.mjs && GIT_EDITOR=true git cherry-pick --continue'), 'FAIL');
+});
+
 const call = (name, input = {}) => ({ name, input, sidechain: false });
 const caps = call('mcp__t3-code__orchestrator_capabilities');
 const opusAdversary = call('Agent', { subagent_type: 'general-purpose', model: 'opus' });

@@ -162,7 +162,7 @@ test('sum adds every value', () => {
 
 const pinsBase = /\bgit\s+(-C\s+\S+\s+)?(reset\s+--hard|checkout|switch|merge\s+--ff-only)\b[^\n]*?\b[0-9a-f]{7,40}\b/;
 const unpinnedChild = { isolation: 'worktree', task: (task) => !pinsBase.test(task ?? '') };
-const pickConflict = { command: /\bcherry-pick\b[^\n]*--(abort|continue|skip|quit)\b/ };
+const pickConflict = { command: /(^|;|&&|\n)\s*(\w+=\S*\s+)*git(\s+-[cC]\s+\S+)*\s+cherry-pick\b[^\n;&|]*--(abort|continue|skip|quit)\b/ };
 const short = (sha) => sha?.slice(0, 7) ?? 'none';
 const childrenOnPrerequisite = (path) => ({
   state: ({ branches }) => {
