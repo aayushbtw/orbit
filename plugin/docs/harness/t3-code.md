@@ -49,6 +49,8 @@ A same-provider child runs this way.
 
 Never wait on a task whose result carries `next`, as you never poll it. `task_status` reports the task's `workState` as `working`, `waiting_for_children` or `result_available`. A finished turn with live child work is not done, so read the result and settle the child only at `result_available`.
 The reply names a child or any other thread by the `link` its result carries, never by an id or a title.
+`t3_background_wait` does not take a `delegate_task` id. Stop a child with `task_cancel`, never `t3_thread_interrupt`. Use `t3_thread_organize` action `archive` only for a child you abandon.
+When `task_status` or `delegate_task` reports `hasPendingQuestion`, or T3 tells this thread that a child asks a question, call `t3_pending_request` with `threadId` set to the `childThreadId`. Use `list` for the request ids and `read` for the request. Then `respond` with `answers` when the brief's context answers it, else ask the user. The child's completion still wakes you. Approvals do not reach `t3_pending_request`. Probe `t3_pending_request` as Probe says before its first call. When it is absent, archive a child that waits on a question.
 
 ## Subagent fields
 
@@ -69,7 +71,7 @@ Claude models map as rules.md Workflow Defaults, Models says, and under a lead o
 
 ### Seats on another family
 
-Read `t3-seats.md` in this folder when the `other-family` Models row lists providers, or the `verifier` row's Model is `other-family` or `other-family, inherit`. Otherwise each seat on another family that a skill names is the skill's own seat on the session's family, and an empty or missing `other-family` row puts `No seat on another family is configured. /orbit:setup lists providers.` in the reply.
+Read `t3-seats.md` in this folder when the `other-family` Models row lists providers, or the `verifier` row's Model is `other-family` or `other-family, inherit`. Otherwise a seat on another family that a skill names runs the skill's session-family seat, as outside T3, which is an `Agent` spawn under a Claude lead or the native subagent under another lead, with the model its role resolves. When a skill names such a seat and the `other-family` row is empty or missing, the reply says `No seat on another family is configured. /orbit:setup lists providers.`
 
 Call `orchestrator_capabilities` once per thread, before the first `delegate_task` of any kind, and reuse the result. Call it again only after an error or a user-named provider change, or with `search` for a model the Models table names, as `t3-seats.md` says. It holds `inheritedProviderInstanceId`, `inheritedModel`, the parent's runtime mode and `providers`, in listed order. Each provider has `providerInstanceId`, `driverKind`, `canRunCrossProviderChildTask`, `constraints` and `models`. A provider that offers only some runtime modes also lists them in `runtimeModes`. Each model has an `id` and may list `options`, each an `id` with its `values`. The effort option's `id` differs per provider.
 

@@ -1,6 +1,6 @@
 # Orbit in T3 Code
 
-T3 Code runs orbit under a Claude lead and under a lead on another provider, such as Grok or Codex. This record says how orbit loads, finds T3's tools, fills panel seats, spawns subagents and resolves paths in each case. The [host adapter](../plugin/docs/harness/t3-code.md) holds the rules a lead follows. Two files beside it hold sections only some sessions read. A lead on another provider also reads [t3-other-lead.md](../plugin/docs/harness/t3-other-lead.md). A session whose `other-family` row lists providers, or whose `verifier` row is `other-family`, also reads [t3-seats.md](../plugin/docs/harness/t3-seats.md). The [README](../README.md#install) holds the setup.
+T3 Code runs orbit under a Claude lead and under a lead on another provider, such as Grok or Codex. This record says how orbit loads, finds T3's tools, fills panel seats, spawns subagents and resolves paths in each case. The [host adapter](../plugin/docs/harness/t3-code.md) holds the rules a lead follows. Two files beside it hold sections only some sessions read. A lead on another provider also reads [t3-other-lead.md](../plugin/docs/harness/t3-other-lead.md). A session whose `other-family` row lists providers, or whose `verifier` row is `other-family` or `other-family, inherit`, also reads [t3-seats.md](../plugin/docs/harness/t3-seats.md). The [README](../README.md#install) holds the setup.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="diagrams/t3-lead-dark.svg">
