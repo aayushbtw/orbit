@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { after, describe, test } from 'node:test';
 import { READERS, kindOf, readLead } from './sessions.mjs';
 
@@ -59,6 +59,33 @@ describe('codex', () => {
     const sessions = READERS.codex.sessions(worktree, { homes });
     assert.deepEqual(READERS.codex.lead(sessions, worktree, { homes }), { file: leadFile, ...expected });
     assert.deepEqual(READERS.codex.childIds(sessions), ['t3-child']);
+  });
+
+  test('a rollout that began before the lane started is not the lead, though its file changed since', () => {
+    const sessions = READERS.codex.sessions(worktree, { homes, since: Date.parse('2026-11-17T00:00:01Z') });
+    assert.deepEqual(sessions.map(([f]) => f), [join(day, 'rollout-child.jsonl')]);
+  });
+});
+
+describe('claude', () => {
+  const homes = { claude: join(root, 'claude') };
+  const dir = READERS.claude.where(worktree, { homes });
+  const message = '/orbit:start Report the branch.';
+  const opening = '<command-message>orbit:start</command-message>\n<command-name>/orbit:start</command-name>\n<command-args>Report the branch.</command-args>';
+  const since = Date.parse('2026-11-20T10:00:00Z');
+  const appended = new Date('2026-11-20T11:00:00Z');
+  const session = (file, timestamp) => {
+    writeJsonl(join(dir, file), [{ type: 'user', timestamp, message: { content: opening } }, { type: 'cost-state' }]);
+    utimesSync(join(dir, file), appended, appended);
+  };
+  session('earlier.jsonl', '2026-11-20T09:00:00Z');
+  session('fresh.jsonl', '2026-11-20T10:01:00Z');
+  session('fresher.jsonl', '2026-11-20T10:02:00Z');
+
+  test('lead is the newest session whose first user entry is after the lane start, though an earlier lane wrote to its file since', () => {
+    const sessions = READERS.claude.sessions(worktree, { homes, since });
+    assert.deepEqual(sessions.map(([f]) => basename(f)).toSorted(), ['fresh.jsonl', 'fresher.jsonl']);
+    assert.equal(READERS.claude.lead(sessions, worktree, { message, homes }).file, join(dir, 'fresher.jsonl'));
   });
 });
 

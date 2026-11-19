@@ -1,0 +1,467 @@
+{
+  "scenario": "child-base",
+  "message": "/orbit:start feature, just testing, don't ship: first add `lib/round.mjs` exporting round2(x), which rounds x to 2 decimals, with a node:test test, and commit it on the task branch. Then, as two parallel units per the Delegate gate, add `mean.mjs` exporting mean(values) and `median.mjs` exporting median(values), each returning round2 of its result and each with a node:test test. They share no file. Commit each unit on the task branch. No PR.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "orbit-lane-child-base-7307a46c",
+    "relabeled": false,
+    "note": "At origin/main 7686e86, a lead on the project root enters a worktree and commits round.mjs as b878f4c. T3 starts both try-1 children at the root's commit, without round.mjs, and their briefs only check for it, so both stop. The try-2 briefs run git merge --ff-only b878f4c and succeed. brief-pins-base and children-on-prerequisite fail",
+    "expect": {
+      "own-checkout-children": "PASS",
+      "brief-pins-base": "FAIL",
+      "no-pick-conflict": "PASS",
+      "children-on-prerequisite": "FAIL"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Skill",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git ls-files; cat package.json 2>/dev/null; git log --stat -3 | cat"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat sum.mjs sum.test.mjs .claude/settings.json .claude/settings.local.json; git worktree list; git rev-parse --git-dir --git-common-dir; git remote -v"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git check-ignore -q .claude/worktrees; echo $?"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "printf '.claude/worktrees\\n' >> .git/info/exclude"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "ToolSearch",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "EnterWorktree",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__orchestrator_capabilities",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git branch -m feat/stats"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git log --oneline -1"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Skill",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:advisor",
+        "run_in_background": false
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:poteto-agent",
+        "run_in_background": false
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat lib/round.mjs lib/round.test.mjs"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node --test"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:gitops",
+        "run_in_background": false
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "isolation": "worktree",
+        "mode": "async",
+        "role": "implementation",
+        "clientRequestId": "feature-mean-b878f4c-try1",
+        "target": {
+          "providerInstanceId": "claudeAgent"
+        },
+        "task": "You are a subagent of this thread. Start no child thread.\n\nU…[1691 chars]"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "isolation": "worktree",
+        "mode": "async",
+        "role": "implementation",
+        "clientRequestId": "feature-median-b878f4c-try1",
+        "target": {
+          "providerInstanceId": "claudeAgent"
+        },
+        "task": "You are a subagent of this thread. Start no child thread.\n\nU…[1900 chars]"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "isolation": "worktree",
+        "mode": "async",
+        "role": "implementation",
+        "clientRequestId": "feature-mean-b878f4c-try2",
+        "target": {
+          "providerInstanceId": "claudeAgent"
+        },
+        "task": "You are a subagent of this thread. Start no child thread.\n\nU…[1908 chars]"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__t3_thread_organize",
+      "input": {
+        "action": "settle"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__delegate_task",
+      "input": {
+        "isolation": "worktree",
+        "mode": "async",
+        "role": "implementation",
+        "clientRequestId": "feature-median-b878f4c-try2",
+        "target": {
+          "providerInstanceId": "claudeAgent"
+        },
+        "task": "You are a subagent of this thread. Start no child thread.\n\nU…[2117 chars]"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__t3_thread_organize",
+      "input": {
+        "action": "settle"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "gh issue create --repo aayushbtw/orbit --title \"t3-code adap…[1193 chars]"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git show a46e3d3"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:gitops",
+        "run_in_background": false
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__t3_thread_organize",
+      "input": {
+        "action": "settle"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git show 9a55d2c"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:gitops",
+        "run_in_background": false
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__t3_thread_organize",
+      "input": {
+        "action": "settle"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node --test"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git worktree list"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git status --short"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git worktree remove ~/.t3/worktrees/orbit-lane-project-child-base-d0f67404/t3-0a76ed55-3d6a3cae75ad2432"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git worktree remove ~/.t3/worktrees/orbit-lane-project-child-base-d0f67404/t3-e3ad1b6e-b311d8201de82213"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git worktree remove ~/.t3/worktrees/orbit-lane-project-child-base-d0f67404/t3-745c0fce-24336288f7439bec"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git worktree remove ~/.t3/worktrees/orbit-lane-project-child-base-d0f67404/t3-b16478ea-26e111c8835244e4"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git branch -D t3/add-mean-tests t3/add-median-tests t3/add-rounded-mean t3/add-rounded-median"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "ls -R | head -50 && fd -e mjs"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Read",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Write",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Write",
+      "input": {},
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "node --test"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C $TMPDIR/orbit-lane-project-child-base-d0f67404/.claude/worktrees/feat-stats status --short"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "ls -la && echo --- && cat sum.mjs sum.test.mjs AGENTS.md && …[350 chars]"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "fd -H -d 3 . .claude | head -30; echo ---; cat .git; git che…[364 chars]"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git add lib/round.mjs lib/round.test.mjs && git commit -q -m \"feat: add round2\" -- lib/round.mjs lib/round.test.mjs && git log -1 --format='%h %s'"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git cherry-pick 9a55d2c 2>&1; git status --short | head; git log --oneline -4"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git cherry-pick a46e3d3 2>&1 | tail -5; git status --short | head; git log --oneline -2"
+      },
+      "sidechain": true
+    }
+  ],
+  "branches": [
+    {
+      "ref": "refs/heads/orbit-lane/child-base-7307a46c",
+      "born": "4570793e0d4eb58d8b4779603f59aa361d84d296",
+      "tip": "4570793e0d4eb58d8b4779603f59aa361d84d296",
+      "worktree": "$TMPDIR/orbit-lane-project-child-base-d0f67404",
+      "child": false,
+      "adds": null
+    },
+    {
+      "ref": "refs/heads/feat/stats",
+      "born": "4570793e0d4eb58d8b4779603f59aa361d84d296",
+      "tip": "235e741c395e0884b32e7454a7724e6c93adc4b2",
+      "worktree": "$TMPDIR/orbit-lane-project-child-base-d0f67404/.claude/worktrees/feat-stats",
+      "child": false,
+      "adds": "b878f4cb3a4ba460e1257fa25f9344a0f6d5e7fc"
+    },
+    {
+      "ref": "refs/heads/t3/add-rounded-mean",
+      "born": "4570793e0d4eb58d8b4779603f59aa361d84d296",
+      "tip": "4570793e0d4eb58d8b4779603f59aa361d84d296",
+      "worktree": "~/.t3/worktrees/orbit-lane-project-child-base-d0f67404/t3-b16478ea-26e111c8835244e4",
+      "child": true,
+      "adds": null
+    },
+    {
+      "ref": "refs/heads/t3/745c0fce",
+      "born": "4570793e0d4eb58d8b4779603f59aa361d84d296",
+      "tip": "4570793e0d4eb58d8b4779603f59aa361d84d296",
+      "worktree": "~/.t3/worktrees/orbit-lane-project-child-base-d0f67404/t3-745c0fce-24336288f7439bec",
+      "child": true,
+      "adds": null
+    },
+    {
+      "ref": "refs/heads/t3/add-rounded-median",
+      "born": "4570793e0d4eb58d8b4779603f59aa361d84d296",
+      "tip": "4570793e0d4eb58d8b4779603f59aa361d84d296",
+      "worktree": "~/.t3/worktrees/orbit-lane-project-child-base-d0f67404/t3-745c0fce-24336288f7439bec",
+      "child": true,
+      "adds": null
+    },
+    {
+      "ref": "refs/heads/t3/0a76ed55",
+      "born": "4570793e0d4eb58d8b4779603f59aa361d84d296",
+      "tip": "4570793e0d4eb58d8b4779603f59aa361d84d296",
+      "worktree": "~/.t3/worktrees/orbit-lane-project-child-base-d0f67404/t3-0a76ed55-3d6a3cae75ad2432",
+      "child": true,
+      "adds": null
+    },
+    {
+      "ref": "refs/heads/t3/add-mean-tests",
+      "born": "4570793e0d4eb58d8b4779603f59aa361d84d296",
+      "tip": "a46e3d3aed7dc05f05e2b11d1542f039e4c07454",
+      "worktree": "~/.t3/worktrees/orbit-lane-project-child-base-d0f67404/t3-0a76ed55-3d6a3cae75ad2432",
+      "child": true,
+      "adds": "b878f4cb3a4ba460e1257fa25f9344a0f6d5e7fc"
+    },
+    {
+      "ref": "refs/heads/t3/add-median-tests",
+      "born": "4570793e0d4eb58d8b4779603f59aa361d84d296",
+      "tip": "9a55d2c72d4c2424b3d199cf847323900c1169d2",
+      "worktree": "~/.t3/worktrees/orbit-lane-project-child-base-d0f67404/t3-e3ad1b6e-b311d8201de82213",
+      "child": true,
+      "adds": "b878f4cb3a4ba460e1257fa25f9344a0f6d5e7fc"
+    }
+  ]
+}

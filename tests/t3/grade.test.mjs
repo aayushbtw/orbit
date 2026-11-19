@@ -132,6 +132,33 @@ test('an expectation with min passes only when that many calls match, naming eac
   assert.match(grade([]).why, /^0 of 2 needed lead call/);
 });
 
+test('children-on-prerequisite fails a child whose round.mjs is its own, and a lane with no branches', () => {
+  const branch = (ref, child, adds) => ({ ref, born: 'b'.repeat(40), tip: ref.padEnd(40, '0'), worktree: null, child, adds });
+  const grade = (branches) => gradeLane(lane({ scenario: 'child-base', provider: 'claude', branches })).find((r) => r.check === 'children-on-prerequisite');
+  const leadBranch = branch('feat', false, 'a'.repeat(40));
+  assert.equal(grade([leadBranch, branch('mean', true, 'a'.repeat(40)), branch('median', true, 'a'.repeat(40))]).verdict, 'PASS');
+  assert.equal(grade([leadBranch, branch('mean', true, 'a'.repeat(40)), branch('median', true, 'c'.repeat(40))]).verdict, 'FAIL');
+  assert.equal(grade([leadBranch, branch('mean', true, 'a'.repeat(40)), branch('median', true, null)]).verdict, 'FAIL');
+  assert.match(grade([leadBranch, branch('mean', true, 'a'.repeat(40))]).why, /^1 of 2 needed child branches/);
+  assert.match(grade(null).why, /no branches recorded/);
+});
+
+test('brief-pins-base passes only a brief that runs the checkout guard and pins a SHA', () => {
+  const grade = (task) => verdicts(lane({ scenario: 'child-base', provider: 'claude', toolCalls: [{ name: 'mcp__t3-code__delegate_task', input: { isolation: 'worktree', task }, sidechain: false }] }))['brief-pins-base'];
+  assert.equal(grade('Run git rev-parse --show-toplevel and stop if it prints /p or /p/.claude/worktrees/x. Then git reset --hard 7beda92.'), 'PASS');
+  assert.equal(grade('Run git reset --hard 7beda92, then add mean.mjs.'), 'FAIL');
+  assert.equal(grade('Run git rev-parse --show-toplevel and stop if it prints /p. Then add mean.mjs.'), 'FAIL');
+});
+
+test('no-pick-conflict fails a cherry-pick recovery that starts a command, not one behind ||', () => {
+  const grade = (command) => verdicts(lane({ scenario: 'child-base', provider: 'claude', toolCalls: [{ name: 'Bash', input: { command }, sidechain: true }] }))['no-pick-conflict'];
+  assert.equal(grade('git cherry-pick 49a14e9 || git cherry-pick --abort; git rev-parse HEAD'), 'PASS');
+  assert.equal(grade('git cherry-pick 49a14e9'), 'PASS');
+  assert.equal(grade('git cherry-pick --abort'), 'FAIL');
+  assert.equal(grade('git status; git -C /w cherry-pick --skip'), 'FAIL');
+  assert.equal(grade('git add mean.mjs && GIT_EDITOR=true git cherry-pick --continue'), 'FAIL');
+});
+
 const call = (name, input = {}) => ({ name, input, sidechain: false });
 const caps = call('mcp__t3-code__orchestrator_capabilities');
 const opusAdversary = call('Agent', { subagent_type: 'general-purpose', model: 'opus' });

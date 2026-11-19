@@ -18,7 +18,7 @@ export function parseLane(text, file) {
   if (toolCalls !== null && !(Array.isArray(toolCalls) && toolCalls.every((c) => typeof c?.name === 'string'))) {
     throw bad('toolCalls is neither null nor a list of calls with a name');
   }
-  return { scenario: lane.scenario, provider, status: lane.status, pendingQuestion: lane.pendingQuestion ?? null, toolCalls };
+  return { scenario: lane.scenario, provider, status: lane.status, pendingQuestion: lane.pendingQuestion ?? null, toolCalls, branches: lane.branches ?? null };
 }
 
 function matches(shape, value) {
@@ -68,7 +68,8 @@ function evaluate(expect, toolCalls) {
 const QUESTION = /^(AskUserQuestion|ask_user_question|request_user_input)$/;
 const askedUser = (pending) => Array.isArray(pending) && pending.length > 0 && pending.every((q) => QUESTION.test(q?.name));
 
-export function gradeLane({ scenario, provider, status, pendingQuestion, toolCalls }) {
+export function gradeLane(lane) {
+  const { scenario, provider, status, pendingQuestion, toolCalls } = lane;
   const { checks, mayAsk } = SCENARIOS[scenario];
   const graded = status === 'completed' || (mayAsk && status === 'waiting' && askedUser(pendingQuestion));
   const notGraded = `lane status is ${status}, not completed${mayAsk ? " or waiting only on the lead's own question" : ''}`;
@@ -76,8 +77,8 @@ export function gradeLane({ scenario, provider, status, pendingQuestion, toolCal
     if (!graded) return { check, verdict: 'FAIL', why: notGraded };
     const expect = cell[provider];
     if (!expect) return { check, verdict: 'N/A', why: cell.na[provider] };
-    if (!toolCalls) return { check, verdict: 'FAIL', why: 'no toolCalls, so the lead session was not read' };
-    const { ok, why } = evaluate(expect, toolCalls);
+    if (!expect.state && !toolCalls) return { check, verdict: 'FAIL', why: 'no toolCalls, so the lead session was not read' };
+    const { ok, why } = expect.state ? expect.state(lane) : evaluate(expect, toolCalls);
     return { check, verdict: ok ? 'PASS' : 'FAIL', why };
   });
 }
