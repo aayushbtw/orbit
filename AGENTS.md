@@ -18,4 +18,10 @@
 - A local edit to a vendored skill gets a line in that skill's `edits` in `skills.json`. Otherwise `/update-skills` drops the edit.
 - Only `plugin/` ships. Dev-only files (this file, `.claude/`, `docs/`, `skills.json`, `templates/`, `tests/`) stay outside it.
 - Explain a flow in the docs with a hand-drawn diagram, not mermaid. Add a scene to `docs/diagrams/render.mjs`, run `vpr build` there, and embed the light and dark SVGs with `<picture>`.
-- Bump `version` in `plugin/.claude-plugin/plugin.json` so installs pick up the change.
+- Bump `version` in `plugin/.claude-plugin/plugin.json` so installs pick up the change, and add a `## <version>` entry to `CHANGELOG.md` in the same PR.
+
+## Mistakes made before
+
+| Rule | Enforced by |
+| --- | --- |
+| Every version bump gets its `## <version>` entry in `CHANGELOG.md` in the same PR | `tests/version-bump.sh` in CI |

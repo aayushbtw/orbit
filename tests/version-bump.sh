@@ -18,4 +18,8 @@ if [ "$base_version" = "$head_version" ] || [ "$highest" != "$head_version" ]; t
 	echo "FAIL: plugin/ changed since $base_ref but version $head_version is not above $base_ref's $base_version; bump version in $manifest"
 	exit 1
 fi
+if ! git -C "$repo" show HEAD:CHANGELOG.md | grep -qxF "## $head_version"; then
+	echo "FAIL: version $head_version has no '## $head_version' entry in CHANGELOG.md; add one"
+	exit 1
+fi
 echo "ok: plugin/ changed since $base_ref and version moved $base_version -> $head_version"

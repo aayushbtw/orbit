@@ -21,9 +21,10 @@ cp "$repo/tests/version-bump.sh" "$r/tests/version-bump.sh"
 printf 'tests/\n' > "$r/.git/info/exclude"
 
 set_version() { printf '{"name":"orbit","version":"%s"}\n' "$1" > "$r/$manifest"; }
+log_version() { printf '## %s\n\n' "$1" >> "$r/CHANGELOG.md"; }
 commit() { git -C "$r" add -A; git -C "$r" commit -q -m "$1"; }
 
-set_version 0.51.1
+set_version 0.51.1; log_version 0.51.1
 echo a > "$r/plugin/skill.md"
 echo readme > "$r/README.md"
 commit init
@@ -31,7 +32,10 @@ commit init
 branch() { git -C "$r" checkout -q -b "$1" main; }
 
 branch bump
-echo b > "$r/plugin/skill.md"; set_version 0.52.0; commit bump
+echo b > "$r/plugin/skill.md"; set_version 0.52.0; log_version 0.52.0; commit bump
+
+branch no-changelog
+echo b > "$r/plugin/skill.md"; set_version 0.52.0; commit no-changelog
 
 branch no-bump
 echo b > "$r/plugin/skill.md"; commit no-bump
@@ -60,10 +64,11 @@ expect() {
 }
 
 expect pass bump main
+expect fail no-changelog main
 expect fail no-bump main
 expect fail stale main-advanced
 expect fail downgrade main
 expect pass docs-only main
 
 [ "$failed" = 0 ] || exit 1
-echo "ok: version-bump.sh passes bumps and docs-only branches, fails missing, stale and downgraded versions"
+echo "ok: version-bump.sh passes bumps and docs-only branches, fails missing, stale and downgraded versions and a version with no CHANGELOG entry"
