@@ -26,6 +26,16 @@ T3 serves its tools as MCP tools, and a step probes each tool before its first c
 - A Claude lead finds a tool in its tool list, or loads it with `ToolSearch`.
 - A lead on another provider uses its own tool search with the bare name. Grok finds `t3-code__list_thread_pull_requests` with `search_tool` and calls it with `use_tool`. With no tool search, a tool is present when its name is in the tool list. Otherwise the first real call is the probe, and an error means absent. The lead never probes with dummy arguments, because a dummy `delegate_task` starts a thread.
 
+## Which children get a thread
+
+The provider picks where a child runs, not the model. Only `delegate_task` opens a thread, and that thread is a child thread under the lead.
+
+- A child on the lead's provider runs native, nested in the lead's thread. That is `Agent` under a Claude lead, `spawn_agent` under a Codex lead and `spawn_subagent` under a Grok lead.
+- A child on the lead's provider that needs its own checkout, or runs while the lead keeps working, is a same-provider `delegate_task` child, as [Give a child its own checkout](#give-a-child-its-own-checkout) says.
+- A child on another provider is always a `delegate_task` child. Only a panel seat on another family and the verifier seat on another family run there, as [Fill a panel seat on another family](#fill-a-panel-seat-on-another-family) says.
+- Code writers, gitops and other native children never move to another provider, as [Spawn subagents under another lead](#spawn-subagents-under-another-lead) says. Under a Codex lead, a Claude model runs only as such a seat. Under a Claude lead, a Codex model runs only as such a seat.
+- Orbit never opens a top-level thread with `t3_thread_launch` unless the user asks for a new thread.
+
 ## Fill a panel seat on another family
 
 A review panel fills one seat on a model family other than the session's.
