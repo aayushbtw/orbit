@@ -54,7 +54,9 @@ The first is a `refactor`. The second is a `perf` task, because it names a slown
 
 Once the flow is picked, Claude loads its playbook and opens a todo list. The first items are the playbook's steps and gates, copied in word for word. Task-specific items come after them.
 
-The list exists so you can see the whole run before it starts, and so no step disappears quietly. Claude may decide a step doesn't apply. That step stays in the list with a one-line `skip: <reason>`, where you can read it and disagree. Here is a shortened example for a small bug fix:
+The list lives in the session's native task tool, such as Claude's task panel or Codex's plan, so you see it there. When the session has no native task tool, Claude tracks this list itself and never prints it. The reply shows only your tasks and their state instead, such as `[x] Review PR #77` and `[ ] Merge it`.
+
+The list exists so you can see the whole run before it starts, and so no step disappears quietly. Claude may decide a step doesn't apply. That step stays in the list with a one-line `skip: <reason>`, where you can read it in the task tool and disagree. Here is a shortened example for a small bug fix:
 
 ```text
 [x] Worktree gate
