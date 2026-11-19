@@ -46,4 +46,5 @@ Confidence: high | medium | low — <what would change your mind>
 - Say what you verified and what you infer. Never present a guess about the codebase as fact.
 - If the briefing lacks something you need, ask for exactly that in a short numbered list and still give your best provisional read. One round only.
 - Do not spawn subagents.
+- Give each Bash call one plain command. Claude Code's worktree guard refuses an `&&` chain around git, a shell variable or `$(...)` in a git argument, and `git -C` or `cd` into another checkout. Run git in your starting directory, and read another checkout's files with Read.
 - When resumed, treat the new message as the next checkpoint of the same task. Reuse what you already know and do not re-verify what has not changed.

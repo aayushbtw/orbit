@@ -3,8 +3,9 @@ set -euo pipefail
 
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 plugin=$(cd "${1:-$repo/plugin}" && pwd -P)
-parts=3
+parts=4
 max_chars=9000
+sources=("$plugin/rules.md" "$plugin/rules-shared.md")
 failed=0
 fail() { echo "FAIL: $*"; failed=1; }
 chars() { node -e 'process.stdout.write(String(require("fs").readFileSync(process.argv[1], "utf8").length))' "$1"; }
@@ -34,13 +35,18 @@ for ((i = 0; i < parts; i++)); do
 		heading=$(head -n 1 "$out")
 		headings+=("$heading")
 		case "$heading" in '# '*) ;; *) fail "SessionStart hook $((i + 1)) does not start with a top-level heading" ;; esac
-		count=$(grep -cxF "$heading" "$plugin/rules.md" || true)
-		[ "$count" = 1 ] || fail "split heading '$heading' occurs $count times in $plugin/rules.md, expected exactly 1"
+		count=$(cat "${sources[@]}" | grep -cxF "$heading" || true)
+		[ "$count" = 1 ] || fail "split heading '$heading' occurs $count times in rules.md and rules-shared.md, expected exactly 1"
 	fi
 done
 
-node -e 'const fs = require("fs"); process.stdout.write(fs.readFileSync(process.argv[1], "utf8").replaceAll("<orbit-plugin>", process.argv[2]))' "$plugin/rules.md" "$plugin" >"$tmp/expected"
-cat "$tmp"/part* | cmp -s - "$tmp/expected" || fail "the SessionStart hooks' output, concatenated, differs from rules.md with <orbit-plugin> expanded"
+node -e 'const fs = require("fs"); process.stdout.write(process.argv.slice(2).map((f) => fs.readFileSync(f, "utf8")).join("").replaceAll("<orbit-plugin>", process.argv[1]))' "$plugin" "${sources[@]}" >"$tmp/expected"
+cat "$tmp"/part* >"$tmp/all"
+cmp -s "$tmp/all" "$tmp/expected" || fail "the SessionStart hooks' output, concatenated, differs from rules.md then rules-shared.md with <orbit-plugin> expanded"
+for heading in '# Non-negotiables' '# Delegation' '# Bash' '# Code Quality' '# Files' '# Task End' '# Writing the reply' '# Comments' '# Workflow Defaults'; do
+	grep -qxF "$heading" "$tmp/all" || fail "the lead's rules lost the section '$heading'"
+done
+grep -qF '**One plain command per Bash call.**' "$tmp/all" || fail "the lead's rules lost 'One plain command per Bash call'"
 
 for dir in 'a&b' 'a|b' 'a b'; do
 	root="$tmp/$dir/plugin"
@@ -58,14 +64,14 @@ done
 root="$tmp/unreadable/plugin"
 mkdir -p "$tmp/unreadable"
 cp -R "$plugin" "$root"
-chmod 000 "$root/rules.md"
+chmod 000 "$root/rules.md" "$root/rules-shared.md"
 for ((i = 0; i < parts; i++)); do
 	code=0
 	out=$(CLAUDE_PLUGIN_ROOT="$root" sh -c "${cmds[$i]}" 2>/dev/null) || code=$?
-	[ "$code" = 0 ] || fail "SessionStart hook $((i + 1)) exited $code with an unreadable rules.md, expected 0"
-	printf '%s\n' "$out" | grep -F 'orbit: ' | grep -qF 'rules.md' || fail "SessionStart hook $((i + 1)) printed no 'orbit: ... rules.md' warning to stdout with an unreadable rules.md"
+	[ "$code" = 0 ] || fail "SessionStart hook $((i + 1)) exited $code with unreadable rules files, expected 0"
+	printf '%s\n' "$out" | grep -qE '^orbit: could not load .*/rules(-shared)?\.md' || fail "SessionStart hook $((i + 1)) printed no 'orbit: could not load' warning to stdout with unreadable rules files"
 done
-chmod 644 "$root/rules.md"
+chmod 644 "$root/rules.md" "$root/rules-shared.md"
 
 root="$tmp/noexec/plugin"
 mkdir -p "$tmp/noexec"
@@ -81,4 +87,4 @@ printf '%s' '{"tool_input":{"command":"git commit -m \"x\" -m \"Co-Authored-By: 
 [ "$code" = 2 ] || fail "PreToolUse trailer hook exited $code with no-claude-trailer.sh not executable, expected 2"
 
 [ "$failed" = 0 ] || exit 1
-echo "ok: $parts SessionStart hooks split rules.md at '${headings[0]}' and '${headings[1]}' into ${sizes[*]} characters, expand odd plugin paths, warn on unreadable rules.md, run without the exec bit"
+echo "ok: $parts SessionStart hooks print rules.md split at '${headings[0]}' and '${headings[1]}', then rules-shared.md from '${headings[2]}', in ${sizes[*]} characters, keep every section, expand odd plugin paths, warn on unreadable rules files, run without the exec bit"

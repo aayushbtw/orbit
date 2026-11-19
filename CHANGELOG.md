@@ -4,6 +4,20 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.67.0
+
+Released 2026-11-20.
+
+### Breaking or behavior changes
+
+- gitops, the advisor, the verifier and comment-sicko now give each git command its own plain Bash call. They no longer chain git with `&&`, put a shell variable or `$(...)` in a git argument, or run `git -C` or `cd` into another checkout, which Claude Code's worktree guard refuses. A ship loses less time to refused calls.
+
+### Token use
+
+- A code-writing delegate reads 2,460 words of orbit's rules before it starts, in place of 5,660. It reads the playbook and the new `plugin/rules-shared.md` and skips `rules.md`, whose routing, shipping and delegation rules are for the lead.
+- `rules-shared.md` holds the rules every agent follows. They are the one-plain-command Bash rule, Code Quality, Files and Comments, moved verbatim from `rules.md`.
+- The lead still gets every rule. A fourth SessionStart hook prints `rules-shared.md`, and the `rules` skill reads it for a lead that is not Claude Code.
+
 ## 0.66.1
 
 Released 2026-11-20.
