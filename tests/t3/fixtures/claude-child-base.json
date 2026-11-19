@@ -10,7 +10,7 @@
     "origin": "hand-built",
     "source": "none",
     "relabeled": false,
-    "note": "A lead on the project root enters a worktree, commits round.mjs, and briefs each delegate_task child to reset its checkout to that commit. Both children's commits descend from it, and both cherry-picks apply",
+    "note": "A lead on the project root enters a worktree, commits round.mjs, and briefs each delegate_task child to check that its checkout is its own, then reset it to that commit. Both children's commits descend from it, and both cherry-picks apply",
     "expect": {
       "own-checkout-children": "PASS",
       "brief-pins-base": "PASS",
@@ -31,7 +31,7 @@
         "isolation": "worktree",
         "mode": "async",
         "clientRequestId": "feature-mean-1a2b3c4-try1",
-        "task": "First run git reset --hard 1a2b3c4d5e6f in your checkout, so lib/round.mjs is there. Then add mean.mjs and its test, and commit them by path."
+        "task": "First run git rev-parse --show-toplevel, and stop if it prints the lead's checkout or the project root. Then run git reset --hard 1a2b3c4d5e6f, so lib/round.mjs is there. Then add mean.mjs and its test, and commit them by path."
       },
       "sidechain": false
     },
@@ -41,7 +41,7 @@
         "isolation": "worktree",
         "mode": "async",
         "clientRequestId": "feature-median-1a2b3c4-try1",
-        "task": "First run git reset --hard 1a2b3c4d5e6f in your checkout, so lib/round.mjs is there. Then add median.mjs and its test, and commit them by path."
+        "task": "First run git rev-parse --show-toplevel, and stop if it prints the lead's checkout or the project root. Then run git reset --hard 1a2b3c4d5e6f, so lib/round.mjs is there. Then add median.mjs and its test, and commit them by path."
       },
       "sidechain": false
     },

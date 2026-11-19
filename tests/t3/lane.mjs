@@ -15,6 +15,7 @@ const CODEX_USER_ORBITS = [
   { path: join(homedir(), '.agents', 'skills', 'orbit'), saved: 'agents-skills-orbit' },
 ];
 const LOCK = join(tmpdir(), 'orbit-lane.lock');
+const LANE_PROJECT = 'orbit.laneProject';
 const LANE_START = Date.now();
 
 const { values: opts } = parseArgs({
@@ -175,6 +176,7 @@ function scratchProject({ name, commits }) {
     }
     renameSync(build, dir);
   }
+  run('git', ['-C', dir, 'config', '--local', LANE_PROJECT, 'true']);
   if (tryRun(cli, ['thread', 'list', '--project', dir, '--json']) === null) run(cli, ['project', 'add', dir, '--title', basename(dir)]);
   return dir;
 }
@@ -187,7 +189,9 @@ let rootBranch = null;
 try {
   result.project = opts.project ? resolve(opts.project) : fixture ? await withLock(() => scratchProject(fixture)) : dirname(orbitCommon);
   const isOrbit = commonDir(result.project) === orbitCommon;
-  if (opts.root && isOrbit) throw new Error('--root moves the project root to the lane commit, so it refuses orbit\'s own checkout; use a scenario project');
+  if (opts.root && tryRun('git', ['-C', result.project, 'config', '--local', '--bool', '--get', LANE_PROJECT]) !== 'true') {
+    throw new Error(`--root runs only in a scenario project the lane built, which sets ${LANE_PROJECT} in its git config, because its cleanup checks the root out with -f and force-removes worktrees and branches made off the lane commit; drop --project or point it at such a project`);
+  }
   if (!isOrbit) {
     const headRef = tryRun('git', ['-C', result.project, 'symbolic-ref', '-q', 'HEAD']);
     if (headRef?.startsWith('refs/heads/orbit-lane/')) throw new Error(`the project root is on ${headRef}, so a --root lane is using it; wait for that lane to end`);
@@ -348,14 +352,15 @@ function recordBranches() {
 
 function keep(state) {
   const { path, checkedOut } = laneWorktree();
-  result.kept = {
+  const left = {
     worktree: path ?? null,
     branch: (checkedOut ?? `refs/heads/${branch}`).replace(/^refs\/heads\//, ''),
     marketplace: result.marketplace,
     runDir: existsSync(runDir) ? runDir : null,
   };
-  const left = Object.values(result.kept).filter(Boolean).join(', ');
-  console.error(`warning: after ${opts.timeout} minutes thread ${result.thread.link} is ${state}, not idle, so cleanup undid nothing and kept ${left}. The next lane's reaper removes the marketplace once worker ${process.pid} is dead. Remove the worktree with git worktree remove and delete the branch by hand.`);
+  result.kept = { ...left, rootBranch };
+  const root = rootBranch ? ` The project root ${project} stays on ${left.branch}, so run git -C ${project} checkout ${rootBranch} once the thread ends.` : '';
+  console.error(`warning: after ${opts.timeout} minutes thread ${result.thread.link} is ${state}, not idle, so cleanup undid nothing and kept ${Object.values(left).filter(Boolean).join(', ')}. The next lane's reaper removes the marketplace once worker ${process.pid} is dead. Remove the worktree with git worktree remove and delete the branch by hand.${root}`);
 }
 
 const undo = [];
@@ -580,8 +585,10 @@ async function lane() {
   if (taken) throw new Error(`the lane branch ${branch} matches the existing ${taken} when case is ignored, so the lane will not create it; run the lane again for a new id`);
   const worktreesBefore = new Set(listWorktrees(project).map((w) => w.path));
   undo.push(() => {
+    // A branch born at the lane commit can be reset off it, as an owner's reset to trunk does, so its worktree counts too.
+    const ours = new Set(laneBranches(project, { before, createdAt: result.laneCommit }).map((b) => b.ref));
     const made = listWorktrees(project)
-      .filter((w) => !worktreesBefore.has(w.path) && w.head && isAncestor(project, result.laneCommit, w.head))
+      .filter((w) => !worktreesBefore.has(w.path) && (ours.has(w.branch) || (w.head && isAncestor(project, result.laneCommit, w.head))))
       .map((w) => w.path);
     for (const path of new Set([laneWorktree().path, ...made].filter(Boolean))) {
       // EnterWorktree locks its worktree, and only a second --force removes a locked one.
@@ -593,7 +600,10 @@ async function lane() {
     tryRun('git', ['-C', project, 'worktree', 'prune']);
     if (rootBranch) try { rmdirSync(join(project, '.claude')); } catch {}
   });
-  if (rootBranch) {
+  // Checked again under the lock, because a parallel --root lane may have taken the root since the first check.
+  if (rootBranch) await withLock(() => {
+    const onRoot = tryRun('git', ['-C', project, 'symbolic-ref', '-q', 'HEAD']) === `refs/heads/${rootBranch}`;
+    if (!onRoot || run('git', ['-C', project, 'status', '--porcelain'])) throw new Error(`the project root left ${rootBranch} or gained edits since the lane started, so another --root lane may hold it; wait for that lane to end`);
     const exclude = join(commonDir(project), 'info', 'exclude');
     const excluded = tryRead(exclude);
     undo.push(() => {
@@ -601,7 +611,7 @@ async function lane() {
       if (excluded !== null && tryRead(exclude) !== excluded) writeFileSync(exclude, excluded);
     });
     run('git', ['-C', project, 'checkout', '-q', '-b', branch, result.laneCommit]);
-  }
+  });
   if (result.status === 'interrupted') return;
   const args = ['thread', 'start', project, '-', ...(rootBranch ? [] : ['--worktree', result.laneCommit, '--branch', branch]), '--title', title, '--wait', '--json'];
   if (opts.provider) args.push('--provider', opts.provider);

@@ -106,7 +106,7 @@ function runLane(argv, env, started = () => {}) {
   });
 }
 
-async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0, kill = false, interruptOrganize = false, inspect = () => null } = {}) {
+async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0, kill = false, interruptOrganize = false, starts = true, inspect = () => null } = {}) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'orbit-lane-test-')));
   let launcherErr = '';
   let interrupted = false;
@@ -145,7 +145,7 @@ async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0,
     const worktrees = git(project, 'worktree', 'list', '--porcelain');
     const after = branches(project);
     const seen = await inspect({ project, out });
-    await until(() => existsSync(`${env.STUB_STATE}.done`), 'the stub agent finished');
+    if (starts) await until(() => existsSync(`${env.STUB_STATE}.done`), 'the stub agent finished');
     return { root, base, before, after, worktrees, out, seen, saw: tryRead(env.STUB_SAW)?.trim(), organized: t3.organized, auth: tryRead(`${env.STUB_STATE}.auth`) };
   } finally {
     t3.close();
@@ -191,7 +191,7 @@ test('cleanup removes a worktree and branch the thread makes off the lane commit
 test('a --root lane runs on the project root and puts the root, its worktrees and branches back', async () => {
   const lead = `echo .claude/worktrees >> .git/info/exclude && git worktree add -q -b worktree-fix-x .claude/worktrees/fix-x HEAD && git worktree lock .claude/worktrees/fix-x && git -C .claude/worktrees/fix-x branch -m fix/x && git -C .claude/worktrees/fix-x ${commit.slice(4)} -m prereq`;
   const child = `git worktree add -q -b t3/child "$STUB_WORKTREES/child" HEAD && git -C "$STUB_WORKTREES/child" ${commit.slice(4)} -m unit`;
-  const { before, after, worktrees, out, seen } = await withProject([], `${lead} && ${child}`, {
+  const { before, after, worktrees, out, seen } = await withProject([['config', 'orbit.laneProject', 'true']], `${lead} && ${child}`, {
     args: ['--root'],
     inspect: ({ project }) => ({
       head: git(project, 'symbolic-ref', 'HEAD'),
@@ -208,6 +208,24 @@ test('a --root lane runs on the project root and puts the root, its worktrees an
   assert.equal(seen.claude, false);
   assert.doesNotMatch(seen.exclude, /\.claude\/worktrees/);
   assert.deepEqual(out.branches.map((b) => b.ref).filter((ref) => !ref.includes('orbit-lane/')).sort(), ['refs/heads/fix/x', 'refs/heads/t3/child']);
+});
+
+test('a --root lane refuses a project the lane did not build and leaves its root alone', async () => {
+  const { before, after, out, seen } = await withProject([], 'true', {
+    args: ['--root'], exit: 1, starts: false,
+    inspect: ({ project }) => git(project, 'symbolic-ref', 'HEAD'),
+  });
+  assert.match(out.error, /--root runs only in a scenario project the lane built/);
+  assert.equal(out.thread, null);
+  assert.equal(seen, 'refs/heads/main');
+  assert.equal(after, before);
+});
+
+test('cleanup removes a worktree whose branch the thread made off the lane commit and then reset to the base', async () => {
+  const agent = `git worktree add -q -b t3/owner "$STUB_WORKTREES/owner" HEAD && git -C "$STUB_WORKTREES/owner" reset -q --hard HEAD~1`;
+  const { before, after, worktrees } = await withProject([], agent);
+  assert.equal(after, before);
+  assert.equal(worktrees.split('\n\n').length, 1, worktrees);
 });
 
 const lead = [{ role: 'user', text: 'go', runId: 'r1' }, { role: 'assistant', text: 'started', runId: 'r1' }];

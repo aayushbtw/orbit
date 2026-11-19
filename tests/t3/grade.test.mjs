@@ -143,6 +143,13 @@ test('children-on-prerequisite fails a child whose round.mjs is its own, and a l
   assert.match(grade(null).why, /no branches recorded/);
 });
 
+test('brief-pins-base passes only a brief that runs the checkout guard and pins a SHA', () => {
+  const grade = (task) => verdicts(lane({ scenario: 'child-base', provider: 'claude', toolCalls: [{ name: 'mcp__t3-code__delegate_task', input: { isolation: 'worktree', task }, sidechain: false }] }))['brief-pins-base'];
+  assert.equal(grade('Run git rev-parse --show-toplevel and stop if it prints /p or /p/.claude/worktrees/x. Then git reset --hard 7beda92.'), 'PASS');
+  assert.equal(grade('Run git reset --hard 7beda92, then add mean.mjs.'), 'FAIL');
+  assert.equal(grade('Run git rev-parse --show-toplevel and stop if it prints /p. Then add mean.mjs.'), 'FAIL');
+});
+
 test('no-pick-conflict fails a cherry-pick recovery that starts a command, not one behind ||', () => {
   const grade = (command) => verdicts(lane({ scenario: 'child-base', provider: 'claude', toolCalls: [{ name: 'Bash', input: { command }, sidechain: true }] }))['no-pick-conflict'];
   assert.equal(grade('git cherry-pick 49a14e9 || git cherry-pick --abort; git rev-parse HEAD'), 'PASS');

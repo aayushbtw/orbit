@@ -10,7 +10,8 @@ Released 2026-11-20.
 
 ### Breaking or behavior changes
 
-- In T3 Code, a child that gets its own checkout now starts from the commit its brief names. T3 starts that checkout at HEAD of the thread's bound checkout, else of the project root, so it could miss the work the lead committed on the task branch. Each brief names the start SHA, the task head or the fetched `origin/<trunk>`, and the child's first command is `git reset --hard <start sha>`.
+- In T3 Code, a child that gets its own checkout now starts from the commit its brief names. T3 starts that checkout at HEAD of the thread's bound checkout, else of the project root, so it could miss the work the lead committed on the task branch. Each brief names the start SHA, the task head, the fetched `origin/<trunk>` or a stacked owner's parent PR tip, and the child resets its own branch there with `git reset --hard <start sha>`.
+- Before that reset, the child runs `git rev-parse --show-toplevel` and stops without resetting when it is in the lead's checkout or the project root. A child that got no worktree never moves your branch or drops your edits.
 - On the wake, the lead cherry-picks a child's commit only when it descends from that start SHA. One that does not is a failed try.
 
 ## 0.65.0
