@@ -12,7 +12,7 @@ A coding agent can stop at code that compiles and never run it. Orbit uses T3's 
 ## What orbit does in T3
 
 - A Claude or Codex lead can run a thread. Both passed every live test that applies to them. Grok is not proven, because its recent test runs stopped on a provider error before the lead acted.
-- Work that needs its own checkout runs as a child thread with its own worktree. That covers parallel units, review adversaries and the verifier. Every other helper stays nested in your thread.
+- Work that needs its own checkout runs as a child thread with its own worktree. That covers parallel units, review adversaries and the verifier. A review seat on another model family, and work that runs while the lead keeps going, such as an autopilot build round, also get a child thread. Helpers that share your checkout stay nested in your thread.
 - Review panels and the verifier can use a second model family, such as Codex under a Claude lead. Orbit uses only the providers you list in `/orbit:setup`.
 - Before a change lands, an agent that did not write it runs it the way a user would. It returns `PASS`, `PASS+NOTES` or `FAIL`, and only a pass lands. Green CI is not a pass.
 - Orbit waits on a PR with T3's PR watch, so the thread wakes when checks finish or a review arrives.
