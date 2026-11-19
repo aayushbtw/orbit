@@ -1,6 +1,6 @@
 # Orbit in T3 Code
 
-T3 Code runs orbit under a Claude lead and under a lead on another provider, such as Grok or Codex. This record says how orbit loads, finds T3's tools, fills panel seats, spawns subagents and resolves paths in each case. The [host adapter](../plugin/docs/harness/t3-code.md) holds the rules a lead follows. The [README](../README.md#install) holds the setup.
+T3 Code runs orbit under a Claude lead and under a lead on another provider, such as Grok or Codex. This record says how orbit loads, finds T3's tools, fills panel seats, spawns subagents and resolves paths in each case. The [host adapter](../plugin/docs/harness/t3-code.md) holds the rules a lead follows. Two files beside it hold sections only some sessions read. A lead on another provider also reads [t3-other-lead.md](../plugin/docs/harness/t3-other-lead.md). A session whose `other-family` row lists providers, or whose `verifier` row is `other-family`, also reads [t3-seats.md](../plugin/docs/harness/t3-seats.md). The [README](../README.md#install) holds the setup.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="diagrams/t3-lead-dark.svg">
@@ -53,7 +53,7 @@ Orbit assumes no provider beyond the lead's own. Each seat on another family com
 
 ## Provider selection
 
-The `other-family` Model cell resolves to one of four outcomes. The [host adapter](../plugin/docs/harness/t3-code.md) holds them as one table.
+The `other-family` Model cell resolves to one of four outcomes. The adapter's [t3-seats.md](../plugin/docs/harness/t3-seats.md) holds them as one table.
 
 - An empty cell, or no row, runs the skill's session-family seat, as outside T3. The reply says that no seat on another family is configured and that `/orbit:setup` lists providers.
 - `inherit` runs the session-family seat, with no line.

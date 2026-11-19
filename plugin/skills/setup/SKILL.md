@@ -66,7 +66,7 @@ The block goes at the end of the repo root's AGENTS.md. When the root has no AGE
 
 ### 4. T3 providers
 
-Read `../../docs/harness/t3-code.md`, sections Probe and Seats on another family. A lead that is not Claude Code also reads Lead on another provider. Probe `orchestrator_capabilities` as Probe says. A call that errors because the tool needs an agent running inside T3 Code counts as absent. If it is absent, print `Skipped outside T3: provider seats. <reason>.` and go on to step 5.
+Read `../../docs/harness/t3-code.md`, sections Probe and Models, and `../../docs/harness/t3-seats.md`. A lead that is not Claude Code also reads `../../docs/harness/t3-other-lead.md`. Probe `orchestrator_capabilities` as Probe says. A call that errors because the tool needs an agent running inside T3 Code counts as absent. If it is absent, print `Skipped outside T3: provider seats. <reason>.` and go on to step 5.
 
 **4a. Detect providers.** Call `orchestrator_capabilities`. The session's family is the `driverKind` of the provider whose `providerInstanceId` equals `inheritedProviderInstanceId`. A provider whose `constraints` hold "Provider instance is disabled." is disabled. Never write a provider or model you have not seen in a result.
 
