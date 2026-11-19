@@ -1,0 +1,7 @@
+{
+  "landed": "PASS",
+  "no-discard": "PASS",
+  "no-exit-refusal": "FAIL",
+  "no-guard-refusal": "FAIL",
+  "clean-end": "PASS"
+}

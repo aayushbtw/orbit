@@ -106,16 +106,18 @@ function git(cwd, ...args) {
   execFileSync('git', ['-c', 'user.name=Skyforge', '-c', 'user.email=dev@skyforge.local', ...args], { cwd, stdio: 'ignore' });
 }
 
-export function scaffold(settings) {
-  const dir = join(tmpdir(), `skyforge-${randomBytes(3).toString('hex')}`);
-  const files = settings ? { ...PROJECT, '.claude/settings.json': JSON.stringify(settings, null, 2) + '\n' } : PROJECT;
+const SKYFORGE = { name: 'skyforge', files: PROJECT, message: 'Initial skyforge prototype' };
+
+export function scaffold(settings, project = SKYFORGE) {
+  const dir = join(tmpdir(), `${project.name}-${randomBytes(3).toString('hex')}`);
+  const files = settings ? { ...project.files, '.claude/settings.json': JSON.stringify(settings, null, 2) + '\n' } : project.files;
   for (const [path, body] of Object.entries(files)) {
     mkdirSync(dirname(join(dir, path)), { recursive: true });
     writeFileSync(join(dir, path), body);
   }
   git(dir, 'init', '-q', '-b', 'main');
   git(dir, 'add', '-A');
-  git(dir, 'commit', '-q', '-m', 'Initial skyforge prototype');
+  git(dir, 'commit', '-q', '-m', project.message);
   git(dir, 'init', '-q', '--bare', '-b', 'main', `${dir}-origin.git`);
   git(dir, 'remote', 'add', 'origin', `${dir}-origin.git`);
   git(dir, 'push', '-q', '-u', 'origin', 'main');
@@ -126,8 +128,8 @@ export const readJsonl = (path) => existsSync(path)
   ? readFileSync(path, 'utf8').split('\n').filter(Boolean).flatMap((line) => { try { return [JSON.parse(line)]; } catch { return []; } })
   : [];
 
-export function orbitRev() {
-  const run = (...args) => execFileSync('git', ['-C', REPO, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+export function orbitRev(dir = REPO) {
+  const run = (...args) => execFileSync('git', ['-C', dir, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   try {
     return { sha: run('rev-parse', 'HEAD').trim(), dirty: run('status', '--porcelain').trim() !== '' };
   } catch {
@@ -135,7 +137,7 @@ export function orbitRev() {
   }
 }
 
-export function createLeads({ host, model, provider, keep, timeoutMs, maxTurns, graceMs }) {
+export function createLeads({ host, model, provider, keep, timeoutMs, maxTurns, graceMs, pluginDir = PLUGIN_DIR, project: spec = SKYFORGE }) {
   let t3;
   if (host === 't3') {
     t3 = [process.env.T3CODE_CLI_PATH, 't3'].filter(Boolean).find((c) => {
@@ -176,18 +178,18 @@ export function createLeads({ host, model, provider, keep, timeoutMs, maxTurns, 
   function startLead(outDir, prompt, hooks) {
     const errFd = openSync(join(outDir, 'stderr.log'), 'w');
     if (host === 'claude') {
-      const project = scaffold();
+      const project = scaffold(undefined, spec);
       const settings = join(outDir, 'settings.json');
       writeFileSync(settings, JSON.stringify({ enabledPlugins: { 'orbit@orbit': false }, hooks }, null, 2));
       const outFd = openSync(join(outDir, 'stream.jsonl'), 'w');
       const child = spawn('claude', [
-        '-p', '--model', model, '--plugin-dir', PLUGIN_DIR, '--settings', settings, '--setting-sources', 'project,local',
+        '-p', '--model', model, '--plugin-dir', pluginDir, '--settings', settings, '--setting-sources', 'project,local',
         '--permission-mode', 'bypassPermissions', '--max-turns', String(maxTurns), '--output-format', 'stream-json', '--verbose',
       ], { cwd: project, detached: true, stdio: ['pipe', outFd, errFd] });
       child.stdin.end(prompt);
       return { project, child, fds: [outFd, errFd] };
     }
-    const project = scaffold({ hooks });
+    const project = scaffold({ hooks }, spec);
     t3Projects.add(project);
     try {
       execFileSync(t3, ['project', 'add', project], { stdio: ['ignore', 'ignore', 'pipe'] });
@@ -203,13 +205,18 @@ export function createLeads({ host, model, provider, keep, timeoutMs, maxTurns, 
     return { project, child, fds: [outFd, errFd] };
   }
 
-  function runLead(outDir, { prompt, matcher, hookArgs = [] }) {
-    mkdirSync(outDir, { recursive: true });
+  function hookLog(outDir, matcher, hookArgs) {
     const log = join(outDir, 'spawns.jsonl');
     writeFileSync(log, '');
     const command = [process.execPath, join(HERE, 'hook.mjs'), log, ...hookArgs].map((a) => JSON.stringify(a)).join(' ');
     const hook = [{ matcher, hooks: [{ type: 'command', command }] }];
-    const { project, child, fds } = startLead(outDir, prompt, { PreToolUse: hook, PostToolUse: hook });
+    return { PreToolUse: hook, PostToolUse: hook };
+  }
+
+  function runLead(outDir, { prompt, matcher, hookArgs = [], inspect }) {
+    mkdirSync(outDir, { recursive: true });
+    const hooks = matcher ? hookLog(outDir, matcher, hookArgs) : undefined;
+    const { project, child, fds } = startLead(outDir, prompt, hooks);
 
     const exited = new Promise((done) => {
       let timedOut = false;
@@ -222,6 +229,7 @@ export function createLeads({ host, model, provider, keep, timeoutMs, maxTurns, 
         for (const fd of fds) closeSync(fd);
         if (host === 't3') await awaitLaneWorkerJson(outDir);
         live.delete(child.pid);
+        if (inspect) await inspect(project);
         release(project);
         done({ outDir, project, exit: timedOut ? 'timeout' : `code ${code}` });
       });

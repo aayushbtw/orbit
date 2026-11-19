@@ -54,6 +54,8 @@ jobs:
         run: node --test tests/refs.test.mjs
       - name: T3 lane grader tests
         run: node --test tests/t3/*.test.mjs
+      - name: Ship cleanup grader tests
+        run: node --test tests/ship/grade.test.mjs
       - name: Version bump tests
         run: bash tests/version-bump.test.sh
       - name: Version bump
