@@ -10,8 +10,8 @@ Released 2026-11-20.
 
 ### Breaking or behavior changes
 
-- In T3 Code, a lead whose PR waits on someone else's merge, such as a merge queue, auto-merge or a person, no longer hands back. It keeps the PR watched with `until: "merged"` and ends its turn, and it resumes when the PR merges or closes. orbit used to say a T3 watch never wakes on a merge, which was wrong.
-- A watch also passes `until: "merged"` when you asked for a merge, so the thread stays in Working until the PR lands.
+- In T3 Code, a lead whose PR waits on someone else's merge, such as a merge queue, auto-merge or a person, no longer hands back. It keeps the PR watched and ends its turn, and it resumes when the PR merges or closes. orbit used to say a T3 watch never wakes on a merge, which was wrong.
+- A watch passes `until: "merged"` when a merge queue or auto-merge holds the merge, or when you asked for a merge and it waits on checks or a named reviewer. The thread then stays in Working until the PR lands. A merge a person holds, or a review with no reviewer requested, passes `until: "checks"`, so the thread returns to your inbox and the merge still wakes it.
 - A lead now arms a PR watch again after T3 ends it on a PR that is still open, such as after a reopen, 10 comment-only wakes in a row or 8 failed reads in a row. It still never re-arms on an ordinary wake.
 
 ## 0.67.0
