@@ -7,7 +7,10 @@ import { parseArgs } from 'node:util';
 
 export const ORBIT_REPO = 'aayushbtw/orbit';
 const GUARD = /^This (?:agent|session) is isolated in the worktree /;
-const EXCLUDE = ['orbit-lane', 'orbit-ship', 'skyforge', 'greet-'];
+const EXCLUDE = [['orbit-lane', /orbit-lane/], ['orbit-ship', /orbit-ship/], ['skyforge', /skyforge/], ['greet-', /[/-](?:T|tmp)[/-]greet-/]];
+// T3's delegate_task prepends this to a child thread's first prompt, for every role but `general`.
+const T3_CHILD = /^Act as the ([\w-]+) sub-agent for this task\./;
+const ORBIT_AGENT_FILE = /\/orbit\/(?:\S*\/)?agents\/([\w-]+)\.md\b/;
 const HOUR = 3600e3;
 
 export const REFUSAL_KINDS = [
@@ -34,10 +37,10 @@ const textOf = (content) => typeof content === 'string'
   ? content
   : Array.isArray(content) ? content.filter((b) => b?.type === 'text').map((b) => b.text).join('\n') : '';
 const clip = (s) => s.length > 8000 ? `${s.slice(0, 4000)}\n...\n${s.slice(-4000)}` : s;
-const refusalText = (call) => call.result?.text.replace(/<\/?tool_use_error>/g, '').trimStart() ?? '';
-const isGuardRefusal = (call) => GUARD.test(refusalText(call));
+const resultText = (call) => call.result?.text.replace(/<\/?tool_use_error>/g, '').trimStart() ?? '';
+const isGuardRefusal = (call) => GUARD.test(resultText(call));
 const refusalKind = (call) => {
-  const clause = refusalText(call).split(', but ').slice(1).join(', but ');
+  const clause = resultText(call).split(', but ').slice(1).join(', but ');
   return REFUSAL_KINDS.find(([, re]) => re.test(clause))?.[0] ?? 'other';
 };
 const isSpawn = (call) => call.name === 'Agent' || call.name === 'Task';
@@ -86,8 +89,8 @@ const tmpRoots = () => [...new Set([tmpdir(), process.env.TMPDIR, (() => { try {
 
 function excludedBy(project, cwd) {
   const name = basename(project);
-  const hit = EXCLUDE.find((s) => name.includes(s) || cwd?.includes(s));
-  if (hit) return hit;
+  const hit = EXCLUDE.find(([, re]) => re.test(name) || re.test(cwd ?? ''));
+  if (hit) return hit[0];
   return tmpRoots().some((t) => name.startsWith(encode(t)) || cwd?.startsWith(t)) ? '$TMPDIR' : null;
 }
 
@@ -107,8 +110,14 @@ function sessionsIn(project, sinceMs) {
   return [...sessions.values()];
 }
 
-function loadSession({ id, project, main, subs }) {
-  const mainRec = main ? { kind: 'main', type: 'main', session: id, file: main, ...readTranscript(main, { sub: false }) } : null;
+const t3ChildOf = (prompt) => {
+  const role = prompt?.match(T3_CHILD)?.[1];
+  return role && { kind: 'child', type: prompt.match(ORBIT_AGENT_FILE)?.[1] ?? `t3:${role}` };
+};
+
+function loadSession({ id, main, subs }) {
+  const mainRec = main ? { session: id, file: main, ...readTranscript(main, { sub: false }) } : null;
+  if (mainRec) Object.assign(mainRec, t3ChildOf(mainRec.prompts[0]) || { kind: 'main', type: 'main' });
   const subRecs = subs.map((file) => {
     const metaFile = file.replace(/\.jsonl$/, '.meta.json');
     let meta = {};
@@ -132,8 +141,8 @@ const perType = (agents, pred) => {
   return Object.fromEntries(Object.entries(hit).map(([k, n]) => [k, `${n}/${of[k]}`]));
 };
 const verdictOf = (text) => text?.match(/\b(PASS\+NOTES|PASS|FAIL)\b/)?.[1];
-const SPAWN_API_ERROR = /API Error|terminated early|Prompt is too long|hit your (?:weekly )?limit|rate limit|overloaded/i;
-const SPAWN_INTERRUPTED = /interrupted|Request was aborted|session ended before/i;
+const SPAWN_API_ERROR = /^(?:Agent terminated early due to an API error|API Error:|Prompt is too long)/;
+const SPAWN_INTERRUPTED = /^(?:\[Tool call interrupted|\[Request interrupted|Request was aborted)/;
 export const ORBIT_RULES = { 'rules.md': /\/orbit\/(?:.*\/)?rules\.md$/, 'rules-shared.md': /\/orbit\/(?:.*\/)?rules-shared\.md$/ };
 const readsOf = (agent, re) => agent.calls.some((c) => c.name === 'Read' && re.test(c.input.file_path ?? ''));
 const isOrbitRun = (main) => main.calls.some((c) => c.name === 'Skill' && /^(?:orbit:)?(?:start|playbook)$/.test(c.input.skill ?? ''))
@@ -144,7 +153,8 @@ const exitKey = (c) => {
   const outcome = !c.result ? 'no result' : (c.result.isError || /refus/i.test(c.result.text)) ? 'refused' : 'ok';
   return `${c.input.action ?? '?'}${discard ? '+discard' : ''} ${outcome}`;
 };
-const WORKTREE_REMOVE = /\bgit\b[^|;&]*\bworktree\s+remove\b/;
+const WORKTREE_REMOVE = /(?:^|[;&|(\n]|\$\()\s*(?:\w+=\S*\s+)*git\s+(?:-[Cc]\s+\S+\s+)*worktree\s+remove\b/;
+const runsWorktreeRemove = (command = '') => WORKTREE_REMOVE.test(command.replace(/'[^']*'|"(?:[^"\\]|\\.)*"/g, "''"));
 const REMOVE_REFUSALS = [
   ['guard', isGuardRefusal],
   ['safety check', (c) => /removal safety check denied/.test(c.result?.text ?? '')],
@@ -153,9 +163,9 @@ const REMOVE_REFUSALS = [
 const removeOutcome = (c) => REMOVE_REFUSALS.find(([, refused]) => refused(c))?.[0] ?? 'ok';
 const ORBIT_ISSUE = new RegExp(`\\bgh\\s+issue\\s+create\\b.*(?:--repo|-R)[\\s=]+${ORBIT_REPO.replace('/', '\\/')}\\b`, 's');
 const failureOf = (sub) => {
-  const spawnText = !sub.spawn || isBackground(sub.spawn) ? '' : (sub.spawn.result?.text ?? '');
-  if (sub.apiError || SPAWN_API_ERROR.test(spawnText.slice(0, 500))) return 'api error';
-  if (SPAWN_INTERRUPTED.test(spawnText.slice(0, 300))) return 'interrupted';
+  const spawnText = !sub.spawn || isBackground(sub.spawn) ? '' : resultText(sub.spawn);
+  if (sub.apiError || SPAWN_API_ERROR.test(spawnText)) return 'api error';
+  if (SPAWN_INTERRUPTED.test(spawnText)) return 'interrupted';
   return sub.finalText ? null : 'empty';
 };
 const correctionsIn = (main) => main.prompts
@@ -163,6 +173,15 @@ const correctionsIn = (main) => main.prompts
   .map((p) => CORRECTIONS.filter(([, re]) => re.test(p.slice(0, 600))).map(([kind]) => kind))
   .filter((kinds) => kinds.length);
 const round = (n, d = 2) => Math.round(n * 10 ** d) / 10 ** d;
+const waitSpan = (c) => [c.start, c.start + Math.min(c.end - c.start, 3 * HOUR)];
+const unionMs = (calls) => {
+  let total = 0, reach = -Infinity;
+  for (const [from, to] of calls.map(waitSpan).toSorted(([x], [y]) => x - y)) {
+    total += Math.max(0, to - Math.max(from, reach));
+    reach = Math.max(reach, to);
+  }
+  return total;
+};
 
 export const METRICS = [
   {
@@ -170,7 +189,11 @@ export const METRICS = [
     measure: ({ mains }) => ({ value: mains.length }),
   },
   {
-    id: 'subagents', label: 'subagents by type (from the spawning call)',
+    id: 't3-children', label: 'T3 delegate_task child threads, by agent file or role',
+    measure: ({ children, mains }) => ({ value: children.length, per: [mains.length, 'main session'], breakdown: tally(children.map((a) => a.type)) }),
+  },
+  {
+    id: 'subagents', label: 'subagents (by the spawning call) and T3 child threads, by type',
     measure: ({ subs, mains }) => ({ value: subs.length, per: [mains.length, 'main session'], breakdown: tally(subs.map((a) => a.type)) }),
   },
   {
@@ -197,7 +220,7 @@ export const METRICS = [
   {
     id: 'worktree-remove-refused', label: '`git worktree remove` refused by the guard, the safety check or git',
     measure: ({ all }) => {
-      const outcomes = all.flatMap((a) => a.calls.filter((c) => c.name === 'Bash' && WORKTREE_REMOVE.test(c.input.command ?? '')).map(removeOutcome));
+      const outcomes = all.flatMap((a) => a.calls.filter((c) => c.name === 'Bash' && runsWorktreeRemove(c.input.command)).map(removeOutcome));
       return { value: outcomes.filter((o) => o !== 'ok').length, per: [outcomes.length, 'call'], breakdown: tally(outcomes) };
     },
   },
@@ -237,12 +260,17 @@ export const METRICS = [
     },
   },
   {
-    id: 'foreground-agent-wait-h', label: 'hours main thread is blocked on foreground Agent calls (each capped 3 h)',
+    id: 'foreground-agent-wait-h', label: 'hours a main thread waits on at least one foreground Agent call (each call capped 3 h)',
     measure: ({ mains }) => {
-      const calls = mains.flatMap((m) => m.calls.filter((c) => isSpawn(c) && !isBackground(c) && c.end != null));
-      const hours = (cs) => round(cs.reduce((s, c) => s + Math.min(c.end - c.start, 3 * HOUR), 0) / HOUR, 1);
-      const types = [...new Set(calls.map((c) => typeOf(c.input)))];
-      return { value: hours(calls), per: [mains.length, 'main session'], breakdown: Object.fromEntries(types.map((t) => [t, hours(calls.filter((c) => typeOf(c.input) === t))])) };
+      const perMain = mains.map((m) => m.calls.filter((c) => isSpawn(c) && !isBackground(c) && c.end != null));
+      const hours = (pred) => round(perMain.reduce((s, cs) => s + unionMs(cs.filter(pred)), 0) / HOUR, 1);
+      const types = [...new Set(perMain.flat().map((c) => typeOf(c.input)))];
+      const summed = round(perMain.flat().map(waitSpan).reduce((s, [from, to]) => s + to - from, 0) / HOUR, 1);
+      return {
+        value: hours(() => true),
+        per: [mains.length, 'main session'],
+        breakdown: { ...Object.fromEntries(types.map((t) => [t, hours((c) => typeOf(c.input) === t)])), 'summed over calls': summed },
+      };
     },
   },
   {
@@ -277,8 +305,9 @@ export function audit({ projects, since, until, skip = [] }) {
     }
   }
   const mains = agents.filter((a) => a.kind === 'main');
-  const subs = agents.filter((a) => a.kind === 'sub');
-  const pop = { all: agents, mains, subs };
+  const children = agents.filter((a) => a.kind === 'child');
+  const subs = agents.filter((a) => a.kind !== 'main');
+  const pop = { all: agents, mains, children, subs };
   return {
     window: { since, until: until ?? null },
     projects,
