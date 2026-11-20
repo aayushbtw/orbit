@@ -4,6 +4,14 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.69.1
+
+Released 2026-11-20.
+
+### Children and threads in T3 Code
+
+- The T3 tick rule that a lead never reads a running child's `task_status` now applies only until the child's wake, so it no longer contradicts reading the result on the wake.
+
 ## 0.69.0
 
 Released 2026-11-20.
