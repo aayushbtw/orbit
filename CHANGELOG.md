@@ -4,6 +4,23 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.67.0
+
+Released 2026-11-20.
+
+### Breaking or behavior changes
+
+- gitops, the advisor, the verifier and comment-sicko now give each git command its own plain Bash call. They no longer chain git with `&&` or put a shell variable or `$(...)` in a git argument, which Claude Code's worktree guard refuses. While their session is isolated in a worktree, they run git only there, because the guard also refuses `git -C` or `cd` into another checkout. Otherwise gitops and the advisor use `git -C <path>` for a checkout their brief names. A ship loses less time to refused calls.
+- A code-writing delegate now stops and reports to its lead before an irreversible write, such as a force-push to a shared branch, a deploy, a data deletion or a message to a customer. It no longer reads Task End's Always-pause list in `rules.md`.
+- A prose delegate's brief names the `unslop` and `technical-writing` skills, which it no longer finds through `rules.md`'s triggers.
+- An autopilot owner's brief names `rules-shared.md` beside `rules.md`, because an owner is a `general-purpose` agent that gets no SessionStart output.
+
+### Token use
+
+- A code-writing delegate reads 2,488 words of orbit's rules before it starts, in place of 5,660. It reads the playbook and the new `plugin/rules-shared.md` and skips `rules.md`, whose routing, shipping and delegation rules are for the lead.
+- `rules-shared.md` holds the rules the lead and its delegates share. They are the one-plain-command Bash rule, Code Quality, Files and Comments, moved from `rules.md`. Only the `# Bash` heading and the first sentence of Comments are new, because that sentence pointed at the reply rules, which stay in `rules.md`.
+- The lead still gets every rule. A fourth SessionStart hook prints `rules-shared.md`, and the `rules` skill reads it for a lead that is not Claude Code.
+
 ## 0.66.1
 
 Released 2026-11-20.

@@ -5,7 +5,7 @@ user-invocable: false
 ---
 A subagent stops here. These rules are for the lead.
 
-Read `../../rules.md` in full now, before you reply. It sits in orbit's plugin folder, two folders above this skill's base directory. `<orbit-plugin>` in that file is that folder.
+Read `../../rules.md` and then `../../rules-shared.md` in full now, before you reply, each in its own command. They sit in orbit's plugin folder, two folders above this skill's base directory. `<orbit-plugin>` in them is that folder.
 
 Then read `~/.claude/rules/orbit-models.md` if it exists. It holds the user-wide Models rows that `/orbit:setup` writes. Claude Code loads it natively, and other leads read it here.
 

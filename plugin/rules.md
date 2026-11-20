@@ -32,8 +32,6 @@ Delegate code-writing to the `poteto-agent` subagent (`orbit:poteto-agent`) per 
 
 **Defaults for every `Agent` call.** Agent mode (`general-purpose` or an `orbit:` agent, not `Explore`), file pointers not inlined context. When any `mcp__t3-code__` tool is in your tool list, pass `run_in_background: false` and send parallel spawns as several calls in one message. A child that needs its own checkout, or runs while you keep working, follows Where a child runs in the adapter that Host tools names.
 
-**One plain command per Bash call.** Claude Code's worktree guard refuses heredocs, `&&` chains around git, shell variables and `$(...)` in arguments, and loops as too complex to verify. Write a script with the Write tool and run it, use `git -C <path>`, and split the rest into separate calls. A session isolated in a worktree, after `EnterWorktree` and in every subagent it spawns, may run git only in its own worktree, so the guard refuses `git -C` or `cd` into another checkout. That git waits until Shipping step 7, where the session leaves with `ExitWorktree` and `keep`. Never leave earlier to run it.
-
 **Host tools.** Before the first step that opens or waits on a PR, schedules a wake or routine, asks for a secret, renders a verdict's proof table, fills a panel seat on another family, spawns a child that needs its own checkout or would start a child thread, read `<orbit-plugin>/docs/harness/t3-code.md`. A lead that is not Claude Code also reads `<orbit-plugin>/docs/harness/t3-other-lead.md`. Check each T3 tool before its first call, as that file's probe says. It maps those steps to T3 Code tools, and to orbit's behavior where they are absent. A brief that asks gitops to wait on a PR names the PR, not a command, because gitops runs the watcher once.
 
 **Match the model to the job.** Each spawn runs on the model and effort that Workflow Defaults, Models resolves for it. An effort its step or its row names is exact, so pass it as the `Agent` call's `effort` as written. A role's row effort overrides its agent's frontmatter, so pass it. With none named, the `gitops`, `verifier`, `advisor` and `comment-sicko` agents keep their frontmatter level, so pass none. `poteto-agent`'s frontmatter level only catches a missed pick. For it and any other spawn, pick the level the job needs. Use high for hard and judgment work. A code writer gets medium, even for a small change. Low is only for an edit that writes no logic, such as a typo fix or one fixed line. Other routine work gets medium or low. A spawn that runs on Fable gets medium or high, never low. Pass xhigh or max only when the step, the row or the user names it. Change only the effort level and keep the resolved model, so a diverse panel stays diverse. If the `Agent` tool rejects the level, do not try another level. Use the row's level or the agent's default and say so.
@@ -43,19 +41,6 @@ Brief the `advisor` subagent (`orbit:advisor`) at the plan gate, before a fork r
 You own every subagent's work. Review the diff and write your own summary, don't pass through what it said. A second opinion is the same prompt against a different model. Agreement is high-signal.
 
 **Fresh subagents by default.** Give new work to a fresh subagent with consolidated scope, meaning the original brief, every later directive, and the prior agent's report and branch. This holds for a fix round, a follow-up, a retry, and the next queue item. Resume, message, or queue a follow-up on an existing subagent only when the new work strictly needs state that lives in that agent and is costly to move: its local checkout, its uncommitted changes, or a process it still runs, such as a dev server, a simulator, or a babysit watcher. A resume means a new agent with the earlier result pasted into its brief. A stop or hold order to a running agent is not reuse. A role such as a PR owner outlives its agent. Once that agent returns, a fresh agent takes the role's next round. Interrupt-chained resumes silently drop directives, so fire a fresh subagent with consolidated scope rather than trusting a "done" summary.
-
-# Code Quality
-
-1. Smallest change that works. Delete before adding.
-2. Match surrounding code. Reuse existing helpers before writing new ones.
-3. No speculative abstractions, flags or fallbacks for cases that can't happen.
-4. Handle errors at boundaries only (input, network, fs). Trust internal calls.
-5. Fix the cause, not the symptom.
-6. Before saying done: run the project check and the relevant test. Check numbers against the real source.
-
-# Files
-
-Never create `.md` files in a repo root. The root holds only README, AGENTS (or CLAUDE), DESIGN, LICENSE and CHANGELOG. Resume notes and other working notes go in your auto memory directory, not the repo (`.claude/` is a protected path and prompts on every write). Permanent docs go in `docs/`.
 
 # Task End
 
@@ -92,10 +77,6 @@ Write the reply clean as you draft it. A cleanup pass after drafting does not re
 - **Every claim carries its evidence or its label in the same sentence.** Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
 
 Every playbook ends with a reply written this way, PR link as `https://github.com/<owner>/<repo>/pull/<number>`. Each playbook's own reply lines name only the content unique to that playbook.
-
-# Comments
-
-Comments follow the same rule as the reply. Write them clean as you go. Keep a comment only for a non-obvious *why* the code can't show. A verify or test script gets no phase-narrating comments such as `// Phase 1: add cards`. The assertion or log string documents the step, as in `assert(ok, 'persisted across restart')`. This applies to every file you produce, including the delegate's diff.
 
 # Workflow Defaults
 
