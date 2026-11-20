@@ -1,0 +1,2 @@
+{"type":"user","timestamp":"2026-11-11T10:00:00Z","cwd":"/work/acme","message":{"role":"user","content":"Act as the implementation sub-agent for this task.\n\nStop the greeting from wrapping."}}
+{"type":"assistant","timestamp":"2026-11-11T10:05:00Z","message":{"id":"d1","content":[{"type":"text","text":"The greeting no longer wraps."}]}}

@@ -1,0 +1,2 @@
+{"type":"user","timestamp":"2026-11-10T12:00:00Z","cwd":"/work/orbit-lane-1","message":{"role":"user","content":"stop"}}
+{"type":"assistant","timestamp":"2026-11-10T12:00:10Z","message":{"id":"x1","content":[{"type":"tool_use","id":"x2","name":"ExitWorktree","input":{"action":"keep"}}]}}

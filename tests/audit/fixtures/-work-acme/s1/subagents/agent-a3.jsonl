@@ -1,0 +1,2 @@
+{"type":"user","isSidechain":true,"timestamp":"2026-11-10T10:13:01Z","cwd":"/work/acme","message":{"role":"user","content":"commit"}}
+{"type":"assistant","isSidechain":true,"isApiErrorMessage":true,"timestamp":"2026-11-10T10:13:59Z","message":{"id":"g1","content":[{"type":"text","text":"API Error: overloaded"}]}}

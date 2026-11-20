@@ -1,0 +1,2 @@
+{"type":"user","isSidechain":true,"timestamp":"2026-11-12T09:03:01Z","cwd":"/work/acme","message":{"role":"user","content":"plan the resume"}}
+{"type":"assistant","isSidechain":true,"timestamp":"2026-11-12T09:38:59Z","message":{"id":"h1","content":[{"type":"text","text":"Interrupted runs now resume from the last step."}]}}

@@ -1,0 +1,2 @@
+{"type":"user","timestamp":"2026-11-01T09:00:00Z","cwd":"/work/acme","message":{"role":"user","content":"use advisor"}}
+{"type":"assistant","timestamp":"2026-11-01T09:00:10Z","message":{"id":"o1","content":[{"type":"tool_use","id":"o2","name":"Skill","input":{"skill":"orbit:playbook","args":"bug"}}]}}
