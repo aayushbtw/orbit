@@ -45,7 +45,7 @@ Each line does one job:
 
 Before code is the line that goes into the brief of the agent writing the code. Put guidance there that code under a path must follow. Put a doc in Review also checks when it matters for the plan and the review but not for each edit.
 
-Your own CLAUDE.md and `settings.json` stay yours. Under Claude Code, orbit's rules load on their own at the start of every session. A Codex or Grok lead loads them at `/orbit:start`, or in every session through the always-on line in the [README](../../README.md#install). The Workflow block adjusts the rules for one project.
+Your own CLAUDE.md and `settings.json` stay yours. Orbit's rules load on their own at the start of every Claude Code session. The Workflow block adjusts the rules for one project.
 
 ## Route work by work type
 
@@ -125,12 +125,12 @@ Code delegates are the catch. Without a guard, a Sonnet `code` row would also mo
 Under T3 Code, a panel can fill one seat on another model family, such as a Codex model, instead of a second Claude model. Five seats work this way. They are arena's judge, interrogate's second adversary, the trail reviewer in `show-me-your-work`, the audit seat in `autopilot-full`, and the verifier when its own row says so. `/orbit:setup` writes the `other-family` row to `~/.claude/rules/orbit-models.md` for every project. A project can set its own row:
 
 ```md
-| `other-family` | | codex, claudeAgent | |
+| `other-family` | | codex, gemini | |
 ```
 
-The Model cell is an ordered list of T3 provider ids. Each entry is a fallback for the one seat, not another reviewer. A seat skips the entry of the lead's own family and tries at most three of the rest, in list order. It never runs on a provider the list leaves out.
+The Model cell is an ordered list of T3 provider ids. Each entry is a fallback for the one seat, not another reviewer. A seat skips an entry of the lead's own family, Claude, and tries at most three of the rest, in list order. It never runs on a provider the list leaves out.
 
-- `codex, claudeAgent` works under either lead. A Claude lead takes the `codex` seat, and a Codex lead takes `claudeAgent`.
+- `codex, gemini` tries `codex` first, and `gemini` when `codex` fails.
 - `codex/gpt-6.1-sol` names one model. A bare `codex` takes the first model the provider lists outside the lead's family, skipping `auto` and `default`.
 - `inherit` keeps the seat on the lead's family.
 - `codex, inherit` falls back to the lead's family when `codex` fails.
@@ -139,9 +139,7 @@ An empty cell, or no row, runs the skill's own seat, and the reply says that no 
 
 The verifier follows its own row. A `verifier` row whose Model is `other-family` sends each verifier to the same list. Setup writes that row when the list is not empty, unless the file already has a `verifier` row with another Model. When every entry fails, Claude asks you before the native verifier runs, or holds the PR. `other-family, inherit` runs the native verifier in that case without asking. Setup asks which one you want and recommends `other-family`. A trailing `inherit` on the `other-family` row covers panel seats, not the verifier.
 
-Setup ranks providers Claude, Codex, Muse, Gemini, then Grok. With all five enabled, it recommends Claude, Codex, Muse and Gemini.
-
-The lead's provider changes the other roles too. Under a Codex lead, an empty `code` cell runs code children on gpt-6.1-sol, and `inherit` keeps the lead's model. Every other role runs on the lead's model. Under a Grok lead, every native subagent runs on the lead's model, and a cell that names a Claude model is skipped. The Grok code child has not run live.
+Setup ranks providers Codex, Muse, Gemini, then Grok, and recommends the first three it finds enabled. With all four enabled, it recommends Codex, Muse and Gemini.
 
 [Provider selection](../t3-code.md#provider-selection) explains the family check, which reads each model's id, not only its provider.
 

@@ -54,7 +54,7 @@ The first is a `refactor`. The second is a `perf` task, because it names a slown
 
 Once the flow is picked, Claude loads its playbook and opens a todo list. The first items are the playbook's steps and gates, copied in word for word. Task-specific items come after them.
 
-The list lives in the session's native task tool, such as Claude's task panel or Codex's plan, so you see it there. When the session has no native task tool, Claude tracks this list itself and never prints it. When your goal holds two or more separate tasks, such as several fixes, the reply shows only those tasks and their state, such as `[x] Fix the login redirect` and `[ ] Add the logout button`. A single task, including building and landing one change, gets no list, only a line of progress in the reply.
+The list lives in the session's native task tool, Claude's task panel, so you see it there. When the session has no native task tool, Claude tracks this list itself and never prints it. When your goal holds two or more separate tasks, such as several fixes, the reply shows only those tasks and their state, such as `[x] Fix the login redirect` and `[ ] Add the logout button`. A single task, including building and landing one change, gets no list, only a line of progress in the reply.
 
 The list exists so you can see the whole run before it starts, and so no step disappears quietly. Claude may decide a step doesn't apply. That step stays in the list with a one-line `skip: <reason>`, where you can read it in the task tool and disagree. Here is a shortened example for a small bug fix:
 

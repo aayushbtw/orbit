@@ -4,6 +4,22 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.70.0
+
+Released 2026-11-20.
+
+### Breaking or behavior changes
+
+- Claude, through Claude Code, is now the only lead. Codex, Grok and other families run only as panel seats on another family and as the verifier seat. A lead that is not running in Claude Code now says that orbit leads only under Claude Code, and stops.
+- `plugin/docs/harness/t3-other-lead.md` is gone, with every rule that forked on the lead's provider. The T3 lanes for Codex and Grok leads, and the `rules-load` and `code-child` lanes, are gone too.
+- `/orbit:start` tracks steps with Claude's task tools only.
+- `/orbit:setup` no longer links Codex, checks what Codex and Grok load, or offers an always-on rules line. Its provider ranking drops Claude and recommends the first three of Codex, Muse, Gemini and Grok that are enabled.
+
+### Manual cleanup
+
+- Remove the `~/.codex/skills/orbit` symlink if setup created it.
+- Remove the orbit rules line from `~/.codex/AGENTS.md` and `~/.grok/AGENTS.md` if setup added it.
+
 ## 0.69.2
 
 Released 2026-11-20.

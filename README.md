@@ -11,9 +11,9 @@ A coding agent can stop at code that compiles and never run it. Orbit uses T3's 
 
 ## What orbit does in T3
 
-- A Claude or Codex lead can run a thread. Both passed every live test that applies to them. Grok is not proven, because its recent test runs stopped on a provider error before the lead acted.
+- Claude, through Claude Code, leads every thread. Other families only fill review seats and the verifier.
 - Work that needs its own checkout runs as a child thread with its own worktree. That covers parallel units, review adversaries and the verifier. A review seat on another model family, and work that runs while the lead keeps going, such as an autopilot build round, also get a child thread. Helpers that share your checkout stay nested in your thread.
-- Review panels and the verifier can use a second model family, such as Codex under a Claude lead. Orbit uses only the providers you list in `/orbit:setup`.
+- Review panels and the verifier can use a second model family, such as Codex or Grok. Orbit uses only the providers you list in `/orbit:setup`.
 - Before a change lands, an agent that did not write it runs it the way a user would. It returns `PASS`, `PASS+NOTES` or `FAIL`, and only a pass lands. Green CI is not a pass.
 - Orbit waits on a PR with T3's PR watch, so the thread wakes when checks finish or a review arrives.
 - Changes ship by default. Say "don't ship" to stop at the PR or branch, and land it later with `/orbit:ship`.
@@ -29,13 +29,7 @@ claude plugin marketplace add aayushbtw/orbit
 claude plugin install orbit@orbit
 ```
 
-Then run `/orbit:setup` in a T3 thread. It lists missing tools, checks the project, links Codex to the same copy of orbit, and asks which providers to use for review. It asks before it changes anything.
-
-To load orbit's rules in every Codex session, add this line to `~/.codex/AGENTS.md`:
-
-```
-If Non-negotiables is not in your context, load the orbit `rules` skill before your first reply.
-```
+Then run `/orbit:setup` in a T3 thread. It lists missing tools, checks the project, and asks which providers to use for review. It asks before it changes anything.
 
 Auto-update is off for third-party marketplaces. [Turn it on](docs/usage.md#auto-update) or run `claude plugin update orbit@orbit`.
 
@@ -52,7 +46,7 @@ Outside T3, orbit still runs in Claude Code. It then runs on Claude models only,
 | Learn how or why code works | `/orbit:how` or `/orbit:why` |
 | Stop a repeated mistake | `/orbit:correct` |
 
-[Every command](docs/usage.md#every-command) lists the rest. [The guide](docs/guide/README.md) walks through one task from start to finish. [Orbit in T3 Code](docs/t3-code.md) explains how each lead loads orbit and picks providers, and lists [each live result](docs/t3-code.md#what-is-verified).
+[Every command](docs/usage.md#every-command) lists the rest. [The guide](docs/guide/README.md) walks through one task from start to finish. [Orbit in T3 Code](docs/t3-code.md) explains how orbit loads and picks providers, and lists [each live result](docs/t3-code.md#what-is-verified).
 
 Each task ends with a `Next:` line that tells you what to run.
 
