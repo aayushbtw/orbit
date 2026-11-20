@@ -7,7 +7,6 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { LaneError, gradeLane, parseLane } from './grade.mjs';
 import { SCENARIOS } from './scenarios.mjs';
-import { READERS, kindOf } from './sessions.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dir = join(here, 'fixtures');
@@ -21,13 +20,11 @@ const verdicts = (lane) => Object.fromEntries(gradeLane(lane).map((r) => [r.chec
 const run = (script, args) => spawnSync(process.execPath, [join(here, script), ...args], { encoding: 'utf8' });
 const lane = (fields) => ({ status: 'completed', toolCalls: [], ...fields });
 
-test('every check has an expectation or an N/A reason for every provider, never both', () => {
+test('every scenario has a prompt and every check one expectation', () => {
   for (const [slug, { prompt, checks }] of Object.entries(SCENARIOS)) {
     assert.ok(prompt, `${slug} has a prompt`);
-    for (const [check, cell] of Object.entries(checks)) {
-      for (const provider of Object.keys(READERS)) {
-        assert.ok(Boolean(cell[provider]) !== Boolean(cell.na?.[provider]), `${slug} ${check} ${provider}`);
-      }
+    for (const [check, expect] of Object.entries(checks)) {
+      assert.ok(expect.want || expect.anyOf || expect.state, `${slug} ${check}`);
     }
   }
 });
@@ -49,45 +46,32 @@ test('fixtures hold no home path, email address or secret', () => {
   }
 });
 
-test('provider cells that no fixture exercises', (t) => {
-  const seen = new Set(fixtures.map(({ json }) => `${json.scenario} ${kindOf(json.thread.providerInstanceId)}`));
-  for (const [slug, { checks }] of Object.entries(SCENARIOS)) {
-    for (const [check, cell] of Object.entries(checks)) {
-      for (const provider of Object.keys(READERS)) {
-        if (cell[provider] && !seen.has(`${slug} ${provider}`)) t.diagnostic(`no fixture: ${slug} ${check} ${provider}`);
-      }
-    }
-  }
+test('scenarios that no fixture exercises', (t) => {
+  const seen = new Set(fixtures.map(({ json }) => json.scenario));
+  for (const slug of Object.keys(SCENARIOS)) if (!seen.has(slug)) t.diagnostic(`no fixture: ${slug}`);
 });
 
-test('a lane that did not complete fails every check, N/A ones included', () => {
-  const results = gradeLane(lane({ scenario: 'rules-load', provider: 'claude', status: 'timeout' }));
-  assert.deepEqual(results.map((r) => r.verdict), ['FAIL']);
+test('a lane that did not complete fails every check', () => {
+  const results = gradeLane(lane({ scenario: 'probe', status: 'timeout' }));
+  assert.deepEqual(results.map((r) => r.verdict), ['FAIL', 'FAIL']);
   assert.match(results[0].why, /status is timeout/);
 });
 
 test('a lane with no toolCalls fails every check that applies', () => {
-  const results = gradeLane(lane({ scenario: 'gitops-native', provider: 'codex', toolCalls: null }));
+  const results = gradeLane(lane({ scenario: 'gitops-native', toolCalls: null }));
   assert.deepEqual(results.map((r) => r.verdict), ['FAIL', 'FAIL']);
   assert.match(results[0].why, /no toolCalls/);
-});
-
-test('a Codex spawn whose call args were not found fails fork_turns and says so', () => {
-  const toolCalls = [{ name: 'spawn_agent', input: { join: 'missing', resolved_model: 'gpt-6.1-sol' }, sidechain: false }];
-  const [result] = gradeLane(lane({ scenario: 'code-child', provider: 'codex', toolCalls }));
-  assert.equal(result.verdict, 'FAIL');
-  assert.match(result.why, /call args were not found/);
 });
 
 test('a child that watches the PR fails no-child-watches; the lead watch still passes', () => {
   const watch = { name: 'mcp__t3-code__watch_pull_request', input: { url: 'https://github.com/o/r/pull/7' } };
   const toolCalls = [{ ...watch, sidechain: false }, { ...watch, sidechain: true }];
-  assert.deepEqual(verdicts(lane({ scenario: 'watch-pr-wait', provider: 'claude', toolCalls })), { 'lead-watches': 'PASS', 'no-child-watches': 'FAIL' });
+  assert.deepEqual(verdicts(lane({ scenario: 'watch-pr-wait', toolCalls })), { 'lead-watches': 'PASS', 'no-child-watches': 'FAIL' });
 });
 
 test('no-sleeping-watcher flags only a watcher run that polls', () => {
   const watcher = '/p/skills/playbook/scripts/watch-pr/watch-pr';
-  const grade = (command) => verdicts(lane({ scenario: 'babysit-wait', provider: 'claude', toolCalls: [{ name: 'Bash', input: { command }, sidechain: false }] }))['no-sleeping-watcher'];
+  const grade = (command) => verdicts(lane({ scenario: 'babysit-wait', toolCalls: [{ name: 'Bash', input: { command }, sidechain: false }] }))['no-sleeping-watcher'];
   assert.equal(grade(`${watcher} --owner o --repo r --pr 7`), 'FAIL');
   assert.equal(grade('cd /p/skills/playbook/scripts/watch-pr && ./watch-pr --pr 7'), 'FAIL');
   assert.equal(grade(`${watcher} --owner o --repo r --pr 7 --once`), 'PASS');
@@ -105,24 +89,24 @@ test('no-sleeping-watcher flags only a watcher run that polls', () => {
 test('a clientRequestId on a different call than the other-family seat fails request-id', () => {
   const seat = (input) => ({ name: 'mcp__t3-code__delegate_task', input: { role: 'review', mode: 'async', ...input }, sidechain: false });
   const toolCalls = [seat({ target: { providerInstanceId: 'codex' } }), seat({ clientRequestId: 'x', target: { providerInstanceId: 'claudeAgent' } })];
-  assert.deepEqual(verdicts(lane({ scenario: 'review-seat', provider: 'claude', toolCalls })), { 'seat-other-family': 'PASS', 'request-id': 'FAIL' });
+  assert.deepEqual(verdicts(lane({ scenario: 'review-seat', toolCalls })), { 'seat-other-family': 'PASS', 'request-id': 'FAIL' });
 });
 
 test('a schedule_task interval under 60 s fails', () => {
   const toolCalls = [{ name: 'mcp__t3-code__schedule_task', input: { bindToCurrentThread: true, schedule: { type: 'interval', everyMs: 30_000 } }, sidechain: false }];
-  assert.deepEqual(verdicts(lane({ scenario: 'schedule-loop', provider: 'codex', toolCalls })), { 'bound-to-thread': 'PASS', 'interval-min-60s': 'FAIL' });
+  assert.deepEqual(verdicts(lane({ scenario: 'schedule-loop', toolCalls })), { 'bound-to-thread': 'PASS', 'interval-min-60s': 'FAIL' });
 });
 
 test('a lead Agent call without run_in_background: false fails every-agent-foreground', () => {
   const agent = (input) => ({ name: 'Agent', input: { subagent_type: 'orbit:poteto-agent', ...input }, sidechain: false });
-  const grade = (toolCalls) => verdicts(lane({ scenario: 'foreground', provider: 'claude', toolCalls }))['every-agent-foreground'];
+  const grade = (toolCalls) => verdicts(lane({ scenario: 'foreground', toolCalls }))['every-agent-foreground'];
   assert.equal(grade([agent({})]), 'FAIL');
   assert.equal(grade([agent({ run_in_background: false })]), 'PASS');
 });
 
 test('an expectation with min passes only when that many calls match, naming each', () => {
   const child = (clientRequestId) => ({ name: 'mcp__t3-code__delegate_task', input: { isolation: 'worktree', mode: 'async', clientRequestId }, sidechain: false });
-  const grade = (toolCalls) => gradeLane(lane({ scenario: 'parallel-units', provider: 'claude', toolCalls })).find((r) => r.check === 'own-checkout-children');
+  const grade = (toolCalls) => gradeLane(lane({ scenario: 'parallel-units', toolCalls })).find((r) => r.check === 'own-checkout-children');
   const two = grade([{ name: 'Read', input: {} }, child('min-try1'), child('max-try1')]);
   assert.equal(two.verdict, 'PASS');
   assert.match(two.why, /^call 2 .*; call 3 /);
@@ -134,7 +118,7 @@ test('an expectation with min passes only when that many calls match, naming eac
 
 test('children-on-prerequisite fails a child whose round.mjs is its own, and a lane with no branches', () => {
   const branch = (ref, child, adds) => ({ ref, born: 'b'.repeat(40), tip: ref.padEnd(40, '0'), worktree: null, child, adds });
-  const grade = (branches) => gradeLane(lane({ scenario: 'child-base', provider: 'claude', branches })).find((r) => r.check === 'children-on-prerequisite');
+  const grade = (branches) => gradeLane(lane({ scenario: 'child-base', branches })).find((r) => r.check === 'children-on-prerequisite');
   const leadBranch = branch('feat', false, 'a'.repeat(40));
   assert.equal(grade([leadBranch, branch('mean', true, 'a'.repeat(40)), branch('median', true, 'a'.repeat(40))]).verdict, 'PASS');
   assert.equal(grade([leadBranch, branch('mean', true, 'a'.repeat(40)), branch('median', true, 'c'.repeat(40))]).verdict, 'FAIL');
@@ -144,14 +128,14 @@ test('children-on-prerequisite fails a child whose round.mjs is its own, and a l
 });
 
 test('brief-pins-base passes only a brief that runs the checkout guard and pins a SHA', () => {
-  const grade = (task) => verdicts(lane({ scenario: 'child-base', provider: 'claude', toolCalls: [{ name: 'mcp__t3-code__delegate_task', input: { isolation: 'worktree', task }, sidechain: false }] }))['brief-pins-base'];
+  const grade = (task) => verdicts(lane({ scenario: 'child-base', toolCalls: [{ name: 'mcp__t3-code__delegate_task', input: { isolation: 'worktree', task }, sidechain: false }] }))['brief-pins-base'];
   assert.equal(grade('Run git rev-parse --show-toplevel and stop if it prints /p or /p/.claude/worktrees/x. Then git reset --hard 7beda92.'), 'PASS');
   assert.equal(grade('Run git reset --hard 7beda92, then add mean.mjs.'), 'FAIL');
   assert.equal(grade('Run git rev-parse --show-toplevel and stop if it prints /p. Then add mean.mjs.'), 'FAIL');
 });
 
 test('no-pick-conflict fails a cherry-pick recovery that starts a command, not one behind ||', () => {
-  const grade = (command) => verdicts(lane({ scenario: 'child-base', provider: 'claude', toolCalls: [{ name: 'Bash', input: { command }, sidechain: true }] }))['no-pick-conflict'];
+  const grade = (command) => verdicts(lane({ scenario: 'child-base', toolCalls: [{ name: 'Bash', input: { command }, sidechain: true }] }))['no-pick-conflict'];
   assert.equal(grade('git cherry-pick 49a14e9 || git cherry-pick --abort; git rev-parse HEAD'), 'PASS');
   assert.equal(grade('git cherry-pick 49a14e9'), 'PASS');
   assert.equal(grade('git cherry-pick --abort'), 'FAIL');
@@ -165,14 +149,13 @@ const opusAdversary = call('Agent', { subagent_type: 'general-purpose', model: '
 const reviewSeat = (providerInstanceId, model) => call('mcp__t3-code__delegate_task', { role: 'review', mode: 'async', target: { providerInstanceId, model } });
 
 test('an all-fail lane that never read orchestrator_capabilities fails caps-read', () => {
-  assert.deepEqual(verdicts(lane({ scenario: 'verifier-all-fail', provider: 'claude' })), { 'caps-read': 'FAIL', 'no-seat': 'PASS', 'no-native-verifier': 'PASS' });
-  assert.equal(verdicts(lane({ scenario: 'verifier-all-fail', provider: 'codex' }))['caps-read'], 'FAIL');
-  assert.equal(verdicts(lane({ scenario: 'seat-all-fail', provider: 'claude', toolCalls: [opusAdversary] }))['caps-read'], 'FAIL');
-  assert.equal(verdicts(lane({ scenario: 'seat-all-fail', provider: 'claude', toolCalls: [caps, opusAdversary] }))['caps-read'], 'PASS');
+  assert.deepEqual(verdicts(lane({ scenario: 'verifier-all-fail' })), { 'caps-read': 'FAIL', 'no-seat': 'PASS', 'no-native-verifier': 'PASS' });
+  assert.equal(verdicts(lane({ scenario: 'seat-all-fail', toolCalls: [opusAdversary] }))['caps-read'], 'FAIL');
+  assert.equal(verdicts(lane({ scenario: 'seat-all-fail', toolCalls: [caps, opusAdversary] }))['caps-read'], 'PASS');
 });
 
 test("verifier-all-fail grades a lane that waits only on the lead's own question", () => {
-  const waiting = (scenario, pendingQuestion) => lane({ scenario, provider: 'claude', status: 'waiting', pendingQuestion, toolCalls: [caps, opusAdversary] });
+  const waiting = (scenario, pendingQuestion) => lane({ scenario, status: 'waiting', pendingQuestion, toolCalls: [caps, opusAdversary] });
   assert.deepEqual(verdicts(waiting('verifier-all-fail', [{ name: 'AskUserQuestion' }])), { 'caps-read': 'PASS', 'no-seat': 'PASS', 'no-native-verifier': 'PASS' });
   for (const pending of [null, [], [{ name: 'Bash' }], [{ name: 'AskUserQuestion' }, { name: 'Bash' }]]) {
     const results = gradeLane(waiting('verifier-all-fail', pending));
@@ -182,17 +165,17 @@ test("verifier-all-fail grades a lane that waits only on the lead's own question
 });
 
 test('seat-listed fails a near-miss provider, a same-family alias, an opaque model and a second seat', () => {
-  const grade = (toolCalls, provider = 'claude') => verdicts(lane({ scenario: 'seat-listed', provider, toolCalls }));
+  const grade = (toolCalls) => verdicts(lane({ scenario: 'seat-listed', toolCalls }));
   assert.deepEqual(grade([reviewSeat('codex-proxy', 'gpt-5')]), { 'seat-on-first-listed': 'FAIL', 'only-listed-seats': 'FAIL', 'one-seat': 'PASS', 'no-native-code-adversary': 'PASS' });
   assert.equal(grade([reviewSeat('codex', 'anthropic/opus-4')])['seat-on-first-listed'], 'FAIL');
-  assert.equal(grade([reviewSeat('grok', 'openai/o3')], 'codex')['seat-on-first-listed'], 'FAIL');
+  assert.equal(grade([reviewSeat('codex', 'claude-sonnet-5')])['seat-on-first-listed'], 'FAIL');
   assert.equal(grade([reviewSeat('codex', 'auto')])['seat-on-first-listed'], 'FAIL');
   assert.equal(grade([reviewSeat('codex', 'gpt-5'), reviewSeat('grok', 'grok-4')])['one-seat'], 'FAIL');
   assert.deepEqual(grade([reviewSeat('codex', 'gpt-5'), reviewSeat('codex', 'gpt-5')]), { 'seat-on-first-listed': 'PASS', 'only-listed-seats': 'PASS', 'one-seat': 'PASS', 'no-native-code-adversary': 'PASS' });
 });
 
 test('a same-provider delegate_task is no seat, but still counts as a native adversary or verifier', () => {
-  const grade = (scenario, toolCalls, provider = 'claude') => verdicts(lane({ scenario, provider, toolCalls: [caps, ...toolCalls] }));
+  const grade = (scenario, toolCalls) => verdicts(lane({ scenario, toolCalls: [caps, ...toolCalls] }));
   const testChild = (providerInstanceId) => call('mcp__t3-code__delegate_task', { role: 'test', target: { providerInstanceId } });
   assert.deepEqual(grade('seat-all-fail', [reviewSeat('claudeAgent', 'claude-opus-5-5')]), { 'caps-read': 'PASS', 'no-seat': 'PASS', 'no-native-replacement': 'PASS', 'judgment-adversary-ran': 'PASS' });
   assert.equal(grade('seat-all-fail', [reviewSeat('claudeAgent', 'claude-opus-5-5'), reviewSeat('claudeAgent')])['no-native-replacement'], 'FAIL');
@@ -201,8 +184,8 @@ test('a same-provider delegate_task is no seat, but still counts as a native adv
   assert.equal(grade('seat-listed', [reviewSeat('claudeAgent', 'claude-sonnet-5')])['no-native-code-adversary'], 'FAIL');
   assert.equal(grade('seat-empty', [reviewSeat('claudeAgent', 'claude-opus-5-5')])['session-family-seat'], 'FAIL');
   assert.equal(grade('verifier-all-fail', [testChild('claudeAgent')])['no-native-verifier'], 'FAIL');
-  assert.equal(grade('verifier-all-fail', [testChild('codex')], 'codex')['no-native-verifier'], 'FAIL');
-  assert.equal(grade('verifier-all-fail', [testChild('claudeAgent')], 'codex')['no-seat'], 'FAIL');
+  assert.equal(grade('verifier-all-fail', [testChild(undefined)])['no-native-verifier'], 'FAIL');
+  assert.equal(grade('verifier-all-fail', [testChild('codex')])['no-seat'], 'FAIL');
 });
 
 test('grade.mjs runs when its path goes through a symlink', () => {
@@ -212,18 +195,18 @@ test('grade.mjs runs when its path goes through a symlink', () => {
     const probe = fixtures.find((f) => f.name === 'claude-probe.json').path;
     const { status, stdout, stderr } = spawnSync(process.execPath, [join(tmp, 't3', 'grade.mjs'), probe], { encoding: 'utf8' });
     assert.equal(status, 0, stderr);
-    assert.ok(stdout.startsWith(`${probe}  probe  claude\n`), stdout);
+    assert.ok(stdout.startsWith(`${probe}  probe\n`), stdout);
   } finally {
     rmSync(tmp, { recursive: true });
   }
 });
 
 test('parseLane rejects a lane it cannot grade, naming the file', () => {
-  const base = { scenario: 'probe', status: 'completed', thread: { providerInstanceId: 'codex' }, toolCalls: [] };
+  const base = { scenario: 'probe', status: 'completed', thread: { providerInstanceId: 'claudeAgent' }, toolCalls: [] };
   const cases = [
     ['{"scenario":', /not valid JSON/],
     [JSON.stringify({ ...base, scenario: 'nope' }), /unknown scenario "nope"/],
-    [JSON.stringify({ ...base, thread: { providerInstanceId: 'gemini' } }), /unknown provider "gemini"/],
+    [JSON.stringify({ ...base, thread: { providerInstanceId: 'codex' } }), /providerInstanceId "codex" is not a Claude lead/],
     [JSON.stringify({ ...base, toolCalls: undefined }), /no toolCalls key/],
     [JSON.stringify({ ...base, toolCalls: [{ input: {} }] }), /toolCalls is neither null nor a list of calls with a name/],
   ];
@@ -236,9 +219,9 @@ test('CLI prints every check of every fixture and exits 1', () => {
   const { status, stdout, stderr } = run('grade.mjs', fixtures.map((f) => f.path));
   assert.equal(status, 1, stderr);
   const lines = stdout.split('\n');
-  for (const { path, json } of fixtures) assert.ok(lines.includes(`${path}  ${json.scenario}  ${kindOf(json.thread.providerInstanceId)}`), path);
+  for (const { path, json } of fixtures) assert.ok(lines.includes(`${path}  ${json.scenario}`), path);
   const checks = fixtures.reduce((n, { json }) => n + Object.keys(json.fixture.expect).length, 0);
-  assert.equal(lines.filter((l) => /^ {2}(PASS|FAIL|N\/A) +\S+ {2}\S/.test(l)).length, checks);
+  assert.equal(lines.filter((l) => /^ {2}(PASS|FAIL) +\S+ {2}\S/.test(l)).length, checks);
 });
 
 test('CLI exits 0 on the fixtures that expect no FAIL', () => {
