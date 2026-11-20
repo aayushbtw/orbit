@@ -12,8 +12,7 @@
 
 | Task | Use for | Model | Effort |
 | --- | --- | --- | --- |
-| other-family | panel seat on another family | codex | |
-| verifier | runs the change before it lands | other-family | |
+| other-family | panel seat on another family | inherit | |
 
 ## Maintaining orbit
 
