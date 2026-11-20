@@ -67,7 +67,7 @@ A SIGINT, SIGTERM or SIGHUP to the launcher does not touch the lane. The launche
 
 ## Scenario projects
 
-A scenario whose check depends on the project's Workflow block names a `project` in `scenarios.mjs`, and the lane runs there unless `--project` is given. `review-seat` and `verifier-seat` need one, because orbit's own `AGENTS.md` sets the `other-family` row to `inherit`, so a correct lead in orbit keeps every seat native and `seat-other-family` cannot pass. They share the `seats` project. Its `AGENTS.md` Models table has these rows, in the format of rules.md Workflow Defaults, Models:
+A scenario whose check depends on the project's Workflow block names a `project` in `scenarios.mjs`, and the lane runs there unless `--project` is given. `review-seat` and `verifier-seat` need one. They need a fixed roster and a `verifier` row. Orbit's own Models table can change, and these must not change with it. They share the `seats` project. Its `AGENTS.md` Models table has these rows, in the format of rules.md Workflow Defaults, Models:
 
 ```
 | other-family | panel seat on another family | codex, claudeAgent | |
