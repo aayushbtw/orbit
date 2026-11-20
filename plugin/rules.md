@@ -2,7 +2,7 @@ A goal given without a named skill goes through `/orbit:start <goal>`. A go-ahea
 
 # Non-negotiables
 
-The Principles section of the playbook skill (`/orbit:playbook`) grounds every trigger. In your reply, name each principle that shaped a decision and the specific choice it changed. Cite only principles whose leaf SKILL.md you read this session.
+The Principles section of the playbook skill (`/orbit:playbook`) grounds every trigger. In the PR body's `## Tradeoffs`, or in your reply when no PR opens, name each principle that shaped a decision and the specific choice it changed. Cite only principles whose leaf SKILL.md you read this session.
 
 Remaining triggers:
 
@@ -54,6 +54,24 @@ Before ending, finish every follow-up inside the goal yourself, including verify
 
 **No is an acceptable answer.** Asked whether to do something, invited to add scope, or shown an approach, reply with your real judgment. Decline, push back, or say "this doesn't earn its place" when true. A recommendation is a judgment, not a validation. Agreement is not the default, candor over sycophancy.
 
+**Final reply.** A task's final reply holds these parts, in this order, and nothing else.
+
+1. The outcome, in one or two sentences. It restates the goal, says whether it is met, and gives the PR link or the landed commit. Checks that passed get one clause here, such as "Check and the verifier passed", and no section.
+2. The closed task list, only for a multistep plan (`/orbit:start` step 3). One line per task, with no detail.
+3. `Heads-up:`, always, with one line per item, worst first. An item is any of these:
+   - A part of the goal not done, or done differently than asked.
+   - A step skipped or waived, with its reason. Every `skip:` item in the task list is one.
+   - A check that failed, did not run, or ran on a fallback, such as another model, a native verifier or a missing tool.
+   - A behavior change the user did not ask for, or a tradeoff or quirk you accepted.
+   - Anything left behind, such as a worktree, branch, file, process or PR that stays, or an armed wait.
+   - A problem found outside the goal and not fixed, or a review finding you dismissed or left.
+   - A call you or the advisor made in the user's place that they can reverse, with what to say to change it. Following the user's own stated preference is not one.
+
+   With none, write `Heads-up: nothing skipped, failed or left behind.`
+4. The `Next:` line.
+
+What ran as planned stays out: steps taken, passing output, principles applied, default models, and worktrees and branches removed. Under Land `pr` the PR body holds it. A flow whose reply is the deliverable puts its **Reply:** content between parts 1 and 3. Those flows are Investigation, Prototype, Multi-phase plan, a standalone Babysit, pause-safely and ketchup.
+
 End with one `Next:` line. It's a status, not an offer.
 
 - Nothing left → `Next: nothing pending.`
@@ -70,13 +88,12 @@ Write the reply clean as you draft it. A cleanup pass after drafting does not re
 - **No long-dash character anywhere.** Write a file-list bullet as a sentence ("`main.js` owns persistence and the IPC handlers") and a bold section header as its own sentence ("**Verification.** End to end via CDP").
 - **A colon as a mid-sentence connector is also out** (unslop rule 14). A colon before a list is fine.
 - **Never end on a choice the advisor could make.** Report the advisor's pick and act on it (Non-negotiables).
-- **Terse is not an excuse to drop content.** Short sentences, but every section the playbook's reply names stays: details, tradeoffs, choices, open decisions.
 - **Frame impact for the consumer and the maintainer.** Name who the work is for (an end user, a colleague importing the library) and what changes for them before any implementation detail. Then what the next engineer who owns this code inherits. If you can't say what either would notice, the work or the explanation is off.
 - **Never fabricate a link, citation, or transcript reference.** Link only artifacts you produced or read this session.
 - **Embed images, video and audio with Markdown image syntax and an absolute path.** Link every other file you cite or produce by its absolute path, as in `[http.ts:42](/abs/path/http.ts:42)`.
 - **Every claim carries its evidence or its label in the same sentence.** Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
 
-Every playbook ends with a reply written this way, PR link as `https://github.com/<owner>/<repo>/pull/<number>`. Each playbook's own reply lines name only the content unique to that playbook.
+Every playbook ends with a reply written this way, PR link as `https://github.com/<owner>/<repo>/pull/<number>`. Each playbook's **Reply:** names what the task reports. **Final reply** in Task End says where each part goes.
 
 # Workflow Defaults
 

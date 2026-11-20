@@ -4,6 +4,18 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.71.0
+
+Released 2026-11-20.
+
+### Breaking or behavior changes
+
+- A task's final reply now has four parts in a fixed order. They are the outcome in one or two sentences, the closed task list for a multistep plan, a `Heads-up:` list, and the `Next:` line.
+- `Heads-up:` always shows, worst first. It names what was not done, each skipped or waived step, each check that failed, did not run or ran on a fallback, unasked behavior changes, anything left behind, problems left outside the goal, and calls made in your place. With none, it says `Heads-up: nothing skipped, failed or left behind.`
+- What ran as planned no longer appears in the reply. Passing checks get one clause in the outcome. Steps taken, passing output, principles applied, default models and removed worktrees go in the PR body under Land `pr`, or nowhere.
+- Principles that shaped a decision now go in the PR body's `## Tradeoffs`, or in the reply when no PR opens.
+- The feature, bug and shipping flows report less in the reply. Feature's choices and throughput checkpoint and bug's repro output move to the PR body. Shipping names only what landed in the outcome, and lists a short run, a missing `PASS`, a fallback, an unfixed finding or a kept worktree as a Heads-up item.
+
 ## 0.70.0
 
 Released 2026-11-20.
