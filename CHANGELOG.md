@@ -4,6 +4,16 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.68.0
+
+Released 2026-11-20.
+
+### Breaking or behavior changes
+
+- In T3 Code, a lead whose PR waits on someone else's merge, such as a merge queue, auto-merge or a person, no longer hands back. It keeps the PR watched with `until: "merged"` and ends its turn, and it resumes when the PR merges or closes. orbit used to say a T3 watch never wakes on a merge, which was wrong.
+- A watch also passes `until: "merged"` when you asked for a merge, so the thread stays in Working until the PR lands.
+- A lead now arms a PR watch again after T3 ends it on a PR that is still open, such as after a reopen, 10 comment-only wakes in a row or 8 failed reads in a row. It still never re-arms on an ordinary wake.
+
 ## 0.67.0
 
 Released 2026-11-20.
