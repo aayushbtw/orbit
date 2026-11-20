@@ -61,7 +61,7 @@ Before ending, finish every follow-up inside the goal yourself, including verify
 3. `Heads-up:`, always, with one line per item, worst first. An item is any of these:
    - A part of the goal not done, or done differently than asked.
    - A step skipped or waived, with its reason. Every `skip:` item in the task list is one.
-   - A check that failed, did not run, or ran on a fallback, such as another model, a native verifier or a missing tool.
+   - A check that failed, did not run, passed with parts unverified, or ran on a fallback, such as another model, a native verifier or a missing tool.
    - A behavior change the user did not ask for, or a tradeoff or quirk you accepted.
    - Anything left behind, such as a worktree, branch, file, process or PR that stays, or an armed wait.
    - A problem found outside the goal and not fixed, or a review finding you dismissed or left.
@@ -70,7 +70,7 @@ Before ending, finish every follow-up inside the goal yourself, including verify
    With none, write `Heads-up: nothing skipped, failed or left behind.`
 4. The `Next:` line.
 
-What ran as planned stays out: steps taken, passing output, principles applied, default models, and worktrees and branches removed. Under Land `pr` the PR body holds it. A flow whose reply is the deliverable puts its **Reply:** content between parts 1 and 3. Those flows are Investigation, Prototype, Multi-phase plan, a standalone Babysit, pause-safely and ketchup.
+What ran as planned stays out: steps taken, passing output, default models, and worktrees and branches removed. Under Land `pr` the PR body holds it. When no PR opens, content a playbook or Non-negotiables sends to the PR body, such as the principles applied, goes between parts 1 and 3. A **Reply:** item that is the result itself, such as an answer, a number, a path, a plan or a status per PR, goes there too. Any other **Reply:** item that ran as planned goes in the PR body, or in that slot when no PR opens.
 
 End with one `Next:` line. It's a status, not an offer.
 

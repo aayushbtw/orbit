@@ -44,5 +44,5 @@ The verifier seat is the second seat that runs code, so like interrogate's adver
 
 Start the panel's other seats too, then keep working or end the turn, as Where a child runs step 6 in `t3-code.md` says. The child's completion brings the wake that step defines. When a `delegate_task` result carries `next`, follow it and do not poll. Read the result with `task_status`. Then check `git status --short` for edits, and settle the child thread with `t3_thread_organize` action `settle`, with `threadId` set to the `childThreadId` that `delegate_task` returned.
 
-When a child fails, try the next candidate as **Every candidate fails** says. The reply names each seat's provider and model.
+When a child fails, try the next candidate as **Every candidate fails** says. The reply names each seat's provider and model when the first listed entry did not fill it.
 The end of Where a child runs says when to read and settle the child, how to stop or archive it, how to answer its question and how the reply names it.

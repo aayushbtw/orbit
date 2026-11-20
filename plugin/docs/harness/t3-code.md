@@ -63,7 +63,7 @@ Claude models map as rules.md Workflow Defaults, Models says.
 
 | pstack | T3 Code | T3 tool absent |
 | --- | --- | --- |
-| A non-Claude model slug, a panel seat on another family | The seat that the `other-family` row resolves, below. | The session-family seat, below. The reply names each seat's model. |
+| A non-Claude model slug, a panel seat on another family | The seat that the `other-family` row resolves, below. | The session-family seat, below. The reply names each seat's model when the `other-family` row lists providers. |
 
 ### Seats on another family
 

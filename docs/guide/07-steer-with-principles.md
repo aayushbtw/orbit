@@ -22,15 +22,15 @@ Say Claude's second fix for a flaky test fails the same check as the first. That
 
 The index is short and the skills carry the detail. Reading only the skills that apply leaves room in the session for the task itself. The code-writing subagent, poteto-agent, reads the same index before it starts, so a name means the same rule to the agent that writes the code.
 
-## The reply names what shaped each decision
+## The PR names what shaped each decision
 
-Orbit's rules tell Claude to name, in its reply, each principle that shaped a decision and the choice it changed. Claude may cite only principles whose skill it read in that session. A reply line looks like this:
+Orbit's rules tell Claude to name each principle that shaped a decision and the choice it changed. It goes in the PR body's `## Tradeoffs`, or in the reply when no PR opens. Claude may cite only principles whose skill it read in that session. A line looks like this:
 
 ```text
 Subtract before you add. I deleted the unused `legacyFormat` branch in `export.ts` before adding the JSON option, so the new code has one path to extend.
 ```
 
-This makes the reply something you can check. You see which rule moved which choice. If you disagree, you can argue with the rule by name instead of reopening the whole change.
+This makes the change something you can check. You see which rule moved which choice. If you disagree, you can argue with the rule by name instead of reopening the whole change.
 
 ## Use a name to change course
 
