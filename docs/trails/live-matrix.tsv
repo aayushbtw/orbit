@@ -24,6 +24,7 @@ seat-listed	claude	claude-opus-5-5	34fdaae	1	completed	PASS	seat-on-first-listed
 seat-listed	codex	gpt-6.1-sol	34fdaae	1	completed	PASS	seat-on-first-listed=PASS only-listed-seats=PASS one-seat=PASS no-native-code-adversary=PASS	21261	96	3	2026-11-17	
 seat-listed	grok	grok-4.7-build-fast	34fdaae	0	not rerun							
 seat-empty	claude	claude-opus-5-5	34fdaae	1	completed	PASS	no-seat=PASS session-family-seat=PASS	52090	106	3	2026-11-17	
+seat-empty	claude	claude-opus-5-5	a256471	9	completed	8 PASS 1 FAIL	no-seat=PASS session-family-seat=FAIL in 1 run	53483		3	2026-11-19	3 runs at a256471, 3 at 0edced6, 3 at e83c6d5 (main). The FAIL run at a256471 pinned the code adversary's target.model to claude-opus-5-5 instead of omitting it for inherit; same model ran; t3-code.md wording unchanged by #90
 seat-empty	codex	gpt-6.1-sol	cfc882d	1	completed	PASS	no-seat=PASS session-family-seat=PASS	21228	118	3	2026-11-17	both adversaries are same-provider review delegate_task children with target.model gpt-6.1-sol
 seat-empty	grok	grok-4.7-build-fast	34fdaae	0	not rerun							
 seat-all-fail	claude	claude-opus-5-5	34fdaae	1	completed	PASS	caps-read=PASS no-seat=PASS no-native-replacement=PASS judgment-adversary-ran=PASS	52173	89	2	2026-11-17	
