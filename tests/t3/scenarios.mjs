@@ -1,12 +1,12 @@
 export const ABSENT = Symbol('absent');
 
-export const t3 = (tool) => new RegExp(`^(mcp__)?t3-code(-direct)?__${tool}$`);
+export const t3 = (tool) => new RegExp(`^(mcp__)?t3-code__${tool}$`);
 const some = (name, input, by = 'any', min = 1) => ({ want: 'some', name, input, by, min });
 const none = (name, input, by = 'any') => ({ want: 'none', name, input, by });
 const atMostOne = (name, input, by, key) => ({ want: 'atMostOne', name, input, by, key });
 const otherFamily = /^(?!claude)/i;
 const ownFamily = (id) => id === undefined || /^claude/i.test(id);
-const agentOrDelegate = /^(Agent|(mcp__)?t3-code(-direct)?__delegate_task)$/;
+const agentOrDelegate = /^(Agent|(mcp__)?t3-code__delegate_task)$/;
 const native = (role, model = () => true) => (input) => input?.role === role
   && ownFamily(input.target?.providerInstanceId) && model(input.target?.model);
 const notOpus = (m) => !/opus/i.test(m ?? '');

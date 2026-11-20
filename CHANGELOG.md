@@ -19,6 +19,7 @@ Released 2026-11-20.
 
 - Remove the `~/.codex/skills/orbit` symlink if setup created it.
 - Remove the orbit rules line from `~/.codex/AGENTS.md` and `~/.grok/AGENTS.md` if setup added it.
+- An existing `~/.claude/rules/orbit-models.md` may still list `claudeAgent`. Seats skip it, and rerunning `/orbit:setup` rewrites the list.
 
 ## 0.69.2
 
