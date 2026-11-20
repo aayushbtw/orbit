@@ -1,0 +1,2 @@
+{"type":"user","isSidechain":true,"timestamp":"2026-11-12T09:00:12Z","cwd":"/work/acme","message":{"role":"user","content":"look around"}}
+{"type":"assistant","isSidechain":true,"timestamp":"2026-11-12T09:00:20Z","message":{"id":"e1","content":[{"type":"tool_use","id":"l1","name":"Bash","input":{"command":"ls"}}]}}
