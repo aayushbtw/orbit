@@ -4,6 +4,15 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.69.0
+
+Released 2026-11-20.
+
+### Breaking or behavior changes
+
+- In T3 Code, a Claude lead now keeps working after it starts a `delegate_task` child, and ends its turn only when no other work is left. T3 now delivers the child's result inside the running turn, beside the next tool result, so the lead reviews and settles the child in the same turn. It used to see the result only in a new run after its turn ended. A Codex lead or another lead still gets the result in a new run.
+- A child result that arrives in the middle of a step, such as a review or another child's cherry-pick, waits until that step is done. The lead handles each result once, so it never reads a child's result a second time after a later turn ends.
+
 ## 0.68.0
 
 Released 2026-11-20.
