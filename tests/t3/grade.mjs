@@ -1,7 +1,7 @@
 import { readFileSync, realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { ABSENT, SCENARIOS } from './scenarios.mjs';
-import { kindOf } from './sessions.mjs';
+import { isClaude } from './sessions.mjs';
 
 export class LaneError extends Error {}
 
@@ -11,14 +11,13 @@ export function parseLane(text, file) {
   try { lane = JSON.parse(text); } catch (e) { throw bad(`not valid JSON (${e.message})`); }
   if (!lane || typeof lane !== 'object') throw bad('not a lane object');
   if (!Object.hasOwn(SCENARIOS, lane.scenario)) throw bad(`unknown scenario ${JSON.stringify(lane.scenario)} (known: ${Object.keys(SCENARIOS).join(', ')})`);
-  const provider = kindOf(lane.thread?.providerInstanceId);
-  if (!provider) throw bad(`unknown provider ${JSON.stringify(lane.thread?.providerInstanceId)} in thread.providerInstanceId`);
+  if (!isClaude(lane.thread?.providerInstanceId)) throw bad(`thread.providerInstanceId ${JSON.stringify(lane.thread?.providerInstanceId)} is not a Claude lead, and only Claude leads are graded`);
   if (!Object.hasOwn(lane, 'toolCalls')) throw bad('no toolCalls key');
   const { toolCalls } = lane;
   if (toolCalls !== null && !(Array.isArray(toolCalls) && toolCalls.every((c) => typeof c?.name === 'string'))) {
     throw bad('toolCalls is neither null nor a list of calls with a name');
   }
-  return { scenario: lane.scenario, provider, status: lane.status, pendingQuestion: lane.pendingQuestion ?? null, toolCalls, branches: lane.branches ?? null };
+  return { scenario: lane.scenario, status: lane.status, pendingQuestion: lane.pendingQuestion ?? null, toolCalls, branches: lane.branches ?? null };
 }
 
 function matches(shape, value) {
@@ -39,7 +38,6 @@ const BY = { lead: (call) => !call.sidechain, child: (call) => call.sidechain ==
 
 function describe({ call, i }, input) {
   const who = call.sidechain ? 'child' : 'lead';
-  if (call.input?.join === 'missing') return `call ${i + 1} ${call.name} by ${who}, whose call args were not found in the session (join: missing)`;
   return `call ${i + 1} ${call.name} by ${who}${input === undefined ? '' : ` ${show(project(call.input, input))}`}`;
 }
 
@@ -65,18 +63,15 @@ function evaluate(expect, toolCalls) {
   return { ok: false, why: `${min > 1 ? `0 of ${min} needed` : 'no'} ${wanted}${near ? `; saw ${describe(near, input)}` : ''}` };
 }
 
-const QUESTION = /^(AskUserQuestion|ask_user_question|request_user_input)$/;
-const askedUser = (pending) => Array.isArray(pending) && pending.length > 0 && pending.every((q) => QUESTION.test(q?.name));
+const askedUser = (pending) => Array.isArray(pending) && pending.length > 0 && pending.every((q) => q?.name === 'AskUserQuestion');
 
 export function gradeLane(lane) {
-  const { scenario, provider, status, pendingQuestion, toolCalls } = lane;
+  const { scenario, status, pendingQuestion, toolCalls } = lane;
   const { checks, mayAsk } = SCENARIOS[scenario];
   const graded = status === 'completed' || (mayAsk && status === 'waiting' && askedUser(pendingQuestion));
   const notGraded = `lane status is ${status}, not completed${mayAsk ? " or waiting only on the lead's own question" : ''}`;
-  return Object.entries(checks).map(([check, cell]) => {
+  return Object.entries(checks).map(([check, expect]) => {
     if (!graded) return { check, verdict: 'FAIL', why: notGraded };
-    const expect = cell[provider];
-    if (!expect) return { check, verdict: 'N/A', why: cell.na[provider] };
     if (!expect.state && !toolCalls) return { check, verdict: 'FAIL', why: 'no toolCalls, so the lead session was not read' };
     const { ok, why } = expect.state ? expect.state(lane) : evaluate(expect, toolCalls);
     return { check, verdict: ok ? 'PASS' : 'FAIL', why };
@@ -99,7 +94,7 @@ if (import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
       exit = 2;
       continue;
     }
-    console.log(`${file}  ${lane.scenario}  ${lane.provider}`);
+    console.log(`${file}  ${lane.scenario}`);
     for (const { check, verdict, why } of gradeLane(lane)) {
       console.log(`  ${verdict.padEnd(4)}  ${check}  ${why}`);
       if (verdict === 'FAIL' && exit === 0) exit = 1;

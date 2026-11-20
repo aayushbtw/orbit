@@ -1,19 +1,15 @@
 import { spawn, execFileSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
-import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, realpathSync, renameSync, rmdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, rmdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { clash, deleteLaneBranches, isAncestor, laneBranches, listBranches, listWorktrees } from './branches.mjs';
 import { SCENARIOS } from './scenarios.mjs';
-import { HOMES, READERS, kindOf } from './sessions.mjs';
+import { CLAUDE_HOME, claude, isClaude } from './sessions.mjs';
 
 const ORBIT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const CODEX_USER_ORBITS = [
-  { path: join(HOMES.codex, 'skills', 'orbit'), saved: 'codex-skills-orbit' },
-  { path: join(homedir(), '.agents', 'skills', 'orbit'), saved: 'agents-skills-orbit' },
-];
 const LOCK = join(tmpdir(), 'orbit-lane.lock');
 const LANE_PROJECT = 'orbit.laneProject';
 const LANE_START = Date.now();
@@ -41,7 +37,6 @@ const tryRead = (path) => { try { return readFileSync(path, 'utf8'); } catch { r
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const alive = (pid) => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
 const gitError = (e) => (e.stderr?.toString().trim() || e.message);
-const lexists = (path) => { try { lstatSync(path); return true; } catch { return false; } };
 
 const slug = opts.scenario;
 const message = opts.message ?? SCENARIOS[slug]?.prompt;
@@ -87,6 +82,10 @@ if (!opts.head || !slug) {
   console.error('usage: node tests/t3/lane.mjs --head <ref> --scenario <slug> [--message <text>] [--out <file>] [--project <dir>] [--installed] [--root] [--provider <id> --model <slug>] [--timeout <minutes>] [--wake <minutes> [--wakes <n>]]');
   process.exit(1);
 }
+if (opts.provider !== undefined && !isClaude(opts.provider)) {
+  console.error(`--provider ${opts.provider} is not a Claude provider instance; a lane's lead runs only on Claude, and other families run only as seats`);
+  process.exit(1);
+}
 if (!workerId) await launch();
 
 const memoryDir = `${out.replace(/\.json$/, '')}.memory`;
@@ -98,7 +97,7 @@ const marketplace = opts.installed ? null : `orbit-head-${id}`;
 const runDir = join(tmpdir(), `orbit-lane-${id}`);
 const title = `orbit lane ${slug} ${id}`;
 const branch = `orbit-lane/${slug}-${id}`;
-const sessionCtx = { message, since: LANE_START, homes: HOMES };
+const sessionCtx = { message, since: LANE_START, home: CLAUDE_HOME };
 
 const result = {
   scenario: slug ?? null, message: message ?? null,
@@ -211,62 +210,17 @@ const unregister = (name) => {
   tryRun('claude', ['plugin', 'marketplace', 'remove', name]);
 };
 
-const holdRecord = (dir) => join(dir, 'codex-skills.json');
-
-function restoreCodexSkills(dir) {
-  const record = holdRecord(dir);
-  const held = tryRead(record);
-  if (!held) return;
-  let restored = true;
-  for (const { path, saved } of JSON.parse(held)) {
-    const from = join(dir, saved);
-    if (!lexists(from)) continue;
-    try {
-      if (!lexists(path)) {
-        mkdirSync(dirname(path), { recursive: true });
-        renameSync(from, path);
-        continue;
-      }
-      // Next to the skills root, not in it: Codex loads a folder there under any name.
-      const keep = join(dirname(dirname(path)), `orbit.${basename(dir)}`);
-      if (lexists(keep)) throw new Error(`${keep} exists too`);
-      renameSync(from, keep);
-      console.error(`warning: ${path} exists again, so the copy the lane moved aside is kept at ${keep}`);
-    } catch (e) {
-      restored = false;
-      console.error(`warning: could not put ${from} back at ${path}: ${e.message}`);
-    }
-  }
-  if (restored) rmSync(record);
-}
-
-const removeRunDir = (dir) => existsSync(holdRecord(dir))
-  ? console.error(`warning: kept ${dir}, because it still holds a skills folder listed in codex-skills.json`)
-  : rmSync(dir, { recursive: true, force: true });
-
-function holdCodexSkills(liveRunDirs) {
-  const holder = liveRunDirs.find((dir) => existsSync(holdRecord(dir)));
-  if (holder) throw new Error(`another Codex lane (${holder}) holds the user's orbit skills folders; run Codex lanes one at a time`);
-  const held = CODEX_USER_ORBITS.filter(({ path }) => lexists(path))
-    .map(({ path, saved }) => ({ path, saved, target: lstatSync(path).isSymbolicLink() ? readlinkSync(path) : null }));
-  if (!held.length) return;
-  undo.push(() => restoreCodexSkills(runDir));
-  writeFileSync(holdRecord(runDir), JSON.stringify(held) + '\n');
-  for (const { path, saved } of held) renameSync(path, join(runDir, saved));
-}
+const removeRunDir = (dir) => rmSync(dir, { recursive: true, force: true });
 
 function reap() {
-  const live = [];
   for (const m of JSON.parse(run('claude', ['plugin', 'marketplace', 'list', '--json']))) {
     if (!m.name?.startsWith('orbit-head-') || !m.path) continue;
     const pid = Number(tryRead(join(m.path, 'lane.pid')));
-    if (pid && alive(pid)) { live.push(m.path); continue; }
-    restoreCodexSkills(m.path);
+    if (pid && alive(pid)) continue;
     unregister(m.name);
     removeRunDir(m.path);
     console.error(`reaped ${m.name}, left by a lane that is no longer running`);
   }
-  return live;
 }
 
 function buildLaneCommit() {
@@ -283,7 +237,7 @@ function buildLaneCommit() {
     add('100644', '.claude/settings.local.json', json({ ...tracked('.claude/settings.local.json'), autoMemoryDirectory: memoryDir }));
     if (marketplace) {
       const settings = tracked('.claude/settings.json');
-      const user = JSON.parse(tryRead(join(HOMES.claude, 'settings.json')) ?? '{}');
+      const user = JSON.parse(tryRead(join(CLAUDE_HOME, 'settings.json')) ?? '{}');
       const enabledOrbits = [user, settings]
         .flatMap((s) => Object.entries(s.enabledPlugins ?? {}))
         .filter(([key, on]) => key.startsWith('orbit@') && on)
@@ -291,7 +245,6 @@ function buildLaneCommit() {
       settings.enabledPlugins = { ...settings.enabledPlugins, ...Object.fromEntries(enabledOrbits), [`orbit@${marketplace}`]: true };
       add('100644', '.claude/settings.json', json(settings));
     }
-    if (codexLane) add('120000', '.agents/skills/orbit', join(runDir, 'plugin'));
     const tree = run('git', ['-C', project, 'write-tree'], { env });
     return run('git', ['-C', project, '-c', 'user.name=orbit lane', '-c', 'user.email=lane@orbit.invalid', 'commit-tree', tree, '-p', base, '-m', `orbit lane ${slug} ${id}${marketplace ? `: load orbit from ${marketplace}` : ''}`]);
   } finally {
@@ -465,14 +418,13 @@ async function loadHead() {
   writeFileSync(join(runDir, '.claude-plugin', 'marketplace.json'), JSON.stringify({ ...manifest, name: marketplace }, null, 2) + '\n');
 
   await withLock(() => {
-    const liveRunDirs = reap();
+    reap();
     undo.push(() => tryRun('claude', ['plugin', 'marketplace', 'remove', marketplace]));
     run('claude', ['plugin', 'marketplace', 'add', runDir]);
     result.marketplace = marketplace;
     undo.push(() => tryRun('claude', ['plugin', 'uninstall', `orbit@${marketplace}`, '--scope', 'user']));
     run('claude', ['plugin', 'install', `orbit@${marketplace}`, '--scope', 'user']);
     run('claude', ['plugin', 'disable', `orbit@${marketplace}`, '--scope', 'user']);
-    if (codexLane) holdCodexSkills(liveRunDirs);
   });
 }
 
@@ -497,8 +449,6 @@ function startThread(args) {
   });
 }
 
-const codexLane = !opts.installed && kindOf(opts.provider) === 'codex';
-
 function recordThreads(threadId) {
   threadId ??= JSON.parse(tryRun(cli, ['thread', 'list', '--project', project, '--json']) ?? '[]').find((t) => t.title === title)?.threadId;
   if (!threadId) return;
@@ -508,16 +458,12 @@ function recordThreads(threadId) {
   const shown = JSON.parse(run(cli, ['thread', 'show', '--json', '--messages', '1000', threadId]));
   const { link, providerInstanceId, model, runtimeMode, branch: threadBranch, worktreePath, pendingRequestCount } = shown.thread;
   result.thread = { threadId, link, providerInstanceId, model, runtimeMode, branch: threadBranch, worktreePath };
-  if (result.orbit === 'head' && !codexLane && kindOf(providerInstanceId) === 'codex') {
-    result.orbit = 'installed';
-    console.error(`warning: the thread runs on ${providerInstanceId}, but the lane linked the head orbit only for --provider codex, so Codex loaded the user's own orbit, if any. orbit is "installed". Pass --provider ${providerInstanceId} to load the head.`);
-  }
   result.messages = shown.messages.map(({ role, text }) => ({ role, text }));
   lead.link = link;
   lead.waiting ||= pendingRequestCount > 0;
   lead.worktreePath = worktreePath ?? null;
 
-  const childIds = new Set(Object.values(READERS).flatMap((reader) => sessionDirs().flatMap((dir) => reader.childIds(reader.sessions(dir, sessionCtx)))));
+  const childIds = new Set(sessionDirs().flatMap((dir) => claude.childIds(claude.sessions(dir, sessionCtx))));
   const children = [...childIds].flatMap((id) => {
     const child = JSON.parse(tryRun(cli, ['thread', 'show', '--json', id]) ?? 'null')?.thread;
     return child ? [{ threadId: id, link: child.link ?? null, waiting: child.pendingRequestCount > 0, parentThreadId: child.parentThreadId ?? null, worktreePath: child.worktreePath ?? null }] : [];
@@ -536,12 +482,10 @@ const sessionDirs = () => result.thread.worktreePath
   : [project, ...listWorktrees(project).map((w) => w.path).filter((path) => path.startsWith(join(project, '.claude', 'worktrees') + '/'))];
 
 function readSession({ providerInstanceId }) {
-  const kind = kindOf(providerInstanceId);
-  const reader = READERS[kind];
   const dirs = sessionDirs();
-  const lead = reader && dirs.map((dir) => reader.lead(reader.sessions(dir, sessionCtx), dir, sessionCtx)).find(Boolean);
+  const lead = isClaude(providerInstanceId) && dirs.map((dir) => claude.lead(claude.sessions(dir, sessionCtx), dir, sessionCtx)).find(Boolean);
   if (!lead) {
-    console.error(`warning: ${reader ? `no ${kind} session for the lead in ${dirs.map((dir) => reader.where(dir, sessionCtx)).join(' or ')}` : `no session reader for provider ${providerInstanceId}`}, so session, toolCalls and firstTurnInputTokens are null`);
+    console.error(`warning: ${isClaude(providerInstanceId) ? `no Claude session for the lead in ${dirs.map((dir) => claude.where(dir, sessionCtx)).join(' or ')}` : `the thread runs on ${providerInstanceId}, not Claude, and only a Claude lead's session is read`}, so session, toolCalls and firstTurnInputTokens are null`);
     return;
   }
   result.session = lead.file;

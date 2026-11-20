@@ -1,53 +1,34 @@
 export const ABSENT = Symbol('absent');
 
-export const t3 = (tool) => new RegExp(`^(mcp__)?t3-code(-direct)?__${tool}$`);
+export const t3 = (tool) => new RegExp(`^(mcp__)?t3-code__${tool}$`);
 const some = (name, input, by = 'any', min = 1) => ({ want: 'some', name, input, by, min });
 const none = (name, input, by = 'any') => ({ want: 'none', name, input, by });
 const atMostOne = (name, input, by, key) => ({ want: 'atMostOne', name, input, by, key });
-const viaUseTool = (tool, input) => ({ tool_name: t3(tool), ...(input && { tool_input: input }) });
-const otherFamily = (kind) => new RegExp(`^(?!${kind})`, 'i');
-const ownFamily = (kind, id) => id === undefined || new RegExp(`^${kind}`, 'i').test(id);
-const agentOrDelegate = /^(Agent|(mcp__)?t3-code(-direct)?__delegate_task)$/;
-const subagentOrUseTool = /^(spawn_subagent|use_tool)$/;
-const native = (kind, role, model = () => true) => (input) => input?.role === role
-  && ownFamily(kind, input.target?.providerInstanceId) && model(input.target?.model);
+const otherFamily = /^(?!claude)/i;
+const ownFamily = (id) => id === undefined || /^claude/i.test(id);
+const agentOrDelegate = /^(Agent|(mcp__)?t3-code__delegate_task)$/;
+const native = (role, model = () => true) => (input) => input?.role === role
+  && ownFamily(input.target?.providerInstanceId) && model(input.target?.model);
 const notOpus = (m) => !/opus/i.test(m ?? '');
 const isOpus = (m) => /opus/i.test(m ?? '');
 
-const noChildThread = {
-  claude: none(t3('delegate_task')),
-  codex: none(t3('delegate_task')),
-  grok: none('use_tool', viaUseTool('delegate_task')),
-};
-const otherSeat = (kind) => ({ target: { providerInstanceId: otherFamily(kind) } });
-const noSeat = {
-  claude: none(t3('delegate_task'), otherSeat('claude')),
-  codex: none(t3('delegate_task'), otherSeat('codex')),
-  grok: none('use_tool', viaUseTool('delegate_task', otherSeat('grok'))),
-};
+const noChildThread = none(t3('delegate_task'));
+const otherSeat = { target: { providerInstanceId: otherFamily } };
+const noSeat = none(t3('delegate_task'), otherSeat);
 const seatOn = (target) => ({ role: 'review', mode: 'async', runtimeMode: ABSENT, target });
-const seat = (kind) => seatOn({ providerInstanceId: otherFamily(kind) });
-const familyNames = { claude: ['claude', 'anthropic'], codex: ['gpt', 'openai'], grok: ['grok', 'xai'] };
-const verifiedOutside = (lead, m) => typeof m === 'string' && !['auto', 'default'].includes(m)
-  && !m.toLowerCase().split(/[-/.:]/).some((token) => familyNames[lead].includes(token));
-const listedSeat = (lead, providerInstanceId) => seatOn({ providerInstanceId, model: (m) => verifiedOutside(lead, m) });
-const unlistedSeat = (kind) => ({ target: { providerInstanceId: (id) => !['codex', 'grok'].includes(id) && !new RegExp(`^${kind}`, 'i').test(id ?? '') } });
-const reviewSeat = (kind) => ({ role: 'review', ...otherSeat(kind) });
+const seat = seatOn({ providerInstanceId: otherFamily });
+const verifiedOutside = (m) => typeof m === 'string' && !['auto', 'default'].includes(m)
+  && !m.toLowerCase().split(/[-/.:]/).some((token) => ['claude', 'anthropic'].includes(token));
+const listedSeat = (providerInstanceId) => seatOn({ providerInstanceId, model: verifiedOutside });
+const unlistedSeat = { target: { providerInstanceId: (id) => !['codex', 'grok'].includes(id) && !/^claude/i.test(id ?? '') } };
+const reviewSeat = { role: 'review', ...otherSeat };
 const seatProvider = (input) => input?.target?.providerInstanceId;
-const capsRead = {
-  claude: some(t3('orchestrator_capabilities'), undefined, 'lead'),
-  codex: some(t3('orchestrator_capabilities'), undefined, 'lead'),
-  grok: some('use_tool', viaUseTool('orchestrator_capabilities'), 'lead'),
-};
-const verifierSeat = (kind) => ({ isolation: 'worktree', target: { providerInstanceId: otherFamily(kind) } });
+const capsRead = some(t3('orchestrator_capabilities'), undefined, 'lead');
+const verifierSeat = { isolation: 'worktree', ...otherSeat };
 const codeAdversary = { subagent_type: 'general-purpose', model: (m) => m !== 'opus' };
 const judgmentAdversary = { subagent_type: 'general-purpose', model: 'opus' };
 const isCodeAdversary = (input) => input?.subagent_type === 'general-purpose' && input.model !== 'opus';
-const noNativeCodeAdversary = {
-  claude: none(agentOrDelegate, (input) => isCodeAdversary(input) || native('claude', 'review', notOpus)(input), 'lead'),
-  codex: none('spawn_agent', { model: 'gpt-6.1-sol' }, 'lead'),
-  na: { grok: 'spawn_subagent cannot tell the code adversary from the judgment one' },
-};
+const noNativeCodeAdversary = none(agentOrDelegate, (input) => isCodeAdversary(input) || native('review', notOpus)(input), 'lead');
 const countsCommits = /rev-list|\bgit\b[^|]*\blog\b[^|]*\|\s*wc\s+-l/;
 const onceRead = /\/watch-pr\s[^|;&]*--once\b/;
 const prefix = /^(\w+=\S*|env|exec|nohup|time|command)$/;
@@ -64,24 +45,12 @@ const sleepingWatcher = (command) => typeof command === 'string' && command.spli
 });
 const shortInterval = { schedule: { type: 'interval', everyMs: (ms) => !(ms >= 60_000) } };
 const ownCheckout = { isolation: 'worktree', mode: 'async', clientRequestId: /./ };
-const ownCheckoutChildren = {
-  claude: some(t3('delegate_task'), ownCheckout, 'lead', 2),
-  codex: some(t3('delegate_task'), ownCheckout, 'lead', 2),
-  grok: some('use_tool', viaUseTool('delegate_task', ownCheckout), 'lead', 2),
-};
-const noWorktreeAgent = {
-  claude: none('Agent', { isolation: 'worktree' }),
-  na: {
-    codex: "the Agent worktree option is Claude Code's; no-shell-worktree covers a checkout made in the shell",
-    grok: "the Agent worktree option is Claude Code's; no-shell-worktree covers a checkout made in the shell",
-  },
-};
-const worktreeAdd = { command: /\bgit\b.*\bworktree\s+add\b/ };
-const noShellWorktree = {
-  claude: none('Bash', worktreeAdd),
-  codex: none('exec_command', worktreeAdd),
-  grok: none('run_terminal_command', worktreeAdd),
-};
+const ownCheckoutChildren = some(t3('delegate_task'), ownCheckout, 'lead', 2);
+const noWorktreeAgent = none('Agent', { isolation: 'worktree' });
+const noShellWorktree = none('Bash', { command: /\bgit\b.*\bworktree\s+add\b/ });
+const boundToThread = some(t3('schedule_task'), { bindToCurrentThread: true }, 'lead');
+const leadWatches = some(t3('watch_pull_request'), { url: /\/pull\/\d+$/ }, 'lead');
+const noChildWatches = none(t3('watch_pull_request'), undefined, 'child');
 const workflow = `## Workflow
 
 - Check: \`node --test\`.
@@ -197,116 +166,47 @@ export const SCENARIOS = {
   probe: {
     prompt: 'Probe. Make no edits and load no skills. Run pwd, then list every skill whose name starts with orbit: with its description quoted verbatim.',
     checks: {
-      'ran-pwd': {
-        claude: some('Bash', { command: /\bpwd\b/ }),
-        codex: some('exec_command', { command: /\bpwd\b/ }),
-        grok: some('run_terminal_command', { command: /\bpwd\b/ }),
-      },
-      'loaded-no-skill': {
-        claude: none('Skill'),
-        codex: none('exec_command', { command: /SKILL\.md/ }),
-        grok: none('read_file', { target_file: /SKILL\.md$/ }),
-      },
-    },
-  },
-  'rules-load': {
-    prompt: '/orbit:start in two sentences, which orbit agent commits and which writes code? Make no edits.',
-    checks: {
-      'rules-read': {
-        codex: some('exec_command', { command: /rules\.md/ }, 'lead'),
-        grok: some('read_file', { target_file: /(skills\/rules\/SKILL|(^|\/)rules)\.md$/ }, 'lead'),
-        na: { claude: 'a Claude lead gets rules.md from the SessionStart hook, so no tool call shows it' },
-      },
+      'ran-pwd': some('Bash', { command: /\bpwd\b/ }),
+      'loaded-no-skill': none('Skill'),
     },
   },
   'gitops-native': {
     prompt: "/orbit:start investigate: which pull requests are linked to this T3 thread? Have orbit's gitops agent check it with T3's list_thread_pull_requests tool, then answer. Make no edits.",
     checks: {
-      'gitops-native-child': {
-        claude: some('Agent', { subagent_type: 'orbit:gitops' }, 'lead'),
-        codex: some('spawn_agent', { fork_turns: 'none' }, 'lead'),
-        grok: some('spawn_subagent', { subagent_type: 'orbit:gitops' }, 'lead'),
-      },
-      'no-child-thread': noChildThread,
-    },
-  },
-  'code-child': {
-    prompt: "/orbit:start just testing: create the file scratch/lane-l3.txt containing the single line 'lane l3'. Run the Delegate gate for the edit as orbit's adapter says for a lead on another provider. No commit, no PR.",
-    checks: {
-      'code-native-child': {
-        claude: some('Agent', { subagent_type: 'orbit:poteto-agent' }, 'lead'),
-        codex: some('spawn_agent', { fork_turns: 'none', model: 'gpt-6.1-sol' }, 'lead'),
-        grok: some('spawn_subagent', { subagent_type: 'orbit:poteto-agent' }, 'lead'),
-      },
+      'gitops-native-child': some('Agent', { subagent_type: 'orbit:gitops' }, 'lead'),
       'no-child-thread': noChildThread,
     },
   },
   foreground: {
     prompt: "/orbit:start just testing: create the file scratch/lane-fg.txt containing the single line 'lane fg'. Run the Delegate gate for the edit. No commit, no PR.",
     checks: {
-      'delegate-ran': {
-        claude: some('Agent', { subagent_type: 'orbit:poteto-agent' }, 'lead'),
-        codex: some('spawn_agent', { fork_turns: 'none' }, 'lead'),
-        grok: some('spawn_subagent', { subagent_type: 'orbit:poteto-agent' }, 'lead'),
-      },
-      'every-agent-foreground': {
-        claude: none('Agent', { run_in_background: (v) => v !== false }, 'lead'),
-        grok: none('spawn_subagent', { background: true }, 'lead'),
-        na: { codex: 'spawn_agent has no background field' },
-      },
+      'delegate-ran': some('Agent', { subagent_type: 'orbit:poteto-agent' }, 'lead'),
+      'every-agent-foreground': none('Agent', { run_in_background: (v) => v !== false }, 'lead'),
     },
   },
   'verifier-seat': {
     prompt: verifierMedian,
     project: seatProject,
     checks: {
-      'verifier-ran': {
-        claude: { anyOf: [some(t3('delegate_task'), verifierSeat('claude'), 'lead'), some('Agent', { subagent_type: 'orbit:verifier' }, 'lead')] },
-        codex: { anyOf: [some(t3('delegate_task'), verifierSeat('codex'), 'lead'), some('spawn_agent', { fork_turns: 'none' }, 'lead')] },
-        grok: { anyOf: [some('use_tool', viaUseTool('delegate_task', verifierSeat('grok')), 'lead'), some('spawn_subagent', { subagent_type: 'orbit:verifier' }, 'lead')] },
-      },
-      'seat-other-family': {
-        claude: some(t3('delegate_task'), verifierSeat('claude'), 'lead'),
-        codex: some(t3('delegate_task'), verifierSeat('codex'), 'lead'),
-        grok: some('use_tool', viaUseTool('delegate_task', verifierSeat('grok')), 'lead'),
-      },
+      'verifier-ran': { anyOf: [some(t3('delegate_task'), verifierSeat, 'lead'), some('Agent', { subagent_type: 'orbit:verifier' }, 'lead')] },
+      'seat-other-family': some(t3('delegate_task'), verifierSeat, 'lead'),
     },
   },
   'review-seat': {
     prompt: interrogateMedian,
     project: seatProject,
     checks: {
-      'seat-other-family': {
-        claude: some(t3('delegate_task'), seat('claude'), 'lead'),
-        codex: some(t3('delegate_task'), seat('codex'), 'lead'),
-        grok: some('use_tool', viaUseTool('delegate_task', seat('grok')), 'lead'),
-      },
-      'request-id': {
-        claude: some(t3('delegate_task'), { ...seat('claude'), clientRequestId: /./ }, 'lead'),
-        codex: some(t3('delegate_task'), { ...seat('codex'), clientRequestId: /./ }, 'lead'),
-        grok: some('use_tool', viaUseTool('delegate_task', { ...seat('grok'), clientRequestId: /./ }), 'lead'),
-      },
+      'seat-other-family': some(t3('delegate_task'), seat, 'lead'),
+      'request-id': some(t3('delegate_task'), { ...seat, clientRequestId: /./ }, 'lead'),
     },
   },
   'seat-listed': {
     prompt: interrogateMedian,
     project: seatsProject('seats-listed', 'codex, grok'),
     checks: {
-      'seat-on-first-listed': {
-        claude: some(t3('delegate_task'), listedSeat('claude', 'codex'), 'lead'),
-        codex: some(t3('delegate_task'), listedSeat('codex', 'grok'), 'lead'),
-        grok: some('use_tool', viaUseTool('delegate_task', listedSeat('grok', 'codex')), 'lead'),
-      },
-      'only-listed-seats': {
-        claude: none(t3('delegate_task'), unlistedSeat('claude'), 'lead'),
-        codex: none(t3('delegate_task'), unlistedSeat('codex'), 'lead'),
-        grok: none('use_tool', viaUseTool('delegate_task', unlistedSeat('grok')), 'lead'),
-      },
-      'one-seat': {
-        claude: atMostOne(t3('delegate_task'), reviewSeat('claude'), 'lead', seatProvider),
-        codex: atMostOne(t3('delegate_task'), reviewSeat('codex'), 'lead', seatProvider),
-        grok: atMostOne('use_tool', viaUseTool('delegate_task', reviewSeat('grok')), 'lead', (input) => seatProvider(input?.tool_input)),
-      },
+      'seat-on-first-listed': some(t3('delegate_task'), listedSeat('codex'), 'lead'),
+      'only-listed-seats': none(t3('delegate_task'), unlistedSeat, 'lead'),
+      'one-seat': atMostOne(t3('delegate_task'), reviewSeat, 'lead', seatProvider),
       'no-native-code-adversary': noNativeCodeAdversary,
     },
   },
@@ -315,11 +215,7 @@ export const SCENARIOS = {
     project: seatsProject('seats-empty', null),
     checks: {
       'no-seat': noSeat,
-      'session-family-seat': {
-        claude: { anyOf: [some('Agent', codeAdversary, 'lead'), some(t3('delegate_task'), native('claude', 'review', notOpus), 'lead')] },
-        codex: { anyOf: [some('spawn_agent', { model: 'gpt-6.1-sol' }, 'lead'), some(t3('delegate_task'), native('codex', 'review', (m) => m === 'gpt-6.1-sol'), 'lead')] },
-        grok: { anyOf: [some('spawn_subagent', undefined, 'lead'), some('use_tool', viaUseTool('delegate_task', native('grok', 'review')), 'lead')] },
-      },
+      'session-family-seat': { anyOf: [some('Agent', codeAdversary, 'lead'), some(t3('delegate_task'), native('review', notOpus), 'lead')] },
     },
   },
   'seat-all-fail': {
@@ -329,11 +225,7 @@ export const SCENARIOS = {
       'caps-read': capsRead,
       'no-seat': noSeat,
       'no-native-replacement': noNativeCodeAdversary,
-      'judgment-adversary-ran': {
-        claude: { anyOf: [some('Agent', judgmentAdversary, 'lead'), some(t3('delegate_task'), native('claude', 'review', isOpus), 'lead')] },
-        codex: { anyOf: [some('spawn_agent', undefined, 'lead'), some(t3('delegate_task'), native('codex', 'review'), 'lead')] },
-        grok: { anyOf: [some('spawn_subagent', undefined, 'lead'), some('use_tool', viaUseTool('delegate_task', native('grok', 'review')), 'lead')] },
-      },
+      'judgment-adversary-ran': { anyOf: [some('Agent', judgmentAdversary, 'lead'), some(t3('delegate_task'), native('review', isOpus), 'lead')] },
     },
   },
   'verifier-all-fail': {
@@ -343,92 +235,39 @@ export const SCENARIOS = {
     checks: {
       'caps-read': capsRead,
       'no-seat': noSeat,
-      'no-native-verifier': {
-        claude: none(agentOrDelegate, (input) => input?.subagent_type === 'orbit:verifier' || native('claude', 'test')(input), 'lead'),
-        codex: none(t3('delegate_task'), native('codex', 'test'), 'lead'),
-        grok: none(subagentOrUseTool, (input) => input?.subagent_type === 'orbit:verifier'
-          || (t3('delegate_task').test(input?.tool_name ?? '') && native('grok', 'test')(input.tool_input)), 'lead'),
-      },
+      'no-native-verifier': none(agentOrDelegate, (input) => input?.subagent_type === 'orbit:verifier' || native('test')(input), 'lead'),
     },
   },
   'watch-pr-wait': {
     prompt: 'Hillclimb wake step test. Load the orbit hillclimb flow with /orbit:playbook hillclimb only to read it, and do not start a hillclimb. Assume an unattended hillclimb run whose next iteration waits on CI for the newest open PR in aayushbtw/orbit-t3-lane-ci. Apply only the step 5 wake mechanism to that PR event: arm the wake, say which tools you used, then end your turn. Make no file changes and push nothing.',
     checks: {
-      'lead-watches': {
-        claude: some(t3('watch_pull_request'), { url: /\/pull\/\d+$/ }, 'lead'),
-        codex: some(t3('watch_pull_request'), { url: /\/pull\/\d+$/ }, 'lead'),
-        grok: some('use_tool', viaUseTool('watch_pull_request', { url: /\/pull\/\d+$/ }), 'lead'),
-      },
-      'no-child-watches': {
-        claude: none(t3('watch_pull_request'), undefined, 'child'),
-        codex: none(t3('watch_pull_request'), undefined, 'child'),
-        grok: none('use_tool', viaUseTool('watch_pull_request'), 'child'),
-      },
+      'lead-watches': leadWatches,
+      'no-child-watches': noChildWatches,
     },
   },
   'babysit-wait': {
     prompt: '/orbit:start babysit <PR URL> in drive mode. Make no file changes and push nothing.',
     checks: {
-      'once-read': {
-        claude: some('Bash', { command: onceRead }, 'lead'),
-        codex: some('exec_command', { command: onceRead }, 'lead'),
-        grok: some('run_terminal_command', { command: onceRead }, 'lead'),
-      },
-      'no-sleeping-watcher': {
-        claude: none('Bash', { command: sleepingWatcher }),
-        codex: none('exec_command', { command: sleepingWatcher }),
-        grok: none('run_terminal_command', { command: sleepingWatcher }),
-      },
-      'lead-watches': {
-        claude: some(t3('watch_pull_request'), { url: /\/pull\/\d+$/ }, 'lead'),
-        codex: some(t3('watch_pull_request'), { url: /\/pull\/\d+$/ }, 'lead'),
-        grok: some('use_tool', viaUseTool('watch_pull_request', { url: /\/pull\/\d+$/ }), 'lead'),
-      },
-      'unwatch-at-ready': {
-        claude: some(t3('unwatch_pull_request'), undefined, 'lead'),
-        codex: some(t3('unwatch_pull_request'), undefined, 'lead'),
-        grok: some('use_tool', viaUseTool('unwatch_pull_request'), 'lead'),
-      },
-      'no-child-watches': {
-        claude: none(t3('watch_pull_request'), undefined, 'child'),
-        codex: none(t3('watch_pull_request'), undefined, 'child'),
-        grok: none('use_tool', viaUseTool('watch_pull_request'), 'child'),
-      },
+      'once-read': some('Bash', { command: onceRead }, 'lead'),
+      'no-sleeping-watcher': none('Bash', { command: sleepingWatcher }),
+      'lead-watches': leadWatches,
+      'unwatch-at-ready': some(t3('unwatch_pull_request'), undefined, 'lead'),
+      'no-child-watches': noChildWatches,
     },
   },
   'schedule-loop': {
     prompt: '/orbit:start every 2 minutes, report `git status --short` in this thread, and stop after the first report. Make no file changes and push nothing.',
     checks: {
-      'bound-to-thread': {
-        claude: some(t3('schedule_task'), { bindToCurrentThread: true }, 'lead'),
-        codex: some(t3('schedule_task'), { bindToCurrentThread: true }, 'lead'),
-        grok: some('use_tool', viaUseTool('schedule_task', { bindToCurrentThread: true }), 'lead'),
-      },
-      'interval-min-60s': {
-        claude: none(t3('schedule_task'), shortInterval),
-        codex: none(t3('schedule_task'), shortInterval),
-        grok: none('use_tool', viaUseTool('schedule_task', shortInterval)),
-      },
+      'bound-to-thread': boundToThread,
+      'interval-min-60s': none(t3('schedule_task'), shortInterval),
     },
   },
   'schedule-only': {
     prompt: '/orbit:start schedule a one-time report of `git rev-list --count HEAD` in this thread for tomorrow at 09:00. Make no file changes and push nothing.',
     checks: {
-      scheduled: {
-        claude: some(t3('schedule_task'), { bindToCurrentThread: true }, 'lead'),
-        codex: some(t3('schedule_task'), { bindToCurrentThread: true }, 'lead'),
-        grok: some('use_tool', viaUseTool('schedule_task', { bindToCurrentThread: true }), 'lead'),
-      },
-      'prompt-not-run': {
-        claude: none('Bash', { command: countsCommits }, 'lead'),
-        codex: none('exec_command', { command: countsCommits }, 'lead'),
-        grok: none('run_terminal_command', { command: countsCommits }, 'lead'),
-      },
-      'no-run-now': {
-        claude: none(t3('run_scheduled_task_now'), undefined, 'lead'),
-        codex: none(t3('run_scheduled_task_now'), undefined, 'lead'),
-        grok: none('use_tool', viaUseTool('run_scheduled_task_now'), 'lead'),
-      },
+      scheduled: boundToThread,
+      'prompt-not-run': none('Bash', { command: countsCommits }, 'lead'),
+      'no-run-now': none(t3('run_scheduled_task_now'), undefined, 'lead'),
     },
   },
   'parallel-units': {
@@ -438,16 +277,8 @@ export const SCENARIOS = {
       'own-checkout-children': ownCheckoutChildren,
       'no-worktree-agent': noWorktreeAgent,
       'no-shell-worktree': noShellWorktree,
-      'cherry-picked': {
-        claude: some('Bash', { command: /\bgit\b.*\bcherry-pick\b/ }, 'any', 2),
-        codex: some('exec_command', { command: /\bgit\b.*\bcherry-pick\b/ }, 'any', 2),
-        grok: some('run_terminal_command', { command: /\bgit\b.*\bcherry-pick\b/ }, 'any', 2),
-      },
-      'children-settled': {
-        claude: some(t3('t3_thread_organize'), { action: 'settle' }, 'lead', 2),
-        codex: some(t3('t3_thread_organize'), { action: 'settle' }, 'lead', 2),
-        grok: some('use_tool', viaUseTool('t3_thread_organize', { action: 'settle' }), 'lead', 2),
-      },
+      'cherry-picked': some('Bash', { command: /\bgit\b.*\bcherry-pick\b/ }, 'any', 2),
+      'children-settled': some(t3('t3_thread_organize'), { action: 'settle' }, 'lead', 2),
     },
   },
   'child-base': {
@@ -456,21 +287,9 @@ export const SCENARIOS = {
     prerequisite: roundPath,
     checks: {
       'own-checkout-children': ownCheckoutChildren,
-      'brief-pins-base': {
-        claude: none(t3('delegate_task'), unpinnedChild, 'lead'),
-        codex: none(t3('delegate_task'), unpinnedChild, 'lead'),
-        grok: none('use_tool', viaUseTool('delegate_task', unpinnedChild), 'lead'),
-      },
-      'no-pick-conflict': {
-        claude: none('Bash', pickConflict),
-        codex: none('exec_command', pickConflict),
-        grok: none('run_terminal_command', pickConflict),
-      },
-      'children-on-prerequisite': {
-        claude: childrenOnPrerequisite(roundPath),
-        codex: childrenOnPrerequisite(roundPath),
-        grok: childrenOnPrerequisite(roundPath),
-      },
+      'brief-pins-base': none(t3('delegate_task'), unpinnedChild, 'lead'),
+      'no-pick-conflict': none('Bash', pickConflict),
+      'children-on-prerequisite': childrenOnPrerequisite(roundPath),
     },
   },
   'autopilot-owners': {
@@ -480,11 +299,7 @@ export const SCENARIOS = {
       'owners-are-children': ownCheckoutChildren,
       'no-worktree-agent': noWorktreeAgent,
       'no-shell-worktree': noShellWorktree,
-      'tick-bound': {
-        claude: some(t3('schedule_task'), { bindToCurrentThread: true }, 'lead'),
-        codex: some(t3('schedule_task'), { bindToCurrentThread: true }, 'lead'),
-        grok: some('use_tool', viaUseTool('schedule_task', { bindToCurrentThread: true }), 'lead'),
-      },
+      'tick-bound': boundToThread,
     },
   },
 };

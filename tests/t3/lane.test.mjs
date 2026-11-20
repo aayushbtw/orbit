@@ -131,7 +131,7 @@ async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0,
     const env = {
       ...process.env,
       T3CODE_CLI_PATH: stub, STUB_STATE: join(root, 'state.json'), STUB_WORKTREES: join(root, 'worktrees'), STUB_AGENT: agent, STUB_SAW: join(root, 'saw'),
-      CLAUDE_CONFIG_DIR: join(root, 'claude'), CODEX_HOME: join(root, 'codex'), GROK_HOME: join(root, 'grok'), T3CODE_HOME: join(root, 't3home'),
+      CLAUDE_CONFIG_DIR: join(root, 'claude'), T3CODE_HOME: join(root, 't3home'),
       ...extra,
     };
     const argv = [join(here, 'lane.mjs'), '--head', 'HEAD', '--scenario', 'probe', '--project', project, '--installed', '--out', join(root, 'out.json'), ...args];
@@ -337,6 +337,13 @@ test('a lane whose thread still runs at the deadline leaves the thread alone', a
   assert.equal(out.status, 'timeout');
   assert.deepEqual(organized, []);
   assert.equal(auth, null);
+});
+
+test('a lane with a non-Claude --provider exits 1 before it starts a worker', async () => {
+  const lane = await runLane([join(here, 'lane.mjs'), '--head', 'HEAD', '--scenario', 'probe', '--provider', 'codex'], process.env);
+  assert.equal(lane.status, 1);
+  assert.match(lane.stderr, /^--provider codex is not a Claude provider instance/);
+  assert.doesNotMatch(lane.stderr, /worker \d+/);
 });
 
 test('a lane branch name that differs from an existing branch only in case clashes', () => {

@@ -1,10 +1,10 @@
 import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
-import { basename, dirname, join } from 'node:path';
+import { basename } from 'node:path';
 import { parseArgs } from 'node:util';
 import { gradeLane } from '../grade.mjs';
 import { SCENARIOS } from '../scenarios.mjs';
-import { kindOf, readJsonl, readLead } from '../sessions.mjs';
+import { claude, isClaude, readJsonl } from '../sessions.mjs';
 
 const { values: opts } = parseArgs({
   options: {
@@ -17,38 +17,18 @@ const { values: opts } = parseArgs({
     lane: { type: 'string' },
   },
 });
-const kind = kindOf(opts.provider);
-if (!kind || !opts.session || !Object.hasOwn(SCENARIOS, opts.scenario ?? '') || !opts.out) {
-  console.error(`usage: node tests/t3/fixtures/make.mjs --provider <providerInstanceId> --session <file> --scenario <${Object.keys(SCENARIOS).join('|')}> --out <file> [--source <name>] [--note <text>] [--lane <lane.json>]`);
+if (!isClaude(opts.provider) || !opts.session || !Object.hasOwn(SCENARIOS, opts.scenario ?? '') || !opts.out) {
+  console.error(`usage: node tests/t3/fixtures/make.mjs --provider <Claude providerInstanceId> --session <file> --scenario <${Object.keys(SCENARIOS).join('|')}> --out <file> [--source <name>] [--note <text>] [--lane <lane.json>]`);
   process.exit(1);
 }
 
 const entries = readJsonl(opts.session);
-const SESSION_INFO = {
-  claude: () => {
-    const first = entries.find((e) => e.type === 'user')?.message?.content;
-    const [, command, args] = first.match(/^<command-message>[^<]*<\/command-message>\n<command-name>(\/\S+)<\/command-name>\n<command-args>([\s\S]*)<\/command-args>$/) ?? [];
-    return {
-      message: command ? [command, args].filter(Boolean).join(' ') : first,
-      model: entries.find((e) => e.type === 'assistant' && e.message?.model)?.message.model,
-    };
-  },
-  codex: () => ({
-    message: entries.find((e) => e.type === 'response_item' && e.payload?.role === 'user'
-      && e.payload.internal_chat_message_metadata_passthrough?.content_item_metadata?.[0]?.provenance?.type === 'user')?.payload.content[0].text,
-    model: entries.find((e) => e.type === 'turn_context')?.payload?.model,
-  }),
-  grok: () => {
-    const content = entries.find((e) => e.type === 'user' && 'prompt_index' in e)?.content;
-    const text = Array.isArray(content) ? content.find((c) => c.type === 'text')?.text : content;
-    return {
-      message: text?.match(/^<user_query>\n([\s\S]*?)\n<\/user_query>/)?.[1],
-      model: JSON.parse(readFileSync(join(dirname(opts.session), 'summary.json'), 'utf8')).current_model_id,
-    };
-  },
-};
+const first = entries.find((e) => e.type === 'user')?.message?.content;
+const [, command, args] = first.match(/^<command-message>[^<]*<\/command-message>\n<command-name>(\/\S+)<\/command-name>\n<command-args>([\s\S]*)<\/command-args>$/) ?? [];
+const message = command ? [command, args].filter(Boolean).join(' ') : first;
+const model = entries.find((e) => e.type === 'assistant' && e.message?.model)?.message.model;
 
-const KEEP = new Set(['subagent_type', 'tool_name', 'command', 'join']);
+const KEEP = new Set(['subagent_type', 'command']);
 const collectKeys = (shape) => {
   if (!shape || typeof shape !== 'object' || shape instanceof RegExp) return;
   for (const [key, value] of Object.entries(shape)) {
@@ -57,12 +37,10 @@ const collectKeys = (shape) => {
   }
 };
 const collectExpect = (expect) => expect.anyOf ? expect.anyOf.forEach(collectExpect) : collectKeys(expect.input);
-for (const { checks } of Object.values(SCENARIOS)) {
-  for (const { na: _, ...cells } of Object.values(checks)) Object.values(cells).forEach(collectExpect);
-}
+for (const { checks } of Object.values(SCENARIOS)) Object.values(checks).forEach(collectExpect);
 
-// Session folders spell a path URL-encoded (Grok) or with dashes (Claude); a one-segment path like /tmp would match too much that way.
-const spellings = (path) => path.split('/').length > 2 ? [path, encodeURIComponent(path), path.replace(/[^a-zA-Z0-9]/g, '-')] : [path];
+// Claude session folders spell a path with dashes; a one-segment path like /tmp would match too much that way.
+const spellings = (path) => path.split('/').length > 2 ? [path, path.replace(/[^a-zA-Z0-9]/g, '-')] : [path];
 const SCRUB = [
   ...[realpathSync(tmpdir()), tmpdir()].flatMap(spellings).map((from) => [from, '$TMPDIR']),
   ...spellings(homedir()).map((from) => [from, '~']),
@@ -77,12 +55,11 @@ const slim = (value) => typeof value === 'string' ? cut(value)
   : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).filter(([key]) => KEEP.has(key)).map(([key, v]) => [key, slim(v)]))
   : value;
 
-const { message, model } = SESSION_INFO[kind]();
-const { toolCalls } = readLead(kind, opts.session);
+const { toolCalls } = claude.read(opts.session);
 const laneJson = opts.lane ? JSON.parse(readFileSync(opts.lane, 'utf8')) : {};
 const pendingQuestion = laneJson.pendingQuestion?.map(({ name }) => ({ name })) ?? null;
 const branches = laneJson.branches?.map((b) => ({ ...b, worktree: b.worktree && unhome(b.worktree) })) ?? null;
-const lane = { scenario: opts.scenario, provider: kind, status: laneJson.status ?? 'completed', pendingQuestion, branches };
+const lane = { scenario: opts.scenario, status: laneJson.status ?? 'completed', pendingQuestion, branches };
 const raw = gradeLane({ ...lane, toolCalls });
 const slimCalls = toolCalls.map(({ name, input, sidechain }) => ({ name, input: slim(input), sidechain }));
 const graded = gradeLane({ ...lane, toolCalls: slimCalls });

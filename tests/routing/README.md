@@ -100,7 +100,7 @@ It exits 0 only when every row meets its `want`, which defaults to PASS. N/A row
 node tests/routing/flows.mjs --grade-only tests/routing/fixtures
 ```
 
-Only Claude leads are graded. Codex and Grok leads fire no `Skill` hook, so their route decision never reaches the log.
+orbit's only lead is Claude, so every graded lead is Claude. Under `--host t3`, `--provider` picks which Claude instance runs it.
 
 ## Cost
 

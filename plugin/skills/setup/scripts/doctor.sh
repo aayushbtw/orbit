@@ -93,9 +93,6 @@ else
 			target=$(real_dir "$location/$plugin_source")
 			copy_version=$(json_field "$target/.claude-plugin/plugin.json" '.version')
 			echo "install: local marketplace copy ${copy_version:-unknown} at ${target:-$location/$plugin_source (missing)}"
-			if [ -n "$target" ] && [ ! -f "$target/skills/rules/SKILL.md" ]; then
-				echo "install: $target has no skills/rules/SKILL.md"
-			fi
 			if [ -n "$record_version" ] && [ "$record_version" = "$copy_version" ]; then
 				echo "ok install record matches the local marketplace copy (upstream may be ahead)"
 			else
@@ -103,37 +100,6 @@ else
 			fi
 		fi
 	fi
-fi
-
-codex_home="${CODEX_HOME:-${HOME:+$HOME/.codex}}"
-if command -v codex >/dev/null 2>&1 || { [ -n "$codex_home" ] && [ -d "$codex_home" ]; }; then
-	echo "codex: found"
-	link="$codex_home/skills/orbit"
-	if [ -z "$target" ]; then
-		echo "codex: link check skipped, no local marketplace copy to link to"
-	elif [ -L "$link" ]; then
-		if [ "$(real_dir "$link")" = "$target" ]; then
-			echo "ok codex link $link -> $target"
-		else
-			echo "codex: $link links elsewhere ($(readlink "$link")), not to $target"
-		fi
-	elif [ -e "$link" ]; then
-		echo "codex: $link is a real folder, not a link to $target"
-	else
-		echo "codex: link missing. Create: mkdir -p '$codex_home/skills' && ln -s '$target' '$link'"
-	fi
-	agents_link="${HOME:-}/.agents/skills/orbit"
-	if [ -n "$target" ] && [ -e "$agents_link" ]; then
-		if [ "$(real_dir "$agents_link")" = "$target" ]; then
-			echo "codex: $agents_link resolves to the target"
-		else
-			echo "codex: $agents_link resolves to $(real_dir "$agents_link"), not the target, so Codex loads two copies"
-		fi
-	fi
-fi
-
-if command -v grok >/dev/null 2>&1; then
-	echo "grok: found. Grok loads the record's installPath, so the record version is Grok's"
 fi
 
 if [ -d "$plugin_root/skills/playbook/scripts/node_modules/commander" ]; then
