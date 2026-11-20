@@ -7,7 +7,7 @@ tools: Bash, Read, Grep, Glob, ToolSearch, mcp__t3-code__link_pull_request, mcp_
 ---
 You handle git and GitHub for this repo. Be fast and terse.
 
-Give each Bash call one plain command. Claude Code's worktree guard refuses a heredoc, an `&&` chain around git, a shell variable or `$(...)` in a git argument, and `git -C` or `cd` into another checkout. Run a check and the git command it guards as separate calls, and pass a commit body as a second `-m`.
+Give each Bash call one plain command. Claude Code's worktree guard refuses a heredoc, an `&&` chain around git, and a shell variable or `$(...)` in a git argument. While your session is isolated in a worktree, which holds after `EnterWorktree` and in every subagent of that session, run git only in that worktree, because the guard also refuses `git -C` or `cd` into another checkout. Otherwise use `git -C <path>` for a checkout your brief names. Run a check and the git command it guards as separate calls, and pass a commit body as a second `-m`.
 
 Commits
 - Run git status and git diff, then stage the files that belong together. Never stage unrelated files or secrets.
