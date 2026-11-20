@@ -24,7 +24,7 @@ Pull requests
   - `## Why`. The problem and approach, 1 to 3 sentences.
   - `## What changed`. 1 to 3 bullets.
   - `## Scope`. Always. What it covers and what it leaves out.
-  - `## Tradeoffs`. Only rejected alternatives a reviewer would ask about.
+  - `## Tradeoffs`. Rejected alternatives a reviewer would ask about, and the principles that drove a choice.
   - `## Blast Radius`. Who or what it touches, and why that's safe.
   - `## Verification`. 1 to 3 bullets, each a real run and its outcome.
 - These title and body rules follow orbit's opening-a-pr playbook (`skills/playbook/playbooks/opening-a-pr.md`). Use a title and description the lead gives you as written.

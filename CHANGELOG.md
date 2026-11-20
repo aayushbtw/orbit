@@ -4,6 +4,20 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.71.0
+
+Released 2026-11-20.
+
+### Breaking or behavior changes
+
+- A task's final reply now has four parts in a fixed order. They are the outcome in one or two sentences, the closed task list for a multistep plan, a `Heads-up:` list, and the `Next:` line.
+- `Heads-up:` always shows, worst first. It names what was not done, each skipped or waived step, each check that failed, did not run, passed with parts unverified or ran on a fallback, unasked behavior changes, anything left behind, problems left outside the goal, and calls made in your place. With none, it says `Heads-up: nothing skipped, failed or left behind.`
+- What ran as planned no longer appears in the reply. Passing checks get one clause in the outcome. Steps taken, passing output, default models and removed worktrees go in the PR body under Land `pr`, or nowhere.
+- When no PR opens, as under the default Land `main`, what a flow sends to the PR body goes in the reply between the outcome and `Heads-up:`. So does a result that is the deliverable itself, such as an answer, a number, a plan or each PR's status.
+- Principles that shaped a decision now go in the PR body's `## Tradeoffs`, which now holds them beside rejected alternatives, or in the reply when no PR opens.
+- The feature, bug and shipping flows report less in the reply. Feature's rejected alternatives go in `## Tradeoffs`, and the throughput checkpoint stays in the todo list. Bug's repro output goes in a PR comment or file that `## Verification` links. Shipping names only what landed in the outcome, and lists a short run, a verdict other than a plain `PASS` with its notes, a fallback, an unfixed finding or a kept worktree as a Heads-up item.
+- The reply names a seat's or reviewer's model only when it ran on a fallback.
+
 ## 0.70.0
 
 Released 2026-11-20.
