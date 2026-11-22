@@ -4,6 +4,21 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.72.0
+
+Released 2026-11-22.
+
+### Breaking or behavior changes
+
+- In T3 Code, gitops links a PR only right after its own `gh pr create`, or when the brief says to link it or take it over. It no longer links again after a push, a merge, a CI wait or a read, because a link persists across pushes.
+- The lead calls no link tool and loads none, except for a PR it opened without gitops, a PR a `delegate_task` child opened, or after gitops reports a link failure. A PR the lead watches needs no link, because `watch_pull_request` links it.
+- Before a handback, the lead unwatches only the PRs it armed and has not unwatched since. It skips a PR that merged or closed, because that ended the watch.
+- `t3_background_wait` takes only the id of a running `Bash` background task or `Monitor`. It never takes an `Agent` id and is never called to probe.
+
+### CI and tests
+
+- The transcript audit has a `t3-wasted-calls` metric. It counts T3 link, watch, unwatch and background-wait calls that did nothing.
+
 ## 0.71.0
 
 Released 2026-11-20.
