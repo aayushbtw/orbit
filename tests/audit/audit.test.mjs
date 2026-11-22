@@ -89,6 +89,17 @@ describe('metrics', () => {
   test('orbit issues count --repo and -R, filed only when the result holds an issue URL', () => {
     assert.deepEqual(metric('orbit-issues'), { value: 2, per: [2, 'main session'], breakdown: { filed: 1, failed: 1 } });
   });
+
+  test("T3 waste trusts T3's alreadyLinked and wasWatching, else the session's own links and watches, and never counts a waiting: false clear", () => {
+    assert.deepEqual(metric('t3-wasted-calls'), {
+      value: 7,
+      per: [13, 'call'],
+      breakdown: {
+        relink: 2, 'unwatch already unwatched': 2, 'unwatch never watched': 1, 'background-wait no match': 1, 'background-wait error': 1,
+        'calls by tool': { link_pull_request: 2, link_pull_requests: 1, watch_pull_request: 2, unwatch_pull_request: 4, t3_background_wait: 4 },
+      },
+    });
+  });
 });
 
 describe('cli', () => {

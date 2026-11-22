@@ -182,6 +182,44 @@ const unionMs = (calls) => {
   }
   return total;
 };
+const T3 = 'mcp__t3-code__';
+const T3_WASTE_TOOLS = ['link_pull_request', 'link_pull_requests', 'watch_pull_request', 'unwatch_pull_request', 't3_background_wait'];
+const T3_FAILED = /invalid|Missing key|Failure/;
+const prKey = (pr) => pr.url ?? `${pr.repository}#${pr.number}`;
+const jsonResult = (call) => {
+  try { return JSON.parse(resultText(call)) ?? {}; } catch { return {}; }
+};
+const alreadyLinkedPerT3 = (r) => typeof r.alreadyLinked === 'boolean' ? Number(r.alreadyLinked)
+  : Array.isArray(r.alreadyLinked) ? r.alreadyLinked.flatMap((g) => g.numbers ?? []).length : null;
+const wasWatchingPerT3 = (r) => typeof r.wasWatching === 'boolean' ? r.wasWatching : null;
+const t3WasteOf = (calls) => {
+  const linked = new Set();
+  const watched = new Map();
+  return calls.flatMap((c) => {
+    const tool = c.name.slice(T3.length);
+    const r = jsonResult(c);
+    if (tool === 'link_pull_request' || tool === 'link_pull_requests') {
+      const keys = tool === 'link_pull_request' ? [prKey(c.input)] : (c.input.urls ?? []);
+      const hits = alreadyLinkedPerT3(r) ?? keys.filter((k) => linked.has(k)).length;
+      keys.forEach((k) => linked.add(k));
+      return Array(hits).fill('relink');
+    }
+    const key = prKey(c.input);
+    if (tool === 'watch_pull_request') {
+      watched.set(key, true);
+      return [];
+    }
+    if (tool === 'unwatch_pull_request') {
+      const wasWatching = wasWatchingPerT3(r) ?? watched.get(key) === true;
+      const kind = wasWatching ? null : watched.has(key) ? 'unwatch already unwatched' : 'unwatch never watched';
+      watched.set(key, false);
+      return kind ? [kind] : [];
+    }
+    if (c.input.waiting === false) return [];
+    if (c.result?.isError || T3_FAILED.test(resultText(c))) return ['background-wait error'];
+    return resultText(c).includes('"matched":[]') ? ['background-wait no match'] : [];
+  });
+};
 
 export const METRICS = [
   {
@@ -286,6 +324,17 @@ export const METRICS = [
       const calls = all.flatMap((a) => a.calls.filter((c) => c.name === 'Bash' && ORBIT_ISSUE.test(c.input.command ?? '')));
       const ok = (c) => /github\.com\/[^/\s]+\/[^/\s]+\/issues\/\d+/.test(c.result?.text ?? '');
       return { value: calls.length, per: [mains.length, 'main session'], breakdown: tally(calls.map((c) => ok(c) ? 'filed' : 'failed')) };
+    },
+  },
+  {
+    id: 't3-wasted-calls', label: 'T3 calls that did nothing: re-links, unwatch of an unwatched PR, background waits that match no task',
+    measure: ({ all }) => {
+      const isT3Waste = (c) => c.name.startsWith(T3) && T3_WASTE_TOOLS.includes(c.name.slice(T3.length));
+      const bySession = Map.groupBy(all.flatMap((a) => a.calls.filter(isT3Waste).map((c) => [a.session, c])), ([s]) => s);
+      const sessions = [...bySession.values()].map((pairs) => pairs.map(([, c]) => c).toSorted((x, y) => x.start - y.start));
+      const waste = sessions.flatMap(t3WasteOf);
+      const calls = sessions.flat();
+      return { value: waste.length, per: [calls.length, 'call'], breakdown: { ...tally(waste), 'calls by tool': tally(calls.map((c) => c.name.slice(T3.length))) } };
     },
   },
 ];
