@@ -12,12 +12,12 @@ Released 2026-11-22.
 
 - In T3 Code, gitops links a PR only right after its own `gh pr create`, or when the brief says to link it or take it over. It no longer links again after a push, a merge, a CI wait or a read, because a link persists across pushes.
 - The lead calls no link tool and loads none, except for a PR it opened without gitops, a PR a `delegate_task` child opened, or after gitops reports a link failure. A PR the lead watches needs no link, because `watch_pull_request` links it.
-- Before a handback, the lead unwatches only the PRs it armed and has not unwatched since. It skips a PR that merged or closed, because that ended the watch.
-- `t3_background_wait` takes only the id of a running `Bash` background task or `Monitor`. It never takes an `Agent` id and is never called to probe.
+- Before a handback, the lead unwatches only the PRs it armed and has not unwatched since. It skips a PR that merged or closed, or that T3 said it stopped watching, because its watch already ended.
+- `t3_background_wait` takes only the id of a running `Bash` background task or `Monitor`. It never takes an `Agent` id and is never called without a running task's id.
 
 ### CI and tests
 
-- The transcript audit has a `t3-wasted-calls` metric. It counts T3 link, watch, unwatch and background-wait calls that did nothing.
+- The transcript audit has a `t3-wasted-calls` metric. It counts link, unwatch and background-wait calls that did nothing, out of all T3 link, watch, unwatch and background-wait calls.
 
 ## 0.71.0
 
