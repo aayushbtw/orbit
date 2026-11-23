@@ -43,7 +43,7 @@ The provider picks where a child runs, not the model. Only `delegate_task` opens
 
 ## Run a row on another provider
 
-Any Models row's Model cell may hold one target, `<providerInstanceId>/<model>`, split at the first `/`. A `, <value> after <n> failed tries` value may be a target too. The `other-family` row keeps its ordered list. Here are the rows for an Antigravity lead on `gemini-4-neon` that writes code on Opus, asks Fable for advice and writes docs on its own model:
+Any Models row's Model cell may hold one target, `<providerInstanceId>/<model>`, split at the first `/`. A `, <value> after <n> failed tries` value may be a target too. The `other-family` row keeps its ordered list. Here are the rows for an Antigravity lead on `gemini-pro-orchestrator-neon` that writes code on Opus, asks Fable for advice and writes docs on its own model:
 
 ```md
 | `code` | | claudeAgent/claude-opus-5-5 | medium |
