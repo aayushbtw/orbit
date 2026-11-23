@@ -62,6 +62,8 @@ jobs:
         run: node --test tests/ship/grade.test.mjs
       - name: Transcript audit tests
         run: node --test tests/audit/audit.test.mjs
+      - name: Setup scripts tests
+        run: node --test tests/setup/*.test.mjs
       - name: Version bump tests
         run: bash tests/version-bump.test.sh
       - name: Version bump

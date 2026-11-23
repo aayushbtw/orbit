@@ -22,7 +22,7 @@ A lookup reference for orbit's commands, agents and defaults. To learn how a tas
 | A long or unattended run you'll review later | `/orbit:show-me-your-work` |
 | Catch up on what changed since your last message | `/orbit:ketchup` |
 | Disk is tight, or worktrees have piled up | `/orbit:worktree-cleanup` |
-| Check what orbit needs on this machine and in this project | `/orbit:setup`, on any host. It changes nothing without a yes. |
+| Check what orbit needs on this machine and in this project | `/orbit:setup`, on any host. When Antigravity is detected or enabled, it also registers orbit's skills in `~/.gemini/config/skills.json`. It changes nothing without a yes. |
 | Choose which T3 providers fill each panel's seat on another family and run the pre-land verifier, for every project | `/orbit:setup`, in a T3 thread. Setup skips this step outside T3. The same step asks whether orbit may run its native verifier when every listed provider fails. |
 
 Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh one.

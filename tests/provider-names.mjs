@@ -6,6 +6,8 @@ const BANNED = [/\b(codex|grok|gemini|antigravity|neon|muse|spawn_agent)\b/gi];
 
 const ALLOWED = [
   { path: 'plugin/skills/setup/SKILL.md', reason: 'the provider ranking question names providers as data' },
+  { path: 'plugin/skills/setup/scripts/doctor.sh', reason: 'setup checks Antigravity config path and status as data' },
+  { path: 'plugin/skills/setup/scripts/antigravity-skills.mjs', reason: 'setup manages Antigravity skills.json path and status as data' },
   { path: 'plugin/docs/harness/t3-seats.md', reason: 'family and vendor words are data' },
 ];
 
