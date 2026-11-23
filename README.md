@@ -22,7 +22,18 @@ A coding agent can stop at code that compiles and never run it. Orbit uses T3's 
 
 Orbit needs `git`, `node`, `bun`, `jq` and `gh` logged in with `gh auth login`. The default Check also needs [Vite+](https://viteplus.dev), unless your AGENTS.md names its own Check.
 
-Orbit installs once, through Claude Code's plugin marketplace. T3's Claude provider loads it from there. When Antigravity is detected or enabled, `/orbit:setup` registers orbit's skills in `~/.gemini/config/skills.json`. Other providers that read their own skill config still need `plugin/skills` registered there by hand. [A lead outside Claude Code](docs/t3-code.md#a-lead-outside-claude-code) has the details.
+For an Antigravity lead in T3 Code, install and configure Orbit from the standalone CLI. This uses Node.js 22.12 or later. To try a version before it is published to npm, [build the package from source](docs/cli.md#build-from-source).
+
+```bash
+npm install -g @aayushbtw/orbit
+orbit setup
+orbit models
+orbit doctor
+```
+
+Open the Orbit start skill in a new T3 session. T3 supplies the lead, enabled providers, and delegation. See [Orbit CLI](docs/cli.md) for scriptable commands and model configuration.
+
+For a Claude Code lead, install Orbit through Claude Code's plugin marketplace. T3's Claude provider loads it from there. When Antigravity is detected or enabled, `/orbit:setup` registers orbit's skills in `~/.gemini/config/skills.json`. Other providers that read their own skill config still need `plugin/skills` registered there by hand. [A lead outside Claude Code](docs/t3-code.md#a-lead-outside-claude-code) has the details.
 
 ```
 claude plugin marketplace add aayushbtw/orbit

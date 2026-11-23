@@ -4,6 +4,11 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.77.0
+
+- Add an interactive Orbit CLI to install and register an Orbit bundle for T3 Code without a Claude Code install, configure user-wide model assignments, and inspect effective project settings.
+- Store Models preferences in `~/.config/orbit/models.md`. Existing preferences are read from the legacy file until the first save. User-wide work types can route units across projects.
+
 ## 0.76.0
 
 Released 2026-11-23.

@@ -55,7 +55,11 @@ function isOrbitSkillsPath(entryPath, home) {
     real = realpathSync(resolved);
   } catch {
     const posixPath = resolved.split(sep).join('/');
-    return ORBIT_CACHE_SKILLS_RE.test(posixPath);
+    const managedReleases = join(home, '.config', 'orbit', 'releases').split(sep).join('/');
+    const releasePath = posixPath.slice(managedReleases.length);
+    return ORBIT_CACHE_SKILLS_RE.test(posixPath) || (
+      posixPath.startsWith(`${managedReleases}/`) && /^\/[^/]+\/plugin\/skills$/.test(releasePath)
+    );
   }
 
   const pluginJsonPath = join(real, '..', '.claude-plugin', 'plugin.json');

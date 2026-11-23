@@ -64,6 +64,9 @@ jobs:
         run: node --test tests/audit/audit.test.mjs
       - name: Setup scripts tests
         run: node --test tests/setup/*.test.mjs
+      - name: Orbit CLI
+        working-directory: cli
+        run: npm ci && npm run check && npm run build && npm test
       - name: Version bump tests
         run: bash tests/version-bump.test.sh
       - name: Version bump
