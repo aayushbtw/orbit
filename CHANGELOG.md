@@ -4,6 +4,14 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.74.0
+
+Released 2026-11-23.
+
+### Breaking or behavior changes
+
+- Shipping's diff review runs the advisor on the `judgment` model, Opus by default, instead of Fable. The advisor keeps Fable for the plan gate and forks. Only an advisor on Fable retries on Opus, so a review that fails on Opus retries on the session model.
+
 ## 0.73.0
 
 Released 2026-11-23.
