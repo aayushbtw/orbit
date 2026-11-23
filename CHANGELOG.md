@@ -4,6 +4,20 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.75.0
+
+Released 2026-11-23.
+
+### Breaking or behavior changes
+
+- `/orbit:setup` adds Step 5 to check and offer to register orbit's canonical `skills` folder in `~/.gemini/config/skills.json` when it detects Antigravity (`agy`, `~/.gemini/config`, or an enabled `antigravity` provider in T3).
+- `plugin/skills/setup/scripts/doctor.sh` prefers non-lane `orbit@*` install records over `orbit@orbit-head-*`, prints `orbit skills dir:`, and delegates read-only Antigravity config inspection to `plugin/skills/setup/scripts/antigravity-skills.mjs`.
+- `plugin/skills/setup/scripts/antigravity-skills.mjs` updates `~/.gemini/config/skills.json` atomically after resolving symlinks. It preserves `inherits` and non-orbit entries, replaces stale orbit paths in place while keeping filters, and refuses to overwrite invalid JSON.
+
+### CI and tests
+
+- `tests/setup/antigravity-skills.test.mjs` runs in CI. `tests/provider-names.mjs` allowlists `plugin/skills/setup/scripts/doctor.sh` and `plugin/skills/setup/scripts/antigravity-skills.mjs` as setup data.
+
 ## 0.74.0
 
 Released 2026-11-23.
