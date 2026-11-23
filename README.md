@@ -11,7 +11,7 @@ A coding agent can stop at code that compiles and never run it. Orbit uses T3's 
 
 ## What orbit does in T3
 
-- Claude, through Claude Code, leads every thread. Other families only fill review seats and the verifier.
+- A model on any T3 provider can lead the thread. A lead in Claude Code gets orbit's hooks, its agents and the worktree guard natively. Another lead maps each Claude Code tool to its own, by what its tool list holds. To switch providers mid-task, run `/orbit:pause-safely`, switch, then run `/orbit:session-pickup`.
 - Work that needs its own checkout runs as a child thread with its own worktree. That covers parallel units, review adversaries and the verifier. A review seat on another model family, and work that runs while the lead keeps going, such as an autopilot build round, also get a child thread. Helpers that share your checkout stay nested in your thread.
 - Review panels and the verifier can use a second model family, such as Codex or Grok. Orbit uses only the providers you list in `/orbit:setup`.
 - Before a change lands, an agent that did not write it runs it the way a user would. It returns `PASS`, `PASS+NOTES` or `FAIL`, and only a pass lands. Green CI is not a pass.
@@ -22,7 +22,7 @@ A coding agent can stop at code that compiles and never run it. Orbit uses T3's 
 
 Orbit needs `git`, `node`, `bun`, `jq` and `gh` logged in with `gh auth login`. The default Check also needs [Vite+](https://viteplus.dev), unless your AGENTS.md names its own Check.
 
-Orbit installs once, through Claude Code's plugin marketplace. T3's Claude provider loads it from there.
+Orbit installs once, through Claude Code's plugin marketplace. T3's Claude provider loads it from there. A provider that loads skills from its own config needs orbit's `plugin/skills` folder registered there by hand. [A lead outside Claude Code](docs/t3-code.md#a-lead-outside-claude-code) has the details.
 
 ```
 claude plugin marketplace add aayushbtw/orbit

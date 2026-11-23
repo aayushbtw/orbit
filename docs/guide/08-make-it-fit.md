@@ -45,7 +45,7 @@ Each line does one job:
 
 Before code is the line that goes into the brief of the agent writing the code. Put guidance there that code under a path must follow. Put a doc in Review also checks when it matters for the plan and the review but not for each edit.
 
-Your own CLAUDE.md and `settings.json` stay yours. Orbit's rules load on their own at the start of every Claude Code session. The Workflow block adjusts the rules for one project.
+Your own CLAUDE.md and `settings.json` stay yours. Orbit's rules load on their own at the start of every Claude Code session. A lead outside Claude Code loads them through the `rules` skill. The Workflow block adjusts the rules for one project.
 
 ## Route work by work type
 
@@ -122,13 +122,13 @@ Code delegates are the catch. Without a guard, a Sonnet `code` row would also mo
 
 ### Give the panels a second family in T3 Code
 
-Under T3 Code, a panel can fill one seat on another model family, such as a Codex model, instead of a second Claude model. Five seats work this way. They are arena's judge, interrogate's second adversary, the trail reviewer in `show-me-your-work`, the audit seat in `autopilot-full`, and the verifier when its own row says so. `/orbit:setup` writes the `other-family` row to `~/.claude/rules/orbit-models.md` for every project. A project can set its own row:
+Under T3 Code, a panel can fill one seat on another model family, such as a Codex model, instead of a second model of the lead's family. Five seats work this way. They are arena's judge, interrogate's second adversary, the trail reviewer in `show-me-your-work`, the audit seat in `autopilot-full`, and the verifier when its own row says so. `/orbit:setup` writes the `other-family` row to `~/.claude/rules/orbit-models.md` for every project. A project can set its own row:
 
 ```md
 | `other-family` | | codex, gemini | |
 ```
 
-The Model cell is an ordered list of T3 provider ids. Each entry is a fallback for the one seat, not another reviewer. A seat skips an entry of the lead's own family, Claude, and tries at most three of the rest, in list order. It never runs on a provider the list leaves out.
+The Model cell is an ordered list of T3 provider ids. Each entry is a fallback for the one seat, not another reviewer. A seat skips an entry of the lead's own family, such as Claude under a Claude lead, and tries at most three of the rest, in list order. It never runs on a provider the list leaves out.
 
 - `codex, gemini` tries `codex` first, and `gemini` when `codex` fails.
 - `codex/gpt-6.1-sol` names one model. A bare `codex` takes the first model the provider lists outside the lead's family, skipping `auto` and `default`.
