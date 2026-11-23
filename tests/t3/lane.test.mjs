@@ -339,11 +339,11 @@ test('a lane whose thread still runs at the deadline leaves the thread alone', a
   assert.equal(auth, null);
 });
 
-test('a lane with a non-Claude --provider exits 1 before it starts a worker', async () => {
-  const lane = await runLane([join(here, 'lane.mjs'), '--head', 'HEAD', '--scenario', 'probe', '--provider', 'codex'], process.env);
-  assert.equal(lane.status, 1);
-  assert.match(lane.stderr, /^--provider codex is not a Claude provider instance/);
-  assert.doesNotMatch(lane.stderr, /worker \d+/);
+test('a lane with a non-Claude --provider runs its lead and records no tool calls', async () => {
+  const { out } = await withProject([], 'true', { args: ['--provider', 'codex', '--model', 'stub'] });
+  assert.equal(out.status, 'completed');
+  assert.equal(out.toolCalls, null);
+  assert.equal(out.session, null);
 });
 
 test('a lane branch name that differs from an existing branch only in case clashes', () => {
