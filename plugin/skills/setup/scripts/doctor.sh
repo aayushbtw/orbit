@@ -76,7 +76,7 @@ elif ! command -v jq >/dev/null 2>&1; then
 	echo "install: check skipped, it needs jq"
 else
 	plugins="$HOME/.claude/plugins"
-	key=$(json_field "$plugins/installed_plugins.json" '[.plugins // {} | keys[] | select(startswith("orbit@"))][0]')
+	key=$(json_field "$plugins/installed_plugins.json" '[.plugins // {} | keys[] | select(startswith("orbit@"))] | (map(select(startswith("orbit@orbit-head-") | not))[0] // .[0])')
 	if [ -z "$key" ]; then
 		echo "install: no orbit install record in $plugins/installed_plugins.json"
 	else
@@ -106,6 +106,27 @@ if [ -d "$plugin_root/skills/playbook/scripts/node_modules/commander" ]; then
 	echo "ok watch-pr deps installed"
 else
 	echo "watch-pr deps: not installed yet. The first watch-pr run installs them with bun and needs network"
+fi
+
+if [ -n "$target" ] && [ -d "$target/skills" ]; then
+	skills_dir="$target/skills"
+else
+	skills_dir="$plugin_root/skills"
+fi
+echo "orbit skills dir: $skills_dir"
+
+if [ -z "${HOME:-}" ]; then
+	echo "antigravity skills: check skipped, HOME unset"
+elif ! command -v agy >/dev/null 2>&1 && [ ! -d "$HOME/.gemini/config" ]; then
+	echo "antigravity skills: not detected (no agy or ~/.gemini/config)"
+elif ! command -v node >/dev/null 2>&1; then
+	echo "antigravity skills: check skipped, it needs node"
+else
+	if ag_status=$(node "$(dirname "$0")/antigravity-skills.mjs" --check --skills-dir "$skills_dir" 2>/dev/null); then
+		echo "antigravity skills: $ag_status"
+	else
+		echo "antigravity skills: check failed"
+	fi
 fi
 
 exit 0
