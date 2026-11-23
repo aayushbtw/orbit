@@ -157,7 +157,7 @@ Pick Fable for the session with `/model fable`, at `high` or `medium` effort. Do
 
 The `judgment` row repeats its default, so the variant below is a one-cell change. The `code` row is neither `sonnet` nor `haiku`, so the guard above leaves every code delegate on Opus, and none falls back to the Fable session. Leave each Effort cell empty on purpose. A row's effort is exact, so a filled cell would stop Claude from raising a hard unit to `high`.
 
-Two spawns stay on Fable. The advisor keeps Fable from its agent file, so its diff review in Shipping reads code that Opus wrote. Comment Sicko takes no row, so it runs on the session model at `medium`, unless `CLAUDE_CODE_SUBAGENT_MODEL` is set. gitops keeps Sonnet from its agent file.
+Two spawns stay on Fable. The advisor keeps Fable from its agent file for the plan gate and forks. Its diff review in Shipping runs on the `judgment` model, so it reads Opus code on Opus. Comment Sicko takes no row, so it runs on the session model at `medium`, unless `CLAUDE_CODE_SUBAGENT_MODEL` is set. gitops keeps Sonnet from its agent file.
 
 With `code` and `judgment` both on Opus, interrogate's two adversaries and arena's two runners run on one model. To keep a second model in the panels, put `judgment` on Fable instead:
 
