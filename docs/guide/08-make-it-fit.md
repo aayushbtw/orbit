@@ -41,7 +41,7 @@ Each line does one job:
 | Land | `pr` to land through pull requests, plus the merge method if it isn't squash | Opening a PR opens the PR, Babysit drives it to merge-ready, and Shipping merges it. Under either setting, a fresh verifier passes the change before it lands. |
 | Before code | Guidance for writing code under a path, as `<path>: <source>` entries separated by `;`. A source is a file to read, or a command that prints a skill or its path. | Each code delegate under that path, copied word for word into its brief. Also the plan gate and `/orbit:interrogate`. |
 | Review also checks | Docs to read before planning and at review only. Scope one to a path with `src/server/: <source>`. | The plan gate and `/orbit:interrogate` |
-| Models | A `### Models` table with Task, Use for, Model and Effort columns. Each row is a work type of your own or one of orbit's six roles, `gitops`, `verifier`, `advisor`, `judgment`, `code` and `other-family`. An empty cell takes the same cell from `~/.claude/rules/orbit-models.md`, else the default. | Every subagent Claude spawns, except Comment Sicko and a step that names its own model or effort, such as `/orbit:recall`. [Route work by work type](#route-work-by-work-type) explains how Claude picks a row. |
+| Models | A `### Models` table with Task, Use for, Model and Effort columns. Each row is a work type of your own or one of orbit's six roles, `gitops`, `verifier`, `advisor`, `judgment`, `code` and `other-family`. An empty cell takes the same cell from Orbit's [user-wide configuration](../cli.md), else the default. | Every subagent Claude spawns, except Comment Sicko and a step that names its own model or effort, such as `/orbit:recall`. [Route work by work type](#route-work-by-work-type) explains how Claude picks a row. |
 
 Before code is the line that goes into the brief of the agent writing the code. Put guidance there that code under a path must follow. Put a doc in Review also checks when it matters for the plan and the review but not for each edit.
 
@@ -72,7 +72,7 @@ Each column does one job:
 - **Model** is `opus`, `sonnet`, `haiku`, `fable` or `inherit`. `inherit` passes no model, so the spawn runs on `CLAUDE_CODE_SUBAGENT_MODEL` when it is set, else on your session model. On the `gitops` and `advisor` rows, `inherit` keeps the model in the agent file. `fable` is Fable 5.2 from Claude Code 2.1.321 on, and Fable 5.1 before it. Fable's safeguards block most cybersecurity work, such as penetration testing and exploit generation, and an older Opus answers in its place. On a security project, set the `advisor` row's Model to `opus` and keep `fable` off rows whose work is security. Under T3 Code, the `other-family` row's Model is an ordered list of providers, and the `verifier` row's Model may be `other-family` or `other-family, inherit` ([Give the panels a second family in T3 Code](#give-the-panels-a-second-family-in-t3-code)). Any row's Model may also be one target, `<providerInstanceId>/<model>`, which runs that row's spawns on that provider's model ([Run a row on another provider](../t3-code.md#run-a-row-on-another-provider)).
 - **Effort** is `low`, `medium`, `high`, `xhigh` or `max`.
 
-Each cell comes from the project's table, else from the same cell of `~/.claude/rules/orbit-models.md`, which `/orbit:setup` writes, else from the default. An empty cell, a missing row and a missing table all fall through to the next source. The game has no role rows, so its roles keep orbit's defaults. Commits already run on Sonnet at `low` from gitops's agent file. A role row changes only the cells it fills, as the `code` row in [Give the panels a second model](#give-the-panels-a-second-model) shows.
+Each cell comes from the project's table, else from the same cell of Orbit's [user-wide configuration](../cli.md), else from the default. An empty cell, a missing row and a missing table all fall through to the next source. The game has no role rows, so its roles keep orbit's defaults. Commits already run on Sonnet at `low` from gitops's agent file. A role row changes only the cells it fills, as the `code` row in [Give the panels a second model](#give-the-panels-a-second-model) shows.
 
 ### See which row a spawn takes
 
@@ -122,7 +122,7 @@ Code delegates are the catch. Without a guard, a Sonnet `code` row would also mo
 
 ### Give the panels a second family in T3 Code
 
-Under T3 Code, a panel can fill one seat on another model family, such as a Codex model, instead of a second model of the lead's family. Five seats work this way. They are arena's judge, interrogate's second adversary, the trail reviewer in `show-me-your-work`, the audit seat in `autopilot-full`, and the verifier when its own row says so. `/orbit:setup` writes the `other-family` row to `~/.claude/rules/orbit-models.md` for every project. A project can set its own row:
+Under T3 Code, a panel can fill one seat on another model family, such as a Codex model, instead of a second model of the lead's family. Five seats work this way. They are arena's judge, interrogate's second adversary, the trail reviewer in `show-me-your-work`, the audit seat in `autopilot-full`, and the verifier when its own row says so. `/orbit:setup` writes the `other-family` row to `~/.config/orbit/models.md` for every project. A project can set its own row:
 
 ```md
 | `other-family` | | codex, gemini | |

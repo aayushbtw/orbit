@@ -8,14 +8,14 @@ disable-model-invocation: true
 
 Setup checks orbit's prerequisites on any host, so a missing tool shows up here and not mid-flow. Setup changes none of your files or settings without a yes. Host CLIs it calls (gh, claude, vp shims) may write their own logs or caches. Setup collects each change it could make as an offer and asks about all of them in one question at the end. A headless run stops at its first question, so it still prints every finding.
 
-Under T3 Code, setup also writes `~/.claude/rules/orbit-models.md`, a user-wide Models table that sets which providers fill the `other-family` seat (`../../rules.md` Workflow Defaults, Models). Claude Code loads every `.md` file in `~/.claude/rules/` into each new session. A cell in a project's AGENTS.md Models table wins over the same cell in this file.
+Under T3 Code, setup also writes the user-wide Models table at `~/.config/orbit/models.md` to configure the `other-family` seat (`../../rules.md` Workflow Defaults, Models). A cell in a project's AGENTS.md Models table wins over the same cell in this file.
 
 | Step | Runs on | May change, after a yes in step 6 |
 | --- | --- | --- |
 | 1. Doctor | Any host | Nothing |
 | 2. Install | Any host | Orbit's install |
 | 3. Workflow block | Any host, in a git repo | The project's AGENTS.md |
-| 4. T3 providers | T3 Code only | `~/.claude/rules/orbit-models.md` |
+| 4. T3 providers | T3 Code only | `~/.config/orbit/models.md` |
 | 5. Antigravity skills | Any host, when Antigravity is detected or enabled in T3 | `~/.gemini/config/skills.json` |
 | 6. One question | Any host, when steps 2 to 5 made an offer | Nothing |
 | 7. Apply and confirm | Any host | Only what the user said yes to |
@@ -54,7 +54,7 @@ Read `../../docs/harness/t3-code.md`, sections Probe and Models, and `../../docs
 
 **4a. Detect providers.** Call `orchestrator_capabilities`. The session's family is the `driverKind` of the provider whose `providerInstanceId` equals `inheritedProviderInstanceId`. A provider whose `constraints` hold "Provider instance is disabled." is disabled. Never write a provider or model you have not seen in a result.
 
-**4b. Load current state.** If `~/.claude/rules/orbit-models.md` exists, read it. Its `other-family` row is the current answer to the first question in 4c, and a trailing `inherit` there stays unless the user's new answer drops it. Its `verifier` row is the current state for the second question. A Model of `other-family, inherit` is the user's earlier yes to a native verifier. A Model of `other-family` is not an earlier no, because setup before 0.60.0 wrote that row without asking the second question. Name it as `current: no native fallback`, treat the question as unanswered, and keep the recommendation. Keep every other row and every line outside the table as it is.
+**4b. Load current state.** Read `~/.config/orbit/models.md` if it exists. If it is absent and `~/.claude/rules/orbit-models.md` exists, use that legacy file as the starting text for the new file. Its `other-family` row is the current answer to the first question in 4c, and a trailing `inherit` there stays unless the user's new answer drops it. Its `verifier` row is the current state for the second question. A Model of `other-family, inherit` is the user's earlier yes to a native verifier. A Model of `other-family` is not an earlier no, because setup before 0.60.0 wrote that row without asking the second question. Name it as `current: no native fallback`, treat the question as unanswered, and keep the recommendation. Keep every other row and every line outside the table as it is.
 
 **4c. Show the providers and ask.** Show every provider in `providers`, in listed order, with its `providerInstanceId` and `driverKind`:
 
@@ -92,9 +92,11 @@ After a yes to the second question, the `verifier` row reads:
 
 No frontmatter. The Model cell holds the entries in order, separated by `, `. The Effort cell stays empty unless the user named an effort. When 4b found no `verifier` row, write one only when the list is not empty. When 4b found a `verifier` row whose Model is `other-family` or `other-family, inherit`, set its Model from the second answer. Keep any other `verifier` row as it is. The rows 4b kept follow the `other-family` row, verbatim.
 
-An existing file keeps every line outside its Models table, such as the header line and the user's notes, byte for byte. Only the table changes. A file with no table gets the table after its last line. When the new file is byte-identical to the current one, say the file is current and make no offer. Otherwise the write is an offer for step 6.
+An existing file keeps every line outside its Models table, such as the header line and the user's notes, byte for byte. Only the table changes. A file with no table gets the table after its last line. When the new file is byte-identical to the file already at `~/.config/orbit/models.md`, say the file is current and make no offer. Otherwise the write is an offer for step 6.
 
 ### 5. Antigravity skills
+
+If `orbit doctor --json` is available and reports a registered CLI-managed bundle, use its registration result and skip this step. The CLI updates its bundle through `orbit setup`.
 
 Use the `orbit skills dir:` and `antigravity skills:` lines from step 1. When step 4 ran, also check its `orchestrator_capabilities` result for an enabled provider whose `providerInstanceId` or `driverKind` is `antigravity`. Take `<skills_dir>` from the `orbit skills dir:` line.
 
@@ -112,7 +114,7 @@ When steps 2 to 5 made no offer, ask nothing and go to step 7. Otherwise ask one
 
 - Update orbit's install.
 - Add the Workflow block, with its target file, or the Check command it still needs.
-- Write `~/.claude/rules/orbit-models.md`.
+- Write `~/.config/orbit/models.md`.
 - Register orbit's skills in `~/.gemini/config/skills.json` (pointing at `<skills_dir>`).
 
 Recommend each offer, and preselect nothing beyond the recommendation. Use your host's question tool, else a numbered list the user answers with numbers. Change nothing without a yes.
@@ -123,7 +125,7 @@ Apply only what the user said yes to:
 
 - Update. Run `claude plugin marketplace update <marketplace>`, then `claude plugin update orbit@<marketplace>`.
 - Workflow block. Append it to the repo root's AGENTS.md, or create AGENTS.md with it. Never write a project's `CLAUDE.md`.
-- Models file. Create `~/.claude/rules/` when it is missing and write the file 4e showed. Write the rows only to this file, never to a project's `CLAUDE.md` or `AGENTS.md`.
+- Models file. Create `~/.config/orbit/` when it is missing and write the file 4e showed. Write the rows only to this file, never to a project's `CLAUDE.md` or `AGENTS.md`.
 - Antigravity skills. Run `node "${CLAUDE_SKILL_DIR}/scripts/antigravity-skills.mjs" --apply --skills-dir "<skills_dir>"`.
 
 Then tell the user what changed and what still needs them: each missing tool with its install command, `gh auth login` when gh is not logged in, a missing `origin/main`, an invalid `~/.gemini/config/skills.json`, and every command setup printed for them to run. When the Models file changed, say that a new session picks it up, and that re-running `/orbit:setup` updates it. When `~/.gemini/config/skills.json` changed, say that a new Antigravity session picks up orbit's skills, and that re-running `/orbit:setup` updates it.
