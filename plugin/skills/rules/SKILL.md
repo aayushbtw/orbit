@@ -9,4 +9,4 @@ Read `../../rules.md` and then `../../rules-shared.md` in full now, before you r
 
 Then read `~/.claude/rules/orbit-models.md` if it exists. It holds the user-wide Models rows that `/orbit:setup` writes. Claude Code loads it natively, so a lead on another provider gets those rows only from this read.
 
-When `Agent` or `Skill` is missing from your tool list, read the Any lead section of `../../docs/harness/t3-code.md` before your first spawn.
+When `Agent` or `Skill` is missing from your tool list, read the Any lead section of `../../docs/harness/t3-code.md` now, before your first reply.

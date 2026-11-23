@@ -23,7 +23,7 @@ A thread on the root has no `worktreePath`. In T3 on 2026-11-20, Claude Code mov
 
 ## Leads on any provider
 
-A lane's lead can run on any provider instance, picked with `--provider` or the project's default. The harness reads only a Claude lead's session, because it knows only Claude Code's transcript format. A provider instance id is Claude when it starts with `claude`, case ignored, such as `claudeAgent`. For any other lead, `session`, `toolCalls` and `firstTurnInputTokens` stay `null` and stderr says why. Such a lane is graded on outcomes only: the thread's status, its worktree and branches, its commits and its PR. Every check over `toolCalls` fails with `no toolCalls`, and only `state` checks can pass.
+A lane's lead can run on any provider instance, picked with `--provider` or the project's default. `--head` loads orbit from the head only for a Claude lead, because head loading goes through Claude Code's plugin marketplace. Any other lead reads orbit's files from the checkout it runs in. The harness reads only a Claude lead's session, because it knows only Claude Code's transcript format. A provider instance id is Claude when it starts with `claude`, case ignored, such as `claudeAgent`. For any other lead, `session`, `toolCalls` and `firstTurnInputTokens` stay `null` and stderr says why. Such a lane is graded on outcomes only: the thread's status, its worktree and branches, its commits and its PR. Every check over `toolCalls` fails with `no toolCalls`, and only `state` checks can pass.
 
 ## Why each run gets its own marketplace
 
