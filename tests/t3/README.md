@@ -21,9 +21,9 @@ With `--root`, step 4 drops `--worktree` and `--branch`, so the thread runs in t
 
 A thread on the root has no `worktreePath`. In T3 on 2026-11-20, Claude Code moved the lead's transcript to the folder of the worktree that `EnterWorktree` made and left the root's folder empty. So the harness looks for the lead's session, and for child ids, in the root's folder and in the folder of each worktree under the root's `.claude/worktrees`. Earlier lanes share those folders, and Claude Code keeps appending entries to their files, so a Claude session counts only when its first `user` entry is timestamped at or after the lane start. A file's change time does not decide it.
 
-## Only Claude leads
+## Leads on any provider
 
-A lane's lead runs on Claude. Other families, such as `codex` and `grok`, run only as panel seats and verifiers that the lead starts with `delegate_task`. A provider instance id is Claude when it starts with `claude`, case ignored, such as `claudeAgent`. With a `--provider` that is not Claude, the launcher prints why and exits 1 before it starts a worker. Without `--provider`, the thread runs on the project's default provider, which the CLI does not report before the thread starts. If that turns out not to be Claude, the harness reads no session, so `toolCalls` stays `null` and stderr says why.
+A lane's lead can run on any provider instance, picked with `--provider` or the project's default. `--head` loads orbit from the head only for a Claude lead, because head loading goes through Claude Code's plugin marketplace. Any other lead reads orbit's files from the checkout it runs in. The harness reads only a Claude lead's session, because it knows only Claude Code's transcript format. A provider instance id is Claude when it starts with `claude`, case ignored, such as `claudeAgent`. For any other lead, `session`, `toolCalls` and `firstTurnInputTokens` stay `null` and stderr says why. Such a lane is graded on outcomes only: the thread's status, its worktree and branches, its commits and its PR. Every check over `toolCalls` fails with `no toolCalls`, and only `state` checks can pass.
 
 ## Why each run gets its own marketplace
 
@@ -54,7 +54,7 @@ node tests/t3/lane.mjs --head HEAD --scenario child-base --root --wake 20 --wake
 | `--project <dir>` | Run in another repo that is already a T3 project. The worktree base is that repo's `HEAD`. Default is the scenario's project when it has one (see Scenario projects), else orbit's main checkout, based on the head |
 | `--installed` | Skip head loading, so orbit comes from the installed plugin. The lane commit still adds the memory setting (see Memory) |
 | `--root` | Run the thread in the project root, with no T3 worktree, so the lead runs orbit's Worktree gate. Only in a scenario project the lane built (see A lane on the project root) |
-| `--provider <id>`, `--model <slug>` | Passed to `t3` only when given. Otherwise the project default runs. `--provider` picks a Claude instance, and any other provider exits 1 (see Only Claude leads) |
+| `--provider <id>`, `--model <slug>` | Passed to `t3` only when given. Otherwise the project default runs. `--provider` takes any instance (see Leads on any provider) |
 | `--timeout <minutes>` | Default 30 |
 | `--wake <minutes>` | After the lead completes, keep polling `t3 thread show` until a later run of the lead posts a reply, such as the wake after an async `delegate_task` child finishes, or until this many minutes pass. Off by default |
 | `--wakes <n>` | With `--wake`, keep polling until `n` later runs have posted a reply, such as one wake per child of `parallel-units`. Default 1 |
@@ -164,7 +164,7 @@ node tests/t3/grade.mjs "$TMPDIR"/orbit-lane-gitops-native-*.json
 
 For each lane, `grade.mjs` prints `<file>  <scenario>`, then one line per check with `PASS` or `FAIL`, the check and why. A `PASS` names the matching call by its position, counted from 1, or every matching call when `min` is over 1. A `FAIL` names the call it missed and the nearest call with that name. Under `min`, it also says how many calls matched of how many it needs, and names those that matched. A lane whose `status` is not `completed` fails every check. The one exception is a `verifier-all-fail` lane whose `status` is `waiting` and whose `pendingQuestion` lists only the lead's own `AskUserQuestion` calls. Asking the user is a correct outcome there, so its tool calls are graded. A lane whose `toolCalls` is `null` fails every check except a `state` one.
 
-The exit code is 0 when no check fails and 1 when any check fails. It is 2 when a file cannot be graded, because it is not valid JSON, names an unknown scenario, has a `thread.providerInstanceId` that is not Claude, has no `toolCalls` key, or has a `toolCalls` that is neither `null` nor a list of calls that each have a string `name`. stderr then names the file and the reason. Exit 2 wins over exit 1.
+The exit code is 0 when no check fails and 1 when any check fails. It is 2 when a file cannot be graded, because it is not valid JSON, names an unknown scenario, has no `toolCalls` key, or has a `toolCalls` that is neither `null` nor a list of calls that each have a string `name`. stderr then names the file and the reason. Exit 2 wins over exit 1.
 
 ## Fixtures
 

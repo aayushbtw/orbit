@@ -82,10 +82,6 @@ if (!opts.head || !slug) {
   console.error('usage: node tests/t3/lane.mjs --head <ref> --scenario <slug> [--message <text>] [--out <file>] [--project <dir>] [--installed] [--root] [--provider <id> --model <slug>] [--timeout <minutes>] [--wake <minutes> [--wakes <n>]]');
   process.exit(1);
 }
-if (opts.provider !== undefined && !isClaude(opts.provider)) {
-  console.error(`--provider ${opts.provider} is not a Claude provider instance; a lane's lead runs only on Claude, and other families run only as seats`);
-  process.exit(1);
-}
 if (!workerId) await launch();
 
 const memoryDir = `${out.replace(/\.json$/, '')}.memory`;
@@ -485,7 +481,7 @@ function readSession({ providerInstanceId }) {
   const dirs = sessionDirs();
   const lead = isClaude(providerInstanceId) && dirs.map((dir) => claude.lead(claude.sessions(dir, sessionCtx), dir, sessionCtx)).find(Boolean);
   if (!lead) {
-    console.error(`warning: ${isClaude(providerInstanceId) ? `no Claude session for the lead in ${dirs.map((dir) => claude.where(dir, sessionCtx)).join(' or ')}` : `the thread runs on ${providerInstanceId}, not Claude, and only a Claude lead's session is read`}, so session, toolCalls and firstTurnInputTokens are null`);
+    console.error(`warning: ${isClaude(providerInstanceId) ? `no Claude session for the lead in ${dirs.map((dir) => claude.where(dir, sessionCtx)).join(' or ')}` : `the lead runs on ${providerInstanceId}, and the harness reads only a Claude lead's session`}, so session, toolCalls and firstTurnInputTokens are null and only outcome checks grade this lane`);
     return;
   }
   result.session = lead.file;

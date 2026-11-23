@@ -100,7 +100,7 @@ It exits 0 only when every row meets its `want`, which defaults to PASS. N/A row
 node tests/routing/flows.mjs --grade-only tests/routing/fixtures
 ```
 
-orbit's only lead is Claude, so every graded lead is Claude. Under `--host t3`, `--provider` picks which Claude instance runs it.
+A lead on any provider can run orbit, but `hook.mjs` is a Claude Code hook, so only a Claude lead's calls reach `spawns.jsonl` and get graded. Under `--host t3`, `--provider` picks the instance that runs the lead. A lead on another provider records no calls.
 
 ## Cost
 

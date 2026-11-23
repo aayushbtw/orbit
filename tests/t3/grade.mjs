@@ -1,7 +1,6 @@
 import { readFileSync, realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { ABSENT, SCENARIOS } from './scenarios.mjs';
-import { isClaude } from './sessions.mjs';
 
 export class LaneError extends Error {}
 
@@ -11,7 +10,6 @@ export function parseLane(text, file) {
   try { lane = JSON.parse(text); } catch (e) { throw bad(`not valid JSON (${e.message})`); }
   if (!lane || typeof lane !== 'object') throw bad('not a lane object');
   if (!Object.hasOwn(SCENARIOS, lane.scenario)) throw bad(`unknown scenario ${JSON.stringify(lane.scenario)} (known: ${Object.keys(SCENARIOS).join(', ')})`);
-  if (!isClaude(lane.thread?.providerInstanceId)) throw bad(`thread.providerInstanceId ${JSON.stringify(lane.thread?.providerInstanceId)} is not a Claude lead, and only Claude leads are graded`);
   if (!Object.hasOwn(lane, 'toolCalls')) throw bad('no toolCalls key');
   const { toolCalls } = lane;
   if (toolCalls !== null && !(Array.isArray(toolCalls) && toolCalls.every((c) => typeof c?.name === 'string'))) {

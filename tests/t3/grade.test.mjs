@@ -206,7 +206,6 @@ test('parseLane rejects a lane it cannot grade, naming the file', () => {
   const cases = [
     ['{"scenario":', /not valid JSON/],
     [JSON.stringify({ ...base, scenario: 'nope' }), /unknown scenario "nope"/],
-    [JSON.stringify({ ...base, thread: { providerInstanceId: 'codex' } }), /providerInstanceId "codex" is not a Claude lead/],
     [JSON.stringify({ ...base, toolCalls: undefined }), /no toolCalls key/],
     [JSON.stringify({ ...base, toolCalls: [{ input: {} }] }), /toolCalls is neither null nor a list of calls with a name/],
   ];

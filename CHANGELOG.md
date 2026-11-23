@@ -4,6 +4,25 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.73.0
+
+Released 2026-11-23.
+
+### Breaking or behavior changes
+
+- A lead on any provider can run orbit. The `rules` skill no longer tells a lead outside Claude Code to stop. A lead without Claude Code's SessionStart hook gets orbit's rules from the `rules` skill, which also reads `~/.claude/rules/orbit-models.md`.
+- The T3 Code adapter has an Any lead section. It maps each Claude Code tool, such as `Skill`, `Agent`, `EnterWorktree` and `TodoWrite`, to the lead's own equivalent by what the lead's tool list holds, never by provider. A tool that the lead's tool search can load counts as in its list, so a Claude Code lead keeps its deferred `EnterWorktree` and `Monitor`. A lead whose list lacks `Agent` or `Skill` reads that section before its first reply.
+- Children stay on the lead's provider. A lead whose subagent tool cannot pick an orbit agent names the agent file in the brief. A lead with no subagent tool does gitops's work itself and sends every other child to a same-provider `delegate_task`. Only a seat on another family leaves the lead's provider.
+- A lead without `EnterWorktree` passes the Worktree gate with `t3_worktree_handoff`, on a branch named `<type>/<slug>`. On `/orbit:session-pickup`, it works in an existing task worktree by absolute path and never calls `t3_worktree_handoff` again.
+- To switch the thread's provider mid-task, run `/orbit:pause-safely`, switch with `t3_thread_configure` or the T3 model picker, then run `/orbit:session-pickup`. A lead with no auto memory directory writes and reads the resume note in Claude Code's memory directory for the main checkout, so a lead on either provider finds it. Pickup reads the note plus the prior thread, with `t3_thread_read`, when the note has no `originSessionId` or is newer than the newest other transcript.
+- After a Stop, each delegated task that T3 reports as interrupted reruns as a fresh `delegate_task` when the goal still needs it. A lead that lost a child's task id in a compaction recovers it from the list that `task_status` returns for an unknown id.
+- The family check counts `google` as the vendor word for `gemini`.
+
+### CI and tests
+
+- `tests/provider-names.mjs` fails CI when a provider name appears in `plugin/`, outside setup's provider ranking and the seat family words.
+- The T3 lane and grader accept a lead on any provider. A lane whose lead is not Claude is graded on outcomes, because the grader reads only a Claude session transcript.
+
 ## 0.72.0
 
 Released 2026-11-22.
