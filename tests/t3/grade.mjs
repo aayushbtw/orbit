@@ -15,7 +15,7 @@ export function parseLane(text, file) {
   if (toolCalls !== null && !(Array.isArray(toolCalls) && toolCalls.every((c) => typeof c?.name === 'string'))) {
     throw bad('toolCalls is neither null nor a list of calls with a name');
   }
-  return { scenario: lane.scenario, status: lane.status, pendingQuestion: lane.pendingQuestion ?? null, toolCalls, branches: lane.branches ?? null };
+  return { scenario: lane.scenario, status: lane.status, pendingQuestion: lane.pendingQuestion ?? null, toolCalls, branches: lane.branches ?? null, thread: lane.thread ?? null, threads: lane.threads ?? null };
 }
 
 function matches(shape, value) {

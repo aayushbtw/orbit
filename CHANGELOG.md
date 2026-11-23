@@ -4,6 +4,18 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.76.0
+
+Released 2026-11-23.
+
+### Breaking or behavior changes
+
+- Any Models row's Model cell, roles and work types alike, may hold one target, `<providerInstanceId>/<model>`, split at the first `/`. A `, <value> after <n> failed tries` value may be a target too. The `other-family` row keeps its ordered list.
+- A target on the lead's own provider runs on the lead's own subagent tool with the target's model. Claude Code's `Agent` takes the alias that is a token of the model id, so `claude-opus-5-5` runs as `opus`.
+- A target on another provider runs as a `delegate_task` child on it, when the lead runs in T3 with `delegate_task` and the provider passes a seat's checks. A child that shares the checkout, such as the advisor, gitops or a fix round, gets `isolation: "shared"`. A child that needs its own checkout runs as the adapter's Where a child runs says, on the target's provider. Otherwise the spawn runs as if the cell were empty, and the reply says `<cell> unavailable: <reason>`.
+- A `shared` child on another provider runs in the lead's checkout by absolute path, and stops when its first `git -C <path> rev-parse --show-toplevel` does not print that path. A target child that errors, hits a limit or returns nothing reruns once as if the cell were empty, with an `unavailable` reply line.
+- A `verifier` row with a target on another provider fills the verifier seat with that one entry. When it is unavailable, the lead asks before a native verifier runs, or holds the PR.
+
 ## 0.75.0
 
 Released 2026-11-23.

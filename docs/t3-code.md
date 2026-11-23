@@ -19,7 +19,7 @@ Before 0.70.0, Codex and Grok could lead a thread through a second adapter file,
 
 - **Rules.** The lead loads the `rules` skill before its first reply. The skill reads `plugin/rules.md`, `plugin/rules-shared.md` and `~/.claude/rules/orbit-models.md`, which Claude Code would otherwise load natively. When `Agent` or `Skill` is missing from the lead's tool list, the skill sends it to the adapter's Any lead section before its first reply.
 - **Tools.** The adapter's [Any lead](../plugin/docs/harness/t3-code.md#any-lead) table maps each Claude Code tool to the lead's own equivalent. The lead reads a skill's `SKILL.md` by path in place of `Skill`, uses its own plan tool in place of `TodoWrite`, and asks a numbered question in place of `AskUserQuestion` when it has no question tool. A step the table does not cover takes the adapter's T3 column, else its absent column.
-- **Children.** Children stay on the lead's provider. The lead uses its own subagent tool, and names the orbit agent file in the brief when that tool cannot select one. With no subagent tool, the lead does gitops's work itself and sends every other child to a same-provider `delegate_task`. A Models cell that names a model the provider does not list, such as `opus`, runs on the provider's default model. Only a seat on another family leaves the lead's provider.
+- **Children.** Children stay on the lead's provider unless their Models row names another. The lead uses its own subagent tool, and names the orbit agent file in the brief when that tool cannot select one. With no subagent tool, the lead does gitops's work itself and sends every other child to a same-provider `delegate_task`. A Models cell with an alias the provider does not list, such as `opus`, runs on the provider's default model. A seat on another family and a row that names another provider are the two ways a child leaves the lead's provider, as [Run a row on another provider](#run-a-row-on-another-provider) says.
 - **Worktree.** A lead without `EnterWorktree` passes the Worktree gate with `t3_worktree_handoff`, on a branch named `<type>/<slug>`. Its next turn runs in the new worktree. Claude Code's worktree guard is a Claude Code hook, so it does not run under such a lead.
 - **Switching.** To switch the thread's provider mid-task, run `/orbit:pause-safely`, switch with `t3_thread_configure` or the T3 model picker, then run `/orbit:session-pickup`. The resume note goes to Claude Code's memory directory for the main checkout when the lead has no auto memory directory of its own, so a lead on either provider finds it. When the note has no `originSessionId` or is newer than the newest other transcript, pickup reads the note plus the prior thread with `t3_thread_read`.
 
@@ -37,9 +37,28 @@ The provider picks where a child runs, not the model. Only `delegate_task` opens
 
 - A child on the lead's provider runs native, nested in the lead's thread. That is an `Agent` call.
 - A child on the lead's provider that needs its own checkout, or runs while the lead keeps working, is a same-provider `delegate_task` child, as [Give a child its own checkout](#give-a-child-its-own-checkout) says.
-- A child on another provider is always a `delegate_task` child. Only a panel seat on another family and the verifier seat on another family run there, as [Fill a panel seat on another family](#fill-a-panel-seat-on-another-family) says.
-- Code writers, gitops and other native children never move to another provider, because a move loses their hooks, their `tools` limit and the worktree guard. A model of another family runs a child only as such a seat.
+- A child on another provider is always a `delegate_task` child. A panel seat on another family and the verifier seat on another family run there, as [Fill a panel seat on another family](#fill-a-panel-seat-on-another-family) says. So does a child whose Models row names another provider, as [Run a row on another provider](#run-a-row-on-another-provider) says.
+- Code writers, gitops and other native children move to another provider only when their Models row names it. A move loses their hooks, their `tools` limit and the worktree guard.
 - Orbit never opens a top-level thread with `t3_thread_launch` unless the user asks for a new thread.
+
+## Run a row on another provider
+
+Any Models row's Model cell may hold one target, `<providerInstanceId>/<model>`, split at the first `/`. A `, <value> after <n> failed tries` value may be a target too. The `other-family` row keeps its ordered list. Here are the rows for an Antigravity lead on `gemini-pro-orchestrator-neon` that writes code on Opus, asks Fable for advice and writes docs on its own model:
+
+```md
+| `code` | | claudeAgent/claude-opus-5-5 | medium |
+| `advisor` | | claudeAgent/claude-fable-5-2 | high |
+| `docs` | Docs and prose | antigravity/gemini-4-neon | |
+```
+
+The adapter's [A cell that names a provider](../plugin/docs/harness/t3-code.md#a-cell-that-names-a-provider) resolves each spawn.
+
+- A target on the lead's own provider runs on the lead's own subagent tool, with the target's model part as the model. Claude Code's `Agent` takes the alias that is a token of the model id, so `claude-opus-5-5` runs as `opus`. A lead whose subagent tool cannot take the model sends the spawn to a same-provider `delegate_task` with that model.
+- A target on another provider runs as a `delegate_task` child on it, when the lead runs in T3 with `delegate_task` and the provider passes the checks a seat's provider passes. A child that shares the checkout, such as the advisor or gitops, gets `isolation: "shared"`. A child that needs its own checkout runs as [Give a child its own checkout](#give-a-child-its-own-checkout) says, on the target's provider. Fix rounds for that row run on the same provider.
+- Outside T3, from a child, without `delegate_task`, or when the provider fails a check, the spawn runs as if the cell were empty, and the reply says `<cell> unavailable: <reason>`.
+- A `verifier` row with a target on another provider fills the verifier seat with that one entry, with no family check. When it is unavailable, the lead asks the user before a native verifier runs, or holds the PR, as for a list whose every entry failed.
+
+A Claude child of a non-Claude lead gains orbit's hooks and the worktree guard, because it runs in Claude Code. A row that sends gitops or another native agent away from Claude Code loses the commit-trailer hook, the `tools` limit and the worktree guard. Writing the row accepts that loss. [pstack-differences.md](pstack-differences.md#model-per-role) records why.
 
 ## Fill a panel seat on another family
 
@@ -52,7 +71,7 @@ A review panel fills one seat on a model family other than the session's.
 - An explicit model pick is checked with `search` before it is called unavailable.
 - An unavailable entry goes in the reply with its reason, whether it failed a check or its child failed.
 - The seat runs through `delegate_task`, reads only, and its child thread is settled when it returns.
-- Seats that write code never take a roster seat. They run on the lead's provider.
+- Seats that write code never take a roster seat. They run on the lead's provider, unless their Models row names another.
 
 Orbit assumes no provider beyond the lead's own. Each seat on another family comes from a provider the user listed, checked at run time.
 

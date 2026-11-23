@@ -129,6 +129,62 @@ test('sum adds every value', () => {
   ],
 };
 
+const providerCells = [
+  { row: 'code', useFor: 'code units', providerInstanceId: 'claudeAgent', model: 'claude-opus-5-5', effort: 'medium' },
+  { row: 'advisor', useFor: 'plan gate and forks', providerInstanceId: 'claudeAgent', model: 'claude-fable-5-2', effort: '' },
+  { row: 'writing', useFor: 'docs and prose', providerInstanceId: 'antigravity', model: 'gemini-4-neon', effort: '' },
+];
+const target = (t) => `${t.providerInstanceId}/${t.model}`;
+const onTarget = (t) => (c) => c.providerInstanceId === t.providerInstanceId && c.model === t.model;
+
+const providerCellsProject = {
+  name: 'provider-cells',
+  commits: [
+    {
+      message: 'chore: add the workflow block',
+      files: {
+        'AGENTS.md': `${workflow}
+### Models
+
+| Task | Use for | Model | Effort |
+| --- | --- | --- | --- |
+${providerCells.map((t) => `| ${t.row} | ${t.useFor} | ${target(t)} | ${t.effort} |`).join('\n')}
+`,
+        'README.md': '# Stats\n',
+      },
+    },
+    unitsProject.commits[1],
+  ],
+};
+
+const childThreads = (fn) => ({
+  state: ({ thread, threads }) => {
+    const lead = thread?.providerInstanceId;
+    if (!lead || !Array.isArray(threads)) return { ok: false, why: 'no lead thread or threads recorded' };
+    const children = threads.filter((t) => t.parentThreadId);
+    const seen = children.map(target).join(', ') || 'none';
+    return fn(lead, children, `lead on ${lead}; children: ${seen}`);
+  },
+});
+
+const offProviderRan = childThreads((lead, children, seen) => {
+  const missing = providerCells.filter((t) => t.providerInstanceId !== lead && !children.some(onTarget(t)));
+  return { ok: !missing.length, why: missing.length ? `no child on ${missing.map((t) => `${t.row} ${target(t)}`).join(', ')}; ${seen}` : seen };
+});
+
+const noUnlistedChild = childThreads((lead, children, seen) => {
+  const unlisted = children.filter((c) => c.providerInstanceId !== lead && !providerCells.some((t) => onTarget(t)(c)));
+  return { ok: !unlisted.length, why: unlisted.length ? `unlisted child ${unlisted.map(target).join(', ')}; ${seen}` : seen };
+});
+
+const leadAdds = (path) => ({
+  state: ({ branches }) => {
+    if (!Array.isArray(branches)) return { ok: false, why: 'no branches recorded, so the lane did not watch git' };
+    const hit = branches.find((b) => !b.child && b.adds);
+    return hit ? { ok: true, why: `${hit.ref} adds ${path} in ${short(hit.adds)}` } : { ok: false, why: `no lead branch adds ${path}` };
+  },
+});
+
 const pinsBase = /\bgit\s+(-C\s+\S+\s+)?(reset\s+--hard|checkout|switch|merge\s+--ff-only)\b[^\n]*?\b[0-9a-f]{7,40}\b/;
 const unpinnedChild = { isolation: 'worktree', task: (task) => !pinsBase.test(task ?? '') || !/--show-toplevel\b/.test(task ?? '') };
 const pickConflict = { command: /(^|;|&&|\n)\s*(\w+=\S*\s+)*git(\s+-[cC]\s+\S+)*\s+cherry-pick\b[^\n;&|]*--(abort|continue|skip|quit)\b/ };
@@ -290,6 +346,16 @@ export const SCENARIOS = {
       'brief-pins-base': none(t3('delegate_task'), unpinnedChild, 'lead'),
       'no-pick-conflict': none('Bash', pickConflict),
       'children-on-prerequisite': childrenOnPrerequisite(roundPath),
+    },
+  },
+  'provider-cells': {
+    prompt: "/orbit:start feature, just testing, don't ship: add `mean.mjs` exporting mean(values) with a node:test test, and document it in README.md under a `## mean` heading. Brief the advisor on the plan before editing. Run the code unit and the README unit as separate delegates per the Delegate gate, each on its Models row. Commit each unit on the task branch. No PR.",
+    project: providerCellsProject,
+    prerequisite: 'mean.mjs',
+    checks: {
+      'targets-off-provider-ran': offProviderRan,
+      'no-unlisted-child': noUnlistedChild,
+      'mean-committed': leadAdds('mean.mjs'),
     },
   },
   'autopilot-owners': {

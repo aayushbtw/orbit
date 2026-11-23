@@ -295,7 +295,8 @@ function watchBranches(before) {
 }
 
 function recordBranches() {
-  const childWorktrees = new Set(result.threads.filter((t) => t.parentThreadId).map((t) => t.worktreePath).filter(Boolean));
+  // A child with isolation "shared" reports the lead's worktree, which stays the lead's.
+  const childWorktrees = new Set(result.threads.filter((t) => t.parentThreadId).map((t) => t.worktreePath).filter((path) => path && path !== result.thread?.worktreePath));
   result.branches = [...branchWatch.values()].map((b) => ({ ...b, child: childWorktrees.has(b.worktree) }));
 }
 
@@ -318,7 +319,7 @@ let cleaning;
 const cleanup = () => cleaning ??= (async () => {
   if (!undo.length) return;
   if (!result.thread) {
-    try { recordThreads(); } catch (e) { console.error(`cleanup: ${gitError(e)}`); }
+    try { await recordThreads(); } catch (e) { console.error(`cleanup: ${gitError(e)}`); }
   }
   const state = result.thread ? await runStateAfterGrace(result.thread) : 'idle';
   if (watching) {
@@ -334,8 +335,8 @@ const cleanup = () => cleaning ??= (async () => {
   });
 })();
 
-// The CLI reaches the server's /mcp tools with an mcp-client session but has no organize command, so the lane does the same.
-async function organize(calls) {
+// The CLI reaches the server's /mcp tools with an mcp-client session but has no organize command and lists no subagent threads, so the lane does the same.
+async function withMcp(fn) {
   let sessionId;
   try {
     const issue = run(cli, ['auth', 'session', 'issue', '--subject', 'mcp-client', '--scope', 'orchestration:read', '--scope', 'orchestration:operate', '--ttl', '5m', '--label', title, '--json']);
@@ -361,19 +362,37 @@ async function organize(calls) {
     };
     await rpc('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'orbit-lane', version: '1' } });
     await rpc('notifications/initialized', {}, true);
-    for (const call of calls) {
-      try {
-        const done = await rpc('tools/call', { name: 't3_thread_organize', arguments: call });
-        if (done.isError) throw new Error(done.content?.find((c) => c.text)?.text ?? 'tool error');
-        console.error(`${call.action}d thread ${call.threadId}`);
-      } catch (e) {
-        console.error(`warning: could not ${call.action} thread ${call.threadId}: ${e.message}`);
-      }
-    }
+    return await fn(async (name, args) => {
+      const done = await rpc('tools/call', { name, arguments: args });
+      const text = done.content?.find((c) => c.text)?.text;
+      if (done.isError) throw new Error(text ?? 'tool error');
+      return done.structuredContent ?? JSON.parse(text ?? '{}');
+    });
   } finally {
     if (sessionId) tryRun(cli, ['auth', 'session', 'revoke', sessionId]);
   }
 }
+
+const organize = (calls) => withMcp(async (tool) => {
+  for (const call of calls) {
+    try {
+      await tool('t3_thread_organize', call);
+      console.error(`${call.action}d thread ${call.threadId}`);
+    } catch (e) {
+      console.error(`warning: could not ${call.action} thread ${call.threadId}: ${e.message}`);
+    }
+  }
+});
+
+const projectThreads = (projectId) => withMcp(async (tool) => {
+  const threads = [];
+  for (let cursor = 0; cursor !== null;) {
+    const page = await tool('t3_thread_list', { projectId, includeSubagents: true, limit: 100, cursor });
+    threads.push(...(page.threads ?? []));
+    cursor = page.nextCursor ?? null;
+  }
+  return threads;
+});
 
 async function endThreads() {
   const calls = result.threads.flatMap(({ threadId }) => {
@@ -445,24 +464,46 @@ function startThread(args) {
   });
 }
 
-function recordThreads(threadId) {
+const descendants = (threads, rootId) => {
+  const found = new Set([rootId]);
+  for (let grew = true; grew;) {
+    const next = threads.filter((t) => found.has(t.parentThreadId) && !found.has(t.threadId));
+    for (const t of next) found.add(t.threadId);
+    grew = next.length > 0;
+  }
+  found.delete(rootId);
+  return found;
+};
+
+async function listedChildIds(projectId, threadId) {
+  if (!projectId) return [];
+  try {
+    return [...descendants(await projectThreads(projectId), threadId)];
+  } catch (e) {
+    console.error(`warning: t3_thread_list could not list subagent threads (${e.message}), so only child ids in Claude session files count`);
+    return [];
+  }
+}
+
+async function recordThreads(threadId) {
   threadId ??= JSON.parse(tryRun(cli, ['thread', 'list', '--project', project, '--json']) ?? '[]').find((t) => t.title === title)?.threadId;
   if (!threadId) return;
-  const lead = { threadId, link: null, waiting: result.status === 'waiting', parentThreadId: null, worktreePath: null };
+  const lead = { threadId, link: null, waiting: result.status === 'waiting', parentThreadId: null, worktreePath: null, providerInstanceId: null, model: null };
   result.threads = [lead];
 
   const shown = JSON.parse(run(cli, ['thread', 'show', '--json', '--messages', '1000', threadId]));
-  const { link, providerInstanceId, model, runtimeMode, branch: threadBranch, worktreePath, pendingRequestCount } = shown.thread;
+  const { projectId, link, providerInstanceId, model, runtimeMode, branch: threadBranch, worktreePath, pendingRequestCount } = shown.thread;
   result.thread = { threadId, link, providerInstanceId, model, runtimeMode, branch: threadBranch, worktreePath };
   result.messages = shown.messages.map(({ role, text }) => ({ role, text }));
-  lead.link = link;
-  lead.waiting ||= pendingRequestCount > 0;
-  lead.worktreePath = worktreePath ?? null;
+  Object.assign(lead, { link, waiting: lead.waiting || pendingRequestCount > 0, worktreePath: worktreePath ?? null, providerInstanceId: providerInstanceId ?? null, model: model ?? null });
 
-  const childIds = new Set(sessionDirs().flatMap((dir) => claude.childIds(claude.sessions(dir, sessionCtx))));
+  const childIds = new Set([
+    ...await listedChildIds(projectId, threadId),
+    ...sessionDirs().flatMap((dir) => claude.childIds(claude.sessions(dir, sessionCtx))),
+  ]);
   const children = [...childIds].flatMap((id) => {
     const child = JSON.parse(tryRun(cli, ['thread', 'show', '--json', id]) ?? 'null')?.thread;
-    return child ? [{ threadId: id, link: child.link ?? null, waiting: child.pendingRequestCount > 0, parentThreadId: child.parentThreadId ?? null, worktreePath: child.worktreePath ?? null }] : [];
+    return child ? [{ threadId: id, link: child.link ?? null, waiting: child.pendingRequestCount > 0, parentThreadId: child.parentThreadId ?? null, worktreePath: child.worktreePath ?? null, providerInstanceId: child.providerInstanceId ?? null, model: child.model ?? null }] : [];
   });
   for (let grew = true; grew;) {
     const listed = new Set(result.threads.map((t) => t.threadId));
@@ -566,11 +607,11 @@ async function lane() {
   result.exit = { completed: 0, waiting: 2 }[result.status] ?? 1;
   result.reply = reply?.reply ?? null;
   result.error = reply?.error ?? (result.status === 'timeout' ? `no reply within ${opts.timeout} minutes` : result.status === 'failed' ? stderr.trim() || `t3 exited ${code}` : null);
-  recordThreads(reply?.threadId);
+  await recordThreads(reply?.threadId);
   if (!result.thread) return;
   if (wakeMs && result.status === 'completed') {
     await holdForWake(result.thread.threadId);
-    recordThreads(result.thread.threadId);
+    await recordThreads(result.thread.threadId);
   }
   readSession(result.thread);
 }
