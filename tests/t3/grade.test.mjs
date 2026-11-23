@@ -127,6 +127,27 @@ test('children-on-prerequisite fails a child whose round.mjs is its own, and a l
   assert.match(grade(null).why, /no branches recorded/);
 });
 
+test('provider-cells passes a Claude lead with one antigravity child and fails an Antigravity lead missing the fable child', () => {
+  const leadThread = (providerInstanceId) => ({ threadId: 'lead', parentThreadId: null, providerInstanceId, model: 'm' });
+  const child = (providerInstanceId, model) => ({ threadId: model, parentThreadId: 'lead', providerInstanceId, model });
+  const leadBranch = { ref: 'refs/heads/feat/mean', child: false, adds: 'a'.repeat(40) };
+  const grade = (providerInstanceId, children, branches = [leadBranch]) => gradeLane(lane({
+    scenario: 'provider-cells', toolCalls: null, thread: { providerInstanceId }, threads: [leadThread(providerInstanceId), ...children], branches,
+  }));
+  const verdictsOf = (results) => Object.fromEntries(results.map((r) => [r.check, r.verdict]));
+  assert.deepEqual(verdictsOf(grade('claudeAgent', [child('antigravity', 'gemini-4-neon')])), { 'targets-off-provider-ran': 'PASS', 'no-unlisted-child': 'PASS', 'mean-committed': 'PASS' });
+  assert.equal(verdictsOf(grade('claudeAgent', []))['targets-off-provider-ran'], 'FAIL');
+  const missing = grade('antigravity', [child('claudeAgent', 'claude-opus-5-5'), child('antigravity', 'gemini-pro-orchestrator-neon')]);
+  assert.deepEqual(verdictsOf(missing), { 'targets-off-provider-ran': 'FAIL', 'no-unlisted-child': 'PASS', 'mean-committed': 'PASS' });
+  assert.match(missing[0].why, /no child on advisor claudeAgent\/claude-fable-5-2;/);
+  assert.doesNotMatch(missing[0].why, /no child on .*code claudeAgent/);
+  assert.equal(verdictsOf(grade('antigravity', [child('claudeAgent', 'claude-opus-5-5'), child('claudeAgent', 'claude-fable-5-2')]))['targets-off-provider-ran'], 'PASS');
+  const unlisted = grade('antigravity', [child('claudeAgent', 'claude-opus-5-5'), child('claudeAgent', 'claude-fable-5-2'), child('codex', 'gpt-6.1-sol')]);
+  assert.equal(verdictsOf(unlisted)['no-unlisted-child'], 'FAIL');
+  assert.match(unlisted[1].why, /unlisted child codex\/gpt-6\.1-sol/);
+  assert.equal(verdictsOf(grade('claudeAgent', [child('antigravity', 'gemini-4-neon')], [{ ...leadBranch, adds: null }]))['mean-committed'], 'FAIL');
+});
+
 test('brief-pins-base passes only a brief that runs the checkout guard and pins a SHA', () => {
   const grade = (task) => verdicts(lane({ scenario: 'child-base', toolCalls: [{ name: 'mcp__t3-code__delegate_task', input: { isolation: 'worktree', task }, sidechain: false }] }))['brief-pins-base'];
   assert.equal(grade('Run git rev-parse --show-toplevel and stop if it prints /p or /p/.claude/worktrees/x. Then git reset --hard 7beda92.'), 'PASS');

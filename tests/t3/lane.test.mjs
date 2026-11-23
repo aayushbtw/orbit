@@ -52,12 +52,14 @@ if (args[0] === 'thread' && args[1] === 'start') {
 const s = existsSync(state) ? JSON.parse(readFileSync(state, 'utf8')) : null;
 if (args[0] === 'thread' && args[1] === 'list') { console.log(JSON.stringify(s ? [s] : [])); process.exit(0); }
 if (args[0] === 'thread' && args[1] === 'show') {
+  const child = JSON.parse(process.env.STUB_CHILDREN ?? '[]').find((t) => t.threadId === args.at(-1));
+  if (child) { console.log(JSON.stringify({ thread: { ...child, link: 't3://' + child.threadId, pendingRequestCount: 0, activeRunId: null }, messages: [] })); process.exit(0); }
   const shows = JSON.parse(process.env.STUB_SHOWS ?? '[[]]');
   const n = s.shows ?? 0;
   writeFileSync(state, JSON.stringify({ ...s, shows: n + 1 }));
   const asks = Boolean(process.env.STUB_ASKS);
   const activeRunId = asks || !existsSync(done) ? 'stub-run' : null;
-  console.log(JSON.stringify({ thread: { threadId: s.threadId, link: 't3://stub', providerInstanceId: 'stub', model: 'stub', runtimeMode: 'full-access', worktreePath: s.worktreePath, pendingRequestCount: asks ? 1 : 0, activeRunId }, messages: shows[Math.min(n, shows.length - 1)] }));
+  console.log(JSON.stringify({ thread: { threadId: s.threadId, projectId: 'stub-project', link: 't3://stub', providerInstanceId: 'stub', model: 'stub', runtimeMode: 'full-access', worktreePath: s.worktreePath, pendingRequestCount: asks ? 1 : 0, activeRunId }, messages: shows[Math.min(n, shows.length - 1)] }));
   process.exit(0);
 }
 process.exit(1);
@@ -75,25 +77,35 @@ async function killLauncher(argv, env) {
   await until(() => !alive(worker), `worker ${worker} exited`);
 }
 
-async function t3Server(onCall) {
+const PAGE = 2;
+
+async function t3Server(onCall, listed) {
   const organized = [];
+  const lists = [];
   const server = createServer((req, res) => {
     let body = '';
     req.on('data', (d) => { body += d; });
     req.on('end', async () => {
       const { id, method, params } = JSON.parse(body);
       if (req.headers.authorization !== 'Bearer stub-token') { res.writeHead(401).end(); return; }
-      if (method === 'tools/call') {
+      let result = {};
+      if (method === 'tools/call' && params.name === 't3_thread_list') {
+        lists.push(params.arguments);
+        const { cursor } = params.arguments;
+        const page = { threads: listed.slice(cursor, cursor + PAGE), nextCursor: cursor + PAGE < listed.length ? cursor + PAGE : null };
+        result = { content: [{ type: 'text', text: JSON.stringify(page) }] };
+      } else if (method === 'tools/call') {
         organized.push(params.arguments);
         await onCall();
+        result = { content: [], structuredContent: {} };
       }
       if (id === undefined) { res.writeHead(202).end(); return; }
       res.writeHead(200, { 'content-type': 'application/json', 'mcp-session-id': 'stub-mcp' });
-      res.end(JSON.stringify({ jsonrpc: '2.0', id, result: method === 'tools/call' ? { content: [], structuredContent: {} } : {} }));
+      res.end(JSON.stringify({ jsonrpc: '2.0', id, result }));
     });
   });
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
-  return { organized, origin: `http://127.0.0.1:${server.address().port}`, close: () => server.close() };
+  return { organized, lists, origin: `http://127.0.0.1:${server.address().port}`, close: () => server.close() };
 }
 
 function runLane(argv, env, started = () => {}) {
@@ -106,7 +118,7 @@ function runLane(argv, env, started = () => {}) {
   });
 }
 
-async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0, kill = false, interruptOrganize = false, starts = true, inspect = () => null } = {}) {
+async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0, kill = false, interruptOrganize = false, starts = true, listed = [], inspect = () => null } = {}) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'orbit-lane-test-')));
   let launcherErr = '';
   let interrupted = false;
@@ -115,7 +127,7 @@ async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0,
     interrupted = true;
     process.kill(Number(launcherErr.match(/worker (\d+)/)[1]), 'SIGTERM');
     await sleep(500);
-  });
+  }, listed);
   try {
     mkdirSync(join(root, 't3home', 'userdata'), { recursive: true });
     writeFileSync(join(root, 't3home', 'userdata', 'server-runtime.json'), JSON.stringify({ origin: t3.origin }));
@@ -131,7 +143,7 @@ async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0,
     const env = {
       ...process.env,
       T3CODE_CLI_PATH: stub, STUB_STATE: join(root, 'state.json'), STUB_WORKTREES: join(root, 'worktrees'), STUB_AGENT: agent, STUB_SAW: join(root, 'saw'),
-      CLAUDE_CONFIG_DIR: join(root, 'claude'), T3CODE_HOME: join(root, 't3home'),
+      CLAUDE_CONFIG_DIR: join(root, 'claude'), T3CODE_HOME: join(root, 't3home'), STUB_CHILDREN: JSON.stringify(listed),
       ...extra,
     };
     const argv = [join(here, 'lane.mjs'), '--head', 'HEAD', '--scenario', 'probe', '--project', project, '--installed', '--out', join(root, 'out.json'), ...args];
@@ -146,7 +158,7 @@ async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0,
     const after = branches(project);
     const seen = await inspect({ project, out });
     if (starts) await until(() => existsSync(`${env.STUB_STATE}.done`), 'the stub agent finished');
-    return { root, base, before, after, worktrees, out, seen, saw: tryRead(env.STUB_SAW)?.trim(), organized: t3.organized, auth: tryRead(`${env.STUB_STATE}.auth`) };
+    return { root, base, before, after, worktrees, out, seen, saw: tryRead(env.STUB_SAW)?.trim(), organized: t3.organized, lists: t3.lists, auth: tryRead(`${env.STUB_STATE}.auth`) };
   } finally {
     t3.close();
     rmSync(root, { recursive: true, force: true });
@@ -308,11 +320,13 @@ test('a lane whose thread waits on a question cleans up at once, though the run 
   assert.equal(worktrees.split('\n\n').length, 1, worktrees);
 });
 
-test('a lane whose run completed settles its thread and revokes the session it used', async () => {
+const sessions = (n) => 'issue mcp-client\nrevoke stub-session\n'.repeat(n);
+
+test('a lane whose run completed lists its threads, settles its thread and revokes each session it used', async () => {
   const { out, organized, auth } = await withProject([], 'true');
   assert.equal(out.status, 'completed');
   assert.deepEqual(organized, [{ threadId: 'stub-thread', action: 'settle' }]);
-  assert.equal(auth, 'issue mcp-client\nrevoke stub-session\n');
+  assert.equal(auth, sessions(2));
 });
 
 test('a lane whose thread waits on its own question archives the thread', async () => {
@@ -321,13 +335,13 @@ test('a lane whose thread waits on its own question archives the thread', async 
   });
   assert.equal(out.status, 'waiting');
   assert.deepEqual(organized, [{ threadId: 'stub-thread', action: 'archive' }]);
-  assert.equal(auth, 'issue mcp-client\nrevoke stub-session\n');
+  assert.equal(auth, sessions(2));
 });
 
-test('a signal while the lane settles its thread issues and revokes one session', async () => {
+test('a signal while the lane settles its thread issues and revokes one session for the settle', async () => {
   const { organized, auth } = await withProject([], 'true', { interruptOrganize: true });
   assert.deepEqual(organized, [{ threadId: 'stub-thread', action: 'settle' }]);
-  assert.equal(auth, 'issue mcp-client\nrevoke stub-session\n');
+  assert.equal(auth, sessions(2));
 });
 
 test('a lane whose thread still runs at the deadline leaves the thread alone', async () => {
@@ -336,7 +350,28 @@ test('a lane whose thread still runs at the deadline leaves the thread alone', a
   });
   assert.equal(out.status, 'timeout');
   assert.deepEqual(organized, []);
-  assert.equal(auth, null);
+  assert.equal(auth, sessions(1));
+});
+
+test("a non-Claude lead's children come from t3_thread_list with subagents, each with its provider and model", async () => {
+  const thread = (threadId, parentThreadId, providerInstanceId, model) => ({ threadId, parentThreadId, providerInstanceId, model, worktreePath: null });
+  const listed = [
+    thread('other-lead', null, 'claudeAgent', 'claude-opus-5-5'),
+    thread('code-child', 'stub-thread', 'claudeAgent', 'claude-opus-5-5'),
+    thread('stranger', 'other-lead', 'codex', 'gpt-6.1-sol'),
+    thread('advisor-child', 'stub-thread', 'claudeAgent', 'claude-fable-5-2'),
+    thread('grandchild', 'code-child', 'claudeAgent', 'claude-opus-5-5'),
+  ];
+  const { out, organized, lists } = await withProject([], 'true', { args: ['--provider', 'antigravity', '--model', 'stub'], listed });
+  assert.equal(out.toolCalls, null);
+  assert.deepEqual(out.threads.map(({ threadId, parentThreadId, providerInstanceId, model }) => [threadId, parentThreadId, providerInstanceId, model]), [
+    ['stub-thread', null, 'stub', 'stub'],
+    ['code-child', 'stub-thread', 'claudeAgent', 'claude-opus-5-5'],
+    ['advisor-child', 'stub-thread', 'claudeAgent', 'claude-fable-5-2'],
+    ['grandchild', 'code-child', 'claudeAgent', 'claude-opus-5-5'],
+  ]);
+  assert.deepEqual(lists.map((l) => [l.projectId, l.includeSubagents, l.cursor]), [['stub-project', true, 0], ['stub-project', true, 2], ['stub-project', true, 4]]);
+  assert.deepEqual(organized.map((o) => o.threadId).sort(), ['advisor-child', 'code-child', 'grandchild', 'stub-thread']);
 });
 
 test('a lane with a non-Claude --provider runs its lead and records no tool calls', async () => {
