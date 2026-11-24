@@ -54,7 +54,7 @@ function landStack(stack, trunk) {
 function checkState(pr) {
   if (!pr.checks) return 'unavailable';
   const { passed, pending, failed } = pr.checks;
-  if (passed + pending + failed > 0) return 'reported';
+  if (passed + pending + failed.length > 0) return 'reported';
   return pr.ciConfig || pr.justPushed ? 'unregistered' : 'no-ci';
 }
 
@@ -66,7 +66,7 @@ function babysitVerdict(pr, { reviewDecision, zeroCheckReads = 0 } = {}) {
   if (pr.state === 'closed') return 'CLOSED';
   const checks = checkState(pr);
   const review = reviewSignal.get(reviewDecision) ?? 'unknown';
-  if (pr.mergeability === 'conflicting' || pr.checks?.failed > 0 || pr.unresolvedThreads > 0 || review === 'blocker') return 'BLOCKER';
+  if (pr.mergeability === 'conflicting' || (Array.isArray(pr.checks?.failed) && pr.checks.failed.length > 0) || pr.unresolvedThreads > 0 || review === 'blocker') return 'BLOCKER';
   if (checks === 'unavailable') return 'HANDBACK';
   if (checks === 'unregistered') return zeroCheckReads > 0 ? 'HANDBACK' : 'WAIT';
   if (pr.checks.pending > 0 || review === 'wait') return 'WAIT';
@@ -74,7 +74,7 @@ function babysitVerdict(pr, { reviewDecision, zeroCheckReads = 0 } = {}) {
   return pr.mergeability === 'mergeable' ? 'READY' : 'HANDBACK';
 }
 
-const green = { passed: 3, pending: 0, failed: 0 };
+const green = { passed: 3, pending: 0, failed: [] };
 const openPr = (extra = {}) => ({ number: 7, state: 'open', baseBranch: 'main', headSha: 'aaa', checks: green, unresolvedThreads: 0, mergeability: 'mergeable', ...extra });
 
 test('#124 shipping, t3-code, gitops and autopilot-full pin merges to the accepted (PR, base, head) without auto-merge', () => {
@@ -82,6 +82,7 @@ test('#124 shipping, t3-code, gitops and autopilot-full pin merges to the accept
   has('gitops', 'Merge only against the accepted `(PR, base, head)`', 'If either differs, stop without merging', '`expectedHeadSha` set to that exact accepted head', 'Never pass `auto: true`');
   has('t3', '`expectedHeadSha` set to the accepted `headSha` the verdict covers', 'Never pass `auto: true`');
   has('autopilot', 'Merge only against the accepted `(PR, base, head)`', 'as Shipping step 4 says');
+  for (const doc of ['shipping', 'gitops', 't3']) has(doc, '`auto: true` or `stack: true`', 'without pinning each layer\'s accepted head');
   for (const doc of Object.keys(docs)) assert.doesNotMatch(docs[doc], /Pass `auto: true` only/, `${doc} no longer allows auto: true`);
 });
 
@@ -94,7 +95,7 @@ test('#124 pre-merge gate merges only the accepted head and re-verifies any drif
 
   assert.deepEqual(preMergeGate(accepted, openPr({ headSha: 'bbb' })), { action: 'reverify', drift: ['head'] }, 'head pushed between verdict and merge');
 
-  assert.deepEqual(preMergeGate(accepted, openPr({ checks: { passed: 1, pending: 2, failed: 0 } })), { action: 'wait' }, 'pending checks return without merging');
+  assert.deepEqual(preMergeGate(accepted, openPr({ checks: { passed: 1, pending: 2, failed: [] } })), { action: 'wait' }, 'pending checks return without merging');
   assert.deepEqual(preMergeGate(accepted, openPr({ headSha: 'ccc' })), { action: 'reverify', drift: ['head'] }, 'head pushed while waiting on checks');
 
   assert.deepEqual(preMergeGate(accepted, openPr({ baseBranch: 'feat/other' })), { action: 'reverify', drift: ['base'] }, 'base retargeted');
@@ -127,12 +128,23 @@ test('#125 a closed ceiling never completes the stack and keeps its branch', () 
   assert.deepEqual(run.cleanup, ['feat/root']);
 });
 
+test('#125 a PR merged onto a non-trunk base is a terminal block that stops the run', () => {
+  has('shipping', 'until the ceiling reads `COMPLETE` with `baseBranch` equal to the intended trunk', 'A PR that reads `merged` on a non-trunk base is a terminal block and stops the run the same way `CLOSED` does.');
+  const run = landStack([
+    { number: 1, branch: 'feat/root', state: 'merged', baseBranch: 'feat/old-parent' },
+    { number: 2, branch: 'feat/child', state: 'open', baseBranch: 'feat/root' },
+  ], 'main');
+  assert.deepEqual(run.log, [], 'child neither merges nor retargets');
+  assert.equal(run.complete, false);
+  assert.deepEqual(run.cleanup, [], 'the non-trunk merge never counts as landed');
+});
+
 test('#126 babysit names unavailable, no-ci and unregistered zero-check states', () => {
   has('babysit', '`unavailable`. `pull_request_read` omits `checks`', 'so the PR is never `READY`', '`no-ci`. `checks` counts 0 passed, 0 pending and 0 failed', '`unregistered`. `checks` counts zero, but the repo holds CI config or a push just happened.', 'a second read still shows zero checks, unwatch the PR and hand back');
 });
 
 test('#126 zero-check states resolve to READY, bounded WAIT or handback', () => {
-  const none = { passed: 0, pending: 0, failed: 0 };
+  const none = { passed: 0, pending: 0, failed: [] };
   assert.equal(babysitVerdict(openPr({ checks: none, ciConfig: false }), { reviewDecision: null }), 'READY', 'known no-CI with clean mergeability');
 
   const unregistered = openPr({ checks: none, ciConfig: true });
@@ -140,6 +152,12 @@ test('#126 zero-check states resolve to READY, bounded WAIT or handback', () => 
   assert.equal(babysitVerdict(unregistered, { reviewDecision: null, zeroCheckReads: 1 }), 'HANDBACK', 'repeat read hands back');
 
   assert.equal(babysitVerdict(openPr({ checks: undefined }), { reviewDecision: 'APPROVED' }), 'HANDBACK', 'unavailable check data is never READY');
+  assert.equal(babysitVerdict(openPr({ checks: { passed: 2, pending: 0, failed: ['check'] } }), { reviewDecision: null }), 'BLOCKER', 'a failed check listed by name blocks');
+});
+
+test('#126 READY needs mergeability to read mergeable', () => {
+  has('babysit', '`mergeability` reads `mergeable`.');
+  assert.equal(babysitVerdict(openPr({ mergeability: 'unknown' }), { reviewDecision: null }), 'HANDBACK');
 });
 
 test('#127 babysit, t3-code and gitops page comments and read reviewDecision from pull_request_list', () => {
@@ -158,7 +176,7 @@ test('#127 reviewDecision drives WAIT, BLOCKER, READY and unknown', () => {
 
 test('#128 shipping and gitops guard parent branch deletion and read back the child base', () => {
   for (const doc of ['shipping', 'gitops']) {
-    has(doc, 'git ls-remote origin refs/heads/', 'git push --force-with-lease=refs/heads/');
+    has(doc, 'git ls-remote origin refs/heads/', 'git push --force-with-lease=refs/heads/', 'If it prints nothing, the branch is already gone');
     const unguarded = docs[doc].replaceAll('never an unguarded `git push origin --delete`', '');
     assert.doesNotMatch(unguarded, /git push origin --delete/, `${doc} never deletes a branch unguarded`);
   }

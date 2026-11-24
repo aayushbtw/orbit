@@ -10,7 +10,7 @@ The user's request starts it, and so does Ship by default (`playbooks/opening-a-
   - `CLOSED`. The PR closed without merging (`state` is `closed`). Babysit alone reports it and stops on that PR. In Shipping it is a terminal block, and the stack stops at that layer and every layer above it.
   - `BLOCKER`. The branch conflicts or needs a rebase, a check failed, a review thread is unresolved, or `reviewDecision` is `CHANGES_REQUESTED`. A review can request changes with no inline thread, so `CHANGES_REQUESTED` blocks even when `unresolvedThreads` is 0.
   - `WAIT`. A check is pending or has not registered yet, as right after a push, `reviewDecision` is `REVIEW_REQUIRED`, or a merge queue, auto-merge or a person holds the merge.
-  - `READY`. Checks pass, no thread is open, `reviewDecision` is `APPROVED` or `null`, and `mergeability` is clean.
+  - `READY`. Checks pass, no thread is open, `reviewDecision` is `APPROVED` or `null`, and `mergeability` reads `mergeable`.
 
   When `pull_request_list` is absent or omits `reviewDecision`, the review state is unknown. So is a requested reviewer that T3's response does not name. Never assume approval or invent a reviewer's name. An unknown review state is never `READY`, so report what is unknown and hand back.
 
