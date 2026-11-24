@@ -24,7 +24,6 @@ const agentOrDelegate = /^(Agent|(mcp__)?t3-code__delegate_task)$/;
 const native = (role, model = () => true) => (input, ctx) => input?.role === role
   && ownFamily(input.target?.providerInstanceId, ctx) && model(input.target?.model);
 const notOpus = (m) => !/opus/i.test(m ?? '');
-const isOpus = (m) => /opus/i.test(m ?? '');
 
 const noChildThread = none(t3('delegate_task'));
 // A non-Claude lead's native spawn is no lead call, so its child's own calls stand in for it. A Claude lead's always shows as `Agent`.
@@ -45,9 +44,10 @@ const seatProvider = (input) => input?.target?.providerInstanceId;
 const capsRead = some(t3('orchestrator_capabilities'), undefined, 'lead');
 const verifierSeat = { isolation: 'worktree', ...otherSeat };
 const codeAdversary = { subagent_type: 'general-purpose', model: (m) => m !== 'opus' };
-const judgmentAdversary = { subagent_type: 'general-purpose', model: 'opus' };
 const isCodeAdversary = (input) => input?.subagent_type === 'general-purpose' && input.model !== 'opus';
 const noNativeCodeAdversary = none(agentOrDelegate, (input, ctx) => isCodeAdversary(input) || native('review', notOpus)(input, ctx), 'lead');
+const isNativeReviewAdversary = (input, ctx) => input?.subagent_type === 'general-purpose' || native('review')(input, ctx);
+const adversaryKey = (input, i) => input?.clientRequestId || `call ${i + 1}`;
 const countsCommits = /rev-list|\bgit\b[^|]*\blog\b[^|]*\|\s*wc\s+-l/;
 const noLegacyWatcher = none('Bash', { command: /\bwatch-pr\b|\bgh\s+pr\b/ });
 const shortInterval = { schedule: { type: 'interval', everyMs: (ms) => !(ms >= 60_000) } };
@@ -143,6 +143,30 @@ const providerCells = [
 ];
 const target = (t) => `${t.providerInstanceId}/${t.model}`;
 const onTarget = (t) => (c) => c.providerInstanceId === t.providerInstanceId && c.model === t.model;
+
+const isNativeVerifier = (call, ctx) => agentOrDelegate.test(call.name)
+  && (call.input?.subagent_type === 'orbit:verifier' || native('test')(call.input, ctx));
+const noNativeVerifier = {
+  state: (lane, ctx) => {
+    const { toolCalls, threads } = lane;
+    if (!toolCalls) return { ok: false, why: 'no toolCalls, so the lead session was not read' };
+    const leadCall = toolCalls.findIndex((call) => !call.sidechain && isNativeVerifier(call, ctx));
+    if (leadCall >= 0) return { ok: false, why: `call ${leadCall + 1} ${toolCalls[leadCall].name} by lead` };
+    if (Array.isArray(threads)) {
+      const nativeChild = threads.find((t) => {
+        if (!t.parentThreadId) return false;
+        const f = familyOf(t.providerInstanceId) ?? familyOf(t.model) ?? t.providerInstanceId;
+        return !f || f === ctx.leadFamily;
+      });
+      return nativeChild ? { ok: false, why: `native child thread on ${target(nativeChild)}` } : { ok: true, why: 'no native verifier call or child thread' };
+    }
+    // Without threads, a non-Claude lead's native child shows only as sidechain calls.
+    const seated = toolCalls.some((call) => !call.sidechain && t3('delegate_task').test(call.name) && otherFamily(call.input?.target?.providerInstanceId, ctx));
+    const childCall = ctx.leadFamily === 'claude' || seated ? -1 : toolCalls.findIndex((call) => call.sidechain === true);
+    if (childCall >= 0) return { ok: false, why: `call ${childCall + 1} ${toolCalls[childCall].name} by child` };
+    return { ok: true, why: 'no native verifier call' };
+  },
+};
 
 const providerCellsProject = {
   name: 'provider-cells',
@@ -324,8 +348,8 @@ export const SCENARIOS = {
     checks: {
       'caps-read': capsRead,
       'no-seat': noSeat,
-      'no-native-replacement': noNativeCodeAdversary,
-      'judgment-adversary-ran': { anyOf: [some('Agent', judgmentAdversary, 'lead'), some(t3('delegate_task'), native('review', isOpus), 'lead')] },
+      'no-native-replacement': atMostOne(agentOrDelegate, isNativeReviewAdversary, 'lead', adversaryKey),
+      'judgment-adversary-ran': some(agentOrDelegate, isNativeReviewAdversary, 'lead'),
     },
   },
   'verifier-all-fail': {
@@ -335,7 +359,7 @@ export const SCENARIOS = {
     checks: {
       'caps-read': capsRead,
       'no-seat': noSeat,
-      'no-native-verifier': none(agentOrDelegate, (input, ctx) => input?.subagent_type === 'orbit:verifier' || native('test')(input, ctx), 'lead'),
+      'no-native-verifier': noNativeVerifier,
     },
   },
   'watch-pr-wait': {

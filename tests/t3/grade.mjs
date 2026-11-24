@@ -50,7 +50,10 @@ function evaluate(expect, toolCalls, ctx) {
   const wanted = `${by === 'any' ? '' : `${by} `}call ${String(name)}${input === undefined ? '' : ` with ${show(input)}`}`;
   if (want === 'atMostOne') {
     const first = new Map();
-    for (const h of hits) if (!first.has(key(h.call.input))) first.set(key(h.call.input), h);
+    for (const h of hits) {
+      const k = key(h.call.input, h.i);
+      if (!first.has(k)) first.set(k, h);
+    }
     const seen = [...first].map(([k, h]) => `${describe(h)} on ${JSON.stringify(k)}`);
     return { ok: seen.length <= 1, why: seen.length ? seen.join(' and ') : `no ${wanted}` };
   }
@@ -74,7 +77,7 @@ export function gradeLane(lane) {
   return Object.entries(checks).map(([check, expect]) => {
     if (!graded) return { check, verdict: 'FAIL', why: notGraded };
     if (!expect.state && !toolCalls) return { check, verdict: 'FAIL', why: 'no toolCalls, so the lead session was not read' };
-    const { ok, why } = expect.state ? expect.state(lane) : evaluate(expect, toolCalls, ctx);
+    const { ok, why } = expect.state ? expect.state(lane, ctx) : evaluate(expect, toolCalls, ctx);
     return { check, verdict: ok ? 'PASS' : 'FAIL', why };
   });
 }
