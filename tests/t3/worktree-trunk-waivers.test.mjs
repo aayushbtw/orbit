@@ -161,7 +161,24 @@ test('#130 doctor passes a trunk-default repo without reporting origin/main miss
     assert.doesNotMatch(withLine.stdout, /origin\/main missing/);
 
     const unset = doctor(headlessClone(dir, 'no-head'));
-    assert.doesNotMatch(unset.stdout, /origin\/main missing/, 'unset origin/HEAD never claims origin/main is missing');
+    assert.doesNotMatch(unset.stdout, /origin\/main\b.*missing/, 'unset origin/HEAD never claims origin/main is missing');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('#130 doctor reads the Trunk line only inside ## Workflow and allows a trailing note', () => {
+  const dir = trunkRemote();
+  try {
+    const scoped = headlessClone(dir, 'scoped');
+    writeFileSync(join(scoped, 'AGENTS.md'), '## Notes\n\n- Trunk: stale\n\n## Workflow\n\n- Trunk: trunk\n\n## Other\n\n- Trunk: other\n');
+    const out = doctor(scoped).stdout;
+    assert.match(out, /^ok trunk origin\/trunk$/m, 'Trunk line inside ## Workflow wins');
+    assert.doesNotMatch(out, /origin\/stale/, 'Trunk line outside ## Workflow is ignored');
+
+    const noted = headlessClone(dir, 'noted');
+    writeFileSync(join(noted, 'AGENTS.md'), '## Workflow\n\n- Trunk: `trunk`. Default branch.\n');
+    assert.match(doctor(noted).stdout, /^ok trunk origin\/trunk$/m, 'trailing note after the branch is ignored');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

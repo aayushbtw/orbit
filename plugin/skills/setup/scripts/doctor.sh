@@ -22,8 +22,20 @@ done
 
 if command -v git >/dev/null 2>&1 && root=$(git rev-parse --show-toplevel 2>/dev/null); then
 	echo "ok git repo $root"
-	trunk=$(sed -nE 's/^- Trunk: `?([^` ]*[^` .])`?\.?[[:space:]]*$/\1/p' "$root/AGENTS.md" "$root/CLAUDE.md" 2>/dev/null | head -n 1)
+	trunk=$(awk '
+		FNR == 1 { w = 0 }
+		/^## Workflow([[:space:]]|$)/ { w = 1; next }
+		/^## / { w = 0 }
+		w && /^- Trunk: / {
+			s = $0
+			sub(/^- Trunk: `?/, "", s)
+			sub(/[`[:space:]].*$/, "", s)
+			sub(/\.$/, "", s)
+			if (s != "") { print s; exit }
+		}
+	' "$root/AGENTS.md" "$root/CLAUDE.md" 2>/dev/null)
 	[ -n "$trunk" ] || trunk=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')
+		[ -n "$trunk" ] || trunk=$(git ls-remote --symref origin HEAD 2>/dev/null | sed -nE 's|^ref: refs/heads/([^[:space:]]+)[[:space:]]+HEAD$|\1|p')
 	if [ -n "$trunk" ] && git rev-parse --verify --quiet "refs/remotes/origin/$trunk" >/dev/null; then
 		echo "ok trunk origin/$trunk"
 	elif [ -n "$trunk" ]; then
