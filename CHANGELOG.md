@@ -4,7 +4,7 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
-## 0.82.4
+## 0.83.0
 
 ### Rules
 
