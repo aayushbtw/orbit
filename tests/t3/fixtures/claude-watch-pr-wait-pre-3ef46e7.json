@@ -1,0 +1,86 @@
+{
+  "scenario": "watch-pr-wait",
+  "message": "Hillclimb wake step test. Load the orbit hillclimb flow with /orbit:playbook hillclimb only to read it, and do not start a hillclimb. Assume an unattended hillclimb run whose next iteration waits on CI for PR https://github.com/aayushbtw/orbit-t3-lane-ci/pull/1. Apply only the step 5 wake mechanism to that PR event: arm the wake, say which tools you used, then end your turn. Make no file changes and push nothing.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent",
+    "model": "claude-opus-5-5"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "orbit-lane-hillclimb-wa-8d91928f07af12fb/618fedd7.jsonl",
+    "relabeled": true,
+    "note": "Hillclimb wake step lane before 3ef46e7 removed watch-pr. The lead ran the watcher, then armed watch_pull_request itself. no-legacy-watcher fails.",
+    "expect": {
+      "lead-watches": "PASS",
+      "no-child-watches": "PASS",
+      "no-legacy-watcher": "FAIL"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Skill",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat $TMPDIR/orbit-lane-8869f9b3/plugin/skills/playbook/playbooks/hillclimb.md $TMPDIR/orbit-lane-8869f9b3/plugin/references/t3-host.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "ToolSearch",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "rg -n -A12 \"^6\\.\" $TMPDIR/orbit-lane-8869f9b3/plugin/skills/playbook/playbooks/babysit.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "$TMPDIR/orbit-lane-8869f9b3/plugin/skills/playbook/scripts/watch-pr/watch-pr https://github.com/aayushbtw/orbit-t3-lane-ci/pull/1 --timeout 120"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "$TMPDIR/orbit-lane-8869f9b3/plugin/skills/playbook/scripts/watch-pr/watch-pr --help"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "$TMPDIR/orbit-lane-8869f9b3/plugin/skills/playbook/scripts/watch-pr/watch-pr --owner aayushbtw --repo orbit-t3-lane-ci --pr 1 --timeout 120"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__watch_pull_request",
+      "input": {
+        "url": "https://github.com/aayushbtw/orbit-t3-lane-ci/pull/1"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "ToolSearch",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "mcp__t3-code__unwatch_pull_request",
+      "input": {
+        "url": "https://github.com/aayushbtw/orbit-t3-lane-ci/pull/1"
+      },
+      "sidechain": false
+    }
+  ]
+}

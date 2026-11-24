@@ -7,13 +7,14 @@
     "model": "claude-opus-5-5"
   },
   "fixture": {
-    "origin": "real",
-    "source": "orbit-lane-hillclimb-wa-8d91928f07af12fb/618fedd7.jsonl",
+    "origin": "hand-built",
+    "source": "claude-watch-pr-wait-pre-3ef46e7.json",
     "relabeled": true,
-    "note": "Hillclimb wake step lane. The lead ran the watcher, then armed watch_pull_request itself.",
+    "note": "The same lane with the watch-pr runs replaced by one pull_request_read. The lead arms watch_pull_request itself.",
     "expect": {
       "lead-watches": "PASS",
-      "no-child-watches": "PASS"
+      "no-child-watches": "PASS",
+      "no-legacy-watcher": "PASS"
     }
   },
   "toolCalls": [
@@ -30,6 +31,11 @@
       "sidechain": false
     },
     {
+      "name": "mcp__t3-code__pull_request_read",
+      "input": {},
+      "sidechain": false
+    },
+    {
       "name": "ToolSearch",
       "input": {},
       "sidechain": false
@@ -38,27 +44,6 @@
       "name": "Bash",
       "input": {
         "command": "rg -n -A12 \"^6\\.\" $TMPDIR/orbit-lane-8869f9b3/plugin/skills/playbook/playbooks/babysit.md"
-      },
-      "sidechain": false
-    },
-    {
-      "name": "Bash",
-      "input": {
-        "command": "$TMPDIR/orbit-lane-8869f9b3/plugin/skills/playbook/scripts/watch-pr/watch-pr https://github.com/aayushbtw/orbit-t3-lane-ci/pull/1 --timeout 120"
-      },
-      "sidechain": false
-    },
-    {
-      "name": "Bash",
-      "input": {
-        "command": "$TMPDIR/orbit-lane-8869f9b3/plugin/skills/playbook/scripts/watch-pr/watch-pr --help"
-      },
-      "sidechain": false
-    },
-    {
-      "name": "Bash",
-      "input": {
-        "command": "$TMPDIR/orbit-lane-8869f9b3/plugin/skills/playbook/scripts/watch-pr/watch-pr --owner aayushbtw --repo orbit-t3-lane-ci --pr 1 --timeout 120"
       },
       "sidechain": false
     },

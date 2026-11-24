@@ -35,6 +35,7 @@ import {
   getEffectiveAssignments,
   listProfiles,
   loadConfig,
+  loadConfigForHostWrite,
   normalizeTaskName,
   resetAssignments,
   saveConfig,
@@ -754,9 +755,9 @@ hostsCommand.command('enable <hosts...>')
   .option('--json', 'print JSON')
   .action((rawHosts: string[], options: { json?: boolean }, cmd: Command) => {
     const targets = [...new Set(rawHosts.map(parseHostId))];
+    const cfg = loadConfigForHostWrite(home).config;
     const ctx = makeHostContext();
     const results = targets.map((h) => applyHost(h, ctx));
-    const cfg = loadConfig(home).config;
     setConfigHosts(home, [...(cfg.hosts ?? []), ...targets]);
     output(results, Boolean(options.json || cmd.optsWithGlobals().json), () => results.map((r) => `${r.host}: ${r.detail}`).join('\n'));
   });
@@ -766,7 +767,7 @@ hostsCommand.command('disable <hosts...>')
   .option('--json', 'print JSON')
   .action((rawHosts: string[], options: { json?: boolean }, cmd: Command) => {
     const targets = [...new Set(rawHosts.map(parseHostId))];
-    const cfg = loadConfig(home).config;
+    const cfg = loadConfigForHostWrite(home).config;
     const remaining = (cfg.hosts ?? []).filter((h) => !targets.includes(h));
     setConfigHosts(home, remaining);
     const ctx = makeHostContext();

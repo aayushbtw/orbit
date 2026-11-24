@@ -18,9 +18,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { checkNpmUpdate, globalOrbitBin, installBundle, pruneReleases, runGlobalOrbitInstall, stageRelease } from '../src/bundle.js';
+import { setConfigHosts } from '../src/config.js';
 const cli = fileURLToPath(new URL('../dist/cli.mjs', import.meta.url));
 const bundleDir = fileURLToPath(new URL('../dist/plugin/', import.meta.url));
 const worktreeRoot = fileURLToPath(new URL('../..', import.meta.url));
+const version: string = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
+const nextVersion = version.replace(/^(\d+)\.(\d+)\.\d+$/, (_, major, minor) => `${major}.${Number(minor) + 1}.0`);
 type Row = { host: string; action: string };
 type Item = Record<string, any>;
 const headings = '| Task | Use for | Model | Effort |\n| --- | --- | --- | --- |\n';
@@ -152,21 +155,21 @@ test('link, unlink, use, and prune manage releases and current symlink safely', 
   stageRelease(bundleDir, home, '0.76.0');
   stageRelease(bundleDir, home, '0.77.0');
   stageRelease(bundleDir, home, '0.78.0');
-  installBundle(bundleDir, home, '0.79.0');
+  installBundle(bundleDir, home, version);
 
   const linked = json('link', worktreeRoot);
   expect(linked.repoPath).toBe(realpathSync(worktreeRoot));
   expect(json('status').bundle).toMatchObject({ linked: true });
 
   const unlinked = json('unlink');
-  expect(unlinked).toMatchObject({ unlinked: true, activeVersion: '0.79.0' });
-  expect(json('status').bundle).toMatchObject({ linked: false, activeVersion: '0.79.0' });
+  expect(unlinked).toMatchObject({ unlinked: true, activeVersion: version });
+  expect(json('status').bundle).toMatchObject({ linked: false, activeVersion: version });
 
   const used = json('use', '0.77.0');
   expect(used.version).toBe('0.77.0');
 
   const pruned = pruneReleases(home, 2);
-  // Keeps 2 newest (0.79.0, 0.78.0) plus currently active 0.77.0; drops 0.76.0.
+  // Keeps the 2 newest (the packaged version and 0.78.0) plus the active 0.77.0, and drops 0.76.0.
   expect(pruned).toEqual(['0.76.0']);
   expect(existsSync(join(home, '.config/orbit/releases/0.77.0'))).toBe(true);
   expect(existsSync(join(home, '.config/orbit/releases/0.76.0'))).toBe(false);
@@ -323,7 +326,7 @@ test('externally managed Claude and Grok installs are reported and never touched
   expect(skippedHosts(ok('link', worktreeRoot).hosts)).toEqual(['claude', 'grok']);
   expect(skippedHosts(ok('unlink').hosts)).toEqual(['claude', 'grok']);
   ok('use', '0.76.0');
-  expect(skippedHosts(ok('update', '0.79.0', '--yes').hosts)).toEqual(['claude', 'grok']);
+  expect(skippedHosts(ok('update', version, '--yes').hosts)).toEqual(['claude', 'grok']);
   expect(skippedHosts(ok('hosts', 'sync', '--all'))).toEqual(['claude', 'grok']);
 
   const doctor = ok('doctor', '--fix');
@@ -357,18 +360,18 @@ test('an Orbit-managed stale Claude marketplace is still updated and uninstalled
 });
 
 test('update takes [targetVersion] or --to instead of colliding with --version', () => {
-  const expected = { currentVersion: '0.79.0', latestVersion: '0.80.0', updateAvailable: true };
-  expect(json('update', '0.80.0', '--check')).toEqual(expected);
-  expect(json('update', '--to', 'v0.80.0', '--check')).toEqual(expected);
-  expect(json('update', 'v0.80.0', '--to', '0.80.0', '--check')).toEqual(expected);
+  const expected = { currentVersion: version, latestVersion: nextVersion, updateAvailable: true };
+  expect(json('update', nextVersion, '--check')).toEqual(expected);
+  expect(json('update', '--to', `v${nextVersion}`, '--check')).toEqual(expected);
+  expect(json('update', `v${nextVersion}`, '--to', nextVersion, '--check')).toEqual(expected);
 
-  const conflict = run('update', '0.80.0', '--to', '0.81.0', '--check');
+  const conflict = run('update', nextVersion, '--to', '9.9.9', '--check');
   expect(conflict.status).toBe(1);
   expect(conflict.stderr).toContain('Conflicting target versions');
   const invalid = run('update', 'newest', '--check');
   expect(invalid.status).toBe(1);
   expect(invalid.stderr).toContain('Invalid target version');
-  expect(run('--version').stdout.trim()).toBe('0.79.0');
+  expect(run('--version').stdout.trim()).toBe(version);
   expect(run('update', '--help').stdout).toContain('--to <version>');
 });
 
@@ -461,6 +464,23 @@ test('malformed legacy models.md is reported and healed by models set instead of
   expect(json('status').legacyConfigError).toBeUndefined();
   expect(json('doctor').legacyConfigError).toBeUndefined();
   expect(readFileSync(legacy, 'utf8')).toContain('judgment, codex');
+});
+
+test('hosts enable, hosts disable and setConfigHosts refuse to drop a malformed legacy models.md', () => {
+  const legacyText = headings + '| interrogate | x | judgment, codex | |\n';
+  const legacy = seed('.config/orbit/models.md', legacyText);
+  const configPath = join(home, '.config/orbit/config.json');
+  for (const args of [['hosts', 'enable', 'codex'], ['hosts', 'disable', 'codex']]) {
+    const { status, stderr } = run(...args);
+    expect(status).toBe(1);
+    expect(stderr).toContain(legacy);
+    expect(stderr).toContain('orbit models reset');
+  }
+  expect(() => setConfigHosts(home, ['codex'])).toThrow(legacy);
+  expect(existsSync(configPath)).toBe(false);
+  expect(existsSync(join(home, '.codex'))).toBe(false);
+  expect(readFileSync(legacy, 'utf8')).toBe(legacyText);
+  expect(json('status').legacyConfigError).toContain(legacy);
 });
 
 test('CLI role names, defaults and config sources match what plugin rules tell the lead', () => {

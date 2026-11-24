@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { LaneError, gradeLane, parseLane } from './grade.mjs';
-import { SCENARIOS } from './scenarios.mjs';
+import { SCENARIOS, familyOf, leadFamily } from './scenarios.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dir = join(here, 'fixtures');
@@ -66,24 +66,76 @@ test('a lane with no toolCalls fails every check that applies', () => {
 test('a child that watches the PR fails no-child-watches; the lead watch still passes', () => {
   const watch = { name: 'mcp__t3-code__watch_pull_request', input: { url: 'https://github.com/o/r/pull/7' } };
   const toolCalls = [{ ...watch, sidechain: false }, { ...watch, sidechain: true }];
-  assert.deepEqual(verdicts(lane({ scenario: 'watch-pr-wait', toolCalls })), { 'lead-watches': 'PASS', 'no-child-watches': 'FAIL' });
+  assert.deepEqual(verdicts(lane({ scenario: 'watch-pr-wait', toolCalls })), { 'lead-watches': 'PASS', 'no-child-watches': 'FAIL', 'no-legacy-watcher': 'PASS' });
 });
 
-test('no-sleeping-watcher flags only a watcher run that polls', () => {
-  const watcher = '/p/skills/playbook/scripts/watch-pr/watch-pr';
-  const grade = (command) => verdicts(lane({ scenario: 'babysit-wait', toolCalls: [{ name: 'Bash', input: { command }, sidechain: false }] }))['no-sleeping-watcher'];
-  assert.equal(grade(`${watcher} --owner o --repo r --pr 7`), 'FAIL');
-  assert.equal(grade('cd /p/skills/playbook/scripts/watch-pr && ./watch-pr --pr 7'), 'FAIL');
-  assert.equal(grade(`${watcher} --owner o --repo r --pr 7 --once`), 'PASS');
-  assert.equal(grade('cd /p/skills/playbook/scripts/watch-pr && ./watch-pr --owner o --repo r --pr 7 --once'), 'PASS');
-  assert.equal(grade(`"${watcher}" --pr 7 --once 2>&1 | tail -5`), 'PASS');
-  assert.equal(grade(`${watcher} --pr 7 --status-only`), 'PASS');
-  assert.equal(grade(`${watcher} --help`), 'PASS');
-  assert.equal(grade(`FOO=1 ${watcher} --pr 7`), 'FAIL');
-  assert.equal(grade(`bash -c "${watcher} --pr 7"`), 'FAIL');
-  assert.equal(grade(`ls ${watcher}`), 'PASS');
-  assert.equal(grade(`cat ${watcher}`), 'PASS');
-  assert.equal(grade(`test -x ${watcher} && echo ok`), 'PASS');
+test('babysit-wait passes pull_request_read, a lead watch and an unwatch, and fails any watch-pr or gh pr run', () => {
+  const url = 'https://github.com/o/r/pull/7';
+  const calls = [
+    { name: 'mcp__t3-code__pull_request_read', input: { url, include: ['checks', 'threads'] }, sidechain: false },
+    { name: 'mcp__t3-code__watch_pull_request', input: { url, until: 'checks' }, sidechain: false },
+    { name: 'mcp__t3-code__unwatch_pull_request', input: { url }, sidechain: false },
+  ];
+  const all = { 'pr-read': 'PASS', 'no-legacy-watcher': 'PASS', 'lead-watches': 'PASS', 'unwatch-at-ready': 'PASS', 'no-child-watches': 'PASS' };
+  assert.deepEqual(verdicts(lane({ scenario: 'babysit-wait', toolCalls: calls })), all);
+  const grade = (command, sidechain = false) => verdicts(lane({ scenario: 'babysit-wait', toolCalls: [...calls, { name: 'Bash', input: { command }, sidechain }] }))['no-legacy-watcher'];
+  assert.equal(grade('/p/skills/playbook/scripts/watch-pr/watch-pr --pr 7 --once'), 'FAIL');
+  assert.equal(grade('gh pr checks 7 --watch'), 'FAIL');
+  assert.equal(grade('gh pr view 7', true), 'FAIL');
+  assert.equal(grade('git status --short'), 'PASS');
+  assert.equal(verdicts(lane({ scenario: 'babysit-wait', toolCalls: calls.slice(1) }))['pr-read'], 'FAIL');
+  assert.equal(verdicts(lane({ scenario: 'babysit-wait', toolCalls: [{ ...calls[0], sidechain: true }, ...calls.slice(1)] }))['pr-read'], 'FAIL');
+});
+
+test('familyOf and leadFamily map provider ids and models to families, defaulting to claude', () => {
+  assert.equal(familyOf('claudeAgent'), 'claude');
+  assert.equal(familyOf('codex'), 'codex');
+  assert.equal(familyOf(undefined, 'gpt-6.1-sol'), 'codex');
+  assert.equal(familyOf('antigravity'), 'antigravity');
+  assert.equal(familyOf('gemini-pro-orchestrator-neon'), 'antigravity');
+  assert.equal(familyOf('grok'), 'grok');
+  assert.equal(familyOf('cursor'), null);
+  assert.equal(leadFamily(null), 'claude');
+  assert.equal(leadFamily({ providerInstanceId: 'codex', model: 'gpt-6.1-sol' }), 'codex');
+  assert.equal(leadFamily({ providerInstanceId: 'work', model: 'gemini-4-neon' }), 'antigravity');
+  assert.equal(leadFamily({ providerInstanceId: 'cursor', model: 'composer' }), 'cursor');
+});
+
+test('seats are graded against the lead family, so a Codex lead needs a non-Codex seat', () => {
+  const seatCall = (providerInstanceId, model) => ({ name: 'mcp__t3-code__delegate_task', input: { role: 'review', mode: 'async', clientRequestId: 'r1', target: { providerInstanceId, model } }, sidechain: false });
+  const codexLead = { providerInstanceId: 'codex', model: 'gpt-6.1-sol' };
+  const grade = (scenario, toolCalls, thread) => verdicts(lane({ scenario, toolCalls, thread }));
+  assert.deepEqual(grade('review-seat', [seatCall('codex', 'gpt-6.1-sol')], codexLead), { 'seat-other-family': 'FAIL', 'request-id': 'FAIL' });
+  assert.deepEqual(grade('review-seat', [seatCall('claudeAgent', 'claude-opus-5-5')], codexLead), { 'seat-other-family': 'PASS', 'request-id': 'PASS' });
+  assert.deepEqual(grade('review-seat', [seatCall('claudeAgent', 'claude-opus-5-5')]), { 'seat-other-family': 'FAIL', 'request-id': 'FAIL' });
+  const listed = grade('seat-listed', [seatCall('grok', 'grok-4')], codexLead);
+  assert.equal(listed['seat-on-first-listed'], 'PASS', 'a Codex lead skips the codex entry and takes grok');
+  assert.equal(listed['only-listed-seats'], 'PASS');
+  assert.equal(grade('seat-listed', [seatCall('codex', 'gpt-5')], codexLead)['seat-on-first-listed'], 'FAIL');
+  assert.equal(grade('seat-listed', [seatCall('grok', 'gpt-5')], codexLead)['seat-on-first-listed'], 'FAIL', 'a model of the lead family is no outside seat');
+  assert.equal(grade('seat-listed', [seatCall('antigravity', 'gemini-4-neon')], codexLead)['only-listed-seats'], 'FAIL');
+  assert.equal(grade('seat-listed', [seatCall('codex', 'gpt-5')], codexLead)['no-native-code-adversary'], 'FAIL', 'a same-family review delegate is a native code adversary');
+  const verifier = { name: 'mcp__t3-code__delegate_task', input: { role: 'test', isolation: 'worktree', target: { providerInstanceId: 'claudeAgent' } }, sidechain: false };
+  assert.deepEqual(grade('verifier-seat', [verifier], codexLead), { 'verifier-ran': 'PASS', 'seat-other-family': 'PASS' });
+  assert.deepEqual(grade('verifier-seat', [verifier], { providerInstanceId: 'claudeAgent', model: 'claude-opus-5-5' }), { 'verifier-ran': 'FAIL', 'seat-other-family': 'FAIL' });
+});
+
+test('models-resolve passes a lead that runs orbit models resolve and puts the unit on the .orbit/config.json target', () => {
+  const threadOf = (threadId, parentThreadId, providerInstanceId, model) => ({ threadId, parentThreadId, providerInstanceId, model });
+  const resolve = { name: 'Bash', input: { command: 'orbit models resolve writing --json' }, sidechain: false };
+  const grade = (providerInstanceId, children, toolCalls = [resolve]) => verdicts(lane({
+    scenario: 'models-resolve', toolCalls, thread: { providerInstanceId, model: 'm' }, threads: [threadOf('lead', null, providerInstanceId, 'm'), ...children],
+  }));
+  assert.deepEqual(grade('claudeAgent', [threadOf('c', 'lead', 'codex', 'gpt-6.1-sol')]), { 'ran-resolve': 'PASS', 'config-target-ran': 'PASS', 'agents-row-shadowed': 'PASS' });
+  assert.deepEqual(grade('claudeAgent', [threadOf('a', 'lead', 'antigravity', 'gemini-4-neon')], []), { 'ran-resolve': 'FAIL', 'config-target-ran': 'FAIL', 'agents-row-shadowed': 'FAIL' });
+  assert.deepEqual(grade('codex', []), { 'ran-resolve': 'PASS', 'config-target-ran': 'PASS', 'agents-row-shadowed': 'PASS' });
+  assert.equal(grade('claudeAgent', [], [{ ...resolve, input: { command: 'orbit models resolve code --json' } }])['ran-resolve'], 'FAIL');
+});
+
+test('a waiting lane counts as asking only when every pending call is a question tool', () => {
+  const waiting = (pendingQuestion) => verdicts(lane({ scenario: 'verifier-all-fail', status: 'waiting', pendingQuestion, toolCalls: [{ name: 'mcp__t3-code__orchestrator_capabilities', input: {}, sidechain: false }] }))['caps-read'];
+  for (const name of ['AskUserQuestion', 'ask_question', 'request_user_input']) assert.equal(waiting([{ name }]), 'PASS', name);
+  assert.equal(waiting([{ name: 'ask_question' }, { name: 'Bash' }]), 'FAIL');
 });
 
 test('a clientRequestId on a different call than the other-family seat fails request-id', () => {

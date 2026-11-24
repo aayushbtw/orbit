@@ -79,9 +79,10 @@ async function killLauncher(argv, env) {
 
 const PAGE = 2;
 
-async function t3Server(onCall, listed) {
+async function t3Server(onCall, listed, activity, pending) {
   const organized = [];
   const lists = [];
+  const reads = [];
   const server = createServer((req, res) => {
     let body = '';
     req.on('data', (d) => { body += d; });
@@ -94,6 +95,14 @@ async function t3Server(onCall, listed) {
         const { cursor } = params.arguments;
         const page = { threads: listed.slice(cursor, cursor + PAGE), nextCursor: cursor + PAGE < listed.length ? cursor + PAGE : null };
         result = { content: [{ type: 'text', text: JSON.stringify(page) }] };
+      } else if (method === 'tools/call' && params.name === 't3_thread_read') {
+        reads.push(params.arguments);
+        const { threadId, afterPosition } = params.arguments;
+        result = activity[threadId] === 'error'
+          ? { isError: true, content: [{ type: 'text', text: 'activity unavailable' }] }
+          : { content: [], structuredContent: { items: (activity[threadId] ?? []).filter((i) => i.position > afterPosition), hasMore: false, nextPosition: null } };
+      } else if (method === 'tools/call' && params.name === 't3_pending_request') {
+        result = { content: [], structuredContent: { requests: (pending[params.arguments.threadId] ?? []).map((requestId) => ({ requestId })) } };
       } else if (method === 'tools/call') {
         organized.push(params.arguments);
         await onCall();
@@ -105,7 +114,7 @@ async function t3Server(onCall, listed) {
     });
   });
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
-  return { organized, lists, origin: `http://127.0.0.1:${server.address().port}`, close: () => server.close() };
+  return { organized, lists, reads, origin: `http://127.0.0.1:${server.address().port}`, close: () => server.close() };
 }
 
 function runLane(argv, env, started = () => {}) {
@@ -118,7 +127,7 @@ function runLane(argv, env, started = () => {}) {
   });
 }
 
-async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0, kill = false, interruptOrganize = false, starts = true, listed = [], inspect = () => null } = {}) {
+async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0, kill = false, interruptOrganize = false, starts = true, listed = [], activity = {}, pending = {}, inspect = () => null } = {}) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'orbit-lane-test-')));
   let launcherErr = '';
   let interrupted = false;
@@ -127,7 +136,7 @@ async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0,
     interrupted = true;
     process.kill(Number(launcherErr.match(/worker (\d+)/)[1]), 'SIGTERM');
     await sleep(500);
-  }, listed);
+  }, listed, activity, pending);
   try {
     mkdirSync(join(root, 't3home', 'userdata'), { recursive: true });
     writeFileSync(join(root, 't3home', 'userdata', 'server-runtime.json'), JSON.stringify({ origin: t3.origin }));
@@ -158,7 +167,7 @@ async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0,
     const after = branches(project);
     const seen = await inspect({ project, out });
     if (starts) await until(() => existsSync(`${env.STUB_STATE}.done`), 'the stub agent finished');
-    return { root, base, before, after, worktrees, out, seen, saw: tryRead(env.STUB_SAW)?.trim(), organized: t3.organized, lists: t3.lists, auth: tryRead(`${env.STUB_STATE}.auth`) };
+    return { root, base, before, after, worktrees, out, seen, saw: tryRead(env.STUB_SAW)?.trim(), organized: t3.organized, lists: t3.lists, reads: t3.reads, auth: tryRead(`${env.STUB_STATE}.auth`) };
   } finally {
     t3.close();
     rmSync(root, { recursive: true, force: true });
@@ -326,7 +335,7 @@ test('a lane whose run completed lists its threads, settles its thread and revok
   const { out, organized, auth } = await withProject([], 'true');
   assert.equal(out.status, 'completed');
   assert.deepEqual(organized, [{ threadId: 'stub-thread', action: 'settle' }]);
-  assert.equal(auth, sessions(2));
+  assert.equal(auth, sessions(3), 'one session each for t3_thread_list, the activity read and the settle');
 });
 
 test('a lane whose thread waits on its own question archives the thread', async () => {
@@ -335,13 +344,13 @@ test('a lane whose thread waits on its own question archives the thread', async 
   });
   assert.equal(out.status, 'waiting');
   assert.deepEqual(organized, [{ threadId: 'stub-thread', action: 'archive' }]);
-  assert.equal(auth, sessions(2));
+  assert.equal(auth, sessions(3));
 });
 
 test('a signal while the lane settles its thread issues and revokes one session for the settle', async () => {
   const { organized, auth } = await withProject([], 'true', { interruptOrganize: true });
   assert.deepEqual(organized, [{ threadId: 'stub-thread', action: 'settle' }]);
-  assert.equal(auth, sessions(2));
+  assert.equal(auth, sessions(3));
 });
 
 test('a lane whose thread still runs at the deadline leaves the thread alone', async () => {
@@ -350,7 +359,7 @@ test('a lane whose thread still runs at the deadline leaves the thread alone', a
   });
   assert.equal(out.status, 'timeout');
   assert.deepEqual(organized, []);
-  assert.equal(auth, sessions(1));
+  assert.equal(auth, sessions(2));
 });
 
 test("a non-Claude lead's children come from t3_thread_list with subagents, each with its provider and model", async () => {
@@ -362,8 +371,17 @@ test("a non-Claude lead's children come from t3_thread_list with subagents, each
     thread('advisor-child', 'stub-thread', 'claudeAgent', 'claude-fable-5-2'),
     thread('grandchild', 'code-child', 'claudeAgent', 'claude-opus-5-5'),
   ];
-  const { out, organized, lists } = await withProject([], 'true', { args: ['--provider', 'antigravity', '--model', 'stub'], listed });
-  assert.equal(out.toolCalls, null);
+  const activity = {
+    'stub-thread': [{ position: 0, itemId: 'a', type: 'dynamic_tool', status: 'completed', text: JSON.stringify({ toolName: 't3-code.delegate_task', input: { role: 'review' } }) }],
+    'grandchild': [{ position: 0, itemId: 'b', type: 'command_execution', status: 'completed', text: '$ /bin/zsh -lc "git status"\n' }],
+  };
+  const { out, organized, lists, reads } = await withProject([], 'true', { args: ['--provider', 'antigravity', '--model', 'stub'], listed, activity });
+  assert.equal(out.activitySource, 't3-activity');
+  assert.deepEqual(out.toolCalls, [
+    { name: 'mcp__t3-code__delegate_task', input: { role: 'review' }, sidechain: false },
+    { name: 'Bash', input: { command: 'git status' }, sidechain: true },
+  ]);
+  assert.deepEqual(reads.map((r) => [r.threadId, r.view, r.afterPosition]), [['stub-thread', 'activity', -1], ['code-child', 'activity', -1], ['advisor-child', 'activity', -1], ['grandchild', 'activity', -1]]);
   assert.deepEqual(out.threads.map(({ threadId, parentThreadId, providerInstanceId, model }) => [threadId, parentThreadId, providerInstanceId, model]), [
     ['stub-thread', null, 'stub', 'stub'],
     ['code-child', 'stub-thread', 'claudeAgent', 'claude-opus-5-5'],
@@ -374,11 +392,28 @@ test("a non-Claude lead's children come from t3_thread_list with subagents, each
   assert.deepEqual(organized.map((o) => o.threadId).sort(), ['advisor-child', 'code-child', 'grandchild', 'stub-thread']);
 });
 
-test('a lane with a non-Claude --provider runs its lead and records no tool calls', async () => {
+test('a lane with a non-Claude --provider reads its tool calls from T3 activity, with no session', async () => {
   const { out } = await withProject([], 'true', { args: ['--provider', 'codex', '--model', 'stub'] });
   assert.equal(out.status, 'completed');
-  assert.equal(out.toolCalls, null);
+  assert.equal(out.activitySource, 't3-activity');
+  assert.deepEqual(out.toolCalls, []);
   assert.equal(out.session, null);
+  assert.equal(out.pendingQuestion, null);
+});
+
+test("a waiting non-Claude lead's pending question comes from t3_pending_request", async () => {
+  const { out } = await withProject([], 'true', {
+    args: ['--timeout', '0.05'], env: { ORBIT_LANE_POLL_MS: '20', STUB_ASKS: '1' }, exit: 2, pending: { 'stub-thread': ['req-1'] },
+  });
+  assert.equal(out.status, 'waiting');
+  assert.deepEqual(out.pendingQuestion, [{ name: 'request_user_input', input: { requestId: 'req-1' } }]);
+});
+
+test('a lane whose T3 activity read fails keeps toolCalls null and still completes', async () => {
+  const { out } = await withProject([], 'true', { activity: { 'stub-thread': 'error' } });
+  assert.equal(out.status, 'completed');
+  assert.equal(out.activitySource, null);
+  assert.equal(out.toolCalls, null);
 });
 
 test('a lane branch name that differs from an existing branch only in case clashes', () => {

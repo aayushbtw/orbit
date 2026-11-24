@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { clash, deleteLaneBranches, isAncestor, laneBranches, listBranches, listWorktrees } from './branches.mjs';
 import { SCENARIOS } from './scenarios.mjs';
-import { CLAUDE_HOME, claude, isClaude } from './sessions.mjs';
+import { CLAUDE_HOME, claude, isClaude, pendingQuestions, readT3ActivityTree } from './sessions.mjs';
 
 const ORBIT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const LOCK = join(tmpdir(), 'orbit-lane.lock');
@@ -101,7 +101,7 @@ const result = {
   orbit: opts.installed ? 'installed' : 'head', marketplace: null, memoryDir,
   exit: 1, status: 'error', reply: null, error: null, wake: null, wakes: [],
   pendingQuestion: null, thread: null, threads: [], messages: [],
-  session: null, firstTurnInputTokens: null, toolCalls: null, branches: null, kept: null,
+  session: null, firstTurnInputTokens: null, activitySource: null, toolCalls: null, branches: null, kept: null,
 };
 
 function save() {
@@ -165,7 +165,10 @@ function scratchProject({ name, commits }) {
     const build = `${dir}.${id}`;
     run('git', ['init', '-q', '-b', 'main', build]);
     for (const { message, files } of commits) {
-      for (const [path, text] of Object.entries(files)) writeFileSync(join(build, path), text);
+      for (const [path, text] of Object.entries(files)) {
+        mkdirSync(dirname(join(build, path)), { recursive: true });
+        writeFileSync(join(build, path), text);
+      }
       run('git', ['-C', build, 'add', '-A']);
       run('git', ['-C', build, '-c', 'user.name=orbit lane', '-c', 'user.email=lane@orbit.invalid', '-c', 'commit.gpgsign=false', 'commit', '-q', '-m', message]);
     }
@@ -518,17 +521,29 @@ const sessionDirs = () => result.thread.worktreePath
   ? [result.thread.worktreePath]
   : [project, ...listWorktrees(project).map((w) => w.path).filter((path) => path.startsWith(join(project, '.claude', 'worktrees') + '/'))];
 
-function readSession({ providerInstanceId }) {
+async function readSession({ threadId, providerInstanceId }) {
   const dirs = sessionDirs();
   const lead = isClaude(providerInstanceId) && dirs.map((dir) => claude.lead(claude.sessions(dir, sessionCtx), dir, sessionCtx)).find(Boolean);
-  if (!lead) {
-    console.error(`warning: ${isClaude(providerInstanceId) ? `no Claude session for the lead in ${dirs.map((dir) => claude.where(dir, sessionCtx)).join(' or ')}` : `the lead runs on ${providerInstanceId}, and the harness reads only a Claude lead's session`}, so session, toolCalls and firstTurnInputTokens are null and only outcome checks grade this lane`);
+  if (lead) {
+    result.activitySource = 'claude-jsonl';
+    result.session = lead.file;
+    result.firstTurnInputTokens = lead.firstTurnInputTokens;
+    result.toolCalls = lead.toolCalls;
+    if (result.status === 'waiting') result.pendingQuestion = lead.pending.length ? lead.pending : null;
     return;
   }
-  result.session = lead.file;
-  result.firstTurnInputTokens = lead.firstTurnInputTokens;
-  result.toolCalls = lead.toolCalls;
-  if (result.status === 'waiting') result.pendingQuestion = lead.pending.length ? lead.pending : null;
+  const why = isClaude(providerInstanceId) ? `no Claude session for the lead in ${dirs.map((dir) => claude.where(dir, sessionCtx)).join(' or ')}` : `the lead runs on ${providerInstanceId}`;
+  try {
+    await withMcp(async (tool) => {
+      const { toolCalls, pending } = await readT3ActivityTree(tool, threadId, result.threads);
+      result.toolCalls = toolCalls;
+      result.activitySource = 't3-activity';
+      if (result.status === 'waiting') result.pendingQuestion = await pendingQuestions(tool, threadId, pending);
+    });
+    console.error(`${why}, so toolCalls come from t3_thread_read activity; session and firstTurnInputTokens stay null`);
+  } catch (e) {
+    console.error(`warning: ${why}, and t3_thread_read activity failed (${e.message}), so session, toolCalls and firstTurnInputTokens are null and only outcome checks grade this lane`);
+  }
 }
 
 function wakeRuns(threadId) {
@@ -613,7 +628,7 @@ async function lane() {
     await holdForWake(result.thread.threadId);
     await recordThreads(result.thread.threadId);
   }
-  readSession(result.thread);
+  await readSession(result.thread);
 }
 
 try {
