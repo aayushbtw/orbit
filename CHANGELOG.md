@@ -4,6 +4,24 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.80.0
+
+### T3 evals
+
+- The T3 lane harness grades a lead on any provider. A Codex, Antigravity or Grok lead, or a Claude lead with no local session file, gets its `toolCalls` from `t3_thread_read` with `view: "activity"` on the lead and every descendant thread. The harness pages from `afterPosition: -1`, stitches truncated items, unwraps Codex's `/bin/zsh -lc` commands into `Bash` calls and maps every T3 tool spelling to `mcp__t3-code__<tool>`. The lane JSON names the reader in `activitySource`, `claude-jsonl` or `t3-activity`. A waiting lead's question comes from unfinished question calls or from `t3_pending_request`.
+- Seat checks grade against the lead's family, read from `thread.providerInstanceId` and `thread.model`, so a Codex lead must put its seat outside Codex. A lane with no thread recorded counts as a Claude lead.
+- The grader accepts `AskUserQuestion`, `ask_question` and `request_user_input` as the lead's own question.
+- `babysit-wait` checks for `pull_request_read`, a lead watch and an unwatch, and fails any `watch-pr` or `gh pr` run. `watch-pr-wait` fails a `watch-pr` or `gh pr` run too. The real watch-pr-wait fixture is renamed `claude-watch-pr-wait-pre-3ef46e7.json`, and a hand-built copy that follows the rule takes its old name.
+- New `models-resolve` scenario. Its project sets the `writing` work type in both `.orbit/config.json` and `AGENTS.md`, so the lead must run `orbit models resolve writing --json` and run the unit on the `.orbit/config.json` target.
+
+### CLI
+
+- `orbit setup`, `orbit hosts enable` and `orbit hosts disable` refuse to write `config.json` while a legacy `models.md` does not parse, because the write would drop its rows. The error names the file and points at `orbit models set` or `orbit models reset`.
+
+### Docs
+
+- The guide and `docs/pstack-differences.md` no longer say the advisor runs on Fable or `judgment` on Opus by default. All five roles inherit the session model.
+
 ## 0.79.0
 
 ### Breaking or behavior changes

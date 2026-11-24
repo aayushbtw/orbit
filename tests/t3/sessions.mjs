@@ -58,3 +58,104 @@ export const claude = {
 };
 
 export const isClaude = (providerInstanceId) => providerInstanceId?.toLowerCase().startsWith('claude') === true;
+
+const PAGE_LIMIT = 100;
+const MAX_CHARS = 20_000;
+const MAX_PAGES = 1_000;
+const MAX_TEXT_READS = 50;
+const TOOL_ITEMS = new Set(['command_execution', 'dynamic_tool', 'mcp_tool_call']);
+const DONE = new Set(['completed', 'failed', 'declined', 'cancelled', 'canceled', 'error', 'interrupted']);
+const SHELL = /^(?:\S*\/)?(?:ba|z)?sh\s+-\w*c\s+(['"])([\s\S]*)\1$/;
+
+const unquote = (quote, body) => quote === "'" ? body.replaceAll(`'\\''`, "'") : body.replace(/\\(["\\$`])/g, '$1');
+
+// Codex wraps each command in `/bin/zsh -lc "<cmd>"`, so the grader sees the inner command as a Claude Bash call would.
+export function unwrapShell(command) {
+  const match = command.trim().match(SHELL);
+  return match ? unquote(match[1], match[2]) : command.trim();
+}
+
+// A quoted -lc body can span lines, so the command runs to the first line that closes the quote.
+export function commandOf(text) {
+  const lines = text.replace(/^\$ /, '').split('\n');
+  for (let end = 1; end <= lines.length; end += 1) {
+    const candidate = lines.slice(0, end).join('\n');
+    if (SHELL.test(candidate.trim())) return unwrapShell(candidate);
+  }
+  return lines[0].trim();
+}
+
+export const t3ToolName = (name) => name.replace(/^(?:mcp_{1,2})?t3-code(?:\.|__|_|\/)(.+)$/, 'mcp__t3-code__$1');
+
+const parseInput = (value) => {
+  if (typeof value !== 'string') return value ?? {};
+  try { return JSON.parse(value); } catch { return value; }
+};
+
+export function activityCall(item, sidechain) {
+  if (!TOOL_ITEMS.has(item?.type) || typeof item.text !== 'string') return null;
+  if (item.type === 'command_execution') {
+    return item.text.startsWith('$ ') ? { name: 'Bash', input: { command: commandOf(item.text) }, sidechain } : null;
+  }
+  let body;
+  try { body = JSON.parse(item.text); } catch { return null; }
+  const raw = body?.toolName ?? body?.name ?? (body?.server && body?.tool ? `${body.server}.${body.tool}` : null);
+  if (typeof raw !== 'string' || !raw) return null;
+  return { name: t3ToolName(raw), input: parseInput(body.input ?? body.arguments ?? body.args), sidechain };
+}
+
+const itemOf = (reply, itemId) => reply?.item ?? reply?.items?.find((i) => i.itemId === itemId) ?? reply?.items?.[0] ?? reply;
+
+async function fullText(tool, threadId, item) {
+  let { text, textTruncated, nextTextOffset } = item;
+  for (let reads = 0; textTruncated === true && nextTextOffset != null && reads < MAX_TEXT_READS; reads += 1) {
+    const next = itemOf(await tool('t3_thread_read', { threadId, itemId: item.itemId, textOffset: nextTextOffset, maxCharsPerItem: MAX_CHARS }), item.itemId);
+    if (typeof next?.text !== 'string' || !next.text) break;
+    text += next.text;
+    ({ textTruncated, nextTextOffset } = next);
+  }
+  return text;
+}
+
+// `tool(name, args)` calls one T3 MCP tool and resolves to its structured result.
+export async function readT3Activity(tool, threadId, sidechain = false) {
+  const calls = [];
+  const pending = [];
+  let afterPosition = -1;
+  for (let pages = 0; pages < MAX_PAGES; pages += 1) {
+    const page = await tool('t3_thread_read', { threadId, view: 'activity', afterPosition, limit: PAGE_LIMIT, maxCharsPerItem: MAX_CHARS });
+    for (const item of page.items ?? []) {
+      if (!TOOL_ITEMS.has(item?.type)) continue;
+      const text = item.textTruncated ? await fullText(tool, threadId, item) : item.text;
+      const call = activityCall({ ...item, text }, sidechain);
+      if (!call) continue;
+      calls.push(call);
+      if (item.status && !DONE.has(item.status)) pending.push({ name: call.name, input: call.input });
+    }
+    if (!page.hasMore || page.nextPosition == null || page.nextPosition === afterPosition) break;
+    afterPosition = page.nextPosition;
+  }
+  return { calls, pending };
+}
+
+// The lead's calls come first with sidechain false, then each descendant thread's with sidechain true.
+export async function readT3ActivityTree(tool, leadThreadId, threads = []) {
+  const lead = await readT3Activity(tool, leadThreadId, false);
+  const children = [];
+  for (const { threadId } of threads.filter((t) => t.threadId !== leadThreadId && t.parentThreadId)) {
+    children.push(...(await readT3Activity(tool, threadId, true)).calls);
+  }
+  return { toolCalls: [...lead.calls, ...children], pending: lead.pending };
+}
+
+const requestIds = (reply) => [reply?.requests, reply?.pendingRequests, reply?.items, reply?.ids, reply?.requestIds]
+  .find(Array.isArray)
+  ?.map((r) => typeof r === 'string' ? r : r?.requestId ?? r?.id)
+  .filter(Boolean) ?? [];
+
+// t3_pending_request lists user questions only, never approvals, so each id is the lead's own question.
+export async function pendingQuestions(tool, threadId, pending) {
+  if (pending.length) return pending;
+  const ids = requestIds(await tool('t3_pending_request', { action: 'list', threadId }));
+  return ids.length ? ids.map((requestId) => ({ name: 'request_user_input', input: { requestId } })) : null;
+}

@@ -1,6 +1,6 @@
 import { readFileSync, realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { ABSENT, SCENARIOS } from './scenarios.mjs';
+import { ABSENT, SCENARIOS, leadFamily } from './scenarios.mjs';
 
 export class LaneError extends Error {}
 
@@ -18,12 +18,12 @@ export function parseLane(text, file) {
   return { scenario: lane.scenario, status: lane.status, pendingQuestion: lane.pendingQuestion ?? null, toolCalls, branches: lane.branches ?? null, thread: lane.thread ?? null, threads: lane.threads ?? null };
 }
 
-function matches(shape, value) {
+function matches(shape, value, ctx) {
   if (shape === ABSENT) return value === undefined;
   if (shape instanceof RegExp) return [value].flat().some((v) => typeof v === 'string' && shape.test(v));
-  if (typeof shape === 'function') return shape(value) === true;
+  if (typeof shape === 'function') return shape(value, ctx) === true;
   if (shape && typeof shape === 'object') {
-    return value !== null && typeof value === 'object' && Object.entries(shape).every(([key, s]) => matches(s, value[key]));
+    return value !== null && typeof value === 'object' && Object.entries(shape).every(([key, s]) => matches(s, value[key], ctx));
   }
   return shape === value;
 }
@@ -39,14 +39,14 @@ function describe({ call, i }, input) {
   return `call ${i + 1} ${call.name} by ${who}${input === undefined ? '' : ` ${show(project(call.input, input))}`}`;
 }
 
-function evaluate(expect, toolCalls) {
+function evaluate(expect, toolCalls, ctx) {
   if (expect.anyOf) {
-    const results = expect.anyOf.map((e) => evaluate(e, toolCalls));
+    const results = expect.anyOf.map((e) => evaluate(e, toolCalls, ctx));
     return results.find((r) => r.ok) ?? { ok: false, why: results.map((r) => r.why).join('; or ') };
   }
   const { want, name, input, by, key, min = 1 } = expect;
-  const calls = toolCalls.map((call, i) => ({ call, i })).filter(({ call }) => matches(name, call.name));
-  const hits = calls.filter(({ call }) => BY[by](call) && (input === undefined || matches(input, call.input)));
+  const calls = toolCalls.map((call, i) => ({ call, i })).filter(({ call }) => matches(name, call.name, ctx));
+  const hits = calls.filter(({ call }) => BY[by](call) && (input === undefined || matches(input, call.input, ctx)));
   const wanted = `${by === 'any' ? '' : `${by} `}call ${String(name)}${input === undefined ? '' : ` with ${show(input)}`}`;
   if (want === 'atMostOne') {
     const first = new Map();
@@ -61,17 +61,20 @@ function evaluate(expect, toolCalls) {
   return { ok: false, why: `${min > 1 ? `0 of ${min} needed` : 'no'} ${wanted}${near ? `; saw ${describe(near, input)}` : ''}` };
 }
 
-const askedUser = (pending) => Array.isArray(pending) && pending.length > 0 && pending.every((q) => q?.name === 'AskUserQuestion');
+// Claude Code, Antigravity and Codex name their question tool differently; a pending approval is never one of these.
+const QUESTION_TOOLS = new Set(['AskUserQuestion', 'ask_question', 'request_user_input']);
+const askedUser = (pending) => Array.isArray(pending) && pending.length > 0 && pending.every((q) => QUESTION_TOOLS.has(q?.name));
 
 export function gradeLane(lane) {
   const { scenario, status, pendingQuestion, toolCalls } = lane;
   const { checks, mayAsk } = SCENARIOS[scenario];
+  const ctx = { leadFamily: leadFamily(lane.thread) };
   const graded = status === 'completed' || (mayAsk && status === 'waiting' && askedUser(pendingQuestion));
   const notGraded = `lane status is ${status}, not completed${mayAsk ? " or waiting only on the lead's own question" : ''}`;
   return Object.entries(checks).map(([check, expect]) => {
     if (!graded) return { check, verdict: 'FAIL', why: notGraded };
     if (!expect.state && !toolCalls) return { check, verdict: 'FAIL', why: 'no toolCalls, so the lead session was not read' };
-    const { ok, why } = expect.state ? expect.state(lane) : evaluate(expect, toolCalls);
+    const { ok, why } = expect.state ? expect.state(lane) : evaluate(expect, toolCalls, ctx);
     return { check, verdict: ok ? 'PASS' : 'FAIL', why };
   });
 }

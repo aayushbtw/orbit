@@ -830,9 +830,18 @@ export function resetAssignments(home: string, options: { projectDir?: string } 
   return getEffectiveAssignments(home, options.projectDir);
 }
 
+/** Load config for a write that keeps the profiles; refuses while a malformed legacy file would be dropped. */
+export function loadConfigForHostWrite(home: string): LoadedConfig {
+  const loaded = loadConfig(home);
+  if (loaded.legacyConfigError) {
+    throw new Error(`Refusing to write ${orbitPaths(home).configPath}, because it would drop the Models rows of a legacy file that does not parse: ${loaded.legacyConfigError}. Fix that file, or run orbit models set <task> <target> or orbit models reset to write config.json, then try again.`);
+  }
+  return loaded;
+}
+
 /** Update the list of enabled hosts persisted in ~/.config/orbit/config.json. */
 export function setConfigHosts(home: string, hosts: HostId[]): OrbitConfig {
-  const { config } = loadConfig(home);
+  const { config } = loadConfigForHostWrite(home);
   config.hosts = [...new Set(hosts)];
   saveConfig(home, config);
   return config;

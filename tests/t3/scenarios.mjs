@@ -4,11 +4,25 @@ export const t3 = (tool) => new RegExp(`^(mcp__)?t3-code__${tool}$`);
 const some = (name, input, by = 'any', min = 1) => ({ want: 'some', name, input, by, min });
 const none = (name, input, by = 'any') => ({ want: 'none', name, input, by });
 const atMostOne = (name, input, by, key) => ({ want: 'atMostOne', name, input, by, key });
-const otherFamily = /^(?!claude)/i;
-const ownFamily = (id) => id === undefined || /^claude/i.test(id);
+const FAMILIES = {
+  claude: ['claude', 'anthropic'],
+  codex: ['codex', 'openai', 'gpt'],
+  antigravity: ['antigravity', 'google', 'gemini'],
+  grok: ['grok', 'xai'],
+};
+const tokens = (text) => text.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+// A word may also lead a token, as `claudeAgent` and `gpt6` do.
+export const familyOf = (...names) => {
+  const words = names.filter((n) => typeof n === 'string').flatMap(tokens);
+  return Object.keys(FAMILIES).find((family) => words.some((w) => FAMILIES[family].some((f) => w === f || w.startsWith(f)))) ?? null;
+};
+// A lane with no thread recorded is an older Claude fixture.
+export const leadFamily = (thread) => thread ? familyOf(thread.providerInstanceId) ?? familyOf(thread.model) ?? thread.providerInstanceId ?? 'claude' : 'claude';
+const otherFamily = (id, ctx) => typeof id === 'string' && (familyOf(id) ?? id) !== ctx.leadFamily;
+const ownFamily = (id, ctx) => id === undefined || (familyOf(id) ?? id) === ctx.leadFamily;
 const agentOrDelegate = /^(Agent|(mcp__)?t3-code__delegate_task)$/;
-const native = (role, model = () => true) => (input) => input?.role === role
-  && ownFamily(input.target?.providerInstanceId) && model(input.target?.model);
+const native = (role, model = () => true) => (input, ctx) => input?.role === role
+  && ownFamily(input.target?.providerInstanceId, ctx) && model(input.target?.model);
 const notOpus = (m) => !/opus/i.test(m ?? '');
 const isOpus = (m) => /opus/i.test(m ?? '');
 
@@ -17,10 +31,11 @@ const otherSeat = { target: { providerInstanceId: otherFamily } };
 const noSeat = none(t3('delegate_task'), otherSeat);
 const seatOn = (target) => ({ role: 'review', mode: 'async', runtimeMode: ABSENT, target });
 const seat = seatOn({ providerInstanceId: otherFamily });
-const verifiedOutside = (m) => typeof m === 'string' && !['auto', 'default'].includes(m)
-  && !m.toLowerCase().split(/[-/.:]/).some((token) => ['claude', 'anthropic'].includes(token));
-const listedSeat = (providerInstanceId) => seatOn({ providerInstanceId, model: verifiedOutside });
-const unlistedSeat = { target: { providerInstanceId: (id) => !['codex', 'grok'].includes(id) && !/^claude/i.test(id ?? '') } };
+const verifiedOutside = (m, ctx) => typeof m === 'string' && !['auto', 'default'].includes(m)
+  && !m.toLowerCase().split(/[-/.:]/).some((token) => (FAMILIES[ctx.leadFamily] ?? [ctx.leadFamily]).includes(token));
+const firstListedOutside = (listed) => (id, ctx) => id === listed.find((p) => otherFamily(p, ctx));
+const listedSeat = (listed) => seatOn({ providerInstanceId: firstListedOutside(listed), model: verifiedOutside });
+const unlistedSeat = (listed) => ({ target: { providerInstanceId: (id, ctx) => !listed.includes(id) && !ownFamily(id, ctx) } });
 const reviewSeat = { role: 'review', ...otherSeat };
 const seatProvider = (input) => input?.target?.providerInstanceId;
 const capsRead = some(t3('orchestrator_capabilities'), undefined, 'lead');
@@ -28,21 +43,9 @@ const verifierSeat = { isolation: 'worktree', ...otherSeat };
 const codeAdversary = { subagent_type: 'general-purpose', model: (m) => m !== 'opus' };
 const judgmentAdversary = { subagent_type: 'general-purpose', model: 'opus' };
 const isCodeAdversary = (input) => input?.subagent_type === 'general-purpose' && input.model !== 'opus';
-const noNativeCodeAdversary = none(agentOrDelegate, (input) => isCodeAdversary(input) || native('review', notOpus)(input), 'lead');
+const noNativeCodeAdversary = none(agentOrDelegate, (input, ctx) => isCodeAdversary(input) || native('review', notOpus)(input, ctx), 'lead');
 const countsCommits = /rev-list|\bgit\b[^|]*\blog\b[^|]*\|\s*wc\s+-l/;
-const onceRead = /\/watch-pr\s[^|;&]*--once\b/;
-const prefix = /^(\w+=\S*|env|exec|nohup|time|command)$/;
-const watcherArgs = (segment) => {
-  const words = segment.trim().split(/\s+/).map((word) => word.replace(/^["'(]+|["')]+$/g, ''));
-  let at = 0;
-  while (prefix.test(words[at] ?? '')) at += 1;
-  if (/^(ba|z)?sh$/.test(words[at]) && /^-\w*c$/.test(words[at + 1] ?? '')) at += 2;
-  return /(^|\/)watch-pr$/.test(words[at] ?? '') ? words.slice(at + 1) : null;
-};
-const sleepingWatcher = (command) => typeof command === 'string' && command.split(/&&|\|\||[;|&\n]/).some((segment) => {
-  const args = watcherArgs(segment);
-  return args !== null && !args.some((arg) => /^(--once|--status-only|--help|-h)$/.test(arg));
-});
+const noLegacyWatcher = none('Bash', { command: /\bwatch-pr\b|\bgh\s+pr\b/ });
 const shortInterval = { schedule: { type: 'interval', everyMs: (ms) => !(ms >= 60_000) } };
 const ownCheckout = { isolation: 'worktree', mode: 'async', clientRequestId: /./ };
 const ownCheckoutChildren = some(t3('delegate_task'), ownCheckout, 'lead', 2);
@@ -177,6 +180,43 @@ const noUnlistedChild = childThreads((lead, children, seen) => {
   return { ok: !unlisted.length, why: unlisted.length ? `unlisted child ${unlisted.map(target).join(', ')}; ${seen}` : seen };
 });
 
+const resolveTargets = {
+  config: { providerInstanceId: 'codex', model: 'gpt-6.1-sol' },
+  agents: { providerInstanceId: 'antigravity', model: 'gemini-4-neon' },
+};
+
+const modelsResolveProject = {
+  name: 'models-resolve',
+  commits: [
+    {
+      message: 'chore: add the workflow block and project Models config',
+      files: {
+        'AGENTS.md': `${workflow}
+### Models
+
+| Task | Use for | Model | Effort |
+| --- | --- | --- | --- |
+| writing | docs and prose | ${target(resolveTargets.agents)} | high |
+`,
+        '.orbit/config.json': `${JSON.stringify({ tasks: {}, panels: {}, workTypes: [{ name: 'writing', use: 'docs and prose', target: target(resolveTargets.config) }] }, null, 2)}\n`,
+        'README.md': '# Stats\n',
+      },
+    },
+    unitsProject.commits[1],
+  ],
+};
+
+const configTargetRan = childThreads((lead, children, seen) => {
+  if (lead === resolveTargets.config.providerInstanceId) return { ok: true, why: `the .orbit/config.json target runs on the lead's own provider; ${seen}` };
+  const hit = children.some(onTarget(resolveTargets.config));
+  return { ok: hit, why: hit ? seen : `no child on the .orbit/config.json target ${target(resolveTargets.config)}; ${seen}` };
+});
+
+const agentsRowShadowed = childThreads((lead, children, seen) => {
+  const shadowed = children.filter(onTarget(resolveTargets.agents));
+  return { ok: !shadowed.length, why: shadowed.length ? `child on the AGENTS.md target ${target(resolveTargets.agents)}, which .orbit/config.json overrides; ${seen}` : seen };
+});
+
 const leadAdds = (path) => ({
   state: ({ branches }) => {
     if (!Array.isArray(branches)) return { ok: false, why: 'no branches recorded, so the lane did not watch git' };
@@ -260,8 +300,8 @@ export const SCENARIOS = {
     prompt: interrogateMedian,
     project: seatsProject('seats-listed', 'codex, grok'),
     checks: {
-      'seat-on-first-listed': some(t3('delegate_task'), listedSeat('codex'), 'lead'),
-      'only-listed-seats': none(t3('delegate_task'), unlistedSeat, 'lead'),
+      'seat-on-first-listed': some(t3('delegate_task'), listedSeat(['codex', 'grok']), 'lead'),
+      'only-listed-seats': none(t3('delegate_task'), unlistedSeat(['codex', 'grok']), 'lead'),
       'one-seat': atMostOne(t3('delegate_task'), reviewSeat, 'lead', seatProvider),
       'no-native-code-adversary': noNativeCodeAdversary,
     },
@@ -291,7 +331,7 @@ export const SCENARIOS = {
     checks: {
       'caps-read': capsRead,
       'no-seat': noSeat,
-      'no-native-verifier': none(agentOrDelegate, (input) => input?.subagent_type === 'orbit:verifier' || native('test')(input), 'lead'),
+      'no-native-verifier': none(agentOrDelegate, (input, ctx) => input?.subagent_type === 'orbit:verifier' || native('test')(input, ctx), 'lead'),
     },
   },
   'watch-pr-wait': {
@@ -299,13 +339,14 @@ export const SCENARIOS = {
     checks: {
       'lead-watches': leadWatches,
       'no-child-watches': noChildWatches,
+      'no-legacy-watcher': noLegacyWatcher,
     },
   },
   'babysit-wait': {
     prompt: '/orbit:start babysit <PR URL> in drive mode. Make no file changes and push nothing.',
     checks: {
-      'once-read': some('Bash', { command: onceRead }, 'lead'),
-      'no-sleeping-watcher': none('Bash', { command: sleepingWatcher }),
+      'pr-read': some(t3('pull_request_read'), undefined, 'lead'),
+      'no-legacy-watcher': noLegacyWatcher,
       'lead-watches': leadWatches,
       'unwatch-at-ready': some(t3('unwatch_pull_request'), undefined, 'lead'),
       'no-child-watches': noChildWatches,
@@ -356,6 +397,15 @@ export const SCENARIOS = {
       'targets-off-provider-ran': offProviderRan,
       'no-unlisted-child': noUnlistedChild,
       'mean-committed': leadAdds('mean.mjs'),
+    },
+  },
+  'models-resolve': {
+    prompt: "/orbit:start feature, just testing, don't ship: document sum(values) in README.md under a `## sum` heading. Before you delegate, resolve the writing work type with `orbit models resolve writing --json`, and run the README unit as one delegate on the target it gives. Commit the unit on the task branch. No PR.",
+    project: modelsResolveProject,
+    checks: {
+      'ran-resolve': some('Bash', { command: /\borbit\s+models\s+resolve\b[^\n|;&]*\bwriting\b/ }, 'lead'),
+      'config-target-ran': configTargetRan,
+      'agents-row-shadowed': agentsRowShadowed,
     },
   },
   'autopilot-owners': {
