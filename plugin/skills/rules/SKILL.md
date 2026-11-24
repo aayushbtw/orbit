@@ -5,7 +5,7 @@ user-invocable: false
 ---
 A subagent stops here. These rules are for the lead.
 
-Read `../../rules.md` and then `../../rules-shared.md` in full now, before you reply, each in its own command. They sit in orbit's plugin folder, two folders above this skill's base directory. `<orbit-plugin>` in them is that folder.
+Run `realpath` on this `SKILL.md` first, because a host may reach orbit's skills through a symlink. Orbit's plugin folder is two folders above the folder it prints, and every `../../` path in this skill starts from the folder it prints. Then read `../../rules.md` and then `../../rules-shared.md` in full now, before you reply, each in its own command. `<orbit-plugin>` in them is orbit's plugin folder.
 
 Then run `orbit models list --json`. Its rows hold every Models cell with the project's `.orbit/config.json` and AGENTS.md overrides merged, and `orbit models resolve <task> --json` gives one spawn's target. Without `orbit` on PATH, read the active profile of `~/.config/orbit/config.json`, keyed by the Task names of rules.md Workflow Defaults, Models, then the project's overrides.
 

@@ -1,0 +1,138 @@
+{
+  "scenario": "gitops-native",
+  "message": "/orbit:start investigate: which pull requests are linked to this T3 thread? Have orbit's gitops agent check it with T3's list_thread_pull_requests tool, then answer. Make no edits.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "codex",
+    "model": "gpt-6.1-sol"
+  },
+  "fixture": {
+    "origin": "real",
+    "source": "orbit-lane-gitops-nativ-d27e7b852b89628c",
+    "relabeled": false,
+    "note": "Live lane at 4e64940 with a Codex lead. The lead spawns gitops natively, so no lead Agent call shows. The child reads agents/gitops.md and calls list_thread_pull_requests.",
+    "expect": {
+      "gitops-native-child": "PASS",
+      "no-child-thread": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "Bash",
+      "input": {
+        "command": "Preparing workspace"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat ~/.codex/skills/orbit/rules/SKILL.md ~/.codex/skills/orbit/start/SKILL.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat ~/.codex/skills/orbit/rules.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat ~/.codex/skills/orbit/rules-shared.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat ~/.codex/skills/orbit/docs/harness/t3-code.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat ~/.codex/skills/orbit/playbook/SKILL.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "orbit models list --json"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "pwd -P; realpath ~/.codex/skills/orbit/rules/SKILL.md; rg --files plugin | rg 'rules|gitops|t3-code|investigation'"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat plugin/rules.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat plugin/rules-shared.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat plugin/docs/harness/t3-code.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat plugin/agents/gitops.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat plugin/skills/playbook/playbooks/investigation.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat plugin/skills/unslop/SKILL.md"
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat plugin/agents/gitops.md"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "cat plugin/docs/harness/t3-code.md"
+      },
+      "sidechain": true
+    },
+    {
+      "name": "mcp__t3-code__list_thread_pull_requests",
+      "input": {},
+      "sidechain": true
+    }
+  ]
+}

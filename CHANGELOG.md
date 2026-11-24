@@ -4,6 +4,16 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.82.1
+
+### Any lead
+
+- A lead finds orbit's plugin folder from the real path of the `rules` skill's `SKILL.md`, as `realpath` prints it, and takes two levels above that folder. A host may link orbit's skills folder into its own, as `~/.codex/skills/orbit` does. Through that link, two levels above the skill's folder is the host's skills folder, so a Codex lead looked for `rules.md` there. `plugin/skills/rules/SKILL.md` and the `${CLAUDE_PLUGIN_ROOT}` row in `plugin/docs/harness/t3-code.md` say so. Relative paths in a skill and orbit paths in a brief use the real path too.
+
+### T3 evals
+
+- `gitops-native-child` and the `foreground` check `delegate-ran` grade a lead outside Claude by its child's calls. Such a lead's native spawn is no lead call in T3 activity. A child that calls `list_thread_pull_requests`, or that reads `agents/poteto-agent.md`, passes. A Claude lead still needs its `Agent` call. New real fixture `codex-gitops-native.json`, from a Codex lane at 4e64940 that the old check failed.
+
 ## 0.82.0
 
 ### CLI
