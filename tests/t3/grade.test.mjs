@@ -156,6 +156,22 @@ test('a lead Agent call without run_in_background: false fails every-agent-foreg
   assert.equal(grade([agent({ run_in_background: false })]), 'PASS');
 });
 
+test("a non-Claude lead's native child passes on its own calls; a Claude lead still needs the Agent call", () => {
+  const codexLead = { providerInstanceId: 'codex', model: 'gpt-6.1-sol' };
+  const listPrs = { name: 'mcp__t3-code__list_thread_pull_requests', input: {}, sidechain: true };
+  const gitops = (toolCalls, thread) => verdicts(lane({ scenario: 'gitops-native', toolCalls, thread }));
+  assert.deepEqual(gitops([listPrs], codexLead), { 'gitops-native-child': 'PASS', 'no-child-thread': 'PASS' });
+  assert.equal(gitops([{ ...listPrs, sidechain: false }], codexLead)['gitops-native-child'], 'FAIL', 'the lead listing PRs itself is no gitops child');
+  assert.equal(gitops([listPrs])['gitops-native-child'], 'FAIL');
+  assert.equal(gitops([{ name: 'Agent', input: { subagent_type: 'orbit:gitops' }, sidechain: false }], codexLead)['gitops-native-child'], 'PASS');
+  const readsPoteto = (name, input) => ({ name, input, sidechain: true });
+  const delegate = (toolCalls, thread) => verdicts(lane({ scenario: 'foreground', toolCalls, thread }))['delegate-ran'];
+  assert.equal(delegate([readsPoteto('Bash', { command: 'cat /p/plugin/agents/poteto-agent.md' })], codexLead), 'PASS');
+  assert.equal(delegate([readsPoteto('Read', { file_path: '/p/plugin/agents/poteto-agent.md' })], { providerInstanceId: 'antigravity' }), 'PASS');
+  assert.equal(delegate([readsPoteto('Bash', { command: 'cat /p/plugin/agents/gitops.md' })], codexLead), 'FAIL');
+  assert.equal(delegate([readsPoteto('Bash', { command: 'cat /p/plugin/agents/poteto-agent.md' })]), 'FAIL');
+});
+
 test('an expectation with min passes only when that many calls match, naming each', () => {
   const child = (clientRequestId) => ({ name: 'mcp__t3-code__delegate_task', input: { isolation: 'worktree', mode: 'async', clientRequestId }, sidechain: false });
   const grade = (toolCalls) => gradeLane(lane({ scenario: 'parallel-units', toolCalls })).find((r) => r.check === 'own-checkout-children');

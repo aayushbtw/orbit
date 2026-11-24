@@ -27,6 +27,10 @@ const notOpus = (m) => !/opus/i.test(m ?? '');
 const isOpus = (m) => /opus/i.test(m ?? '');
 
 const noChildThread = none(t3('delegate_task'));
+// A non-Claude lead's native spawn is no lead call, so its child's own calls stand in for it. A Claude lead's always shows as `Agent`.
+const nonClaudeLead = (_, ctx) => ctx.leadFamily !== 'claude';
+const childReads = (file) => some(/^(Bash|Read)$/, (input, ctx) => nonClaudeLead(input, ctx)
+  && [input?.command, input?.file_path].some((v) => typeof v === 'string' && v.includes(file)), 'child');
 const otherSeat = { target: { providerInstanceId: otherFamily } };
 const noSeat = none(t3('delegate_task'), otherSeat);
 const seatOn = (target) => ({ role: 'review', mode: 'async', runtimeMode: ABSENT, target });
@@ -269,14 +273,14 @@ export const SCENARIOS = {
   'gitops-native': {
     prompt: "/orbit:start investigate: which pull requests are linked to this T3 thread? Have orbit's gitops agent check it with T3's list_thread_pull_requests tool, then answer. Make no edits.",
     checks: {
-      'gitops-native-child': some('Agent', { subagent_type: 'orbit:gitops' }, 'lead'),
+      'gitops-native-child': { anyOf: [some('Agent', { subagent_type: 'orbit:gitops' }, 'lead'), some(t3('list_thread_pull_requests'), nonClaudeLead, 'child')] },
       'no-child-thread': noChildThread,
     },
   },
   foreground: {
     prompt: "/orbit:start just testing: create the file scratch/lane-fg.txt containing the single line 'lane fg'. Run the Delegate gate for the edit. No commit, no PR.",
     checks: {
-      'delegate-ran': some('Agent', { subagent_type: 'orbit:poteto-agent' }, 'lead'),
+      'delegate-ran': { anyOf: [some('Agent', { subagent_type: 'orbit:poteto-agent' }, 'lead'), childReads('agents/poteto-agent.md')] },
       'every-agent-foreground': none('Agent', { run_in_background: (v) => v !== false }, 'lead'),
     },
   },
