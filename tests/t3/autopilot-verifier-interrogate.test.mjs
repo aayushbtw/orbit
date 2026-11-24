@@ -45,7 +45,7 @@ const readTree = (dir) => Object.fromEntries(readdirSync(dir, { recursive: true 
 test('#131 autopilot-full, autopilot-stack and t3-code bind every owner round to the no-ship build contract', () => {
   has('full', 'the one branch the owner may write', '"Run `/orbit:start <item>, don\'t ship` with the Skill tool. Write only branch `<branch>`. Never merge a PR, never push `<trunk>`."', 'The contract holds for every continuation and every later round, because only the main thread lands.', "Every fix or rebase round's brief carries step 2's build contract verbatim.", 'stops at the committed local branch, pushes nothing');
   has('stack', 'Every owner brief, continuation and later round keeps the build contract of step 2 of `playbooks/autopilot-full.md`, so no owner merges a PR or pushes `<trunk>`.');
-  has('t3', "It carries that step's build contract verbatim, which runs `/orbit:start <item>, don't ship`, names the one branch the owner may write, and says \"never merge a PR, never push `<trunk>`\", because only the lead lands.", 'Under Land `main`, the owner stops at the committed local branch and pushes nothing.', "carries step 5's build contract verbatim");
+  has('t3', "It carries that step's build contract verbatim, which runs `/orbit:start <item>, don't ship`, names the one branch the owner may write, and says \"Never merge a PR, never push `<trunk>`.\", because only the lead lands.", 'Under Land `main`, the owner stops at the committed local branch and pushes nothing.', "carries step 5's build contract verbatim");
 });
 
 const ownerBrief = "Run `/orbit:start README teh fix, don't ship` with the Skill tool. Write only branch `fix/readme-teh`. Never merge a PR, never push `<trunk>`.";
@@ -63,6 +63,8 @@ for (const scenario of ['autopilot-full-owner-authority', 'autopilot-stack-owner
     assert.deepEqual(grade([delegate(ownerBrief), ...ownerOnBranch, childCall('mcp__t3-code__pull_request_merge', { number: 7 })]), { ...all, 'no-child-merge': 'FAIL' });
     assert.equal(grade([delegate(ownerBrief), childCall('Bash', { command: 'git push origin HEAD:main' })])['no-child-trunk-push'], 'FAIL');
     assert.equal(grade([delegate(ownerBrief), childCall('Bash', { command: 'git -C /w push origin HEAD:trunk' })])['no-child-trunk-push'], 'FAIL');
+    assert.equal(grade([delegate(ownerBrief), childCall('Bash', { command: 'git push origin main' })])['no-child-trunk-push'], 'FAIL', 'pushing trunk by name');
+    assert.equal(grade([delegate(ownerBrief), childCall('Bash', { command: 'git push origin trunk' })])['no-child-trunk-push'], 'FAIL');
     assert.equal(grade([delegate(ownerBrief), childCall('Bash', { command: 'git push -u origin fix/readme-teh' })])['no-child-trunk-push'], 'PASS', 'pushing its own branch is allowed');
     assert.equal(grade([delegate('Run `/orbit:start README teh fix` with the Skill tool. Write only branch `fix/readme-teh`.'), ...ownerOnBranch])['owner-brief-no-ship'], 'FAIL', "brief without don't ship");
     assert.equal(grade([delegate("Run `/orbit:start README teh fix, don't ship`."), ...ownerOnBranch])['owner-brief-no-ship'], 'FAIL', 'brief without the no-merge clause');
@@ -70,12 +72,36 @@ for (const scenario of ['autopilot-full-owner-authority', 'autopilot-stack-owner
 }
 
 test('#135 verifier, t3-code and shipping prove a separate checkout and fall back to read-only exports', () => {
-  has('verifier', 'Before any checkout, run `git rev-parse --show-toplevel` in your starting working directory.', 'differs from both the task worktree path and the project root path', 'never run `git checkout`, `git switch`, `git reset`', 'run `git archive -o <scratch>/<sha>.tar <sha>`, then `mkdir <scratch>/<sha>`, then `tar -xf <scratch>/<sha>.tar -C <scratch>/<sha>`', 'reply `BLOCKED: <reason>`');
-  has('t3', 'The verifier never detaches or moves a ref in your checkout or a dirty task worktree.', 'A verifier is the exception. It never reruns in the task worktree', 'proves a separate checkout before it moves HEAD');
-  has('shipping', "A native verifier's `BLOCKED` holds the PR. It is never a `FAIL` or a `PASS`", 'both the task worktree path and the project root path, as `git rev-parse --show-toplevel` prints them');
+  has('verifier', 'Before any checkout, run `git rev-parse --show-toplevel` in your starting working directory.', 'differs from all three of the lead\'s checkout path, the task worktree path and the project root path', 'skip each `git checkout` and its `git rev-parse HEAD` confirmation', 'never run `git checkout`, `git switch`, `git reset`', 'run `git archive -o <scratch>/<sha>.tar <sha>`, then `mkdir <scratch>/<sha>`, then `tar -xf <scratch>/<sha>.tar -C <scratch>/<sha>`', 'reply `BLOCKED: <reason>`');
+  has('t3', 'The verifier never detaches or moves a ref in your checkout or a dirty task worktree.', 'A verifier is the exception. It never reruns in the task worktree', 'switches to export mode in place when its guard trips', 'proves a separate checkout against all three before it moves HEAD');
+  has('shipping', "A native verifier's `BLOCKED` holds the PR. It is never a `FAIL` or a `PASS`", "the lead's checkout path, the task worktree path and the project root path, each as `git rev-parse --show-toplevel` prints it");
+  has('seats', "names the lead's checkout path, the task worktree path and the project root path, each as `git rev-parse --show-toplevel` prints it");
 });
 
-const separate = (top, taskWorktree, projectRoot) => Boolean(taskWorktree && projectRoot) && top !== taskWorktree && top !== projectRoot;
+const separate = (top, leadCheckout, taskWorktree, projectRoot) => Boolean(leadCheckout && taskWorktree && projectRoot) && ![leadCheckout, taskWorktree, projectRoot].includes(top);
+
+test("#135 a verifier that lands in the lead's bound checkout is not separate when the task worktree is an owner's", () => {
+  const dir = scratch('orbit-verify-lead-');
+  try {
+    const root = join(dir, 'root');
+    mkdirSync(root);
+    ok(root, 'init');
+    commitFiles(root, { 'a.txt': 'one\n' }, 'base');
+    const lead = join(dir, 'lead');
+    const owner = join(dir, 'owner');
+    const verifier = join(dir, 'verifier');
+    ok(root, 'worktree', 'add', lead, '-b', 'fix/lead');
+    ok(root, 'worktree', 'add', owner, '-b', 'fix/owner');
+    ok(root, 'worktree', 'add', verifier, '-b', 't3/verifier');
+    const leadTop = ok(lead, 'rev-parse', '--show-toplevel');
+    assert.notEqual(leadTop, owner, "the lead's checkout differs from the owner's task worktree");
+    assert.equal(separate(leadTop, lead, owner, root), false, "a child in the lead's checkout is not separate");
+    assert.equal(separate(leadTop, undefined, owner, root), false, "a missing lead's checkout leaves separation unproven");
+    assert.equal(separate(ok(verifier, 'rev-parse', '--show-toplevel'), lead, owner, root), true, 'its own worktree is separate');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 
 test('#135 export mode verifies parent and head from git archive without touching a dirty task worktree', () => {
   const dir = scratch('orbit-verify-export-');
@@ -91,9 +117,9 @@ test('#135 export mode verifies parent and head from git archive without touchin
     assert.equal(statusBefore, 'M a.txt\n?? c.txt', 'task worktree starts dirty');
 
     const top = ok(task, 'rev-parse', '--show-toplevel');
-    assert.equal(separate(top, task, task), false, 'a verifier started in the task worktree is not separate');
-    assert.equal(separate(top, task, undefined), false, 'a missing path leaves separation unproven');
-    assert.equal(separate(join(dir, 'other'), task, join(dir, 'root')), true);
+    assert.equal(separate(top, join(dir, 'lead'), task, task), false, 'a verifier started in the task worktree is not separate');
+    assert.equal(separate(top, join(dir, 'lead'), task, undefined), false, 'a missing path leaves separation unproven');
+    assert.equal(separate(join(dir, 'other'), join(dir, 'lead'), task, join(dir, 'root')), true);
 
     const out = join(dir, 'exports');
     mkdirSync(out);
@@ -117,7 +143,7 @@ test('#135 export mode verifies parent and head from git archive without touchin
 });
 
 test('#154 interrogate cleans up only run-owned child worktrees and serial scratch folders', () => {
-  has('interrogate', 'In this serial mode an adversary skips the commit checkout and the patch apply', 'a fresh scratch folder from `mktemp -d`', 'A worktree is eligible for removal only when all three hold:', '- A `delegate_task` child of this run reported its path.', '- `git worktree list` shows that path.', '- The path differs from both your `git rev-parse --show-toplevel` and the project root.', 'Remove each serial scratch folder this run made, and nothing else.', '- **Kept**: each worktree, branch or folder that cleanup kept, with the reason.');
+  has('interrogate', 'In this serial mode an adversary skips the commit checkout and the patch apply', 'a fresh scratch folder from `mktemp -d`', 'When your HEAD is not the named commit, it first unpacks a `git archive` export of that commit into the scratch folder', 'Keep repros in your own worktree or scratch folder.', 'A worktree is eligible for removal only when all three hold:', '- A `delegate_task` child of this run reported its path.', '- `git worktree list` shows that path.', '- The path differs from both your `git rev-parse --show-toplevel` and the project root.', 'Remove each serial scratch folder this run made, and nothing else.', '- **Kept**: each worktree, branch or folder that cleanup kept, with the reason.');
 });
 
 const listedWorktrees = (cwd) => ok(cwd, 'worktree', 'list', '--porcelain').split('\n').filter((l) => l.startsWith('worktree ')).map((l) => l.slice('worktree '.length));
