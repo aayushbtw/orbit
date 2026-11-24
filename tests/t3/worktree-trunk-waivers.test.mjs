@@ -32,7 +32,6 @@ const waives = new Map([
   ['quick check', ['commit', 'pr', 'ship']],
   ['no subagents', ['spawn', 'ship']],
   ['skip e2e', ['e2e']],
-  ['no pr', ['pr', 'ship']],
 ]);
 const lifts = new Map([['commit each unit', 'commit']]);
 

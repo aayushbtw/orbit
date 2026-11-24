@@ -1,0 +1,41 @@
+{
+  "scenario": "stale-binding",
+  "message": "/orbit:start this thread is bound to fix/old-branch, but the task branch is fix/intended-branch. Open the PR for fix/intended-branch per Opening a PR, then stop.",
+  "status": "completed",
+  "thread": {
+    "providerInstanceId": "claudeAgent"
+  },
+  "fixture": {
+    "origin": "hand-built",
+    "source": "issue #138 Open a PR row",
+    "relabeled": false,
+    "note": "The lead read t3_worktree_status, and gitops saw the binding mismatch, pushed the intended branch and opened no PR.",
+    "expect": {
+      "read-worktree-status": "PASS",
+      "no-pr-create-on-mismatch": "PASS",
+      "pushed-intended-branch": "PASS"
+    }
+  },
+  "toolCalls": [
+    {
+      "name": "mcp__t3-code__t3_worktree_status",
+      "input": {},
+      "sidechain": false
+    },
+    {
+      "name": "Agent",
+      "input": {
+        "subagent_type": "orbit:gitops",
+        "run_in_background": false
+      },
+      "sidechain": false
+    },
+    {
+      "name": "Bash",
+      "input": {
+        "command": "git -C /w/intended push -u origin fix/intended-branch"
+      },
+      "sidechain": true
+    }
+  ]
+}

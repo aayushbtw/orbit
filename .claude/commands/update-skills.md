@@ -19,7 +19,7 @@ For each skill in scope:
 After all skills:
 1. **Version.** Bump the patch version in all three files together: `version` in `plugin/.claude-plugin/plugin.json`, `version` in `cli/package.json`, and both version fields in `cli/package-lock.json` (the top-level `version` and `packages[""].version`). Add a `## <version>` entry to `CHANGELOG.md` that names the updated skills.
 2. **Checks.** Run each, and fix what fails before the commit:
-   - `bash tests/version-bump.sh origin/main`
+   - `bash tests/version-bump.sh origin/<trunk>`
    - `node tests/refs.mjs`
    - `node tests/provider-names.mjs`
    - the Check command from `AGENTS.md`'s Workflow block
