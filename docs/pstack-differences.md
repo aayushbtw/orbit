@@ -120,7 +120,7 @@ The retry on an unavailable model departs from T3's system prompt, "Provider or 
 ### Standalone CLI
 
 - **pstack.** Model setup runs through the setup skill and writes its table under `~/.claude/rules/`.
-- **orbit.** A standalone CLI installs a versioned Orbit bundle and registers its skills through the existing host setup helper, which recognizes prior CLI releases even after their folders are removed. The CLI and setup skill share `~/.config/orbit/models.md`. The legacy file remains the source until the new file exists. Project cells still take priority and a user-wide table can define work types used in any project. The Delegate gate considers project work types before user-wide types.
+- **orbit.** A standalone CLI installs a versioned Orbit bundle and registers its skills through the existing host setup helper, which recognizes prior CLI releases even after their folders are removed. The CLI stores user-wide rows in `~/.config/orbit/config.json`, keyed by the role names rules.md uses, and the lead reads that file, or asks `orbit models resolve`, before `~/.config/orbit/models.md`. The setup skill writes through `orbit models set` once that store exists. The Markdown files remain the source until `config.json` exists. Project cells still take priority and a user-wide table can define work types used in any project. The Delegate gate considers project work types before user-wide types.
 - **Why.** Orbit users on T3 can install the skills and configure roles with no marketplace or Claude Code dependency. T3 continues to own model availability and execution.
 
 ### Setup

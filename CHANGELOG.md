@@ -4,6 +4,16 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.78.0
+
+- Make the `orbit` CLI a T3-first control plane with atomic `~/.config/orbit/current` symlink management (`install`, `update`, `use`, `link`, `unlink`, `uninstall`, `status`, `doctor --fix`).
+- Add multi-host registration adapters (`antigravity`, `codex`, `agents`, `claude`, `grok`) under `orbit hosts`.
+- Store user-wide task, panel, and work-type assignments in `~/.config/orbit/config.json` with named profiles (`orbit profile`), automatic one-time migration from `models.md`, project `.orbit/config.json` overrides, live `orbit models sync` via T3 ACP, deterministic `orbit models resolve`, and `orbit init`.
+- Fix `### Models` parsing when `AGENTS.md` task names or cells are wrapped in backticks, and remove backticks from `plugin/skills/setup/workflow-block.md`.
+- The lead and `/orbit:setup` read and write the CLI's `~/.config/orbit/config.json` (through `orbit models resolve` and `orbit models set` when `orbit` is on PATH) before `models.md`. The CLI uses rules.md's role names (`advisor`, `judgment`, `code`, `verifier`, `gitops`), `judgment` defaults to `opus`, and effort follows rules.md's levels plus the values a target model lists.
+- Orbit CLI leaves a Claude Code or Grok orbit install it does not manage alone and reports it as `external`.
+- `orbit update` takes the version as `[targetVersion]` or `--to`, and runs the new CLI from `npm prefix -g`. `orbit models set arena` validates its runners and `--judge`, panel seats accept `@effort`, `doctor` checks each roster and panel entry, `AGENTS.md` overrides reach `interrogate` and `arena`, and a malformed `.orbit/config.json` shows up in `status` and `doctor` instead of crashing.
+
 ## 0.77.1
 
 - Say where a Models target wins without relying on an override sentence. A child whose cell holds a target skips the Where a child runs table, Shipping's diff review follows a `judgment` target, and a target on your own provider retries as other native spawns do.

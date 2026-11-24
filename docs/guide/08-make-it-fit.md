@@ -122,7 +122,7 @@ Code delegates are the catch. Without a guard, a Sonnet `code` row would also mo
 
 ### Give the panels a second family in T3 Code
 
-Under T3 Code, a panel can fill one seat on another model family, such as a Codex model, instead of a second model of the lead's family. Five seats work this way. They are arena's judge, interrogate's second adversary, the trail reviewer in `show-me-your-work`, the audit seat in `autopilot-full`, and the verifier when its own row says so. `/orbit:setup` writes the `other-family` row to `~/.config/orbit/models.md` for every project. A project can set its own row:
+Under T3 Code, a panel can fill one seat on another model family, such as a Codex model, instead of a second model of the lead's family. Five seats work this way. They are arena's judge, interrogate's second adversary, the trail reviewer in `show-me-your-work`, the audit seat in `autopilot-full`, and the verifier when its own row says so. `/orbit:setup` writes the `other-family` row to the user-wide store for every project, `~/.config/orbit/config.json` when the `orbit` CLI manages it, else `~/.config/orbit/models.md`. A project can set its own row:
 
 ```md
 | `other-family` | | codex, gemini | |
