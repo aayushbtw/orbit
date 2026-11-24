@@ -13,13 +13,14 @@ import {
   symlinkSync,
   unlinkSync,
 } from 'node:fs';
-import { delimiter, dirname, isAbsolute, join, resolve } from 'node:path';
-import { readOptional } from './paths.js';
+import { delimiter, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { orbitPaths, readOptional } from './paths.js';
 
 export const HOST_IDS = ['antigravity', 'codex', 'agents', 'claude', 'grok'] as const;
 export type HostId = (typeof HOST_IDS)[number];
 
-export type HostStatus = 'registered' | 'unregistered' | 'missing-file' | 'stale' | 'invalid';
+/** `external` marks an orbit install the user manages outside ~/.config/orbit, which the CLI never touches. */
+export type HostStatus = 'registered' | 'unregistered' | 'missing-file' | 'stale' | 'invalid' | 'external';
 
 export interface HostInspection {
   host: HostId;
@@ -34,7 +35,7 @@ export interface HostInspection {
 
 export interface HostApplyResult {
   host: HostId;
-  action: 'registered' | 'updated' | 'unchanged' | 'manual';
+  action: 'registered' | 'updated' | 'unchanged' | 'manual' | 'skipped';
   path: string;
   detail: string;
   command?: string;
@@ -127,6 +128,34 @@ function safeRealpath(target: string): string {
   } catch {
     return resolve(target);
   }
+}
+
+function isWithin(child: string, parent: string): boolean {
+  const rel = relative(parent, child);
+  return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
+}
+
+function isOrbitManaged(location: string, home: string): boolean {
+  const { orbitDir } = orbitPaths(home);
+  return isWithin(resolve(location), orbitDir) || isWithin(safeRealpath(location), safeRealpath(orbitDir));
+}
+
+function externalInspection(host: 'claude' | 'grok', detected: boolean, location: string): HostInspection {
+  return {
+    host,
+    displayName: DISPLAY_NAMES[host],
+    detected,
+    status: 'external',
+    path: location,
+    detail: `externally managed at ${location} (Orbit CLI leaves it alone)`,
+  };
+}
+
+function externalError(inspection: HostInspection): Error {
+  return new Error(
+    `${inspection.displayName} loads orbit from ${inspection.path}, which Orbit CLI does not manage. `
+    + `Orbit CLI leaves it alone. Remove that install with ${inspection.host}'s own plugin command to let Orbit CLI register ${inspection.host}.`,
+  );
 }
 
 function looksLikeOrbitSkills(targetPath: string): boolean {
@@ -246,8 +275,22 @@ function inspectClaude(ctx: HostContext): HostInspection {
   const marketplacesFile = join(claudeDir, 'plugins', 'known_marketplaces.json');
   const detected = existsSync(claudeDir) || isExecutableOnPath('claude', env.PATH);
 
+  let markets: Record<string, { installLocation?: string }> = {};
+  const rawMarkets = readOptional(marketplacesFile);
+  if (rawMarkets !== undefined) {
+    try {
+      markets = JSON.parse(rawMarkets) as Record<string, { installLocation?: string }>;
+    } catch {}
+  }
+  const externalLocation = (marketName: string) => {
+    const location = markets[marketName]?.installLocation;
+    return location && !isOrbitManaged(location, ctx.home) ? location : undefined;
+  };
+
   const rawPlugins = readOptional(pluginsFile);
   if (rawPlugins === undefined) {
+    const location = externalLocation('orbit');
+    if (location) return externalInspection('claude', detected, location);
     return {
       host: 'claude',
       displayName: DISPLAY_NAMES.claude,
@@ -273,6 +316,9 @@ function inspectClaude(ctx: HostContext): HostInspection {
 
   const keys = Object.keys(parsedPlugins.plugins ?? {}).filter((k) => k.startsWith('orbit@'));
   const key = keys.find((k) => !k.startsWith('orbit@orbit-head-')) ?? keys[0];
+  const marketName = key ? key.slice('orbit@'.length) : 'orbit';
+  const external = externalLocation(marketName) ?? externalLocation('orbit');
+  if (external) return externalInspection('claude', detected, external);
   if (!key) {
     return {
       host: 'claude',
@@ -287,15 +333,7 @@ function inspectClaude(ctx: HostContext): HostInspection {
   const rawEntry = parsedPlugins.plugins?.[key];
   const record = Array.isArray(rawEntry) ? (rawEntry.find((r) => r.scope === 'user') ?? rawEntry[0]) : rawEntry;
   const recordVersion = record?.version;
-  const marketName = key.slice('orbit@'.length);
-  let marketLocation: string | undefined;
-  const rawMarkets = readOptional(marketplacesFile);
-  if (rawMarkets !== undefined) {
-    try {
-      const markets = JSON.parse(rawMarkets) as Record<string, { installLocation?: string }>;
-      marketLocation = markets[marketName]?.installLocation;
-    } catch {}
-  }
+  const marketLocation = markets[marketName]?.installLocation;
 
   const activeVersion = readOptional(join(ctx.pluginDir, '.claude-plugin', 'plugin.json'))
     ? (JSON.parse(readFileSync(join(ctx.pluginDir, '.claude-plugin', 'plugin.json'), 'utf8')) as { version?: string }).version
@@ -328,6 +366,7 @@ function applyClaude(ctx: HostContext): HostApplyResult {
   const exec = ctx.exec ?? defaultExec;
   const current = inspectClaude(ctx);
   if (current.status === 'invalid') throw new Error(current.detail);
+  if (current.status === 'external') throw externalError(current);
   if (current.status === 'registered') {
     return { host: 'claude', action: 'unchanged', path: current.path, detail: current.detail };
   }
@@ -376,6 +415,9 @@ function removeClaude(ctx: HostContext): HostRemoveResult {
   const current = inspectClaude(ctx);
   if (current.status === 'unregistered' || current.status === 'missing-file') {
     return { host: 'claude', action: 'unchanged', path: current.path, detail: 'not registered' };
+  }
+  if (current.status === 'external') {
+    return { host: 'claude', action: 'skipped', path: current.path, detail: current.detail };
   }
   const cmd = 'claude plugin uninstall orbit@orbit';
   if (!isExecutableOnPath('claude', env.PATH)) {
@@ -430,6 +472,9 @@ function inspectGrok(ctx: HostContext): HostInspection {
     };
   }
   const installedPath = hit[1]?.path ?? hit[1]?.source;
+  if (installedPath && !isOrbitManaged(installedPath, ctx.home)) {
+    return externalInspection('grok', detected, installedPath);
+  }
   if (installedPath && safeRealpath(installedPath) === safeRealpath(ctx.pluginDir)) {
     return {
       host: 'grok',
@@ -456,6 +501,7 @@ function applyGrok(ctx: HostContext): HostApplyResult {
   const exec = ctx.exec ?? defaultExec;
   const current = inspectGrok(ctx);
   if (current.status === 'invalid') throw new Error(current.detail);
+  if (current.status === 'external') throw externalError(current);
   if (current.status === 'registered') {
     return { host: 'grok', action: 'unchanged', path: current.path, detail: current.detail };
   }
@@ -478,6 +524,9 @@ function removeGrok(ctx: HostContext): HostRemoveResult {
   const current = inspectGrok(ctx);
   if (current.status === 'unregistered' || current.status === 'missing-file') {
     return { host: 'grok', action: 'unchanged', path: current.path, detail: 'not registered' };
+  }
+  if (current.status === 'external') {
+    return { host: 'grok', action: 'skipped', path: current.path, detail: current.detail };
   }
   const cmd = 'grok plugin uninstall orbit';
   if (!isExecutableOnPath('grok', env.PATH)) {
@@ -588,17 +637,27 @@ export function removeHost(host: HostId, ctx: HostContext): HostRemoveResult {
   }
 }
 
-/** Select hosts to apply during setup/install/sync. */
+/** Select hosts to apply during setup/install/sync. Implicit and --all selections skip externally managed hosts. */
 export function resolveTargetHosts(
   requested: string[] | undefined,
   configured: HostId[] | undefined,
   ctx: HostContext,
   options: { all?: boolean } = {},
 ): HostId[] {
-  if (options.all) return [...HOST_IDS];
-  if (requested && requested.length > 0) {
+  if (requested && requested.length > 0 && !options.all) {
     return [...new Set(requested.map(parseHostId))];
   }
-  const detected = inspectAllHosts(ctx).filter((h) => h.detected).map((h) => h.host);
-  return [...new Set([...(configured ?? []), ...detected])];
+  const inspections = inspectAllHosts(ctx);
+  const external = new Set(inspections.filter((h) => h.status === 'external').map((h) => h.host));
+  const candidates = options.all
+    ? [...HOST_IDS]
+    : [...(configured ?? []), ...inspections.filter((h) => h.detected).map((h) => h.host)];
+  return [...new Set(candidates)].filter((host) => !external.has(host));
+}
+
+/** Report each externally managed host as a skipped apply result. */
+export function externalHostResults(ctx: HostContext): HostApplyResult[] {
+  return inspectAllHosts(ctx)
+    .filter((h) => h.status === 'external')
+    .map((h) => ({ host: h.host, action: 'skipped' as const, path: h.path, detail: h.detail }));
 }

@@ -9,8 +9,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   applyNpmUpdate,
   checkNpmUpdate,
+  globalOrbitBin,
   inspectBundle,
   installBundle,
+  isSemver,
   linkCheckout,
   pruneReleases,
   readPluginVersion,
@@ -47,6 +49,7 @@ import {
 import {
   HOST_IDS,
   applyHost,
+  externalHostResults,
   inspectAllHosts,
   inspectHost,
   isExecutableOnPath,
@@ -54,12 +57,13 @@ import {
   removeHost,
   resolveTargetHosts,
   type AntigravitySkillsApi,
+  type HostApplyResult,
   type HostContext,
   type HostId,
 } from './hosts.js';
 import { applyProjectInit, detectProjectSetup } from './init.js';
 import { projectRoot } from './paths.js';
-import { inspectTargetAvailability, resolveTask } from './resolve.js';
+import { inspectTargetAvailability, resolveTask, rowProviderTargets } from './resolve.js';
 
 function resolveBundleDir(): string {
   const packaged = fileURLToPath(new URL('./plugin/', import.meta.url));
@@ -97,6 +101,11 @@ function makeHostContext(env: NodeJS.ProcessEnv = process.env): HostContext {
     version: inspection.activeVersion ?? version,
     antigravity,
   };
+}
+
+function syncHosts(ctx: HostContext, options: { all?: boolean } = {}): HostApplyResult[] {
+  const targets = resolveTargetHosts(undefined, loadConfig(home).config.hosts, ctx, options);
+  return [...targets.map((h) => applyHost(h, ctx)), ...externalHostResults(ctx)];
 }
 
 function parseHostFlags(raw?: string[]): string[] | undefined {
@@ -210,6 +219,9 @@ async function runInstall(options: { host?: string[]; all?: boolean; yes?: boole
     if (inspected.status === 'invalid') {
       throw new Error(`Invalid ${inspected.displayName} config at ${inspected.path}: ${inspected.detail}`);
     }
+    if (inspected.status === 'external') {
+      throw new Error(`${inspected.displayName} is ${inspected.detail}. Drop --host ${hostId}, or remove that install first to let Orbit CLI manage it.`);
+    }
   }
 
   // Persist user's explicit host selection if provided or interactively chosen; keep existing if unchanged.
@@ -219,7 +231,7 @@ async function runInstall(options: { host?: string[]; all?: boolean; yes?: boole
 
   const installed = installBundle(bundle, home, version);
   const ctxAfter = makeHostContext();
-  const hostResults = targets.map((hostId) => applyHost(hostId, ctxAfter));
+  const hostResults = [...targets.map((hostId) => applyHost(hostId, ctxAfter)), ...externalHostResults(ctxAfter)];
 
   let catalogSynced: { ok: boolean; source?: string; providers?: number; error?: string } = { ok: false };
   if (process.env.T3_ACP_MCP_NODE) {
@@ -339,7 +351,7 @@ async function editModels(options: { catalog?: string; project?: boolean }) {
     choiceOptions.push({ value: 'manual', label: 'Enter comma-separated providers or provider/model targets manually' });
   } else {
     choiceOptions.push({ value: 'inherit', label: 'inherit (use lead thread model)' });
-    if (name === 'verify') {
+    if (name === 'verifier') {
       choiceOptions.push(
         { value: 'other-family', label: 'other-family (require another model family, ask on failure)' },
         { value: 'other-family, inherit', label: 'other-family, inherit (fall back to lead family if all fail)' },
@@ -440,16 +452,25 @@ program.command('install')
   .option('--json', 'print JSON')
   .action((opts) => runInstall(opts, false));
 
-program.command('update')
-  .description('Check or install a newer @aayushbtw/orbit release and update current symlink')
+program.command('update [targetVersion]')
+  .description('Check or install a newer (or the named) @aayushbtw/orbit release and update current symlink')
+  .option('--to <version>', 'install a specific version instead of latest (same as [targetVersion])')
   .option('--check', 'only check whether a newer version is published')
-  .option('--version <ver>', 'install a specific version instead of latest')
   .option('--keep <n>', 'keep at most N installed releases after updating', (v) => Number(v), 3)
   .option('--yes', 'apply update without prompts')
   .option('--json', 'print JSON')
-  .action(async (options: { check?: boolean; version?: string; keep: number; yes?: boolean; json?: boolean }) => {
+  .action(async (targetArg: string | undefined, options: { to?: string; check?: boolean; keep: number; yes?: boolean; json?: boolean }) => {
+    const positional = targetArg?.trim().replace(/^v/, '');
+    const flagged = options.to?.trim().replace(/^v/, '');
+    if (positional && flagged && positional !== flagged) {
+      throw new Error(`Conflicting target versions: ${positional} and --to ${flagged}. Pass one.`);
+    }
+    const requested = positional ?? flagged;
+    if (requested !== undefined && !isSemver(requested)) {
+      throw new Error(`Invalid target version "${requested}". Use a version such as 0.79.0.`);
+    }
     const bundleState = inspectBundle(home, version);
-    if (bundleState.linked && !options.version && !options.check) {
+    if (bundleState.linked && !requested && !options.check) {
       const result = {
         status: 'linked',
         currentLink: bundleState.currentLink,
@@ -461,8 +482,8 @@ program.command('update')
       return;
     }
 
-    const check = options.version
-      ? { currentVersion: version, latestVersion: options.version.replace(/^v/, ''), updateAvailable: true }
+    const check = requested
+      ? { currentVersion: version, latestVersion: requested, updateAvailable: requested !== version }
       : checkNpmUpdate(version);
 
     if (options.check) {
@@ -481,7 +502,7 @@ program.command('update')
     }
 
     if (!options.yes) {
-      requireTerminal(`orbit update${options.version ? ` --version ${options.version}` : ''} --yes`);
+      requireTerminal(`orbit update${requested ? ` ${requested}` : ''} --yes`);
       const approved = await confirm({
         ...io,
         message: `Update Orbit from ${version} to ${check.latestVersion}?`,
@@ -494,8 +515,8 @@ program.command('update')
 
     if (check.latestVersion !== version) {
       applyNpmUpdate(check.latestVersion);
-      // Invoke the newly installed global orbit CLI so it stages its own new bundle and syncs hosts.
-      const installedJson = execFileSync('orbit', ['install', '--yes', '--json'], { encoding: 'utf8' });
+      // The new global CLI stages its own bundle; PATH may still resolve an older orbit first.
+      const installedJson = execFileSync(globalOrbitBin(), ['install', '--yes', '--json'], { encoding: 'utf8' });
       const pruned = pruneReleases(home, options.keep);
       const parsed = JSON.parse(installedJson) as Record<string, unknown>;
       const result = { ...check, updated: true, pruned, install: parsed };
@@ -505,10 +526,7 @@ program.command('update')
 
     const res = installBundle(bundle, home, version);
     const pruned = pruneReleases(home, options.keep);
-    const ctx = makeHostContext();
-    const cfg = loadConfig(home).config;
-    const hostTargets = resolveTargetHosts(undefined, cfg.hosts, ctx);
-    const hosts = hostTargets.map((h) => applyHost(h, ctx));
+    const hosts = syncHosts(makeHostContext());
     const result = { ...check, updated: true, currentLink: res.currentLink, pruned, hosts };
     output(result, options.json, () => `Switched Orbit current to ${version}${pruned.length ? `; pruned ${pruned.join(', ')}` : ''}.`);
   });
@@ -519,9 +537,7 @@ program.command('use <version>')
   .action((targetVersion: string, options: { json?: boolean }) => {
     const clean = targetVersion.replace(/^v/, '');
     const switched = useRelease(home, clean);
-    const ctx = makeHostContext();
-    const cfg = loadConfig(home).config;
-    const hosts = resolveTargetHosts(undefined, cfg.hosts, ctx).map((h) => applyHost(h, ctx));
+    const hosts = syncHosts(makeHostContext());
     const result = { version: switched.version, currentLink: switched.currentLink, hosts };
     output(result, options.json, () => `Active Orbit version is now ${switched.version} (${switched.currentLink}).`);
   });
@@ -531,9 +547,7 @@ program.command('link [path]')
   .option('--json', 'print JSON')
   .action((repoPath: string | undefined, options: { json?: boolean }) => {
     const linked = linkCheckout(home, repoPath ?? projectRoot());
-    const ctx = makeHostContext();
-    const cfg = loadConfig(home).config;
-    const hosts = resolveTargetHosts(undefined, cfg.hosts, ctx).map((h) => applyHost(h, ctx));
+    const hosts = syncHosts(makeHostContext());
     const result = { ...linked, hosts };
     output(result, options.json, () =>
       `Linked ${linked.currentLink} -> ${linked.repoPath} (v${linked.version}).\n${hosts.map((h) => `${h.host}: ${h.detail}`).join('\n')}`);
@@ -544,9 +558,7 @@ program.command('unlink')
   .option('--json', 'print JSON')
   .action((options: { json?: boolean }) => {
     const res = unlinkCheckout(home, version);
-    const ctx = makeHostContext();
-    const cfg = loadConfig(home).config;
-    const hosts = res.activeVersion ? resolveTargetHosts(undefined, cfg.hosts, ctx).map((h) => applyHost(h, ctx)) : [];
+    const hosts = res.activeVersion ? syncHosts(makeHostContext()) : [];
     const result = { ...res, hosts };
     output(result, options.json, () =>
       res.unlinked
@@ -600,6 +612,7 @@ program.command('status')
       hosts,
       activeProfile: modelsState.activeProfile,
       configSource: modelsState.source ?? null,
+      ...(modelsState.project.projectConfigError ? { projectConfigError: modelsState.project.projectConfigError } : {}),
       catalog: catalog
         ? { syncedAt: catalog.syncedAt, source: catalog.source, providerCount: catalog.providers.length }
         : null,
@@ -609,6 +622,7 @@ program.command('status')
       `Orbit packaged: ${version} | active: ${bundleState.activeVersion ?? 'not installed'}${bundleState.linked ? ` (linked -> ${bundleState.currentRealPath})` : ''}`,
       `Releases: ${bundleState.releases.length ? bundleState.releases.join(', ') : 'none'}`,
       `Profile: ${modelsState.activeProfile} (${modelsState.source ?? 'defaults'})`,
+      ...(modelsState.project.projectConfigError ? [`Project config error: ${modelsState.project.projectConfigError}`] : []),
       `Catalog: ${catalog ? `${catalog.providers.length} providers synced ${catalog.syncedAt}` : 'not synced (run "orbit models sync" in T3)'}`,
       'Hosts:',
       formatHostLines(hosts),
@@ -668,10 +682,13 @@ program.command('doctor')
         issues.push(`${h.host}: ${h.detail}`);
       }
     }
+    if (modelsState.project.projectConfigError) {
+      issues.push(`project config: ${modelsState.project.projectConfigError}`);
+    }
     for (const row of modelsState.rows) {
-      if (row.target.includes('/')) {
-        const err = inspectTargetAvailability(row.target, catalog);
-        if (err) issues.push(`model ${row.task} (${row.target}): ${err}`);
+      for (const target of rowProviderTargets(row)) {
+        const err = inspectTargetAvailability(target, catalog);
+        if (err) issues.push(`model ${row.task} (${target}): ${err}`);
       }
     }
 
@@ -692,6 +709,7 @@ program.command('doctor')
       hosts,
       tools,
       models: modelsState.rows,
+      ...(modelsState.project.projectConfigError ? { projectConfigError: modelsState.project.projectConfigError } : {}),
       catalogSynced: Boolean(catalog),
       fixes,
       issues,
@@ -755,10 +773,7 @@ hostsCommand.command('sync')
   .option('--all', 'register all supported hosts')
   .option('--json', 'print JSON')
   .action((options: { all?: boolean; json?: boolean }, cmd: Command) => {
-    const ctx = makeHostContext();
-    const cfg = loadConfig(home).config;
-    const targets = resolveTargetHosts(undefined, cfg.hosts, ctx, { all: options.all });
-    const results = targets.map((h) => applyHost(h, ctx));
+    const results = syncHosts(makeHostContext(), { all: options.all });
     output(results, Boolean(options.json || cmd.optsWithGlobals().json), () => results.map((r) => `${r.host}: ${r.detail}`).join('\n'));
   });
 
@@ -790,12 +805,12 @@ modelCommand.command('explain [task]')
 
 modelCommand.command('set <task> <target>')
   .description('Set a task, panel, or work-type model assignment (use "" to clear)')
-  .option('--effort <effort>', 'effort value (e.g. low, medium, high, xhigh, max, ultra)')
+  .option('--effort <effort>', 'low, medium, high, xhigh, max, or a value the target model lists')
   .option('--option <k=v>', 'provider option pair (repeatable)', collectList, [])
   .option('--fallback <targets>', 'comma-separated fallback provider/model targets')
   .option('--escalate <spec>', 'escalate after failures: <tries>:<target|effort=val|effort>')
-  .option('--on-all-failed <policy>', 'verify fallback policy: ask, inherit, or hold')
-  .option('--judge <target>', 'judge target for arena panel')
+  .option('--on-all-failed <policy>', 'verifier fallback policy: ask, inherit, or hold')
+  .option('--judge <seat>', 'arena judge: role name, other-family, or <provider>/<model>[@effort]')
   .option('--use <description>', 'describe what work uses this custom work type')
   .option('--project', 'write override to <repo>/.orbit/config.json instead of user config')
   .option('--json', 'print JSON')

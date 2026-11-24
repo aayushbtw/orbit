@@ -11,6 +11,7 @@ import {
   CANONICAL_TASKS,
   getEffectiveAssignments,
   normalizeTaskName,
+  parseSeatEntry,
   type EffectiveAssignmentRow,
   type OnAllFailedPolicy,
 } from './config.js';
@@ -309,11 +310,11 @@ function resolveRowAssignment(
     });
     const policy: OnAllFailedPolicy = effectiveTarget === 'other-family, inherit'
       ? 'inherit'
-      : (row.onAllFailed ?? (taskName === 'verify' ? 'ask' : 'inherit'));
+      : (row.onAllFailed ?? (taskName === 'verifier' ? 'ask' : 'inherit'));
     const fallbackToInherit = policy === 'inherit' || roster.fallbackToInherit;
     const mode = roster.candidates.length > 0
       ? 'delegate'
-      : fallbackToInherit ? 'inherit' : policy === 'hold' ? 'hold' : taskName === 'verify' ? 'ask' : 'skip';
+      : fallbackToInherit ? 'inherit' : policy === 'hold' ? 'hold' : taskName === 'verifier' ? 'ask' : 'skip';
 
     return {
       kind: 'task',
@@ -423,77 +424,24 @@ export function resolveTask(options: {
     };
   }
 
-  if (normalized === 'interrogate') {
-    const panel = state.project.orbitProfile?.panels?.interrogate
-      ?? state.config.profiles[state.activeProfile]?.panels?.interrogate
-      ?? ['hard', 'other-family'];
-    const seats: SeatResult[] = panel.map((seat, idx) => {
-      const seatTask = normalizeTaskName(seat);
-      const seatName = `adversary-${idx + 1}`;
-      if (seatTask === 'other-family' || Object.hasOwn(CANONICAL_TASKS, seatTask)) {
-        return { seat: seatName, ...resolveTask({ ...options, task: seatTask, workType: undefined, catalog }) };
-      }
-      return {
-        seat: seatName,
-        ...resolveRowAssignment(
-          'interrogate-seat',
-          {
-            task: 'interrogate-seat',
-            kind: 'panel',
-            use: 'Interrogate adversary',
-            target: seat,
-            targetSource: 'panel',
-            effort: '',
-            effortSource: 'default',
-            options: {},
-            fallbacks: [],
-            userTarget: '',
-            userEffort: '',
-          },
-          state.rows,
-          catalog,
-          session,
-          tries,
-          runtimeMode,
-        ),
-      };
-    });
-    return {
-      kind: 'panel',
-      task: 'interrogate',
-      mode: 'panel',
-      source: state.rows.find((r) => r.task === 'interrogate')?.targetSource ?? 'default',
-      escalated: false,
-      tries,
-      session,
-      target: null,
-      candidates: [],
-      unavailable: [],
-      fallbackToInherit: false,
-      seats,
-    };
-  }
-
-  if (normalized === 'arena') {
-    const arenaCfg = state.project.orbitProfile?.panels?.arena
-      ?? state.config.profiles[state.activeProfile]?.panels?.arena;
-    const runners = arenaCfg?.runners?.length ? arenaCfg.runners : ['hard', 'code'];
-    const judge = arenaCfg?.judge || 'other-family';
-    const resolveSeat = (entry: string, roleLabel: string) => {
+  if (normalized === 'interrogate' || normalized === 'arena') {
+    const row = state.rows.find((r) => r.task === normalized)!;
+    const resolveSeat = (entry: string, label: string) => {
       const name = normalizeTaskName(entry);
       if (name === 'other-family' || Object.hasOwn(CANONICAL_TASKS, name)) {
         return resolveTask({ ...options, task: name, workType: undefined, catalog });
       }
+      const seat = parseSeatEntry(entry);
       return resolveRowAssignment(
-        roleLabel,
+        label,
         {
-          task: roleLabel,
+          task: label,
           kind: 'panel',
-          use: roleLabel,
-          target: entry,
-          targetSource: 'panel',
-          effort: '',
-          effortSource: 'default',
+          use: label,
+          target: seat.target,
+          targetSource: row.targetSource,
+          effort: seat.effort ?? '',
+          effortSource: row.targetSource,
           options: {},
           fallbacks: [],
           userTarget: '',
@@ -506,15 +454,18 @@ export function resolveTask(options: {
         runtimeMode,
       );
     };
-    const seats = [
-      ...runners.map((entry, idx) => ({ seat: `runner-${idx + 1}`, ...resolveSeat(entry, `arena-runner-${idx + 1}`) })),
-      { seat: 'judge', ...resolveSeat(judge, 'arena-judge') },
-    ];
+    const entries = row.entries ?? [];
+    const seats: SeatResult[] = normalized === 'interrogate'
+      ? entries.map((entry, idx) => ({ seat: `adversary-${idx + 1}`, ...resolveSeat(entry, 'interrogate-seat') }))
+      : [
+        ...entries.map((entry, idx) => ({ seat: `runner-${idx + 1}`, ...resolveSeat(entry, `arena-runner-${idx + 1}`) })),
+        { seat: 'judge', ...resolveSeat(row.judge ?? 'other-family', 'arena-judge') },
+      ];
     return {
       kind: 'panel',
-      task: 'arena',
+      task: normalized,
       mode: 'panel',
-      source: state.rows.find((r) => r.task === 'arena')?.targetSource ?? 'default',
+      source: row.targetSource,
       escalated: false,
       tries,
       session,
@@ -532,6 +483,17 @@ export function resolveTask(options: {
     row = state.rows.find((r) => r.task === 'code')!;
   }
   return resolveRowAssignment(row.task, row, state.rows, catalog, session, tries, runtimeMode);
+}
+
+/** List every `<provider>/<model>` target a row names, including roster entries, panel seats, the arena judge, fallbacks, and escalation. */
+export function rowProviderTargets(row: EffectiveAssignmentRow): string[] {
+  const entries = [
+    ...(row.entries ?? [row.target]),
+    ...(row.judge ? [row.judge] : []),
+    ...row.fallbacks,
+    ...(row.escalate?.target ? [row.escalate.target] : []),
+  ];
+  return [...new Set(entries.map((entry) => parseSeatEntry(entry).target).filter((target) => target.includes('/')))];
 }
 
 /** Validate whether a target string exists cleanly inside a catalog when synced. */

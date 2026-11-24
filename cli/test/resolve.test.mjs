@@ -77,16 +77,24 @@ beforeEach(() => {
 
 afterEach(() => rmSync(home, { recursive: true, force: true }));
 
-function json(...args) {
-  const result = spawnSync(process.execPath, [cli, ...args, '--json'], {
+function run(...args) {
+  const result = spawnSync(process.execPath, [cli, ...args], {
     cwd: workspace,
-    env: { ...process.env, HOME: home, USERPROFILE: home, PATH: '' },
+    env: { ...process.env, HOME: home, USERPROFILE: home, PATH: '', T3_ACP_MCP_NODE: '' },
     encoding: 'utf8',
   });
+  if (result.error) throw result.error;
+  return result;
+}
+
+function json(...args) {
+  const result = run(...args, '--json');
   expect(result.stderr).toBe('');
   expect(result.status).toBe(0);
   return JSON.parse(result.stdout);
 }
+
+const modelsTable = (rows) => `## Workflow\n\n### Models\n\n| Task | Use for | Model | Effort |\n| --- | --- | --- | --- |\n${rows}`;
 
 test('unset tasks resolve to inherit with zero hardcoded provider defaults', () => {
   const res = json('models', 'resolve', 'code');
@@ -202,4 +210,99 @@ test('supports work-type escalation after N failed tries and panel resolution', 
   expect(panel.seats).toHaveLength(2);
   expect(panel.seats[0].target).toMatchObject({ providerInstanceId: 'claudeAgent', model: 'claude-opus-5-5' });
   expect(panel.seats[1].target).toMatchObject({ providerInstanceId: 'codex', model: 'gpt-6.2-sol' });
+});
+
+test('arena accepts comma-separated runner seats and validates --judge', () => {
+  const rows = json('models', 'set', 'arena', 'hard, code', '--judge', 'other-family');
+  expect(rows.find((r) => r.task === 'arena')).toMatchObject({ entries: ['judgment', 'code'], judge: 'other-family' });
+  const defaults = json('models', 'resolve', 'arena');
+  expect(defaults.seats.map((s) => s.seat)).toEqual(['runner-1', 'runner-2', 'judge']);
+  expect(defaults.seats[0]).toMatchObject({ task: 'judgment', mode: 'alias', alias: 'opus' });
+  expect(defaults.seats[1]).toMatchObject({ task: 'code', mode: 'inherit' });
+
+  const badJudge = run('models', 'set', 'arena', 'hard, code', '--judge', 'not a target');
+  expect(badJudge.status).toBe(1);
+  expect(badJudge.stderr).toContain('Invalid arena judge "not a target"');
+  const badRunner = run('models', 'set', 'arena', 'hard, bad entry');
+  expect(badRunner.status).toBe(1);
+  expect(badRunner.stderr).toContain('arena seats');
+  const judgeElsewhere = run('models', 'set', 'code', 'claudeAgent/claude-opus-5-5', '--judge', 'judgment');
+  expect(judgeElsewhere.status).toBe(1);
+  expect(judgeElsewhere.stderr).toContain('--judge applies only to the arena panel');
+
+  json('models', 'set', 'arena', 'claudeAgent/claude-fable-5-2@high, code', '--judge', 'grok/grok-4.7@medium');
+  const panel = json('models', 'resolve', 'arena');
+  expect(panel.seats[0].target).toMatchObject({
+    providerInstanceId: 'claudeAgent',
+    model: 'claude-fable-5-2',
+    options: [{ id: 'effort', value: 'high' }],
+  });
+  expect(panel.seats[1].mode).toBe('inherit');
+  expect(panel.seats[2].target).toMatchObject({
+    providerInstanceId: 'grok',
+    model: 'grok-4.7',
+    options: [{ id: 'reasoningEffort', value: 'medium' }],
+  });
+});
+
+test('effort follows the plugin levels unless a target model lists its own', () => {
+  expect(run('models', 'set', 'judgment', 'opus', '--effort', 'ultra').status).toBe(1);
+  expect(run('models', 'set', 'code', 'claudeAgent/claude-opus-5-5', '--effort', 'ultra').stderr)
+    .toContain('Choose effort from low, medium, high, xhigh, max, ultrathink for claude-opus-5-5');
+  json('models', 'set', 'code', 'codex/gpt-6.2-sol', '--effort', 'ultra');
+  json('models', 'set', 'code', 'codex/gpt-7-preview', '--effort', 'turbo');
+  expect(json('models', 'resolve', 'code').target).toMatchObject({ model: 'gpt-7-preview', modelVerified: false });
+  json('models', 'set', 'judgment', 'opus', '--effort', 'high');
+});
+
+test('doctor checks every entry of comma-separated roster, interrogate and arena rows', () => {
+  json('install', '--yes');
+  json('models', 'set', 'other-family', 'codex/gpt-6.2-sol, claudeAgent/claude-opus-5-5');
+  json('models', 'set', 'interrogate', 'judgment, codex/gpt-6.2-sol@high');
+  json('models', 'set', 'arena', 'hard, claudeAgent/claude-fable-5-2', '--judge', 'grok/grok-4.7');
+  const healthy = json('doctor');
+  expect(healthy.issues).toEqual([]);
+  expect(healthy.healthy).toBe(true);
+
+  json('models', 'set', 'arena', 'hard, claudeAgent/claude-fable-5-2', '--judge', 'grok/grok-9');
+  json('models', 'set', 'other-family', 'codex/gpt-6.2-sol, cursor/some-model');
+  json('models', 'set', 'interrogate', 'judgment, claudeAgent/claude-haiku-9@low');
+  const sick = json('doctor');
+  expect(sick.healthy).toBe(false);
+  expect(sick.issues.sort()).toEqual([
+    'model arena (grok/grok-9): model grok-9 not listed on grok',
+    'model interrogate (claudeAgent/claude-haiku-9): model claude-haiku-9 not listed on claudeAgent',
+    'model other-family (cursor/some-model): provider cursor is disabled',
+  ]);
+});
+
+test('interrogate and arena read AGENTS.md ### Models overrides below .orbit/config.json', () => {
+  json('models', 'set', 'interrogate', 'judgment, other-family');
+  writeFileSync(join(workspace, 'AGENTS.md'), modelsTable(
+    '| interrogate | | codex/gpt-6.2-sol@high, judgment | |\n'
+    + '| arena | | claudeAgent/claude-fable-5-2, code, judge=grok/grok-4.7 | |\n',
+  ));
+
+  const interrogate = json('models', 'resolve', 'interrogate');
+  expect(interrogate.source).toContain('AGENTS.md');
+  expect(interrogate.seats[0].target).toMatchObject({
+    providerInstanceId: 'codex',
+    model: 'gpt-6.2-sol',
+    options: [{ id: 'reasoningEffort', value: 'high' }],
+  });
+  expect(interrogate.seats[1]).toMatchObject({ mode: 'alias', alias: 'opus' });
+
+  const arena = json('models', 'resolve', 'arena');
+  expect(arena.source).toContain('AGENTS.md');
+  expect(arena.seats.map((s) => s.seat)).toEqual(['runner-1', 'runner-2', 'judge']);
+  expect(arena.seats[0].target).toMatchObject({ providerInstanceId: 'claudeAgent', model: 'claude-fable-5-2' });
+  expect(arena.seats[1].mode).toBe('inherit');
+  expect(arena.seats[2].target).toMatchObject({ providerInstanceId: 'grok', model: 'grok-4.7' });
+  expect(json('models', 'list').filter((r) => r.task === 'interrogate' || r.task === 'arena').map((r) => r.kind))
+    .toEqual(['panel', 'panel']);
+
+  json('models', 'set', 'interrogate', 'code', '--project');
+  const project = json('models', 'resolve', 'interrogate');
+  expect(project.source).toContain(join('.orbit', 'config.json'));
+  expect(project.seats).toHaveLength(1);
 });

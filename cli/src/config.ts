@@ -1,6 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import type { CapabilitiesSnapshot, ProviderModel } from './catalog.js';
+import { modelEffortOption, type CapabilitiesSnapshot, type ProviderModel } from './catalog.js';
 import type { HostId } from './hosts.js';
 import { orbitPaths, projectRoot, readOptional, withLock, writeFileAtomic } from './paths.js';
 
@@ -52,22 +52,20 @@ export interface OrbitConfig {
   profiles: Record<string, ProfileConfig>;
 }
 
-export const CANONICAL_TASKS: Record<string, { use: string }> = {
-  plan: { use: 'Plan gate, architecture tradeoffs, fork advisor, and diff review' },
-  code: { use: 'Code implementation delegates' },
-  hard: { use: 'Complex cross-cutting changes, codebase explainers, and autopilot owners' },
-  writing: { use: 'Docs, PR descriptions, and prose units' },
-  verify: { use: 'Pre-land independent verification' },
-  fast: { use: 'Routine git/PR ops, transcript slicing, and read-only workers' },
-  comments: { use: 'Comment cleanup audit (Comment Sicko)' },
+// Role names and defaults mirror plugin/rules.md Workflow Defaults, Models, which the lead reads.
+export const CANONICAL_TASKS: Record<string, { use: string; default: string }> = {
+  advisor: { use: 'Plan gate, fork advisor, and diff review (orbit:advisor)', default: 'inherit' },
+  judgment: { use: 'Hardest changes, prose delegates, explainers, and first panel seats', default: 'opus' },
+  code: { use: 'Code delegates, swarm workers, and second panel seats', default: 'inherit' },
+  verifier: { use: 'Pre-land independent verification (orbit:verifier)', default: 'inherit' },
+  gitops: { use: 'Commits and PR work (orbit:gitops)', default: 'inherit' },
 };
 
 export const ROLE_ALIASES: Record<string, string> = {
-  advisor: 'plan',
-  judgment: 'hard',
-  verifier: 'verify',
-  gitops: 'fast',
-  'comment-sicko': 'comments',
+  plan: 'advisor',
+  hard: 'judgment',
+  verify: 'verifier',
+  fast: 'gitops',
 };
 
 export const PANEL_NAMES = ['other-family', 'interrogate', 'arena'] as const;
@@ -75,7 +73,32 @@ export const PANEL_NAMES = ['other-family', 'interrogate', 'arena'] as const;
 const ROLE_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const TARGET_PATTERN = /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.:@+/-]+$/;
 const LEGACY_ALIASES = ['inherit', 'opus', 'sonnet', 'haiku', 'fable'];
-const STANDARD_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max', 'ultra', 'ultrathink', 'auto'];
+const STANDARD_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
+const EFFORT_TOKEN = /^[a-z][a-z0-9_-]*$/;
+
+function splitList(value: string): string[] {
+  return value.split(',').map((entry) => entry.trim()).filter(Boolean);
+}
+
+/** Split a panel seat entry `<provider>/<model>@<effort>` into its target and effort. */
+export function parseSeatEntry(entry: string): { target: string; effort?: string } {
+  const value = entry.trim();
+  const slash = value.indexOf('/');
+  const at = value.lastIndexOf('@');
+  if (slash > 0 && at > slash && EFFORT_TOKEN.test(value.slice(at + 1))) {
+    return { target: value.slice(0, at), effort: value.slice(at + 1) };
+  }
+  return { target: value };
+}
+
+function validateSeatEntry(entry: string): boolean {
+  const { target, effort } = parseSeatEntry(entry);
+  if (effort) return TARGET_PATTERN.test(target);
+  return target === 'other-family'
+    || Object.hasOwn(CANONICAL_TASKS, normalizeTaskName(target))
+    || LEGACY_ALIASES.includes(target)
+    || TARGET_PATTERN.test(target);
+}
 
 /** Strip optional backticks and map legacy role aliases to canonical task names. */
 export function normalizeTaskName(raw: string): string {
@@ -168,9 +191,22 @@ export function parseMarkdownModelsTable(text: string, opts: { insideWorkflow?: 
 function rowsToProfile(rows: ParsedMarkdownRow[]): ProfileConfig {
   const profile = emptyProfile();
   for (const row of rows) {
+    if (row.task === 'interrogate') {
+      if (row.model) profile.panels.interrogate = splitList(row.model).map(normalizeTaskName);
+      continue;
+    }
+    if (row.task === 'arena') {
+      const entries = splitList(row.model);
+      const judge = entries.find((entry) => entry.startsWith('judge='))?.slice('judge='.length).trim();
+      const runners = entries.filter((entry) => !entry.startsWith('judge=')).map(normalizeTaskName);
+      if (runners.length || judge) {
+        profile.panels.arena = { ...(runners.length ? { runners } : {}), ...(judge ? { judge: normalizeTaskName(judge) } : {}) };
+      }
+      continue;
+    }
     if (row.task === 'other-family') {
       if (row.model) {
-        profile.panels['other-family'] = row.model.split(',').map((entry) => entry.trim()).filter(Boolean);
+        profile.panels['other-family'] = splitList(row.model);
       }
       if (row.effort) {
         profile.tasks['other-family'] = { target: row.model || 'inherit', effort: row.effort };
@@ -194,9 +230,9 @@ function rowsToProfile(rows: ParsedMarkdownRow[]): ProfileConfig {
     }
 
     if (Object.hasOwn(CANONICAL_TASKS, row.task)) {
-      if (row.task === 'verify' && assignment.target === 'other-family, inherit') {
+      if (row.task === 'verifier' && assignment.target === 'other-family, inherit') {
         assignment.onAllFailed = 'inherit';
-      } else if (row.task === 'verify' && assignment.target === 'other-family') {
+      } else if (row.task === 'verifier' && assignment.target === 'other-family') {
         assignment.onAllFailed = 'ask';
       }
       profile.tasks[row.task] = assignment;
@@ -213,11 +249,27 @@ function rowsToProfile(rows: ParsedMarkdownRow[]): ProfileConfig {
 }
 
 function cloneProfile(profile?: Partial<ProfileConfig>): ProfileConfig {
-  return {
-    tasks: structuredClone(profile?.tasks ?? {}),
-    panels: structuredClone(profile?.panels ?? {}),
-    workTypes: structuredClone(profile?.workTypes ?? []),
-  };
+  const tasks: Record<string, TaskAssignment> = {};
+  const workTypes = structuredClone(profile?.workTypes ?? []);
+  for (const [rawName, assignment] of Object.entries(structuredClone(profile?.tasks ?? {}))) {
+    const name = normalizeTaskName(rawName);
+    if (Object.hasOwn(CANONICAL_TASKS, name) || name === 'other-family') {
+      tasks[name] = assignment;
+    } else if (!workTypes.some((w) => w.name === name)) {
+      workTypes.push({ ...assignment, name, use: assignment.use || name });
+    }
+  }
+  return { tasks, panels: structuredClone(profile?.panels ?? {}), workTypes };
+}
+
+function assertProfileShape(raw: unknown, sourcePath: string): Partial<ProfileConfig> {
+  const isObject = (value: unknown) => value !== null && typeof value === 'object' && !Array.isArray(value);
+  if (!isObject(raw)) throw new Error(`Invalid Orbit project config at ${sourcePath}: root must be a JSON object.`);
+  const obj = raw as Record<string, unknown>;
+  if (obj.tasks !== undefined && !isObject(obj.tasks)) throw new Error(`Invalid Orbit project config at ${sourcePath}: tasks must be an object.`);
+  if (obj.panels !== undefined && !isObject(obj.panels)) throw new Error(`Invalid Orbit project config at ${sourcePath}: panels must be an object.`);
+  if (obj.workTypes !== undefined && !Array.isArray(obj.workTypes)) throw new Error(`Invalid Orbit project config at ${sourcePath}: workTypes must be an array.`);
+  return obj as Partial<ProfileConfig>;
 }
 
 function normalizeLoadedConfig(raw: unknown, sourcePath: string): OrbitConfig {
@@ -287,23 +339,34 @@ export interface ProjectOverrides {
   agentsPath?: string;
   orbitProfile?: ProfileConfig;
   orbitPath?: string;
+  projectConfigError?: string;
 }
 
-/** Read project overrides from AGENTS.md (### Models) and .orbit/config.json. */
+/** Read project overrides from AGENTS.md (### Models) and .orbit/config.json, reporting malformed files in projectConfigError. */
 export function loadProjectOverrides(dir = projectRoot()): ProjectOverrides {
   const root = projectRoot(dir);
+  const errors: string[] = [];
   const agentsPath = join(root, 'AGENTS.md');
   const agentsText = readOptional(agentsPath);
-  const agentsProfile = agentsText !== undefined
-    ? rowsToProfile(parseMarkdownModelsTable(agentsText, { insideWorkflow: true }))
-    : undefined;
+  let agentsProfile: ProfileConfig | undefined;
+  if (agentsText !== undefined) {
+    try {
+      agentsProfile = rowsToProfile(parseMarkdownModelsTable(agentsText, { insideWorkflow: true }));
+    } catch (error) {
+      errors.push(`${agentsPath}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
 
   const orbitPath = join(root, '.orbit', 'config.json');
   const orbitRaw = readOptional(orbitPath);
   let orbitProfile: ProfileConfig | undefined;
   if (orbitRaw !== undefined) {
-    const parsed = JSON.parse(orbitRaw) as Partial<ProfileConfig>;
-    orbitProfile = cloneProfile(parsed);
+    try {
+      orbitProfile = cloneProfile(assertProfileShape(JSON.parse(orbitRaw), orbitPath));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      errors.push(message.includes(orbitPath) ? message : `${orbitPath}: ${message}`);
+    }
   }
 
   return {
@@ -312,7 +375,16 @@ export function loadProjectOverrides(dir = projectRoot()): ProjectOverrides {
     agentsPath: agentsText !== undefined ? agentsPath : undefined,
     orbitProfile,
     orbitPath: orbitRaw !== undefined ? orbitPath : undefined,
+    ...(errors.length ? { projectConfigError: errors.join('; ') } : {}),
   };
+}
+
+function loadEditableProject(dir: string): ProjectOverrides {
+  const project = loadProjectOverrides(dir);
+  if (project.orbitPath && !project.orbitProfile) {
+    throw new Error(`Fix or reset ${project.orbitPath} before editing it: ${project.projectConfigError}`);
+  }
+  return project;
 }
 
 /** Update <projectRoot>/.orbit/config.json atomically. */
@@ -344,16 +416,13 @@ export function validateTarget(rawTask: string, rawValue: string): string | unde
     return 'Use unique provider or provider/model entries, with optional inherit at the end.';
   }
 
-  if (task === 'interrogate') {
-    const entries = value.split(',').map((entry) => entry.trim()).filter(Boolean);
-    if (entries.length > 0 && entries.every((entry) =>
-      entry === 'other-family' || Object.hasOwn(CANONICAL_TASKS, normalizeTaskName(entry)) || TARGET_PATTERN.test(entry) || LEGACY_ALIASES.includes(entry))) {
-      return undefined;
-    }
-    return 'Use comma-separated targets, canonical role names, or other-family.';
+  if (task === 'interrogate' || task === 'arena') {
+    const entries = splitList(value);
+    if (entries.length > 0 && entries.every(validateSeatEntry)) return undefined;
+    return `Use comma-separated ${task} seats: role names (${Object.keys(CANONICAL_TASKS).join(', ')}), other-family, or <provider>/<model>[@effort].`;
   }
 
-  if (task === 'verify' && ['other-family', 'other-family, inherit'].includes(value)) return undefined;
+  if (task === 'verifier' && ['other-family', 'other-family, inherit'].includes(value)) return undefined;
   if (isSingleModel(value)) return undefined;
 
   const retry = parseRetryCell(value);
@@ -363,19 +432,21 @@ export function validateTarget(rawTask: string, rawValue: string): string | unde
   return 'Use provider/model, inherit, or a supported model value.';
 }
 
-/** Validate an effort value, honoring model-specific catalog values when known. */
-export function validateEffort(effort: string, model?: ProviderModel): string | undefined {
+/**
+ * Validate an effort value. A catalog model's effort option is authoritative. A provider target the
+ * catalog does not list may name any provider-native token, which resolve then marks unverified.
+ */
+export function validateEffort(effort: string, model?: ProviderModel, providerTarget = false): string | undefined {
   if (!effort) return undefined;
-  if (model?.options) {
-    const allowed = model.options.flatMap((opt) => (Array.isArray(opt.values) ? opt.values.map(String) : []));
-    if (allowed.length > 0 && allowed.includes(effort)) return undefined;
-    const effortOpt = model.options.find((opt) => ['effort', 'reasoningEffort', 'thought_level'].includes(opt.id));
-    if (effortOpt?.values && !effortOpt.values.map(String).includes(effort)) {
-      return `Choose effort from ${effortOpt.values.join(', ')} for ${model.id}.`;
-    }
+  const option = modelEffortOption(model);
+  if (option?.values?.length) {
+    return option.values.map(String).includes(effort)
+      ? undefined
+      : `Choose effort from ${option.values.join(', ')} for ${model!.id}.`;
   }
   if (STANDARD_EFFORTS.includes(effort)) return undefined;
-  return `Choose effort from ${STANDARD_EFFORTS.join(', ')}.`;
+  if (providerTarget && !model && EFFORT_TOKEN.test(effort)) return undefined;
+  return `Choose effort from ${STANDARD_EFFORTS.join(', ')}, or a value the target model's effort option lists.`;
 }
 
 export interface EffectiveAssignmentRow {
@@ -392,6 +463,8 @@ export interface EffectiveAssignmentRow {
   onAllFailed?: OnAllFailedPolicy;
   userTarget: string;
   userEffort: string;
+  entries?: string[];
+  judge?: string;
 }
 
 /** Merge user profile + project AGENTS.md + project .orbit/config.json into effective assignments. */
@@ -434,7 +507,7 @@ export function getEffectiveAssignments(home: string, projectDir = projectRoot()
       task,
       kind: 'task',
       use: useHit?.assignment?.use || meta.use,
-      target: targetHit?.assignment?.target || 'inherit',
+      target: targetHit?.assignment?.target || meta.default,
       targetSource: targetHit ? targetHit.source : 'default',
       effort: effortHit?.assignment?.effort || '',
       effortSource: effortHit ? effortHit.source : 'default',
@@ -466,17 +539,19 @@ export function getEffectiveAssignments(home: string, projectDir = projectRoot()
     fallbacks: [],
     userTarget: profile.panels['other-family']?.join(', ') ?? '',
     userEffort: profile.tasks['other-family']?.effort ?? '',
+    entries: otherFamilyHit?.entries ?? [],
   });
 
   // interrogate panel
   const interrogateHit = layers
     .map((layer) => ({ entries: layer.data?.panels?.interrogate, source: layer.source }))
     .find((hit) => Array.isArray(hit.entries) && hit.entries.length > 0);
+  const interrogateEntries = interrogateHit?.entries ?? ['judgment', 'other-family'];
   rows.push({
     task: 'interrogate',
     kind: 'panel',
     use: 'Adversarial review seats',
-    target: interrogateHit?.entries?.join(', ') || 'hard, other-family',
+    target: interrogateEntries.join(', '),
     targetSource: interrogateHit ? interrogateHit.source : 'default',
     effort: '',
     effortSource: 'default',
@@ -484,19 +559,20 @@ export function getEffectiveAssignments(home: string, projectDir = projectRoot()
     fallbacks: [],
     userTarget: profile.panels.interrogate?.join(', ') ?? '',
     userEffort: '',
+    entries: interrogateEntries,
   });
 
   // arena panel
   const arenaHit = layers
     .map((layer) => ({ arena: layer.data?.panels?.arena, source: layer.source }))
     .find((hit) => hit.arena && (hit.arena.runners?.length || hit.arena.judge));
-  const arenaRunners = arenaHit?.arena?.runners?.length ? arenaHit.arena.runners.join(', ') : 'hard, code';
+  const arenaRunners = arenaHit?.arena?.runners?.length ? arenaHit.arena.runners : ['judgment', 'code'];
   const arenaJudge = arenaHit?.arena?.judge || 'other-family';
   rows.push({
     task: 'arena',
     kind: 'panel',
     use: 'Parallel bakeoff runners and judge',
-    target: `runners=[${arenaRunners}] judge=${arenaJudge}`,
+    target: `runners=[${arenaRunners.join(', ')}] judge=${arenaJudge}`,
     targetSource: arenaHit ? arenaHit.source : 'default',
     effort: '',
     effortSource: 'default',
@@ -504,6 +580,8 @@ export function getEffectiveAssignments(home: string, projectDir = projectRoot()
     fallbacks: [],
     userTarget: profile.panels.arena?.runners?.join(', ') ?? '',
     userEffort: '',
+    entries: arenaRunners,
+    judge: arenaJudge,
   });
 
   // Work types: project first, then user-wide
@@ -573,15 +651,22 @@ export function setTaskAssignment(
     const err = validateTarget(task, update.target);
     if (err) throw new Error(err);
   }
+  if (update.judge !== undefined) {
+    if (task !== 'arena') throw new Error('--judge applies only to the arena panel.');
+    if (!validateSeatEntry(update.judge)) {
+      throw new Error(`Invalid arena judge "${update.judge}". Use a role name (${Object.keys(CANONICAL_TASKS).join(', ')}), other-family, or <provider>/<model>[@effort].`);
+    }
+  }
   if (update.effort) {
     let model: ProviderModel | undefined;
-    if (update.target && update.target.includes('/')) {
+    const providerTarget = Boolean(update.target?.includes('/'));
+    if (update.target && providerTarget) {
       const idx = update.target.indexOf('/');
       const providerId = update.target.slice(0, idx);
       const modelId = update.target.slice(idx + 1);
       model = options.catalog?.providers.find((p) => p.providerInstanceId === providerId)?.models?.find((m) => m.id === modelId);
     }
-    const err = validateEffort(update.effort, model);
+    const err = validateEffort(update.effort, model, providerTarget);
     if (err) throw new Error(err);
   }
   if (update.use !== undefined && (!update.use.trim() || /[|\r\n\\]/.test(update.use))) {
@@ -633,9 +718,9 @@ export function setTaskAssignment(
         ...(update.onAllFailed ? { onAllFailed: update.onAllFailed } : prev.onAllFailed ? { onAllFailed: prev.onAllFailed } : {}),
         ...(update.use !== undefined ? { use: update.use } : prev.use ? { use: prev.use } : {}),
       };
-      if (task === 'verify' && update.target === 'other-family, inherit' && !update.onAllFailed) {
+      if (task === 'verifier' && update.target === 'other-family, inherit' && !update.onAllFailed) {
         next.onAllFailed = 'inherit';
-      } else if (task === 'verify' && update.target === 'other-family' && !update.onAllFailed) {
+      } else if (task === 'verifier' && update.target === 'other-family' && !update.onAllFailed) {
         next.onAllFailed = 'ask';
       }
       if (!next.target && !next.effort && !next.options && !next.fallbacks?.length && !next.escalate && !next.onAllFailed) {
@@ -662,7 +747,7 @@ export function setTaskAssignment(
   };
 
   if (options.projectDir) {
-    const project = loadProjectOverrides(options.projectDir);
+    const project = loadEditableProject(options.projectDir);
     const profile = cloneProfile(project.orbitProfile);
     applyToProfile(profile);
     saveProjectOverrides(project.root, profile);
@@ -696,7 +781,7 @@ export function unsetTaskAssignment(home: string, rawTask: string, options: { pr
   };
 
   if (options.projectDir) {
-    const project = loadProjectOverrides(options.projectDir);
+    const project = loadEditableProject(options.projectDir);
     const profile = cloneProfile(project.orbitProfile);
     clearFrom(profile);
     saveProjectOverrides(project.root, profile);

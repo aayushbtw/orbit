@@ -81,6 +81,8 @@ Every other field maps as in pstack's Claude Code adapter, in both hosts.
 
 Claude models map as rules.md Workflow Defaults, Models says.
 
+When `orbit` is on PATH, `orbit models resolve <task> --json` resolves a role, work type (`code --work-type <name>`) or panel with every Models source merged. Its `mode` says how the spawn runs. `inherit` omits `model`. `alias` passes `alias` as the model. `same-provider` runs on your own subagent tool with `target.model`, as A target on your provider says. `delegate` spawns `delegate_task` with `target`, whose `options` already use the model's own option ids, and `candidates` lists a seat's entries in try order. `ask`, `hold`, `skip` and `unavailable` take the paths below and in `t3-seats.md`. A panel (`interrogate`, `arena`) returns one such result per seat in `seats`.
+
 | pstack | T3 Code | T3 tool absent |
 | --- | --- | --- |
 | A non-Claude model slug, a panel seat on another family | The seat that the `other-family` row resolves, below. | The session-family seat, below. The reply names each seat's model when the `other-family` row lists providers. |

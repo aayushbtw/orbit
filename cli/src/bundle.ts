@@ -132,6 +132,9 @@ export function stageRelease(bundleDir: string, home: string, version: string): 
   try {
     cpSync(bundleDir, join(stage, 'plugin'), { recursive: true });
     writeMarketplaceManifest(stage);
+    if (existsSync(releaseRoot) && !existsSync(join(pluginDest, 'skills', 'start', 'SKILL.md'))) {
+      rmSync(releaseRoot, { recursive: true, force: true });
+    }
     try {
       renameSync(stage, releaseRoot);
     } catch (error) {
@@ -348,6 +351,21 @@ export function checkNpmUpdate(
     latestVersion,
     updateAvailable: semverCompare(latestVersion, currentVersion) > 0,
   };
+}
+
+/** Return true for a plain semantic version such as 0.79.0. */
+export function isSemver(version: string): boolean {
+  return SEMVER_RE.test(version);
+}
+
+/** Locate the globally installed orbit bin under `npm prefix -g`, falling back to `orbit` on PATH. */
+export function globalOrbitBin(exec: ExecRunner = defaultExec, platform: NodeJS.Platform = process.platform): string {
+  try {
+    const prefix = exec('npm', ['prefix', '-g']).trim();
+    const bin = platform === 'win32' ? join(prefix, 'orbit.cmd') : join(prefix, 'bin', 'orbit');
+    if (prefix && existsSync(bin)) return bin;
+  } catch {}
+  return 'orbit';
 }
 
 /** Install a target npm package version globally. */
