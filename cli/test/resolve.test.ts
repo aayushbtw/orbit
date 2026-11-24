@@ -8,6 +8,7 @@ import type { EffectiveAssignmentRow } from '../src/config.js';
 import { rowProviderTargets } from '../src/resolve.js';
 
 const cli = fileURLToPath(new URL('../dist/cli.mjs', import.meta.url));
+type Item = Record<string, any>;
 let home: string;
 let workspace: string;
 
@@ -152,7 +153,7 @@ test('resolves other-family roster with family checks, disabled skips, cap of 3,
   expect(resolved.mode).toBe('delegate');
   expect(resolved.onAllFailed).toBe('ask');
   expect(resolved.target).toMatchObject({ providerInstanceId: 'grok', model: 'grok-4.7' });
-  expect(resolved.candidates.map((c) => c.providerInstanceId)).toEqual([
+  expect(resolved.candidates.map((c: Item) => c.providerInstanceId)).toEqual([
     'grok',
     'claudeAgent',
   ]);
@@ -167,7 +168,7 @@ test('resolves other-family roster with family checks, disabled skips, cap of 3,
   json('models', 'set', 'other-family', 'cursor, antigravity/gemini-4-neon, codex, grok, claudeAgent');
   json('models', 'set', 'verify', 'other-family');
   const cleanRoster = json('models', 'resolve', 'verify');
-  expect(cleanRoster.candidates.map((c) => c.providerInstanceId)).toEqual(['codex', 'grok', 'claudeAgent']);
+  expect(cleanRoster.candidates.map((c: Item) => c.providerInstanceId)).toEqual(['codex', 'grok', 'claudeAgent']);
 
   // Verify holds/asks if every listed provider is disabled
   json('models', 'set', 'other-family', 'cursor');
@@ -216,9 +217,9 @@ test('supports work-type escalation after N failed tries and panel resolution', 
 
 test('arena accepts comma-separated runner seats and validates --judge', () => {
   const rows = json('models', 'set', 'arena', 'hard, code', '--judge', 'other-family');
-  expect(rows.find((r) => r.task === 'arena')).toMatchObject({ entries: ['judgment', 'code'], judge: 'other-family' });
+  expect(rows.find((r: Item) => r.task === 'arena')).toMatchObject({ entries: ['judgment', 'code'], judge: 'other-family' });
   const defaults = json('models', 'resolve', 'arena');
-  expect(defaults.seats.map((s) => s.seat)).toEqual(['runner-1', 'runner-2', 'judge']);
+  expect(defaults.seats.map((s: Item) => s.seat)).toEqual(['runner-1', 'runner-2', 'judge']);
   expect(defaults.seats[0]).toMatchObject({ task: 'judgment', mode: 'inherit' });
   expect(defaults.seats[1]).toMatchObject({ task: 'code', mode: 'inherit' });
 
@@ -296,11 +297,11 @@ test('interrogate and arena read AGENTS.md ### Models overrides below .orbit/con
 
   const arena = json('models', 'resolve', 'arena');
   expect(arena.source).toContain('AGENTS.md');
-  expect(arena.seats.map((s) => s.seat)).toEqual(['runner-1', 'runner-2', 'judge']);
+  expect(arena.seats.map((s: Item) => s.seat)).toEqual(['runner-1', 'runner-2', 'judge']);
   expect(arena.seats[0].target).toMatchObject({ providerInstanceId: 'claudeAgent', model: 'claude-fable-5-2' });
   expect(arena.seats[1].mode).toBe('inherit');
   expect(arena.seats[2].target).toMatchObject({ providerInstanceId: 'grok', model: 'grok-4.7' });
-  expect(json('models', 'list').filter((r) => r.task === 'interrogate' || r.task === 'arena').map((r) => r.kind))
+  expect(json('models', 'list').filter((r: Item) => r.task === 'interrogate' || r.task === 'arena').map((r: Item) => r.kind))
     .toEqual(['panel', 'panel']);
 
   json('models', 'set', 'interrogate', 'code', '--project');

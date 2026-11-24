@@ -64,11 +64,11 @@ Claude runs these itself. You can also ask for the advisor. A Models table in yo
 
 | Agent | Model | Job |
 | --- | --- | --- |
-| poteto-agent | The row of the unit's work type. With no work type that fits, the `judgment` model (Opus by default) for prose and the hardest changes, else the `code` model (by default your session's model, or `CLAUDE_CODE_SUBAGENT_MODEL` when set). When a `code` row is `sonnet` or `haiku`, only trivial mechanical edits take it, and the rest run on your session model. Runs at `medium` effort when Claude passes no effort. Claude still passes `high` for a hard unit. | Writes the code for each unit of a change, so no code is reviewed by the agent that wrote it. |
-| gitops | Sonnet at `low` effort, or the `gitops` row | Commits, pushes, PRs and merges. |
+| poteto-agent | The row of the unit's work type. With no work type that fits, the `judgment` model for prose and the hardest changes, else the `code` model. Both default to your session's model, or `CLAUDE_CODE_SUBAGENT_MODEL` when set. Runs at `medium` effort when Claude passes no effort. Claude still passes `high` for a hard unit. | Writes the code for each unit of a change, so no code is reviewed by the agent that wrote it. |
+| gitops | Your session's model at `low` effort, or the `gitops` row | Commits, pushes, PRs and merges. |
 | comment-sicko | Your session's model, or `CLAUDE_CODE_SUBAGENT_MODEL` when set, at `medium` effort | Deletes comments outside its keep list and flags the code they excuse, before review. |
 | verifier | Your session's model, or `CLAUDE_CODE_SUBAGENT_MODEL` when set, at `high` effort, or the `verifier` row. No Edit tool, and Write only for scratch scripts, in its own worktree. Under T3 Code, when the `verifier` row's Model is `other-family` or `other-family, inherit`, it runs as a seat on a provider you listed. | Runs the change the way a user would before it lands, and returns PASS, PASS+NOTES or FAIL. It is never the agent that wrote the change. |
-| advisor | Fable at `high` effort, or the `advisor` row. Read-only. | Gives a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Picks an approach before Claude would ask you, and reviews each PR's diff before the verifier runs, on the `judgment` model instead of Fable. Ask for it any other time. |
+| advisor | Your session's model at `high` effort, or the `advisor` row. Read-only. | Gives a second opinion at the plan gate, when a change adds a module or touches more than 3 files. Picks an approach before Claude would ask you, and reviews each PR's diff before the verifier runs, on the `judgment` model. Ask for it any other time. |
 
 When each runs:
 

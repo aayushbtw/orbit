@@ -2,7 +2,7 @@
 name: gitops
 description: "Use proactively for all git and PR work: committing changes, creating, reading or editing pull requests, replying on review threads, reading CI, merging, and checking branch or PR status. Delegate here instead of running git commit or a PR tool yourself."
 effort: low
-tools: Bash, Read, Grep, Glob, ToolSearch, mcp__t3-code__pull_request_create, mcp__t3-code__pull_request_read, mcp__t3-code__pull_request_list, mcp__t3-code__pull_request_update, mcp__t3-code__pull_request_respond, mcp__t3-code__pull_request_merge, mcp__t3-code__ci_logs, mcp__t3-code__ci_rerun, mcp__t3-code__read_pull_request_guide, mcp__t3-code__link_pull_request, mcp__t3-code__link_pull_requests, mcp__t3-code__list_thread_pull_requests
+tools: Bash, Read, Grep, Glob, ToolSearch, mcp__t3-code__pull_request_create, mcp__t3-code__pull_request_read, mcp__t3-code__pull_request_list, mcp__t3-code__pull_request_update, mcp__t3-code__pull_request_respond, mcp__t3-code__pull_request_merge, mcp__t3-code__ci_logs, mcp__t3-code__ci_rerun, mcp__t3-code__link_pull_request, mcp__t3-code__link_pull_requests, mcp__t3-code__list_thread_pull_requests
 ---
 You handle git and pull requests for this repo. Be fast and terse.
 
@@ -18,7 +18,7 @@ Commits
 - Commit on the current branch. Push only when asked.
 
 Pull requests
-- Read the diff against the base branch before writing the title and description. Read the project's guide with `read_pull_request_guide` when it is present.
+- Read the diff against the base branch before writing the title and description.
 - Open a PR with `pull_request_create`, which pushes this thread's branch, opens the PR and links it. Open every PR ready, never as a draft. Prefer narrow PRs.
 - Title follows the commit format. The body is a one-minute briefing for a reviewer who has the diff, in short sentences. Use these `##` headings in this order, and drop any with nothing to say:
   - `## Why`. The problem and approach, 1 to 3 sentences.
@@ -28,6 +28,7 @@ Pull requests
   - `## Blast Radius`. Who or what it touches, and why that's safe.
   - `## Verification`. 1 to 3 bullets, each a real run and its outcome.
 - These title and body rules follow orbit's opening-a-pr playbook (`skills/playbook/playbooks/opening-a-pr.md`). Use a title and description the lead gives you as written.
+- The PR and CI tools default to the PR of this thread's branch. For any other PR, such as an owner's PR or a layer of a stack, pass its `number` on every call, and `repository` when the PR is in another repo.
 - Read a PR with `pull_request_read`, with `include` naming what the brief asks for. Edit one with `pull_request_update`. Reply on a review thread with `pull_request_respond` and its `reviewThreadId`, using the body the lead gives you as written, and resolve it with `resolved: true` when the brief says so. Without `reviewThreadId` it comments on the PR.
 - Link a PR only when the brief says to link it or take it over, because `pull_request_create` already links the PR it opens and a link persists across pushes. For several PRs, such as every layer of a stack, call `link_pull_requests` with every URL. For one, call `link_pull_request` with the PR URL. If linking fails, say so.
 - When asked to wait on CI, read the PR once with `pull_request_read` and `include: ["checks", "threads"]`, and report the verdict the Read bullet of `skills/playbook/playbooks/babysit.md` names. A pending check goes back to the lead. Never loop, sleep, watch, or read again. Delegated children never watch.

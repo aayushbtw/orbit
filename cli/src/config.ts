@@ -310,9 +310,10 @@ export interface LoadedConfig {
   config: OrbitConfig;
   source?: string;
   migratedFrom?: string;
+  legacyConfigError?: string;
 }
 
-/** Load user config from ~/.config/orbit/config.json, migrating legacy models.md when absent. */
+/** Load user config from ~/.config/orbit/config.json, migrating legacy models.md when absent. A malformed legacy file loads as defaults with legacyConfigError set. */
 export function loadConfig(home: string): LoadedConfig {
   const paths = orbitPaths(home);
   const jsonRaw = readOptional(paths.configPath);
@@ -326,9 +327,13 @@ export function loadConfig(home: string): LoadedConfig {
   for (const legacyPath of [paths.legacyModelsPath, paths.legacyClaudeModelsPath]) {
     const legacyText = readOptional(legacyPath);
     if (legacyText === undefined) continue;
-    const rows = parseMarkdownModelsTable(legacyText);
     const config = defaultConfig();
-    config.profiles.default = rowsToProfile(rows);
+    try {
+      config.profiles.default = rowsToProfile(parseMarkdownModelsTable(legacyText));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { config, legacyConfigError: `${legacyPath}: ${message}` };
+    }
     return { config, source: legacyPath, migratedFrom: legacyPath };
   }
 
@@ -483,6 +488,7 @@ export function getEffectiveAssignments(home: string, projectDir = projectRoot()
   configPath: string;
   source?: string;
   migratedFrom?: string;
+  legacyConfigError?: string;
   activeProfile: string;
   hosts: HostId[];
   rows: EffectiveAssignmentRow[];
@@ -631,6 +637,7 @@ export function getEffectiveAssignments(home: string, projectDir = projectRoot()
     configPath: paths.configPath,
     source: loaded.source,
     migratedFrom: loaded.migratedFrom,
+    ...(loaded.legacyConfigError ? { legacyConfigError: loaded.legacyConfigError } : {}),
     activeProfile: loaded.config.activeProfile,
     hosts: loaded.config.hosts ?? [],
     rows,

@@ -612,6 +612,7 @@ program.command('status')
       hosts,
       activeProfile: modelsState.activeProfile,
       configSource: modelsState.source ?? null,
+      ...(modelsState.legacyConfigError ? { legacyConfigError: modelsState.legacyConfigError } : {}),
       ...(modelsState.project.projectConfigError ? { projectConfigError: modelsState.project.projectConfigError } : {}),
       catalog: catalog
         ? { syncedAt: catalog.syncedAt, source: catalog.source, providerCount: catalog.providers.length }
@@ -622,6 +623,7 @@ program.command('status')
       `Orbit packaged: ${version} | active: ${bundleState.activeVersion ?? 'not installed'}${bundleState.linked ? ` (linked -> ${bundleState.currentRealPath})` : ''}`,
       `Releases: ${bundleState.releases.length ? bundleState.releases.join(', ') : 'none'}`,
       `Profile: ${modelsState.activeProfile} (${modelsState.source ?? 'defaults'})`,
+      ...(modelsState.legacyConfigError ? [`Legacy config error: ${modelsState.legacyConfigError}`] : []),
       ...(modelsState.project.projectConfigError ? [`Project config error: ${modelsState.project.projectConfigError}`] : []),
       `Catalog: ${catalog ? `${catalog.providers.length} providers synced ${catalog.syncedAt}` : 'not synced (run "orbit models sync" in T3)'}`,
       'Hosts:',
@@ -682,6 +684,9 @@ program.command('doctor')
         issues.push(`${h.host}: ${h.detail}`);
       }
     }
+    if (modelsState.legacyConfigError) {
+      issues.push(`legacy config: ${modelsState.legacyConfigError} (fix it, or run "orbit models set" or "orbit models reset" to write config.json)`);
+    }
     if (modelsState.project.projectConfigError) {
       issues.push(`project config: ${modelsState.project.projectConfigError}`);
     }
@@ -709,6 +714,7 @@ program.command('doctor')
       hosts,
       tools,
       models: modelsState.rows,
+      ...(modelsState.legacyConfigError ? { legacyConfigError: modelsState.legacyConfigError } : {}),
       ...(modelsState.project.projectConfigError ? { projectConfigError: modelsState.project.projectConfigError } : {}),
       catalogSynced: Boolean(catalog),
       fixes,

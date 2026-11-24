@@ -22,6 +22,7 @@ const cli = fileURLToPath(new URL('../dist/cli.mjs', import.meta.url));
 const bundleDir = fileURLToPath(new URL('../dist/plugin/', import.meta.url));
 const worktreeRoot = fileURLToPath(new URL('../..', import.meta.url));
 type Row = { host: string; action: string };
+type Item = Record<string, any>;
 const headings = '| Task | Use for | Model | Effort |\n| --- | --- | --- | --- |\n';
 let home: string;
 let workspace: string;
@@ -181,7 +182,7 @@ test('hosts refuses to overwrite a non-orbit skill symlink or directory', () => 
   symlinkSync(customSkill, join(home, '.codex/skills/orbit'));
 
   const inspected = json('hosts', 'list');
-  const codex = inspected.find((h) => h.host === 'codex');
+  const codex = inspected.find((h: Item) => h.host === 'codex');
   expect(codex.status).toBe('invalid');
   expect(run('hosts', 'enable', 'codex').status).toBe(1);
   expect(readlinkSync(join(home, '.codex/skills/orbit'))).toBe(customSkill);
@@ -201,17 +202,17 @@ test('migrates legacy models.md, strips backticks in AGENTS.md, and layers proje
   expect(existsSync(configPath)).toBe(true);
   expect(readFileSync(legacy, 'utf8')).toBe(original);
 
-  expect(rows.find((row) => row.task === 'advisor')).toMatchObject({
+  expect(rows.find((row: Item) => row.task === 'advisor')).toMatchObject({
     target: 'two/advice',
     targetSource: realpathSync(project),
     effort: 'high',
     effortSource: configPath,
   });
-  expect(rows.find((row) => row.task === 'code')).toMatchObject({
+  expect(rows.find((row: Item) => row.task === 'code')).toMatchObject({
     target: 'three/coder',
     effort: 'medium',
   });
-  expect(rows.find((row) => row.task === 'writing')).toMatchObject({
+  expect(rows.find((row: Item) => row.task === 'writing')).toMatchObject({
     kind: 'work-type',
     target: 'one/model/with-slash',
     targetSource: configPath,
@@ -220,7 +221,7 @@ test('migrates legacy models.md, strips backticks in AGENTS.md, and layers proje
   // Project .orbit/config.json takes precedence over AGENTS.md and user config
   json('models', 'set', 'code', 'four/override', '--effort', 'high', '--project');
   const afterProject = json('models', 'list');
-  expect(afterProject.find((r) => r.task === 'code')).toMatchObject({
+  expect(afterProject.find((r: Item) => r.task === 'code')).toMatchObject({
     target: 'four/override',
     effort: 'high',
     targetSource: join(realpathSync(workspace), '.orbit/config.json'),
@@ -228,7 +229,7 @@ test('migrates legacy models.md, strips backticks in AGENTS.md, and layers proje
 
   expect(run('models', 'set', 'writing', 'x/y | invalid').status).toBe(1);
   const cleared = json('models', 'unset', 'writing');
-  expect(cleared.find((row) => row.task === 'writing')).toBeUndefined();
+  expect(cleared.find((row: Item) => row.task === 'writing')).toBeUndefined();
 });
 
 test('profiles can save, switch, inspect, and delete independently', () => {
@@ -241,8 +242,8 @@ test('profiles can save, switch, inspect, and delete independently', () => {
   expect(json('models', 'explain', 'code').target).toBe('codex/gpt-6.2-sol');
 
   const profiles = json('profile', 'list');
-  expect(profiles.find((p) => p.name === 'default').active).toBe(true);
-  expect(profiles.find((p) => p.name === 'fast-mode').active).toBe(false);
+  expect(profiles.find((p: Item) => p.name === 'default').active).toBe(true);
+  expect(profiles.find((p: Item) => p.name === 'fast-mode').active).toBe(false);
 
   expect(run('profile', 'delete', 'default').status).toBe(1);
   json('profile', 'delete', 'fast-mode');
@@ -301,11 +302,11 @@ test('externally managed Claude and Grok installs are reported and never touched
   writeFileSync(oldManifest, JSON.stringify({ ...JSON.parse(readFileSync(oldManifest, 'utf8')), version: '0.76.0' }));
   const setup = ok('setup', '--yes');
   expect(skippedHosts(setup.hosts)).toEqual(['claude', 'grok']);
-  expect(setup.hosts.find((h) => h.host === 'claude').detail).toContain(`externally managed at ${external}`);
+  expect(setup.hosts.find((h: Item) => h.host === 'claude').detail).toContain(`externally managed at ${external}`);
 
   const listed = ok('hosts', 'list');
-  expect(listed.find((h) => h.host === 'claude')).toMatchObject({ status: 'external', path: external });
-  expect(listed.find((h) => h.host === 'grok')).toMatchObject({ status: 'external', path: join(external, 'plugin') });
+  expect(listed.find((h: Item) => h.host === 'claude')).toMatchObject({ status: 'external', path: external });
+  expect(listed.find((h: Item) => h.host === 'grok')).toMatchObject({ status: 'external', path: join(external, 'plugin') });
 
   const explicit = runWithEnv(fake.env, 'setup', '--host', 'claude', '--yes');
   expect(explicit.status).toBe(1);
@@ -327,10 +328,10 @@ test('externally managed Claude and Grok installs are reported and never touched
 
   const doctor = ok('doctor', '--fix');
   expect(doctor.healthy).toBe(true);
-  expect(doctor.fixes.filter((fix) => /claude|grok/.test(fix))).toEqual([]);
-  expect(doctor.hosts.filter((h) => h.status === 'external').map((h) => h.host)).toEqual(['claude', 'grok']);
+  expect(doctor.fixes.filter((fix: string) => /claude|grok/.test(fix))).toEqual([]);
+  expect(doctor.hosts.filter((h: Item) => h.status === 'external').map((h: Item) => h.host)).toEqual(['claude', 'grok']);
 
-  expect(ok('hosts', 'disable', 'claude', 'grok').map((h) => h.action)).toEqual(['skipped', 'skipped']);
+  expect(ok('hosts', 'disable', 'claude', 'grok').map((h: Item) => h.action)).toEqual(['skipped', 'skipped']);
   expect(skippedHosts(ok('uninstall', '--yes').hosts)).toEqual(['claude', 'grok']);
   expect(fake.calls()).toEqual([]);
   expect(snapshot()).toEqual(before);
@@ -345,7 +346,7 @@ test('an Orbit-managed stale Claude marketplace is still updated and uninstalled
   }));
   const fake = fakeBin(['claude']);
   const setup = jsonWithEnv(fake.env, 'setup', '--yes');
-  expect(setup.hosts.find((h) => h.host === 'claude').action).toBe('updated');
+  expect(setup.hosts.find((h: Item) => h.host === 'claude').action).toBe('updated');
   expect(fake.calls()).toEqual([
     'claude plugin marketplace remove orbit',
     `claude plugin marketplace add ${join(home, '.config/orbit/current')}`,
@@ -427,7 +428,7 @@ test('malformed .orbit/config.json is reported by status and doctor instead of c
   const doctor = json('doctor');
   expect(doctor.healthy).toBe(false);
   expect(doctor.projectConfigError).toContain(join('.orbit', 'config.json'));
-  expect(doctor.issues.some((issue) => issue.startsWith('project config:'))).toBe(true);
+  expect(doctor.issues.some((issue: string) => issue.startsWith('project config:'))).toBe(true);
 
   const edit = run('models', 'set', 'code', 'x/y', '--project');
   expect(edit.status).toBe(1);
@@ -436,8 +437,30 @@ test('malformed .orbit/config.json is reported by status and doctor instead of c
 
   seed('repo/.orbit/config.json', JSON.stringify({ tasks: [] }));
   expect(json('status').projectConfigError).toContain('tasks must be an object');
-  expect(json('models', 'reset', '--project', '--yes').find((r) => r.task === 'code').target).toBe('inherit');
+  expect(json('models', 'reset', '--project', '--yes').find((r: Item) => r.task === 'code').target).toBe('inherit');
   expect(json('status').projectConfigError).toBeUndefined();
+});
+
+test('malformed legacy models.md is reported and healed by models set instead of crashing', () => {
+  const legacy = seed('.config/orbit/models.md', headings + '| interrogate | x | judgment, codex | |\n');
+  const status = json('status');
+  expect(status.legacyConfigError).toContain(legacy);
+  expect(status.legacyConfigError).toContain('Invalid interrogate seat "codex"');
+  expect(status.configSource).toBeNull();
+
+  const doctor = json('doctor');
+  expect(doctor.healthy).toBe(false);
+  expect(doctor.legacyConfigError).toContain(legacy);
+  expect(doctor.issues.some((issue: string) => issue.startsWith('legacy config:') && issue.includes(legacy))).toBe(true);
+
+  expect(json('models', 'list').find((r: Item) => r.task === 'interrogate').target).toBe('judgment, other-family');
+  expect(json('doctor', '--fix').fixes.some((fix: string) => fix.startsWith('migrated'))).toBe(false);
+
+  const healed = json('models', 'set', 'interrogate', 'judgment, other-family');
+  expect(healed.find((r: Item) => r.task === 'interrogate').targetSource).toBe(join(home, '.config/orbit/config.json'));
+  expect(json('status').legacyConfigError).toBeUndefined();
+  expect(json('doctor').legacyConfigError).toBeUndefined();
+  expect(readFileSync(legacy, 'utf8')).toContain('judgment, codex');
 });
 
 test('CLI role names, defaults and config sources match what plugin rules tell the lead', () => {
@@ -447,7 +470,7 @@ test('CLI role names, defaults and config sources match what plugin rules tell t
   }
   expect(rules).toContain('orbit models resolve <task> --json');
 
-  const defaults = Object.fromEntries(json('models', 'list').map((row) => [row.task, row]));
+  const defaults = Object.fromEntries(json('models', 'list').map((row: Item) => [row.task, row]));
   for (const role of ['gitops', 'verifier', 'advisor', 'judgment', 'code', 'other-family']) {
     expect(defaults[role]).toBeDefined();
   }
@@ -460,9 +483,9 @@ test('CLI role names, defaults and config sources match what plugin rules tell t
     + '| verifier | Pre-land verifier | other-family, inherit | |\n'
     + '| judgment | | claudeAgent/claude-opus-5-5 | high |\n');
   const legacy = json('models', 'list');
-  expect(legacy.find((r) => r.task === 'verifier')).toMatchObject({ target: 'other-family, inherit', onAllFailed: 'inherit' });
-  expect(legacy.find((r) => r.task === 'judgment')).toMatchObject({ target: 'claudeAgent/claude-opus-5-5', effort: 'high' });
-  expect(legacy.find((r) => r.task === 'other-family')).toMatchObject({ target: 'codex, grok, inherit' });
+  expect(legacy.find((r: Item) => r.task === 'verifier')).toMatchObject({ target: 'other-family, inherit', onAllFailed: 'inherit' });
+  expect(legacy.find((r: Item) => r.task === 'judgment')).toMatchObject({ target: 'claudeAgent/claude-opus-5-5', effort: 'high' });
+  expect(legacy.find((r: Item) => r.task === 'other-family')).toMatchObject({ target: 'codex, grok, inherit' });
 
   json('models', 'set', 'gitops', 'claudeAgent/claude-sonnet-5-5', '--effort', 'low');
   json('models', 'set', 'hard', 'claudeAgent/claude-fable-5-2');
@@ -477,6 +500,6 @@ test('CLI role names, defaults and config sources match what plugin rules tell t
     profiles: { default: { tasks: { hard: { target: 'a/b' }, writing: { target: 'c/d' } }, panels: {}, workTypes: [] } },
   }));
   const renamed = json('models', 'list');
-  expect(renamed.find((r) => r.task === 'judgment').target).toBe('a/b');
-  expect(renamed.find((r) => r.task === 'writing')).toMatchObject({ kind: 'work-type', target: 'c/d' });
+  expect(renamed.find((r: Item) => r.task === 'judgment').target).toBe('a/b');
+  expect(renamed.find((r: Item) => r.task === 'writing')).toMatchObject({ kind: 'work-type', target: 'c/d' });
 });
