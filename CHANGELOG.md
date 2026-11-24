@@ -4,6 +4,11 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.81.0
+
+- Keep Autopilot's queue, verification and landing in the main thread. Delegate builds early, follow completion events, use CI for routine checks and recheck affected behavior after minor fixes.
+- Call a plan-mode exit tool only when the operator put the thread in plan mode and approved the plan. The lead no longer calls one on each wake-up or before a step, and writes no plan for a step it can take now.
+
 ## 0.80.0
 
 ### T3 evals
