@@ -4,6 +4,24 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.82.2
+
+### Shipping
+
+- A merge runs only against the accepted `(PR, base, head)` that step 3 records. gitops reads the PR first and stops when the head or the base moved. It merges with `expectedHeadSha` set to the accepted head and never passes `auto: true`, because T3's auto-merge also merges later pushes no verdict covers. When checks are still pending, gitops returns without merging and the next brief confirms `(base, head)` again. `plugin/skills/playbook/playbooks/shipping.md`, `plugin/agents/gitops.md`, `plugin/docs/harness/t3-code.md` and `plugin/skills/playbook/playbooks/autopilot-full.md` say so. Fixes #124.
+- A PR has landed only when `state` reads `merged` and `baseBranch` reads the intended trunk. A PR closed without merging is a terminal block. The stack stops at that layer, no layer above it merges or retargets, and its branch and worktrees stay. Fixes #125.
+- gitops deletes a merged parent branch only while it still points at the merged PR's last `headSha`. It checks the ref with `git ls-remote` and deletes with `git push --force-with-lease=refs/heads/<branch>:<tip> origin :refs/heads/<branch>`. A moved branch stays, and gitops reports it. After the delete, gitops reads the child PR's `baseBranch` before any rebase or merge. Fixes #128.
+
+### Babysit
+
+- `CLOSED` is its own verdict, apart from `COMPLETE`. A closed PR stays the frontier and stops the stack. Fixes #125.
+- A PR with no check results is `unavailable`, `no-ci` or `unregistered`, and the reply names which. `unavailable` is never `READY`. `no-ci` is `READY` when threads, reviews and mergeability allow. `unregistered` waits once, then hands back. Fixes #126.
+- The status read pages `comments` and takes `reviewDecision` from `pull_request_list`. `CHANGES_REQUESTED` blocks with no inline thread. `REVIEW_REQUIRED` waits. A missing review signal reads unknown, never approved. Fixes #127.
+
+### T3 evals
+
+- New `tests/t3/shipping-babysit-safety.test.mjs` checks the playbook wording for #124 to #128 and models each decision as a pure function. Its #128 case runs real git against a temporary bare remote and proves a moved parent branch survives the guarded delete.
+
 ## 0.82.1
 
 ### Any lead
