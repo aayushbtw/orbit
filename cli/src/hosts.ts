@@ -72,11 +72,19 @@ const DISPLAY_NAMES: Record<HostId, string> = {
   grok: 'Grok',
 };
 
+function codexDir(ctx: HostContext): string {
+  return (ctx.env ?? process.env).CODEX_HOME || join(ctx.home, '.codex');
+}
+
+function grokDir(ctx: HostContext): string {
+  return (ctx.env ?? process.env).GROK_HOME || join(ctx.home, '.grok');
+}
+
 /** Each host's user-wide instructions file, which its lead reads on every session. A host that runs orbit's SessionStart hook has none. */
-const RULES_FILES: Partial<Record<HostId, (home: string) => string>> = {
-  antigravity: (home) => join(home, '.gemini', 'config', 'AGENTS.md'),
-  codex: (home) => join(home, '.codex', 'AGENTS.md'),
-  grok: (home) => join(home, '.grok', 'AGENTS.md'),
+const RULES_FILES: Partial<Record<HostId, (ctx: HostContext) => string>> = {
+  antigravity: (ctx) => join(ctx.home, '.gemini', 'config', 'AGENTS.md'),
+  codex: (ctx) => join(codexDir(ctx), 'AGENTS.md'),
+  grok: (ctx) => join(grokDir(ctx), 'AGENTS.md'),
 };
 
 const RULES_START = '<!-- orbit:rules:start -->';
@@ -101,7 +109,8 @@ function ensureRulesBlock(path: string): boolean {
     }
     next = current.replace(RULES_SPAN, RULES_BLOCK);
   } else {
-    const separator = !current ? '' : current.endsWith('\n') ? '\n' : '\n\n';
+    // One newline either way, so removing `\n<block>\n` restores the file byte for byte.
+    const separator = current ? '\n' : '';
     next = `${current ?? ''}${separator}${RULES_BLOCK}\n`;
   }
   writeFileAtomic(target, next, current === undefined ? 0o644 : statSync(target).mode & 0o777);
@@ -454,9 +463,8 @@ function removeClaude(ctx: HostContext): HostRemoveResult {
 
 function inspectGrok(ctx: HostContext): HostInspection {
   const env = ctx.env ?? process.env;
-  const grokDir = join(ctx.home, '.grok');
-  const registryPath = join(grokDir, 'installed-plugins', 'registry.json');
-  const detected = existsSync(grokDir) || isExecutableOnPath('grok', env.PATH);
+  const registryPath = join(grokDir(ctx), 'installed-plugins', 'registry.json');
+  const detected = existsSync(grokDir(ctx)) || isExecutableOnPath('grok', env.PATH);
 
   const raw = readOptional(registryPath);
   if (raw === undefined) {
@@ -573,7 +581,7 @@ function removeGrok(ctx: HostContext): HostRemoveResult {
 /** Inspect registration status for a single host, with its rules line when the host has an instructions file. */
 export function inspectHost(host: HostId, ctx: HostContext): HostInspection {
   const inspection = inspectRegistration(host, ctx);
-  const rulesPath = RULES_FILES[host]?.(ctx.home);
+  const rulesPath = RULES_FILES[host]?.(ctx);
   if (!rulesPath || inspection.status === 'external') return inspection;
   return { ...inspection, rules: { path: rulesPath, present: hasRulesBlock(rulesPath) } };
 }
@@ -597,9 +605,8 @@ function inspectRegistration(host: HostId, ctx: HostContext): HostInspection {
       };
     }
     case 'codex': {
-      const codexDir = join(ctx.home, '.codex');
-      const detected = existsSync(codexDir) || isExecutableOnPath('codex', env.PATH);
-      return inspectSymlinkHost('codex', join(codexDir, 'skills', 'orbit'), detected, ctx);
+      const detected = existsSync(codexDir(ctx)) || isExecutableOnPath('codex', env.PATH);
+      return inspectSymlinkHost('codex', join(codexDir(ctx), 'skills', 'orbit'), detected, ctx);
     }
     case 'agents': {
       const agentsDir = join(ctx.home, '.agents');
@@ -621,7 +628,7 @@ export function inspectAllHosts(ctx: HostContext): HostInspection[] {
 /** Register Orbit with one host and write its rules line. */
 export function applyHost(host: HostId, ctx: HostContext): HostApplyResult {
   const result = applyRegistration(host, ctx);
-  const rulesPath = RULES_FILES[host]?.(ctx.home);
+  const rulesPath = RULES_FILES[host]?.(ctx);
   if (!rulesPath || result.action === 'manual' || result.action === 'skipped' || !ensureRulesBlock(rulesPath)) return result;
   return {
     ...result,
@@ -644,9 +651,8 @@ function applyRegistration(host: HostId, ctx: HostContext): HostApplyResult {
       };
     }
     case 'codex': {
-      const codexDir = join(ctx.home, '.codex');
-      const detected = existsSync(codexDir) || isExecutableOnPath('codex', env.PATH);
-      return applySymlinkHost('codex', join(codexDir, 'skills', 'orbit'), detected, ctx);
+      const detected = existsSync(codexDir(ctx)) || isExecutableOnPath('codex', env.PATH);
+      return applySymlinkHost('codex', join(codexDir(ctx), 'skills', 'orbit'), detected, ctx);
     }
     case 'agents': {
       const agentsDir = join(ctx.home, '.agents');
@@ -661,7 +667,7 @@ function applyRegistration(host: HostId, ctx: HostContext): HostApplyResult {
 
 /** Deregister Orbit from one host cleanly and remove its rules line. */
 export function removeHost(host: HostId, ctx: HostContext): HostRemoveResult {
-  const rulesPath = RULES_FILES[host]?.(ctx.home);
+  const rulesPath = RULES_FILES[host]?.(ctx);
   if (!rulesPath || inspectRegistration(host, ctx).status === 'external') return removeRegistration(host, ctx);
   const result = removeRegistration(host, ctx);
   if (!removeRulesBlock(rulesPath)) return result;
@@ -686,9 +692,8 @@ function removeRegistration(host: HostId, ctx: HostContext): HostRemoveResult {
       };
     }
     case 'codex': {
-      const codexDir = join(ctx.home, '.codex');
-      const detected = existsSync(codexDir) || isExecutableOnPath('codex', env.PATH);
-      return removeSymlinkHost('codex', join(codexDir, 'skills', 'orbit'), detected, ctx);
+      const detected = existsSync(codexDir(ctx)) || isExecutableOnPath('codex', env.PATH);
+      return removeSymlinkHost('codex', join(codexDir(ctx), 'skills', 'orbit'), detected, ctx);
     }
     case 'agents': {
       const agentsDir = join(ctx.home, '.agents');

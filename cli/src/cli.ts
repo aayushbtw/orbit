@@ -61,6 +61,7 @@ import {
   type HostApplyResult,
   type HostContext,
   type HostId,
+  type HostInspection,
 } from './hosts.js';
 import { applyProjectInit, detectProjectSetup } from './init.js';
 import { projectRoot } from './paths.js';
@@ -166,9 +167,13 @@ function formatEffectiveRows(state: ReturnType<typeof getEffectiveAssignments>):
     .join('\n');
 }
 
+function rulesMissing(h: HostInspection): boolean {
+  return Boolean(h.rules && !h.rules.present && (h.status === 'registered' || h.status === 'stale'));
+}
+
 function formatHostLines(inspections: ReturnType<typeof inspectAllHosts>): string {
   return inspections
-    .map((h) => `${h.host}${h.detected ? '' : ' (not detected)'}: ${h.detail}${h.rules && !h.rules.present ? `; rules line missing from ${h.rules.path}` : ''}`)
+    .map((h) => `${h.host}${h.detected ? '' : ' (not detected)'}: ${h.detail}${rulesMissing(h) ? `; rules line missing from ${h.rules?.path}` : ''}`)
     .join('\n');
 }
 
@@ -684,8 +689,8 @@ program.command('doctor')
       if (h.detected && (h.status === 'stale' || h.status === 'invalid')) {
         issues.push(`${h.host}: ${h.detail}`);
       }
-      if (h.rules && !h.rules.present && (h.status === 'registered' || h.status === 'stale')) {
-        issues.push(`${h.host}: orbit rules line missing from ${h.rules.path}`);
+      if (rulesMissing(h)) {
+        issues.push(`${h.host}: orbit rules line missing from ${h.rules?.path}`);
       }
     }
     if (modelsState.legacyConfigError) {

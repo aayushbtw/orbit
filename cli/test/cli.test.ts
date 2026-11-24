@@ -53,7 +53,7 @@ function run(...args: string[]) {
 function runWithEnv(env: Record<string, string>, ...args: string[]) {
   const result = spawnSync(process.execPath, [cli, ...args], {
     cwd: workspace,
-    env: { ...process.env, HOME: home, USERPROFILE: home, T3_ACP_MCP_NODE: '', ...env },
+    env: { ...process.env, HOME: home, USERPROFILE: home, T3_ACP_MCP_NODE: '', CODEX_HOME: '', GROK_HOME: '', ...env },
     encoding: 'utf8',
   });
   if (result.error) throw result.error;
@@ -148,7 +148,7 @@ test('setup stages bundle, flips current symlink, registers multi-host targets, 
   expect(JSON.parse(readFileSync(agConfig, 'utf8'))).toEqual(existing);
 });
 
-test('the rules line is one marked block that leaves the rest of each instructions file alone', () => {
+test('the rules line is one marked block that leaves the rest of each instructions file alone, byte for byte', () => {
   const userText = '# Mine\n\nKeep replies short.\n';
   const codexRules = seed('.codex/AGENTS.md', userText);
   const dotfile = seed('dotfiles/gemini.md', 'Gemini notes.');
@@ -156,17 +156,20 @@ test('the rules line is one marked block that leaves the rest of each instructio
   mkdirSync(dirname(geminiRules), { recursive: true });
   symlinkSync(dotfile, geminiRules);
   const withBlock = `${userText}\n${RULES_BLOCK}\n`;
+  expect(run('hosts', 'list').stdout).not.toContain('rules line missing');
 
   json('setup', '--host', 'codex', '--host', 'antigravity', '--yes');
   expect(readFileSync(codexRules, 'utf8')).toBe(withBlock);
   expect(lstatSync(geminiRules).isSymbolicLink()).toBe(true);
-  expect(readFileSync(dotfile, 'utf8')).toBe(`Gemini notes.\n\n${RULES_BLOCK}\n`);
+  expect(readFileSync(dotfile, 'utf8')).toBe(`Gemini notes.\n${RULES_BLOCK}\n`);
 
   expect(json('hosts', 'enable', 'codex')[0].action).toBe('unchanged');
   expect(readFileSync(codexRules, 'utf8')).toBe(withBlock);
 
   writeFileSync(codexRules, withBlock.replace('first reply', 'reply'));
   expect(json('hosts', 'list').find((h: Item) => h.host === 'codex').rules).toEqual({ path: codexRules, present: false });
+  const listed = run('hosts', 'list').stdout.split('\n').filter((line) => line.includes('rules line missing'));
+  expect(listed).toEqual([expect.stringMatching(new RegExp(`^codex: .*; rules line missing from ${codexRules}$`))]);
   const drift = json('doctor');
   expect(drift.healthy).toBe(false);
   expect(drift.issues).toContain(`codex: orbit rules line missing from ${codexRules}`);
@@ -185,7 +188,32 @@ test('the rules line is one marked block that leaves the rest of each instructio
   expect(readFileSync(codexRules, 'utf8')).toBe(userText);
   json('uninstall', '--yes');
   expect(lstatSync(geminiRules).isSymbolicLink()).toBe(true);
-  expect(readFileSync(dotfile, 'utf8')).toBe('Gemini notes.\n');
+  expect(readFileSync(dotfile, 'utf8')).toBe('Gemini notes.');
+});
+
+test('codex and grok paths follow CODEX_HOME and GROK_HOME', () => {
+  const fake = fakeBin(['grok']);
+  const codexHome = join(home, 'codex-home');
+  const grokHome = join(home, 'grok-home');
+  const env = { ...fake.env, CODEX_HOME: codexHome, GROK_HOME: grokHome };
+  const pluginDir = join(home, '.config/orbit/current/plugin');
+
+  jsonWithEnv(env, 'setup', '--host', 'codex', '--host', 'grok', '--yes');
+  expect(readlinkSync(join(codexHome, 'skills/orbit'))).toBe(join(pluginDir, 'skills'));
+  expect(readFileSync(join(codexHome, 'AGENTS.md'), 'utf8')).toBe(`${RULES_BLOCK}\n`);
+  expect(readFileSync(join(grokHome, 'AGENTS.md'), 'utf8')).toBe(`${RULES_BLOCK}\n`);
+  expect(existsSync(join(home, '.codex'))).toBe(false);
+  expect(existsSync(join(home, '.grok'))).toBe(false);
+
+  seed('grok-home/installed-plugins/registry.json', grokRegistry(pluginDir, version));
+  const rows: Item[] = jsonWithEnv(env, 'hosts', 'list');
+  expect(rows.find((h) => h.host === 'grok')).toMatchObject({ status: 'registered', rules: { path: join(grokHome, 'AGENTS.md'), present: true } });
+  expect(rows.find((h) => h.host === 'codex')).toMatchObject({ status: 'registered', path: join(codexHome, 'skills/orbit') });
+
+  jsonWithEnv(env, 'hosts', 'disable', 'codex', 'grok');
+  expect(existsSync(join(codexHome, 'skills/orbit'))).toBe(false);
+  expect(existsSync(join(codexHome, 'AGENTS.md'))).toBe(false);
+  expect(existsSync(join(grokHome, 'AGENTS.md'))).toBe(false);
 });
 
 test('grok installs with --trust and reinstalls a stale copy from the registry grok writes', () => {
