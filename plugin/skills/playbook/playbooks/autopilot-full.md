@@ -2,7 +2,7 @@
 
 **The main thread owns the queue, verdicts and landing. One owner at a time writes each PR in its worktree. Nothing merges until an independent verifier proves the patch.**
 
-Under Land `main`, a PR means an unpushed task branch, the Check run stands in for CI, and landing pushes `HEAD:main` per Shipping.
+Under Land `main`, a PR means an unpushed task branch, the Check run stands in for CI, and landing pushes `HEAD:<trunk>` per Shipping. Trunk is the branch the trunk order in `SKILL.md` resolves, and an owner's base SHA is `origin/<trunk>` after a fetch.
 
 1. **Take the operator's go.** The grant covers the queue's items. Items the operator reserves and PRs outside the queue stop at merge-ready. A request to state the plan is not a go. Track each item's base SHA, owner, acceptance check, head and blocker in the trail, not in the reply. On go, read enough to brief the first owner and start it. Each owner reads the sources for its own item.
 2. **Delegate each build at the start.** Use a `general-purpose` child with role `implementation` on the `judgment` model (rules.md Workflow Defaults, Models), per the host adapter's Where a child runs. The brief names the item, base SHA, allowed paths, acceptance check, trail path and absolute paths of `SKILL.md`, `../../rules.md` and `../../rules-shared.md`. The owner runs `/orbit:start <item>` with the Skill tool and may use native foreground subagents. Start the trail in `$TMPDIR/orbit-autopilot/<slug>/<item>.tsv` with the worktree path and branch in its first row. Commit each finished unit before starting the next.
