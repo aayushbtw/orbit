@@ -184,6 +184,30 @@ test('#130 doctor reads the Trunk line only inside ## Workflow and allows a trai
   }
 });
 
+test('#130 doctor reads CLAUDE.md without AGENTS.md, matches only the exact heading and closes on any H1 or H2', () => {
+  const dir = trunkRemote();
+  try {
+    ok(join(dir, 'seed'), 'push', join(dir, 'remote.git'), 'HEAD:release');
+    const claudeOnly = headlessClone(dir, 'claude-only');
+    writeFileSync(join(claudeOnly, 'CLAUDE.md'), '## Workflow\n\n- Trunk: release\n');
+    assert.match(doctor(claudeOnly).stdout, /^ok trunk origin\/release$/m, 'missing AGENTS.md still reads CLAUDE.md');
+
+    const notes = headlessClone(dir, 'notes');
+    writeFileSync(join(notes, 'AGENTS.md'), '## Workflow notes\n\n- Trunk: stale\n\n## Workflow\n\n- Trunk: trunk\n');
+    const notesOut = doctor(notes).stdout;
+    assert.match(notesOut, /^ok trunk origin\/trunk$/m, '## Workflow notes is not the Workflow block');
+    assert.doesNotMatch(notesOut, /origin\/stale/);
+
+    const h1 = headlessClone(dir, 'h1');
+    writeFileSync(join(h1, 'AGENTS.md'), '## Workflow\n\n- Check: `vpr check`\n\n# Other\n\n- Trunk: stale\n');
+    const h1Out = doctor(h1).stdout;
+    assert.match(h1Out, /^ok trunk origin\/trunk$/m, 'falls back to the remote default');
+    assert.doesNotMatch(h1Out, /origin\/stale/, '# Other closes ## Workflow');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('#130 trunk docs use the resolved <trunk> and pass baseRef to t3_worktree_handoff', () => {
   has('playbook', '**Trunk** is the project\'s default branch', '`git symbolic-ref --short refs/remotes/origin/HEAD`', '`git ls-remote --symref origin HEAD`', '`baseRef` set to `<trunk>`');
   has('t3', '`baseRef` set to `<trunk>`', 'origin/<trunk>');
