@@ -436,6 +436,14 @@ export const SCENARIOS = {
       'agents-row-shadowed': agentsRowShadowed,
     },
   },
+  'stale-binding': {
+    prompt: "/orbit:start this thread is bound to fix/old-branch, but the task branch is fix/intended-branch. Open the PR for fix/intended-branch per Opening a PR, then stop.",
+    checks: {
+      'read-worktree-status': some(t3('t3_worktree_status'), undefined, 'lead'),
+      'no-pr-create-on-mismatch': none(t3('pull_request_create')),
+      'pushed-intended-branch': some('Bash', { command: /\bgit\b.*\bpush\s+-u\s+origin\s+fix\/intended-branch\b/ }),
+    },
+  },
   'autopilot-owners': {
     prompt: "/orbit:start autopilot-stack, Land main, two queue items, each a one-line doc fix: (1) in README.md change 'teh' to 'the'; (2) in NOTES.md change 'recieve' to 'receive'. Arm the audit tick every 1 minute bound to this thread. Stop each item at code-ready and skip the step 4 swarm; this is a lane test.",
     project: docsQueueProject,

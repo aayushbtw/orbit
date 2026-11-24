@@ -4,6 +4,19 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.82.3
+
+### Playbook
+
+- One **Waivers** rule in `plugin/skills/playbook/SKILL.md` maps each waiver to the actions it skips. An active waiver outranks every nested playbook, gate and **Ship by default**, and rides verbatim in the `t3_worktree_handoff` `continuationPrompt` and every subagent brief. `no subagents` never lets the lead verify its own change. A more specific instruction lifts only the part it names. Fixes #129.
+- Orbit resolves the project's actual trunk instead of assuming `main`. The order is a `Trunk:` line in the Workflow block, then `origin/HEAD`, then `git ls-remote --symref origin HEAD`, then `main`. The Worktree gate passes `baseRef` set to `<trunk>`, and Shipping, gitops and autopilot use `origin/<trunk>`. `doctor.sh` passes a repo whose default branch is not `main`. Fixes #130.
+- Before `pull_request_create`, the lead reads `t3_worktree_status` and gives gitops the bound and intended branches. gitops opens the PR only when they match. On a mismatch it pushes the intended branch and reports both. Fixes #138.
+
+### Dev
+
+- `/update-skills` resolves orbit's checkout with `git rev-parse --show-toplevel` and works in a task worktree. It bumps all three version files and `CHANGELOG.md`, runs the version-bump check, and reports each local edit it could not replay. Fixes #137.
+- `tests/t3/worktree-trunk-waivers.test.mjs` covers the waiver decisions, trunk resolution against real git remotes, the doctor on a `trunk` default branch, and the stale binding guard.
+
 ## 0.82.2
 
 ### Shipping

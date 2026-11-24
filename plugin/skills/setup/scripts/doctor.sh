@@ -22,12 +22,34 @@ done
 
 if command -v git >/dev/null 2>&1 && root=$(git rev-parse --show-toplevel 2>/dev/null); then
 	echo "ok git repo $root"
-	if git rev-parse --verify --quiet refs/remotes/origin/main >/dev/null; then
-		echo "ok origin/main"
+	trunk=
+	for f in AGENTS.md CLAUDE.md; do
+		[ -f "$root/$f" ] || continue
+		trunk=$(awk '
+			/^##[[:space:]]+Workflow[[:space:]]*$/ { w = 1; next }
+			/^##?[[:space:]]/ { w = 0 }
+			w && /^- Trunk: / {
+				s = $0
+				sub(/^- Trunk: `?/, "", s)
+				sub(/[`[:space:]].*$/, "", s)
+				sub(/\.$/, "", s)
+				if (s != "") { print s; exit }
+			}
+		' "$root/$f")
+		[ -n "$trunk" ] && break
+	done
+	[ -n "$trunk" ] || trunk=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')
+	[ -n "$trunk" ] || trunk=$(git ls-remote --symref origin HEAD 2>/dev/null | sed -nE 's|^ref: refs/heads/([^[:space:]]+)[[:space:]]+HEAD$|\1|p')
+	if [ -n "$trunk" ] && git rev-parse --verify --quiet "refs/remotes/origin/$trunk" >/dev/null; then
+		echo "ok trunk origin/$trunk"
+	elif [ -n "$trunk" ]; then
+		echo "origin/$trunk missing. The Worktree gate branches from origin/$trunk. Run: git fetch origin"
+	elif git rev-parse --verify --quiet refs/remotes/origin/main >/dev/null; then
+		echo "ok trunk origin/main (origin/HEAD is unset, so main is assumed. If the default branch differs, run: git remote set-head origin --auto)"
 	elif git remote get-url origin >/dev/null 2>&1; then
-		echo "origin/main missing. The Worktree gate branches from origin/main. Run: git fetch origin"
+		echo "trunk unknown. origin/HEAD is unset and origin/main is missing. Run: git fetch origin, then git remote set-head origin --auto"
 	else
-		echo "origin/main missing. The Worktree gate branches from origin/main. Add a remote: git remote add origin <url>, then git fetch origin"
+		echo "trunk unknown. The Worktree gate branches from the remote default branch. Add a remote: git remote add origin <url>, then git fetch origin, then git remote set-head origin --auto"
 	fi
 	block=missing
 	for f in AGENTS.md CLAUDE.md; do
@@ -39,7 +61,7 @@ if command -v git >/dev/null 2>&1 && root=$(git rev-parse --show-toplevel 2>/dev
 	[ "$block" = missing ] && [ ! -f "$root/AGENTS.md" ] && block="missing (no AGENTS.md)"
 	echo "workflow block: $block"
 else
-	echo "not in a git repo. The Worktree gate needs a git repo with origin/main."
+	echo "not in a git repo. The Worktree gate needs a git repo with a remote default branch."
 fi
 
 if command -v vpr >/dev/null 2>&1; then echo "vpr: found"; else echo "vpr: missing"; fi

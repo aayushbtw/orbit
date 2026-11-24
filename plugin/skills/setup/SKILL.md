@@ -27,6 +27,7 @@ Relay the findings to the user nearly verbatim. Each missing tool comes with its
 
 - `orbit missing`, and from `orbit doctor --json` the fields `installed`, `activeVersion`, `version`, `hosts` and `issues`, for step 2.
 - `ok git repo`, `not in a git repo`, `workflow block:` and `vpr:` lines, for step 3.
+- `ok trunk origin/<branch>`, `origin/<branch> missing` or `trunk unknown`, for step 6. The doctor resolves trunk without the network, from a `Trunk:` line in the Workflow block, else `origin/HEAD`, else an existing `origin/main`, so a repo whose default branch is `trunk` passes once `origin/HEAD` is set.
 - `models` and `catalogSynced` from `orbit doctor --json`, for step 4.
 
 ### 2. Install and hosts
@@ -107,4 +108,4 @@ Apply only what the user said yes to, one command per Bash call:
 - Workflow block. The `orbit init` command step 3 proposed. Never write a project's `CLAUDE.md`.
 - Models rows. `orbit models sync` when 4a called for it, then the `orbit models set` commands 4e showed, or the edit it showed to `~/.config/orbit/config.json`. Write the rows only to the user-wide store, never to a project's `CLAUDE.md` or `AGENTS.md`.
 
-Then run `orbit doctor --json` again and tell the user what changed and what still needs them: each missing tool with its install command, a missing `origin/main`, an invalid host file, and every command setup printed for them to run. When the install, hosts or Models rows changed, say that a new T3 thread picks them up, and that re-running `/orbit:setup` updates them.
+Then run `orbit doctor --json` again and tell the user what changed and what still needs them: each missing tool with its install command, a missing or unknown trunk with the doctor's command, an invalid host file, and every command setup printed for them to run. When the install, hosts or Models rows changed, say that a new T3 thread picks them up, and that re-running `/orbit:setup` updates them.
