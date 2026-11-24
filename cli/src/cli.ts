@@ -168,7 +168,7 @@ function formatEffectiveRows(state: ReturnType<typeof getEffectiveAssignments>):
 
 function formatHostLines(inspections: ReturnType<typeof inspectAllHosts>): string {
   return inspections
-    .map((h) => `${h.host}${h.detected ? '' : ' (not detected)'}: ${h.detail}`)
+    .map((h) => `${h.host}${h.detected ? '' : ' (not detected)'}: ${h.detail}${h.rules && !h.rules.present ? `; rules line missing from ${h.rules.path}` : ''}`)
     .join('\n');
 }
 
@@ -636,7 +636,7 @@ program.command('status')
 
 program.command('doctor')
   .description('Diagnose bundle, hosts, config, catalog mismatches, and tools (--fix repairs drift)')
-  .option('--fix', 'repair missing current symlink, migrate legacy models.md, and sync hosts')
+  .option('--fix', 'repair missing current symlink, migrate legacy models.md, and sync hosts and their rules lines')
   .option('--json', 'print JSON')
   .action((options: { fix?: boolean; json?: boolean }) => {
     const fixes: string[] = [];
@@ -683,6 +683,9 @@ program.command('doctor')
     for (const h of hosts) {
       if (h.detected && (h.status === 'stale' || h.status === 'invalid')) {
         issues.push(`${h.host}: ${h.detail}`);
+      }
+      if (h.rules && !h.rules.present && (h.status === 'registered' || h.status === 'stale')) {
+        issues.push(`${h.host}: orbit rules line missing from ${h.rules.path}`);
       }
     }
     if (modelsState.legacyConfigError) {

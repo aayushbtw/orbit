@@ -10,12 +10,13 @@ import {
   realpathSync,
   renameSync,
   rmSync,
+  statSync,
   symlinkSync,
   unlinkSync,
 } from 'node:fs';
 import { delimiter, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import * as antigravity from './antigravity.js';
-import { orbitPaths, readOptional } from './paths.js';
+import { orbitPaths, readOptional, writeFileAtomic } from './paths.js';
 
 export const HOST_IDS = ['antigravity', 'codex', 'agents', 'claude', 'grok'] as const;
 export type HostId = (typeof HOST_IDS)[number];
@@ -32,6 +33,7 @@ export interface HostInspection {
   detail: string;
   filtered?: boolean;
   stalePaths?: string[];
+  rules?: { path: string; present: boolean };
 }
 
 export interface HostApplyResult {
@@ -69,6 +71,52 @@ const DISPLAY_NAMES: Record<HostId, string> = {
   claude: 'Claude Code',
   grok: 'Grok',
 };
+
+/** Each host's user-wide instructions file, which its lead reads on every session. A host that runs orbit's SessionStart hook has none. */
+const RULES_FILES: Partial<Record<HostId, (home: string) => string>> = {
+  antigravity: (home) => join(home, '.gemini', 'config', 'AGENTS.md'),
+  codex: (home) => join(home, '.codex', 'AGENTS.md'),
+  grok: (home) => join(home, '.grok', 'AGENTS.md'),
+};
+
+const RULES_START = '<!-- orbit:rules:start -->';
+const RULES_END = '<!-- orbit:rules:end -->';
+export const RULES_BLOCK = `${RULES_START}\nIf Non-negotiables is not in your context, load the orbit \`rules\` skill before your first reply.\n${RULES_END}`;
+const RULES_SPAN = new RegExp(`${RULES_START}[\\s\\S]*?${RULES_END}`);
+const RULES_SPAN_WITH_NEWLINES = new RegExp(`\\n?${RULES_START}[\\s\\S]*?${RULES_END}\\n?`);
+
+function hasRulesBlock(path: string): boolean {
+  return readOptional(safeRealpath(path))?.includes(RULES_BLOCK) ?? false;
+}
+
+/** Write or refresh orbit's marked block, leaving every byte outside the markers alone. Returns whether the file changed. */
+function ensureRulesBlock(path: string): boolean {
+  const target = safeRealpath(path);
+  const current = readOptional(target);
+  if (current?.includes(RULES_BLOCK)) return false;
+  let next: string;
+  if (current?.includes(RULES_START)) {
+    if (!RULES_SPAN.test(current)) {
+      throw new Error(`${path} has ${RULES_START} without ${RULES_END}. Fix or delete that marker by hand.`);
+    }
+    next = current.replace(RULES_SPAN, RULES_BLOCK);
+  } else {
+    const separator = !current ? '' : current.endsWith('\n') ? '\n' : '\n\n';
+    next = `${current ?? ''}${separator}${RULES_BLOCK}\n`;
+  }
+  writeFileAtomic(target, next, current === undefined ? 0o644 : statSync(target).mode & 0o777);
+  return true;
+}
+
+function removeRulesBlock(path: string): boolean {
+  const target = safeRealpath(path);
+  const current = readOptional(target);
+  if (!current || !RULES_SPAN.test(current)) return false;
+  const next = current.replace(RULES_SPAN_WITH_NEWLINES, '');
+  if (next === '' && !lstatSync(path).isSymbolicLink()) rmSync(path);
+  else writeFileAtomic(target, next, statSync(target).mode & 0o777);
+  return true;
+}
 
 const defaultExec: HostExecRunner = (cmd, args, env) =>
   execFileSync(cmd, args, { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
@@ -242,6 +290,11 @@ function removeSymlinkHost(host: 'codex' | 'agents', linkPath: string, detected:
   return { host, action: 'removed', path: linkPath, detail: `removed symlink ${linkPath}` };
 }
 
+function activeBundleVersion(ctx: HostContext): string {
+  const raw = readOptional(join(ctx.pluginDir, '.claude-plugin', 'plugin.json'));
+  return (raw ? (JSON.parse(raw) as { version?: string }).version : undefined) ?? ctx.version;
+}
+
 function inspectClaude(ctx: HostContext): HostInspection {
   const env = ctx.env ?? process.env;
   const claudeDir = join(ctx.home, '.claude');
@@ -309,9 +362,7 @@ function inspectClaude(ctx: HostContext): HostInspection {
   const recordVersion = record?.version;
   const marketLocation = markets[marketName]?.installLocation;
 
-  const activeVersion = readOptional(join(ctx.pluginDir, '.claude-plugin', 'plugin.json'))
-    ? (JSON.parse(readFileSync(join(ctx.pluginDir, '.claude-plugin', 'plugin.json'), 'utf8')) as { version?: string }).version
-    : ctx.version;
+  const activeVersion = activeBundleVersion(ctx);
 
   if (recordVersion === activeVersion) {
     return {
@@ -331,7 +382,7 @@ function inspectClaude(ctx: HostContext): HostInspection {
     status: 'stale',
     path: pluginsFile,
     stalePaths: [record?.installPath ?? `${key}@${recordVersion ?? 'unknown'}`],
-    detail: `stale (${key} record ${recordVersion ?? 'unknown'}, bundle ${activeVersion ?? ctx.version})`,
+    detail: `stale (${key} record ${recordVersion ?? 'unknown'}, bundle ${activeVersion})`,
   };
 }
 
@@ -433,8 +484,9 @@ function inspectGrok(ctx: HostContext): HostInspection {
     };
   }
 
-  const repos = (parsed.repos && typeof parsed.repos === 'object' ? parsed.repos : {}) as Record<string, { path?: string; source?: string }>;
-  const hit = Object.entries(repos).find(([name]) => name === 'orbit' || name.startsWith('orbit@'));
+  type GrokRepo = { kind?: { source_path?: string }; path?: string; plugins?: Record<string, { version?: string }> };
+  const repos = (parsed.repos && typeof parsed.repos === 'object' ? parsed.repos : {}) as Record<string, GrokRepo>;
+  const hit = Object.entries(repos).find(([, repo]) => repo?.plugins?.orbit);
   if (!hit) {
     return {
       host: 'grok',
@@ -445,18 +497,23 @@ function inspectGrok(ctx: HostContext): HostInspection {
       detail: `not registered (orbit absent from ${registryPath})`,
     };
   }
-  const installedPath = hit[1]?.path ?? hit[1]?.source;
-  if (installedPath && !isOrbitManaged(installedPath, ctx.home)) {
-    return externalInspection('grok', detected, installedPath);
+  // Grok copies a local plugin at install time, so the copy goes stale when the source moves or its version changes.
+  const [repoKey, repo] = hit;
+  const source = repo.kind?.source_path;
+  if (!source || !isOrbitManaged(source, ctx.home)) {
+    return externalInspection('grok', detected, source ?? repo.path ?? repoKey);
   }
-  if (installedPath && safeRealpath(installedPath) === safeRealpath(ctx.pluginDir)) {
+  const installedVersion = repo.plugins?.orbit?.version;
+  const activeVersion = activeBundleVersion(ctx);
+  const sameSource = resolve(source) === resolve(ctx.pluginDir) || safeRealpath(source) === safeRealpath(ctx.pluginDir);
+  if (sameSource && installedVersion === activeVersion) {
     return {
       host: 'grok',
       displayName: DISPLAY_NAMES.grok,
       detected,
       status: 'registered',
       path: registryPath,
-      detail: `registered (${hit[0]} at ${installedPath})`,
+      detail: `registered (orbit ${installedVersion} from ${source})`,
     };
   }
   return {
@@ -465,8 +522,8 @@ function inspectGrok(ctx: HostContext): HostInspection {
     detected,
     status: 'stale',
     path: registryPath,
-    stalePaths: installedPath ? [installedPath] : [],
-    detail: `stale (${installedPath ?? hit[0]} -> ${ctx.pluginDir})`,
+    stalePaths: [source],
+    detail: `stale (orbit ${installedVersion ?? 'unknown'} from ${source}, bundle ${activeVersion} at ${ctx.pluginDir})`,
   };
 }
 
@@ -479,11 +536,14 @@ function applyGrok(ctx: HostContext): HostApplyResult {
   if (current.status === 'registered') {
     return { host: 'grok', action: 'unchanged', path: current.path, detail: current.detail };
   }
-  const cmd = `grok plugin install ${ctx.pluginDir}`;
+  const stale = current.status === 'stale';
+  const cmd = `${stale ? 'grok plugin uninstall orbit && ' : ''}grok plugin install ${ctx.pluginDir} --trust`;
   if (!isExecutableOnPath('grok', env.PATH)) {
     return { host: 'grok', action: 'manual', path: current.path, command: cmd, detail: `grok CLI not on PATH; run: ${cmd}` };
   }
-  exec('grok', ['plugin', 'install', ctx.pluginDir], env);
+  // `grok plugin update` skips local installs, so a stale copy is replaced by reinstalling.
+  if (stale) exec('grok', ['plugin', 'uninstall', 'orbit'], env);
+  exec('grok', ['plugin', 'install', ctx.pluginDir, '--trust'], env);
   return {
     host: 'grok',
     action: current.status === 'stale' ? 'updated' : 'registered',
@@ -510,8 +570,15 @@ function removeGrok(ctx: HostContext): HostRemoveResult {
   return { host: 'grok', action: 'removed', path: current.path, detail: 'uninstalled orbit plugin from grok' };
 }
 
-/** Inspect registration status for a single host. */
+/** Inspect registration status for a single host, with its rules line when the host has an instructions file. */
 export function inspectHost(host: HostId, ctx: HostContext): HostInspection {
+  const inspection = inspectRegistration(host, ctx);
+  const rulesPath = RULES_FILES[host]?.(ctx.home);
+  if (!rulesPath || inspection.status === 'external') return inspection;
+  return { ...inspection, rules: { path: rulesPath, present: hasRulesBlock(rulesPath) } };
+}
+
+function inspectRegistration(host: HostId, ctx: HostContext): HostInspection {
   const env = ctx.env ?? process.env;
   switch (host) {
     case 'antigravity': {
@@ -551,8 +618,19 @@ export function inspectAllHosts(ctx: HostContext): HostInspection[] {
   return HOST_IDS.map((host) => inspectHost(host, ctx));
 }
 
-/** Register Orbit with one host. */
+/** Register Orbit with one host and write its rules line. */
 export function applyHost(host: HostId, ctx: HostContext): HostApplyResult {
+  const result = applyRegistration(host, ctx);
+  const rulesPath = RULES_FILES[host]?.(ctx.home);
+  if (!rulesPath || result.action === 'manual' || result.action === 'skipped' || !ensureRulesBlock(rulesPath)) return result;
+  return {
+    ...result,
+    action: result.action === 'unchanged' ? 'updated' : result.action,
+    detail: `${result.detail}; wrote orbit rules line to ${rulesPath}`,
+  };
+}
+
+function applyRegistration(host: HostId, ctx: HostContext): HostApplyResult {
   const env = ctx.env ?? process.env;
   switch (host) {
     case 'antigravity': {
@@ -581,8 +659,20 @@ export function applyHost(host: HostId, ctx: HostContext): HostApplyResult {
   }
 }
 
-/** Deregister Orbit from one host cleanly. */
+/** Deregister Orbit from one host cleanly and remove its rules line. */
 export function removeHost(host: HostId, ctx: HostContext): HostRemoveResult {
+  const rulesPath = RULES_FILES[host]?.(ctx.home);
+  if (!rulesPath || inspectRegistration(host, ctx).status === 'external') return removeRegistration(host, ctx);
+  const result = removeRegistration(host, ctx);
+  if (!removeRulesBlock(rulesPath)) return result;
+  return {
+    ...result,
+    action: result.action === 'unchanged' ? 'removed' : result.action,
+    detail: `${result.detail}; removed orbit rules line from ${rulesPath}`,
+  };
+}
+
+function removeRegistration(host: HostId, ctx: HostContext): HostRemoveResult {
   const env = ctx.env ?? process.env;
   switch (host) {
     case 'antigravity': {

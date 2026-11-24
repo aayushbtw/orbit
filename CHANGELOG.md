@@ -4,6 +4,17 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.82.0
+
+### CLI
+
+- `orbit setup`, `orbit hosts enable` and `orbit hosts sync` write orbit's always-on rules line back into each host that runs no SessionStart hook. The line goes into `~/.codex/AGENTS.md`, `~/.grok/AGENTS.md` and `~/.gemini/config/AGENTS.md`, inside `<!-- orbit:rules:start -->` and `<!-- orbit:rules:end -->` markers. Text outside the markers stays as it is. `orbit hosts disable` and `orbit uninstall` remove the block. `orbit doctor` reports a missing or edited block, and `orbit doctor --fix` rewrites it. 0.70.0 removed this line when Claude was the only lead.
+- The Grok adapter installs with `--trust`, because `grok plugin install` asks for confirmation without it. It reads the registry Grok writes, which keys a repo by a generated id and lists `orbit` under `plugins` with its `source_path` and version. A copy whose source or version no longer matches the active bundle reinstalls, because `grok plugin update` skips local installs.
+
+### Any lead
+
+- The Any lead table in `plugin/docs/harness/t3-code.md` maps `$ARGUMENTS`, a skill line that is `` !`<cmd>` ``, a step that reads a session transcript under `~/.claude/projects/`, and `effort` in an agent file's frontmatter. A lead with no `CLAUDE_SESSION_ID`, or no matching transcript, reads the thread with `t3_thread_read` instead. `/orbit:session-pickup` points at that row.
+
 ## 0.81.0
 
 - Keep Autopilot's queue, verification and landing in the main thread. Delegate builds early, follow completion events, use CI for routine checks and recheck affected behavior after minor fixes.
