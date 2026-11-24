@@ -78,7 +78,7 @@ For a change, the list continues past the flow's own steps. Opening a PR comes n
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../diagrams/docs-dark.svg">
-  <img alt="Three swimlanes for you, Claude and subagents. You name the goal with /orbit:start. Claude picks the flow, a question stops at its answer, and a change gets a worktree off origin/main and an advisor check when it touches more than 3 files. For each unit, poteto-agent writes it, Claude reads and runs it, and gitops commits it. Then come interrogate on a contested design, deslop, comment-sicko and the PR or branch. If you said don't ship, the task stops with Next: /orbit:ship. Otherwise Babysit drives a PR to merge-ready under Land pr and a fresh verifier runs the change. On PASS, gitops lands it. On FAIL, nothing lands and the reply carries a repro. Dashed boxes run only when they apply." src="../diagrams/docs-light.svg">
+  <img alt="Three swimlanes for you, Claude and subagents. You name the goal with /orbit:start. Claude picks the flow, a question stops at its answer, and a change gets a worktree off origin/main and an advisor check when it touches more than 3 files. For each unit, poteto-agent writes it, Claude reads and runs it, and gitops commits it. Then come interrogate on a contested design, deslop, comment-sicko and the PR or branch. If you said don't ship, the task stops and tells you to run /orbit:ship. Otherwise Babysit drives a PR to merge-ready under Land pr and a fresh verifier runs the change. On PASS, gitops lands it. On FAIL, nothing lands and the reply carries a repro. Dashed boxes run only when they apply." src="../diagrams/docs-light.svg">
 </picture>
 
 ## A change ships by default
@@ -95,16 +95,11 @@ To keep the change but land it yourself, put "don't ship" or "I'll land it" in t
 
 The flow stays the same and stops at Opening a PR. You get the PR link, or under Land `main` the worktree path and branch. Run `/orbit:ship` when you're ready, and the same verifier runs first. [Make orbit fit your project](./08-make-it-fit.md) explains the Land line that picks between `pr` and `main`.
 
-## Read the Next: line
+## Read the reply
 
-Every task ends with one `Next:` line. It reports where things stand. It is never an offer. There are four forms:
+Every task ends with a short reply in plain sentences. It says what the task did and links the PR or the landed commit. It also names each part that did not go to plan: a part of the goal not done, a skipped step, a check that failed or ran on a fallback, and anything left behind, such as a worktree or an open PR. When nothing went wrong, the reply leaves that part out. The steps that ran as planned go in the PR body, not the reply.
 
-- `Next: nothing pending.` The task is done. Start your next goal.
-- `Next: /orbit:ship` You said "don't ship", so the PR or the unpushed branch waits for you. Run it to verify and land.
-- `Next: /orbit:start <follow-up>` Something is outside the goal or needs your decision. The reply says which. Run it when you're ready.
-- `Next: new session, then /orbit:session-pickup` The work was paused. Open a new session and run it there.
-
-One fixed line means you never have to read a long reply to learn whether something waits on you. The README has the same four lines as a table.
+When something waits on you, the reply names the command. After "don't ship", run `/orbit:ship` to verify and land. After a pause, open a new session and run `/orbit:session-pickup`.
 
 ## Steer a task in progress
 

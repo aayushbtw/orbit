@@ -86,7 +86,7 @@ function readme(theme) {
   const verify = box('agent', 830, 230, 'Run it like a user', 'a fresh agent', { ts: 22 });
   const land = box('claude', 1000, 170, 'Land it', 'on PASS', { kind: 'done' });
   const fail = box('agent', 1120, 200, 'Nothing lands', 'on FAIL, with a repro', { kind: 'fail', ss: 16 });
-  const next = box('you', 1130, 180, 'Next: line', 'what to do next', { kind: 'done' });
+  const next = box('you', 1130, 180, 'Reply', 'what landed', { kind: 'done' });
 
   k.arrow([[start.x + 140, start.bot + 6], [plan.x + 30, plan.y - 6]]);
   k.arrow([[plan.r + 6, plan.cy], [write.x - 6, write.cy]]);
@@ -140,12 +140,12 @@ function docs(theme) {
   const deslop = box('claude', 8, 'Deslop', 'cut AI slop');
   const sicko = box('agent', 8, 'Strip comments', 'comment-sicko');
   const pr = box('agent', 9, 'PR or branch', 'gitops');
-  const stop = box('you', 9, 'Next:', '/orbit:ship', { kind: 'done', optional: true });
+  const stop = box('you', 9, 'Run', '/orbit:ship', { kind: 'done', optional: true });
   const baby = box('claude', 10, 'Babysit', 'Land pr: to merge-ready', { optional: true });
   const verify = box('agent', 11, 'Verify', 'fresh verifier');
   const fail = box('claude', 11, 'Nothing lands', 'FAIL, with a repro', { kind: 'fail' });
   const land = box('agent', 12, 'Land', 'gitops merges or pushes');
-  const next = box('you', 13, 'Next: line', 'what to do next', { kind: 'done' });
+  const next = box('you', 13, 'Reply', 'what landed', { kind: 'done' });
 
   down(start, pick);
   k.arrow([[pick.x - 6, pick.cy], [answer.r + 6, answer.cy]], true);
