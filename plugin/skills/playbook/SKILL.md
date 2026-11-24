@@ -72,7 +72,7 @@ Before writing code that matches a line below, read its index, then open only th
 - `prototype`, `playbooks/prototype.md`. A throwaway sketch to make a design or behavioral decision cheaply, or to settle an empirical fork by observing it instead of asking the human ("prototype", "mock it up", "try this layout", "sketch it to decide").
 - `perf`, `playbooks/perf-issue.md`. A measured slowness to trace and improve against a baseline.
 - `hillclimb`, `playbooks/hillclimb.md`. Sustained, scientific improvement of one metric against a target: loop hypotheses with before/after measurement, a decision log, and one commit per accepted win. Distinct from `perf`, which is a one-off fix.
-- `autopilot-full`, `playbooks/autopilot-full.md`. A queue of independent PRs run to merged with full autonomy. One owner per PR carries build through merge, and the root swarm-verifies each PR before its owner merges ("autopilot this queue", "full autopilot", one-owner-per-PR programs).
+- `autopilot-full`, `playbooks/autopilot-full.md`. A queue of independent PRs run to merged with full autonomy. The main thread delegates each build, swarm-verifies the patch and lands it ("autopilot this queue", "full autopilot", one-owner-per-PR programs).
 - `autopilot-stack`, `playbooks/autopilot-stack.md`. `autopilot-full` without the merge. A queue of PRs built and verified with full autonomy, then handed to the operator to land. A PR stacks only on a PR it builds on ("autopilot-stack", "autopilot, don't merge", "stack them, don't ship", "build the stack, I'll land it").
 - `multi-phase-plan`, `playbooks/multi-phase-plan.md`. Work that spans phases or stacked PRs.
 - `opening-a-pr`, `playbooks/opening-a-pr.md`. Invoked at the end of every other playbook.
