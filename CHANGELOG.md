@@ -4,6 +4,10 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.77.1
+
+- Say where a Models target wins without relying on an override sentence. A child whose cell holds a target skips the Where a child runs table, Shipping's diff review follows a `judgment` target, and a target on your own provider retries as other native spawns do.
+
 ## 0.77.0
 
 - Add an interactive Orbit CLI to install and register an Orbit bundle for T3 Code without a Claude Code install, configure user-wide model assignments, and inspect effective project settings.
