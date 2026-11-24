@@ -4,6 +4,11 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.86.0
+
+- Run /orbit:how on request and drop the file-count plan gate. Keep path-scoped project guidance in the playbook and load pstack’s worker instructions in agent kickoffs.
+- Use T3 PR and thread data to audit worktrees before pruning. Require a matching merged PR head when git ancestry alone cannot prove landing.
+
 ## 0.85.0
 
 ### Distribution and CLI

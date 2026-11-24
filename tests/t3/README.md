@@ -85,7 +85,7 @@ The Claude lead takes the `codex` seat. A second commit adds `median.mjs` and it
 
 ```
 | code | code units | claudeAgent/claude-opus-5-5 | medium |
-| advisor | plan gate and forks | claudeAgent/claude-fable-5-2 | |
+| advisor | forks and requested second opinions | claudeAgent/claude-fable-5-2 | |
 | writing | docs and prose | antigravity/gemini-4-neon | |
 ```
 

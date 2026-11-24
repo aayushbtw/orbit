@@ -4,23 +4,41 @@
 # operated in it. Emits a table sorted by size with a suggested bucket. Never
 # deletes anything; deletion stays a human-gated step in the playbook.
 #
-# Usage: worktree-audit.sh [-b|--base <ref>] [repo-path]
+# Usage: worktree-audit.sh [-b|--base <ref>] [--prs <file>] [repo-path]
 #   repo-path defaults to the current repo.
 #   -b sets the ref the MERGED column checks against (e.g. origin/integration).
 #   Without it the base is origin/HEAD, then origin/main, then origin/master.
 #   origin/HEAD is the remote's default branch, not necessarily the branch PRs
 #   merge into; pass -b when they differ.
+#   --prs takes a JSON array of T3 pull_request_list entries.
 set -u
 
 base=""
+prs=""
 while [ $# -gt 0 ]; do
 	case "$1" in
 	-b|--base) [ $# -ge 2 ] || { echo "error: $1 needs a ref" >&2; exit 2; }; base="$2"; shift 2 ;;
+	--prs) [ $# -ge 2 ] && [ -n "$2" ] || { echo "error: --prs needs a file" >&2; exit 2; }; prs="$2"; shift 2 ;;
 	-h|--help) sed -n '2,/^set -u/p' "$0" | sed '$d; s/^# \{0,1\}//'; exit 0 ;;
 	-*) echo "error: unknown option: $1" >&2; exit 2 ;;
 	*) break ;;
 	esac
 done
+
+if [ -n "$prs" ]; then
+	if ! prs=$(jq -sce '
+		if length == 1 and (.[0] | type == "array" and all(.[];
+			type == "object" and (.headBranch | type == "string") and
+			(.number | type == "number") and (.isDraft | type == "boolean") and
+			(.state | IN("open", "closed", "merged"))))
+		then .[0] else error("expected an array of T3 pull requests") end
+	' "$prs"); then
+		echo "error: could not read --prs data" >&2
+		exit 2
+	fi
+else
+	prs='[]'
+fi
 
 repo="${1:-$(git rev-parse --show-toplevel 2>/dev/null)}"
 [ -z "$repo" ] && { echo "not in a git repo; pass a repo path" >&2; exit 1; }
@@ -28,7 +46,7 @@ cd "$repo" || exit 1
 git rev-parse --git-dir >/dev/null 2>&1 || { echo "error: not a git repo: $repo" >&2; exit 1; }
 
 # Main worktree is the first entry; everything else is a candidate.
-main_wt=$(git worktree list --porcelain | awk '/^worktree /{print $2; exit}')
+main_wt=$(git worktree list --porcelain | awk '/^worktree /{print substr($0,10); exit}')
 
 if [ -z "$base" ]; then
 	for cand in "$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)" origin/main origin/master; do
@@ -55,15 +73,6 @@ else
 	stat_fmt=(-f '%m %N'); fmt_day() { date -r "$1" '+%Y-%m-%d'; }
 fi
 
-# PR state by branch, fetched once as [{number, state, head}] with a lowercase
-# state, from gh. Empty when gh can't read this repo's PRs.
-prs=$(mktemp)
-if raw=$(gh pr list --author "@me" --state all --limit 1000 \
-	--json number,state,headRefName 2>/dev/null); then
-	printf '%s' "$raw" | jq '[.[] | {number, state: (.state | ascii_downcase), head: .headRefName}]' > "$prs" 2>/dev/null
-fi
-[ -s "$prs" ] || echo "[]" > "$prs"
-
 # Transcripts: ~/.claude/projects/<slug>/**/*.jsonl, where <slug> is the session's
 # start path with every non-alphanumeric char replaced by "-". A session started
 # in a worktree gets that worktree's own slug dir, which extends the main one, so
@@ -76,7 +85,7 @@ now=$(date +%s)
 echo "# base: $base"
 printf "SIZE\tAGE\tMERGED\tDIRTY\tREMOTE\tPR\tLAST_CHAT\tBUCKET\tWORKTREE\n"
 
-git worktree list --porcelain | awk '/^worktree /{print $2}' | while read -r wt; do
+git worktree list --porcelain | awk '/^worktree /{print substr($0,10)}' | while IFS= read -r wt; do
 	[ "$wt" = "$main_wt" ] && continue
 
 	size=$(du -sh "$wt" 2>/dev/null | awk '{print $1}')
@@ -103,8 +112,11 @@ git worktree list --porcelain | awk '/^worktree /{print $2}' | while read -r wt;
 			|| remote="ahead$(git -C "$wt" rev-list --count "origin/$branch..HEAD" 2>/dev/null)"
 	else remote=no-remote; fi
 
-	pr=$([ -n "$branch" ] && jq -r --arg b "$branch" \
-		'.[] | select(.head==$b) | "#\(.number)/\(.state)"' "$prs" 2>/dev/null | head -1)
+	pr=$([ -n "$branch" ] && printf '%s\n' "$prs" | jq -r --arg b "$branch" '
+		map(select(.headBranch == $b)) as $matches
+		| (first($matches[] | select(.state == "open")) // $matches[0])
+		| select(. != null)
+		| "#\(.number)/\(if .state == "open" and .isDraft then "draft" else .state end)"')
 	[ -z "$pr" ] && pr="-"
 
 	# Most recent chat whose transcript operated in this worktree: any session
@@ -128,13 +140,10 @@ git worktree list --porcelain | awk '/^worktree /{print $2}' | while read -r wt;
 	else case "$dirty" in wip:*) bucket=hold-wip ;; *)
 		case "$pr" in */open|*/draft) bucket=hold-open-pr ;; *)
 			if [ "$recent" = yes ]; then bucket=verify-recent-chat
-			elif [ "$merged" = YES ] || [ "$pr" != "-" ]; then bucket=safe
-			else bucket=review; fi ;;
+			else case "$merged:$pr" in YES:*|*:*/merged) bucket=safe ;; *) bucket=review ;; esac; fi ;;
 		esac ;;
 	esac; fi
 
 	printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
 		"$size" "$age" "$merged" "$dirty" "$remote" "$pr" "$last" "$bucket" "$wt"
 done | sort -t$'\t' -k1,1 -rh
-
-rm -f "$prs"

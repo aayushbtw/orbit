@@ -39,8 +39,8 @@ Each line does one job:
 | --- | --- | --- |
 | Check | The command that proves a change is sound | The flows' verify steps. Under Land `main`, Shipping runs it in place of CI. |
 | Land | `pr` to land through pull requests, plus the merge method if it isn't squash | Opening a PR opens the PR, Babysit drives it to merge-ready, and Shipping merges it. Under either setting, a fresh verifier passes the change before it lands. |
-| Before code | Guidance for writing code under a path, as `<path>: <source>` entries separated by `;`. A source is a file to read, or a command that prints a skill or its path. | Each code delegate under that path, copied word for word into its brief. Also the plan gate and `/orbit:interrogate`. |
-| Review also checks | Docs to read before planning and at review only. Scope one to a path with `src/server/: <source>`. | The plan gate and `/orbit:interrogate` |
+| Before code | Guidance for writing code under a path, as `<path>: <source>` entries separated by `;`. A source is a file to read, or a command that prints a skill or its path. | Each code delegate under that path, copied word for word into its brief. Also read before editing and provided to `/orbit:interrogate`. |
+| Review also checks | Docs to read when reviewing. Scope one to a path with `src/server/: <source>`. | Shipping diff review and `/orbit:interrogate` |
 | Models | A `### Models` table with Task, Use for, Model and Effort columns. Each row is a work type of your own or one of orbit's six roles, `gitops`, `verifier`, `advisor`, `judgment`, `code` and `other-family`. An empty cell takes the same cell from Orbit's [user-wide configuration](../cli.md), else the default. | Every subagent Claude spawns, except Comment Sicko and a step that names its own model or effort, such as `/orbit:recall`. [Route work by work type](#route-work-by-work-type) explains how Claude picks a row. |
 
 Before code is the line that goes into the brief of the agent writing the code. Put guidance there that code under a path must follow. Put a doc in Review also checks when it matters for the plan and the review but not for each edit.
@@ -172,9 +172,7 @@ A smoke run of the routing eval (`tests/routing/run.mjs`, one run per lead, 2026
 
 ## Put folder rules next to the code
 
-A rule that only matters for one folder goes in an AGENTS.md (or CLAUDE.md) inside that folder, such as `src/payments/AGENTS.md`. When the plan gate runs, it reads every such file in the folders a change touches and in the folders above them. It also reads each `.claude/rules/` file whose `paths` match.
-
-The plan gate runs when a change adds a module or touches more than 3 files. For a rule that every code delegate under a path must load, use a Before code entry instead.
+A rule that only matters for one folder goes in an AGENTS.md (or CLAUDE.md) inside that folder, such as `src/payments/AGENTS.md`. Before editing or reviewing, read every such file in the folders a change touches and in the folders above them. Also read each `.claude/rules/` file whose `paths` match. Use a Before code entry for a rule that every code delegate under a path must load.
 
 ## Fix a repeated mistake with /orbit:correct
 

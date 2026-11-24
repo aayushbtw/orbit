@@ -1,6 +1,6 @@
 ---
 name: advisor
-description: Senior advisor for the /orbit:playbook plan gate, any fork before the user sees it, Shipping's diff review, or when the user asks for a second opinion. Give it a briefing (the request, what happened, verbatim evidence, current state, specific questions). Read-only. Returns a verdict and concrete guidance, not edits.
+description: Senior advisor for any fork before the user sees it, Shipping's diff review, or when the user asks for a second opinion. Give it a briefing (the request, what happened, verbatim evidence, current state, specific questions). Read-only. Returns a verdict and concrete guidance, not edits.
 effort: high
 tools: Read, Grep, Glob, Bash
 ---

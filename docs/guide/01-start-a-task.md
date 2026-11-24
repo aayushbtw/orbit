@@ -10,7 +10,7 @@ Describe the outcome you want and anything you already know. Leave the order of 
 /orbit:start after login, users land on /home instead of the page they came from. the original URL is in the `next` query param.
 ```
 
-That prompt names a symptom and a clue. It doesn't say "read the auth code, add logging, then patch the redirect". Orbit's flows already hold the order of steps, plus gates such as a fresh worktree and a plan review. A bug fix, for example, reproduces the bug before anyone writes a fix. If you list the steps yourself, you trade that order for one you made up on the spot.
+That prompt names a symptom and a clue. It doesn't say "read the auth code, add logging, then patch the redirect". Orbit's flows already hold the order of steps, plus gates such as a fresh worktree and a delegate for each unit of code. A bug fix, for example, reproduces the bug before anyone writes a fix. If you list the steps yourself, you trade that order for one you made up on the spot.
 
 The goal can be short. It only needs to be clear enough to act on. Claude asks you a question only when the goal itself is unclear.
 
@@ -60,7 +60,6 @@ The list exists so you can see the whole run before it starts, and so no step di
 
 ```text
 [x] Worktree gate
-[x] Plan gate. skip: the fix touches two files and adds no module
 [ ] Delegate gate
 [ ] 1. Reproduce it on the matching surface
 [ ] 2. Binary-search the cause
@@ -70,15 +69,13 @@ The list exists so you can see the whole run before it starts, and so no step di
 [ ] 6. Run Opening a PR
 ```
 
-The Plan gate applies only when a change adds a module or touches more than 3 files, so a two-file fix skips it in plain sight. If a skip looks wrong to you, say so.
-
 You can waive steps yourself. A step you rule out, such as "no subagents", "skip e2e" or "no commit", stays in the list as `skip: user waived`. "Just testing" or "quick check" waives the commit, the PR and shipping. Brainstorming or iterating on UI you may not keep routes to `prototype`, so it skips the full build.
 
 For a change, the list continues past the flow's own steps. Opening a PR comes next. Then, unless you opted out, Babysit and Shipping. A `prototype` is the exception. It is throwaway, so it ends at its reply.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../diagrams/docs-dark.svg">
-  <img alt="Three swimlanes for you, Claude and subagents. You name the goal with /orbit:start. Claude picks the flow, a question stops at its answer, and a change gets a worktree off origin/main and an advisor check when it touches more than 3 files. For each unit, poteto-agent writes it, Claude reads and runs it, and gitops commits it. Then come interrogate on a contested design, deslop, comment-sicko and the PR or branch. If you said don't ship, the task stops and tells you to run /orbit:ship. Otherwise Babysit drives a PR to merge-ready under Land pr and a fresh verifier runs the change. On PASS, gitops lands it. On FAIL, nothing lands and the reply carries a repro. Dashed boxes run only when they apply." src="../diagrams/docs-light.svg">
+  <img alt="Three swimlanes for you, Claude and subagents. You name the goal with /orbit:start. Claude picks the flow, a question stops at its answer, and a change gets a worktree off origin/main and reads the project guidance. For each unit, poteto-agent writes it, Claude reads and runs it, and gitops commits it. Then come interrogate on a contested design, deslop, comment-sicko and the PR or branch. If you said don't ship, the task stops and tells you to run /orbit:ship. Otherwise Babysit drives a PR to merge-ready under Land pr and a fresh verifier runs the change. On PASS, gitops lands it. On FAIL, nothing lands and the reply carries a repro. Dashed boxes run only when they apply." src="../diagrams/docs-light.svg">
 </picture>
 
 ## A change ships by default
