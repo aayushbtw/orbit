@@ -234,11 +234,11 @@ function guideAutopilot(theme) {
   const k = canvas(theme, W, H);
   const box = (b) => { const r = B({ h: 84, ...b }); k.box(r); return r; };
   const queue = box({ x: 20, y: 160, w: 180, t: 'Queue', s: 'your items', kind: 'you' });
-  const root = box({ x: 240, y: 160, w: 190, t: 'Root', s: 'writes no code', kind: 'claude' });
-  const owners = ['A', 'B', 'C'].map((n, i) => box({ x: 475, y: 30 + i * 130, w: 210, t: `Owner ${n}`, s: 'flow, PR, babysit', kind: 'agent' }));
+  const root = box({ x: 240, y: 160, w: 190, t: 'Main thread', s: 'runs the queue', kind: 'claude' });
+  const owners = ['A', 'B', 'C'].map((n, i) => box({ x: 475, y: 30 + i * 130, w: 210, t: `Owner ${n}`, s: 'builds and opens PR', kind: 'agent' }));
   const ver = box({ x: 730, y: 30, w: 170, h: 344, t: 'Verifiers', kind: 'agent' });
-  ['a fresh swarm', 'at each', 'code-ready head'].forEach((l, i) => k.text(ver.cx, ver.cy + 34 + i * 22, l, 17, k.c.muted));
-  const full = box({ x: 945, y: 70, w: 200, t: 'autopilot-full', s: 'a fresh owner merges', kind: 'done' });
+  ['live proof', 'and diff review', 'at code-ready'].forEach((l, i) => k.text(ver.cx, ver.cy + 34 + i * 22, l, 17, k.c.muted));
+  const full = box({ x: 945, y: 70, w: 200, t: 'autopilot-full', s: 'main thread merges', kind: 'done' });
   const stack = box({ x: 945, y: 250, w: 200, t: 'autopilot-stack', s: 'you land the stack', kind: 'you' });
   k.link(queue, root);
   owners.forEach((o) => {
@@ -249,7 +249,7 @@ function guideAutopilot(theme) {
   k.arrow([[ver.r + 6, stack.cy], [stack.x - 6, stack.cy]]);
   const c = owners[2];
   k.arrow([[root.cx, root.bot + 6], [root.cx + 30, c.bot + 50], [c.cx - 40, c.bot + 50], [c.cx - 10, c.bot + 6]], true);
-  k.text(440, c.bot + 84, '/loop 1h reads each trail', 17, k.c.muted);
+  k.text(440, c.bot + 84, 'audit tick checks for stalls', 17, k.c.muted);
   k.arrow([[ver.cx, ver.bot + 6], [ver.cx - 20, ver.bot + 46], [c.r + 20, c.bot + 46], [c.r - 14, c.bot + 6]], true);
   k.text(770, c.bot + 84, 'findings go back to the owner', 17, k.c.muted);
   return k;

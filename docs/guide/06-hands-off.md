@@ -10,22 +10,18 @@ Give `/orbit:start` a list of independent changes and ask it to autopilot them.
 /orbit:start autopilot this queue: add retries to the webhook sender, cache the feature flag lookup, delete the unused legacy_sessions table
 ```
 
-That routes to the `autopilot-full` flow. Its root agent writes no code. It spawns one owner per item, each in its own worktree off trunk, and the owners run in parallel. Each owner runs `/orbit:start` on its item, so the item goes through the same flow it would get as a single task, Opening a PR included. Then the owner babysits its own PR to merge-ready. In T3 Code, the owner returns once its PR is open, and the root babysits the PR. Each later round of that owner, such as a fix or the merge, then runs in the root's own thread, in the owner's worktree.
+That routes to the `autopilot-full` flow. The main thread keeps the queue and starts one owner per ready item, each in its own worktree. Each owner runs `/orbit:start` on its item, opens its PR and returns the head and proof. The main thread babysits the PR and hands fixes back to the owner.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../diagrams/guide-autopilot-dark.svg">
-  <img alt="A queue goes to a root that writes no code. The root fans out to one owner per item, and each owner runs its flow, opens a PR and babysits it. Every hour the root reads each owner's trail. A fresh swarm of verifiers checks each code-ready head and sends findings back to the owner, the only writer on its branch. Then autopilot-full merges the PRs, while autopilot-stack hands you the verified PRs to land." src="../diagrams/guide-autopilot-light.svg">
+  <img alt="The main thread delegates each item to an owner. The owners build and open PRs. Independent verifiers check the code-ready patches and route findings back to the owners. The main thread merges in autopilot-full and hands the verified PRs to you in autopilot-stack." src="../diagrams/guide-autopilot-light.svg">
 </picture>
 
-**Each branch has one writer.** The root never pushes a fix to an owner's branch. It sends findings back, and the owner fixes them. Two agents writing one branch undo each other's work.
+**Each branch has one writer.** Owners keep a decision trail in `$TMPDIR/orbit-autopilot/<slug>/` and commit each finished unit. A replacement picks up from the branch and trail.
 
-**The playbook assumes an owner can die.** Each owner keeps a decision trail in the run's store under `$TMPDIR/orbit-autopilot/<slug>/` and commits after every unit worth keeping. A replacement owner reads that trail and the branch, and picks up where the last one stopped.
+**Independent verification gates landing.** Each code-ready patch gets a live check and diff review from the swarm. CI covers routine checks, and a minor fix gets a focused independent recheck. When the verdict covers the patch and checks are green, the main thread merges and reads the PR back.
 
-**Nothing merges on the owner's word.** When an owner's code is clean and rebased onto trunk, it records a `code-ready` head in its trail. The root then fans out a swarm of fresh verifiers at that SHA. They rerun the Check line, drive the change live through your verify skill, and audit the diff. A later rebase or small fix gets a single verifier at the new head. Only new behavior, a redesign or a large new diff gets the full swarm again.
-
-Once the owner reports merge-ready and its head is verified, a fresh owner takes the merge round. It checks that the code still matches what the verifiers passed, merges, and reads the PR back. Green CI alone never authorizes a merge.
-
-On your go, the root arms `/loop 1h`. In T3 Code, that loop is a `schedule_task` bound to the root's thread. Each tick reads every owner's trail, starts verification at each new `code-ready` head, and replaces any agent that has stalled. You keep your gates. Items you name as yours stop at merge-ready. Asking the root to state its plan is not a go. Say stop, and every owner gets an order to make no more writes and reports where it stands.
+The main thread advances the queue when an owner finishes or a PR changes. For unattended work, a scheduled audit checks the trails for stalls. Items you reserve stop at merge-ready. Say stop to cancel running delegates.
 
 ## Stack it when you want to land it yourself
 
