@@ -55,7 +55,7 @@ export interface OrbitConfig {
 // Role names and defaults mirror plugin/rules.md Workflow Defaults, Models, which the lead reads.
 export const CANONICAL_TASKS: Record<string, { use: string; default: string }> = {
   advisor: { use: 'Plan gate, fork advisor, and diff review (orbit:advisor)', default: 'inherit' },
-  judgment: { use: 'Hardest changes, prose delegates, explainers, and first panel seats', default: 'opus' },
+  judgment: { use: 'Hardest changes, prose delegates, explainers, and first panel seats', default: 'inherit' },
   code: { use: 'Code delegates, swarm workers, and second panel seats', default: 'inherit' },
   verifier: { use: 'Pre-land independent verification (orbit:verifier)', default: 'inherit' },
   gitops: { use: 'Commits and PR work (orbit:gitops)', default: 'inherit' },
@@ -75,6 +75,7 @@ const TARGET_PATTERN = /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.:@+/-]+$/;
 const LEGACY_ALIASES = ['inherit', 'opus', 'sonnet', 'haiku', 'fable'];
 const STANDARD_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
 const EFFORT_TOKEN = /^[a-z][a-z0-9_-]*$/;
+const JUDGE_ENTRY = /^judge\s*=\s*(.*)$/;
 
 function splitList(value: string): string[] {
   return value.split(',').map((entry) => entry.trim()).filter(Boolean);
@@ -192,15 +193,25 @@ function rowsToProfile(rows: ParsedMarkdownRow[]): ProfileConfig {
   const profile = emptyProfile();
   for (const row of rows) {
     if (row.task === 'interrogate') {
-      if (row.model) profile.panels.interrogate = splitList(row.model).map(normalizeTaskName);
+      const entries = splitList(row.model);
+      const bad = entries.find((entry) => !validateSeatEntry(entry));
+      if (bad) throw new Error(`Invalid interrogate seat "${bad}" in the Models table.`);
+      if (entries.length) profile.panels.interrogate = entries.map(normalizeTaskName);
       continue;
     }
     if (row.task === 'arena') {
       const entries = splitList(row.model);
-      const judge = entries.find((entry) => entry.startsWith('judge='))?.slice('judge='.length).trim();
-      const runners = entries.filter((entry) => !entry.startsWith('judge=')).map(normalizeTaskName);
+      const judgeEntry = entries.find((entry) => JUDGE_ENTRY.test(entry));
+      const judge = judgeEntry?.match(JUDGE_ENTRY)?.[1].trim();
+      const runners = entries.filter((entry) => entry !== judgeEntry);
+      if (judge !== undefined && !validateSeatEntry(judge)) throw new Error(`Invalid arena judge "${judge}" in the Models table.`);
+      const bad = runners.find((entry) => !validateSeatEntry(entry));
+      if (bad) throw new Error(`Invalid arena seat "${bad}" in the Models table.`);
       if (runners.length || judge) {
-        profile.panels.arena = { ...(runners.length ? { runners } : {}), ...(judge ? { judge: normalizeTaskName(judge) } : {}) };
+        profile.panels.arena = {
+          ...(runners.length ? { runners: runners.map(normalizeTaskName) } : {}),
+          ...(judge ? { judge: normalizeTaskName(judge) } : {}),
+        };
       }
       continue;
     }
@@ -299,9 +310,10 @@ export interface LoadedConfig {
   config: OrbitConfig;
   source?: string;
   migratedFrom?: string;
+  legacyConfigError?: string;
 }
 
-/** Load user config from ~/.config/orbit/config.json, migrating legacy models.md when absent. */
+/** Load user config from ~/.config/orbit/config.json, migrating legacy models.md when absent. A malformed legacy file loads as defaults with legacyConfigError set. */
 export function loadConfig(home: string): LoadedConfig {
   const paths = orbitPaths(home);
   const jsonRaw = readOptional(paths.configPath);
@@ -315,9 +327,13 @@ export function loadConfig(home: string): LoadedConfig {
   for (const legacyPath of [paths.legacyModelsPath, paths.legacyClaudeModelsPath]) {
     const legacyText = readOptional(legacyPath);
     if (legacyText === undefined) continue;
-    const rows = parseMarkdownModelsTable(legacyText);
     const config = defaultConfig();
-    config.profiles.default = rowsToProfile(rows);
+    try {
+      config.profiles.default = rowsToProfile(parseMarkdownModelsTable(legacyText));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { config, legacyConfigError: `${legacyPath}: ${message}` };
+    }
     return { config, source: legacyPath, migratedFrom: legacyPath };
   }
 
@@ -472,6 +488,7 @@ export function getEffectiveAssignments(home: string, projectDir = projectRoot()
   configPath: string;
   source?: string;
   migratedFrom?: string;
+  legacyConfigError?: string;
   activeProfile: string;
   hosts: HostId[];
   rows: EffectiveAssignmentRow[];
@@ -620,6 +637,7 @@ export function getEffectiveAssignments(home: string, projectDir = projectRoot()
     configPath: paths.configPath,
     source: loaded.source,
     migratedFrom: loaded.migratedFrom,
+    ...(loaded.legacyConfigError ? { legacyConfigError: loaded.legacyConfigError } : {}),
     activeProfile: loaded.config.activeProfile,
     hosts: loaded.config.hosts ?? [],
     rows,
@@ -656,6 +674,9 @@ export function setTaskAssignment(
     if (!validateSeatEntry(update.judge)) {
       throw new Error(`Invalid arena judge "${update.judge}". Use a role name (${Object.keys(CANONICAL_TASKS).join(', ')}), other-family, or <provider>/<model>[@effort].`);
     }
+  }
+  if (update.effort && (task === 'interrogate' || task === 'arena')) {
+    throw new Error(`--effort does not apply to the ${task} panel. Put the effort on a seat instead, as <provider>/<model>@<effort>.`);
   }
   if (update.effort) {
     let model: ProviderModel | undefined;

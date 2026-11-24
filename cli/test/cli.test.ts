@@ -17,14 +17,15 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, expect, test } from 'vitest';
-import { checkNpmUpdate, globalOrbitBin, installBundle, pruneReleases, stageRelease } from '../src/bundle.js';
-
+import { checkNpmUpdate, globalOrbitBin, installBundle, pruneReleases, runGlobalOrbitInstall, stageRelease } from '../src/bundle.js';
 const cli = fileURLToPath(new URL('../dist/cli.mjs', import.meta.url));
 const bundleDir = fileURLToPath(new URL('../dist/plugin/', import.meta.url));
 const worktreeRoot = fileURLToPath(new URL('../..', import.meta.url));
+type Row = { host: string; action: string };
+type Item = Record<string, any>;
 const headings = '| Task | Use for | Model | Effort |\n| --- | --- | --- | --- |\n';
-let home;
-let workspace;
+let home: string;
+let workspace: string;
 
 beforeEach(() => {
   home = mkdtempSync(join(tmpdir(), 'orbit-cli-test-'));
@@ -34,18 +35,18 @@ beforeEach(() => {
 
 afterEach(() => rmSync(home, { recursive: true, force: true }));
 
-function seed(file, content) {
+function seed(file: string, content: string): string {
   const path = join(home, file);
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, content);
   return path;
 }
 
-function run(...args) {
+function run(...args: string[]) {
   return runWithEnv({ PATH: '' }, ...args);
 }
 
-function runWithEnv(env, ...args) {
+function runWithEnv(env: Record<string, string>, ...args: string[]) {
   const result = spawnSync(process.execPath, [cli, ...args], {
     cwd: workspace,
     env: { ...process.env, HOME: home, USERPROFILE: home, T3_ACP_MCP_NODE: '', ...env },
@@ -55,7 +56,7 @@ function runWithEnv(env, ...args) {
   return result;
 }
 
-function fakeBin(names) {
+function fakeBin(names: string[]) {
   const bin = join(home, 'fakebin');
   const log = join(home, 'fakebin.log');
   mkdirSync(bin, { recursive: true });
@@ -70,18 +71,18 @@ function fakeBin(names) {
   };
 }
 
-function jsonWithEnv(env, ...args) {
+function jsonWithEnv(env: Record<string, string>, ...args: string[]) {
   const { status, stdout, stderr } = runWithEnv(env, ...args, '--json');
   expect(stderr).toBe('');
   expect(status).toBe(0);
   return JSON.parse(stdout);
 }
 
-function skippedHosts(results) {
+function skippedHosts(results: Row[]): string[] {
   return results.filter((h) => h.action === 'skipped').map((h) => h.host).sort();
 }
 
-function json(...args) {
+function json(...args: string[]) {
   const { status, stdout, stderr } = run(...args, '--json');
   expect(stderr).toBe('');
   expect(status).toBe(0);
@@ -148,30 +149,30 @@ test('setup leaves malformed Antigravity config alone and requires TTY without -
 });
 
 test('link, unlink, use, and prune manage releases and current symlink safely', () => {
-  stageRelease(bundleDir, home, '0.75.0');
   stageRelease(bundleDir, home, '0.76.0');
   stageRelease(bundleDir, home, '0.77.0');
-  installBundle(bundleDir, home, '0.78.0');
+  stageRelease(bundleDir, home, '0.78.0');
+  installBundle(bundleDir, home, '0.79.0');
 
   const linked = json('link', worktreeRoot);
   expect(linked.repoPath).toBe(realpathSync(worktreeRoot));
   expect(json('status').bundle).toMatchObject({ linked: true });
 
   const unlinked = json('unlink');
-  expect(unlinked).toMatchObject({ unlinked: true, activeVersion: '0.78.0' });
-  expect(json('status').bundle).toMatchObject({ linked: false, activeVersion: '0.78.0' });
+  expect(unlinked).toMatchObject({ unlinked: true, activeVersion: '0.79.0' });
+  expect(json('status').bundle).toMatchObject({ linked: false, activeVersion: '0.79.0' });
 
-  const used = json('use', '0.76.0');
-  expect(used.version).toBe('0.76.0');
+  const used = json('use', '0.77.0');
+  expect(used.version).toBe('0.77.0');
 
   const pruned = pruneReleases(home, 2);
-  // Keeps 2 newest (0.78.0, 0.77.0) plus currently active 0.76.0; drops 0.75.0.
-  expect(pruned).toEqual(['0.75.0']);
-  expect(existsSync(join(home, '.config/orbit/releases/0.76.0'))).toBe(true);
-  expect(existsSync(join(home, '.config/orbit/releases/0.75.0'))).toBe(false);
+  // Keeps 2 newest (0.79.0, 0.78.0) plus currently active 0.77.0; drops 0.76.0.
+  expect(pruned).toEqual(['0.76.0']);
+  expect(existsSync(join(home, '.config/orbit/releases/0.77.0'))).toBe(true);
+  expect(existsSync(join(home, '.config/orbit/releases/0.76.0'))).toBe(false);
 
-  const updateInfo = checkNpmUpdate('0.78.0', '@aayushbtw/orbit', () => '0.79.0');
-  expect(updateInfo).toEqual({ currentVersion: '0.78.0', latestVersion: '0.79.0', updateAvailable: true });
+  const updateInfo = checkNpmUpdate('0.79.0', '@aayushbtw/orbit', () => '0.80.0');
+  expect(updateInfo).toEqual({ currentVersion: '0.79.0', latestVersion: '0.80.0', updateAvailable: true });
 });
 
 test('hosts refuses to overwrite a non-orbit skill symlink or directory', () => {
@@ -181,7 +182,7 @@ test('hosts refuses to overwrite a non-orbit skill symlink or directory', () => 
   symlinkSync(customSkill, join(home, '.codex/skills/orbit'));
 
   const inspected = json('hosts', 'list');
-  const codex = inspected.find((h) => h.host === 'codex');
+  const codex = inspected.find((h: Item) => h.host === 'codex');
   expect(codex.status).toBe('invalid');
   expect(run('hosts', 'enable', 'codex').status).toBe(1);
   expect(readlinkSync(join(home, '.codex/skills/orbit'))).toBe(customSkill);
@@ -201,17 +202,17 @@ test('migrates legacy models.md, strips backticks in AGENTS.md, and layers proje
   expect(existsSync(configPath)).toBe(true);
   expect(readFileSync(legacy, 'utf8')).toBe(original);
 
-  expect(rows.find((row) => row.task === 'advisor')).toMatchObject({
+  expect(rows.find((row: Item) => row.task === 'advisor')).toMatchObject({
     target: 'two/advice',
     targetSource: realpathSync(project),
     effort: 'high',
     effortSource: configPath,
   });
-  expect(rows.find((row) => row.task === 'code')).toMatchObject({
+  expect(rows.find((row: Item) => row.task === 'code')).toMatchObject({
     target: 'three/coder',
     effort: 'medium',
   });
-  expect(rows.find((row) => row.task === 'writing')).toMatchObject({
+  expect(rows.find((row: Item) => row.task === 'writing')).toMatchObject({
     kind: 'work-type',
     target: 'one/model/with-slash',
     targetSource: configPath,
@@ -220,7 +221,7 @@ test('migrates legacy models.md, strips backticks in AGENTS.md, and layers proje
   // Project .orbit/config.json takes precedence over AGENTS.md and user config
   json('models', 'set', 'code', 'four/override', '--effort', 'high', '--project');
   const afterProject = json('models', 'list');
-  expect(afterProject.find((r) => r.task === 'code')).toMatchObject({
+  expect(afterProject.find((r: Item) => r.task === 'code')).toMatchObject({
     target: 'four/override',
     effort: 'high',
     targetSource: join(realpathSync(workspace), '.orbit/config.json'),
@@ -228,7 +229,7 @@ test('migrates legacy models.md, strips backticks in AGENTS.md, and layers proje
 
   expect(run('models', 'set', 'writing', 'x/y | invalid').status).toBe(1);
   const cleared = json('models', 'unset', 'writing');
-  expect(cleared.find((row) => row.task === 'writing')).toBeUndefined();
+  expect(cleared.find((row: Item) => row.task === 'writing')).toBeUndefined();
 });
 
 test('profiles can save, switch, inspect, and delete independently', () => {
@@ -241,8 +242,8 @@ test('profiles can save, switch, inspect, and delete independently', () => {
   expect(json('models', 'explain', 'code').target).toBe('codex/gpt-6.2-sol');
 
   const profiles = json('profile', 'list');
-  expect(profiles.find((p) => p.name === 'default').active).toBe(true);
-  expect(profiles.find((p) => p.name === 'fast-mode').active).toBe(false);
+  expect(profiles.find((p: Item) => p.name === 'default').active).toBe(true);
+  expect(profiles.find((p: Item) => p.name === 'fast-mode').active).toBe(false);
 
   expect(run('profile', 'delete', 'default').status).toBe(1);
   json('profile', 'delete', 'fast-mode');
@@ -295,38 +296,42 @@ test('externally managed Claude and Grok installs are reported and never touched
   const snapshot = () => files.map((file) => readFileSync(file, 'utf8'));
   const before = snapshot();
   const fake = fakeBin(['claude', 'grok']);
-  const ok = (...args) => jsonWithEnv(fake.env, ...args);
+  const ok = (...args: string[]) => jsonWithEnv(fake.env, ...args);
 
   const oldManifest = join(stageRelease(bundleDir, home, '0.76.0'), 'plugin/.claude-plugin/plugin.json');
   writeFileSync(oldManifest, JSON.stringify({ ...JSON.parse(readFileSync(oldManifest, 'utf8')), version: '0.76.0' }));
   const setup = ok('setup', '--yes');
   expect(skippedHosts(setup.hosts)).toEqual(['claude', 'grok']);
-  expect(setup.hosts.find((h) => h.host === 'claude').detail).toContain(`externally managed at ${external}`);
+  expect(setup.hosts.find((h: Item) => h.host === 'claude').detail).toContain(`externally managed at ${external}`);
 
   const listed = ok('hosts', 'list');
-  expect(listed.find((h) => h.host === 'claude')).toMatchObject({ status: 'external', path: external });
-  expect(listed.find((h) => h.host === 'grok')).toMatchObject({ status: 'external', path: join(external, 'plugin') });
+  expect(listed.find((h: Item) => h.host === 'claude')).toMatchObject({ status: 'external', path: external });
+  expect(listed.find((h: Item) => h.host === 'grok')).toMatchObject({ status: 'external', path: join(external, 'plugin') });
 
   const explicit = runWithEnv(fake.env, 'setup', '--host', 'claude', '--yes');
   expect(explicit.status).toBe(1);
   expect(explicit.stderr).toContain(`externally managed at ${external}`);
+  const configPath = join(home, '.config/orbit/config.json');
+  const readConfig = () => (existsSync(configPath) ? readFileSync(configPath, 'utf8') : null);
+  const configBefore = readConfig();
   const enable = runWithEnv(fake.env, 'hosts', 'enable', 'grok');
   expect(enable.status).toBe(1);
   expect(enable.stderr).toContain('does not manage');
+  expect(readConfig()).toBe(configBefore);
 
   expect(skippedHosts(ok('use', '0.76.0').hosts)).toEqual(['claude', 'grok']);
   expect(skippedHosts(ok('link', worktreeRoot).hosts)).toEqual(['claude', 'grok']);
   expect(skippedHosts(ok('unlink').hosts)).toEqual(['claude', 'grok']);
   ok('use', '0.76.0');
-  expect(skippedHosts(ok('update', '0.78.0', '--yes').hosts)).toEqual(['claude', 'grok']);
+  expect(skippedHosts(ok('update', '0.79.0', '--yes').hosts)).toEqual(['claude', 'grok']);
   expect(skippedHosts(ok('hosts', 'sync', '--all'))).toEqual(['claude', 'grok']);
 
   const doctor = ok('doctor', '--fix');
   expect(doctor.healthy).toBe(true);
-  expect(doctor.fixes.filter((fix) => /claude|grok/.test(fix))).toEqual([]);
-  expect(doctor.hosts.filter((h) => h.status === 'external').map((h) => h.host)).toEqual(['claude', 'grok']);
+  expect(doctor.fixes.filter((fix: string) => /claude|grok/.test(fix))).toEqual([]);
+  expect(doctor.hosts.filter((h: Item) => h.status === 'external').map((h: Item) => h.host)).toEqual(['claude', 'grok']);
 
-  expect(ok('hosts', 'disable', 'claude', 'grok').map((h) => h.action)).toEqual(['skipped', 'skipped']);
+  expect(ok('hosts', 'disable', 'claude', 'grok').map((h: Item) => h.action)).toEqual(['skipped', 'skipped']);
   expect(skippedHosts(ok('uninstall', '--yes').hosts)).toEqual(['claude', 'grok']);
   expect(fake.calls()).toEqual([]);
   expect(snapshot()).toEqual(before);
@@ -341,7 +346,7 @@ test('an Orbit-managed stale Claude marketplace is still updated and uninstalled
   }));
   const fake = fakeBin(['claude']);
   const setup = jsonWithEnv(fake.env, 'setup', '--yes');
-  expect(setup.hosts.find((h) => h.host === 'claude').action).toBe('updated');
+  expect(setup.hosts.find((h: Item) => h.host === 'claude').action).toBe('updated');
   expect(fake.calls()).toEqual([
     'claude plugin marketplace remove orbit',
     `claude plugin marketplace add ${join(home, '.config/orbit/current')}`,
@@ -352,18 +357,18 @@ test('an Orbit-managed stale Claude marketplace is still updated and uninstalled
 });
 
 test('update takes [targetVersion] or --to instead of colliding with --version', () => {
-  const expected = { currentVersion: '0.78.0', latestVersion: '0.79.0', updateAvailable: true };
-  expect(json('update', '0.79.0', '--check')).toEqual(expected);
-  expect(json('update', '--to', 'v0.79.0', '--check')).toEqual(expected);
-  expect(json('update', 'v0.79.0', '--to', '0.79.0', '--check')).toEqual(expected);
+  const expected = { currentVersion: '0.79.0', latestVersion: '0.80.0', updateAvailable: true };
+  expect(json('update', '0.80.0', '--check')).toEqual(expected);
+  expect(json('update', '--to', 'v0.80.0', '--check')).toEqual(expected);
+  expect(json('update', 'v0.80.0', '--to', '0.80.0', '--check')).toEqual(expected);
 
-  const conflict = run('update', '0.79.0', '--to', '0.80.0', '--check');
+  const conflict = run('update', '0.80.0', '--to', '0.81.0', '--check');
   expect(conflict.status).toBe(1);
   expect(conflict.stderr).toContain('Conflicting target versions');
   const invalid = run('update', 'newest', '--check');
   expect(invalid.status).toBe(1);
   expect(invalid.stderr).toContain('Invalid target version');
-  expect(run('--version').stdout.trim()).toBe('0.78.0');
+  expect(run('--version').stdout.trim()).toBe('0.79.0');
   expect(run('update', '--help').stdout).toContain('--to <version>');
 });
 
@@ -371,7 +376,7 @@ test('globalOrbitBin resolves the npm global prefix bin and falls back to orbit'
   const prefix = join(home, 'npm-global');
   mkdirSync(join(prefix, 'bin'), { recursive: true });
   writeFileSync(join(prefix, 'bin', 'orbit'), '');
-  const calls = [];
+  const calls: string[][] = [];
   expect(globalOrbitBin((cmd, args) => {
     calls.push([cmd, ...args]);
     return `${prefix}\n`;
@@ -379,6 +384,30 @@ test('globalOrbitBin resolves the npm global prefix bin and falls back to orbit'
   expect(calls).toEqual([['npm', 'prefix', '-g']]);
   expect(globalOrbitBin(() => join(home, 'missing'), 'darwin')).toBe('orbit');
   expect(globalOrbitBin(() => { throw new Error('npm missing'); }, 'darwin')).toBe('orbit');
+});
+
+test('update runs the global orbit with piped stdout, inherited stderr, and a shell only on Windows', () => {
+  const calls: unknown[][] = [];
+  const fake = (file: string, args: string[], options: object) => {
+    calls.push([file, args, options]);
+    return '{"ok":true}';
+  };
+  expect(runGlobalOrbitInstall('/npm/bin/orbit', fake, 'darwin')).toBe('{"ok":true}');
+  expect(runGlobalOrbitInstall('C:\\npm global\\orbit.cmd', fake, 'win32')).toBe('{"ok":true}');
+  const stdio = ['ignore', 'pipe', 'inherit'];
+  expect(calls).toEqual([
+    ['/npm/bin/orbit', ['install', '--yes', '--json'], { encoding: 'utf8', stdio, shell: false }],
+    ['"C:\\npm global\\orbit.cmd"', ['install', '--yes', '--json'], { encoding: 'utf8', stdio, shell: true }],
+  ]);
+});
+
+test('setup doctor.sh is read-only, needs no bun or watch-pr, and points at the orbit CLI', () => {
+  const doctor = join(worktreeRoot, 'plugin/skills/setup/scripts/doctor.sh');
+  const res = spawnSync('bash', [doctor], { cwd: workspace, env: { HOME: home, PATH: '/usr/bin:/bin' }, encoding: 'utf8' });
+  expect(res.status).toBe(0);
+  expect(res.stdout).toMatch(/^orbit missing\. Install: npm install -g @aayushbtw\/orbit, then orbit setup$/m);
+  expect(res.stdout).not.toMatch(/bun|watch-pr|antigravity/);
+  expect(readdirSync(home)).toEqual(['repo']);
 });
 
 test('stageRelease replaces a partial release left by an interrupted run', () => {
@@ -399,7 +428,7 @@ test('malformed .orbit/config.json is reported by status and doctor instead of c
   const doctor = json('doctor');
   expect(doctor.healthy).toBe(false);
   expect(doctor.projectConfigError).toContain(join('.orbit', 'config.json'));
-  expect(doctor.issues.some((issue) => issue.startsWith('project config:'))).toBe(true);
+  expect(doctor.issues.some((issue: string) => issue.startsWith('project config:'))).toBe(true);
 
   const edit = run('models', 'set', 'code', 'x/y', '--project');
   expect(edit.status).toBe(1);
@@ -408,8 +437,30 @@ test('malformed .orbit/config.json is reported by status and doctor instead of c
 
   seed('repo/.orbit/config.json', JSON.stringify({ tasks: [] }));
   expect(json('status').projectConfigError).toContain('tasks must be an object');
-  expect(json('models', 'reset', '--project', '--yes').find((r) => r.task === 'code').target).toBe('inherit');
+  expect(json('models', 'reset', '--project', '--yes').find((r: Item) => r.task === 'code').target).toBe('inherit');
   expect(json('status').projectConfigError).toBeUndefined();
+});
+
+test('malformed legacy models.md is reported and healed by models set instead of crashing', () => {
+  const legacy = seed('.config/orbit/models.md', headings + '| interrogate | x | judgment, codex | |\n');
+  const status = json('status');
+  expect(status.legacyConfigError).toContain(legacy);
+  expect(status.legacyConfigError).toContain('Invalid interrogate seat "codex"');
+  expect(status.configSource).toBeNull();
+
+  const doctor = json('doctor');
+  expect(doctor.healthy).toBe(false);
+  expect(doctor.legacyConfigError).toContain(legacy);
+  expect(doctor.issues.some((issue: string) => issue.startsWith('legacy config:') && issue.includes(legacy))).toBe(true);
+
+  expect(json('models', 'list').find((r: Item) => r.task === 'interrogate').target).toBe('judgment, other-family');
+  expect(json('doctor', '--fix').fixes.some((fix: string) => fix.startsWith('migrated'))).toBe(false);
+
+  const healed = json('models', 'set', 'interrogate', 'judgment, other-family');
+  expect(healed.find((r: Item) => r.task === 'interrogate').targetSource).toBe(join(home, '.config/orbit/config.json'));
+  expect(json('status').legacyConfigError).toBeUndefined();
+  expect(json('doctor').legacyConfigError).toBeUndefined();
+  expect(readFileSync(legacy, 'utf8')).toContain('judgment, codex');
 });
 
 test('CLI role names, defaults and config sources match what plugin rules tell the lead', () => {
@@ -419,22 +470,22 @@ test('CLI role names, defaults and config sources match what plugin rules tell t
   }
   expect(rules).toContain('orbit models resolve <task> --json');
 
-  const defaults = Object.fromEntries(json('models', 'list').map((row) => [row.task, row]));
+  const defaults = Object.fromEntries(json('models', 'list').map((row: Item) => [row.task, row]));
   for (const role of ['gitops', 'verifier', 'advisor', 'judgment', 'code', 'other-family']) {
     expect(defaults[role]).toBeDefined();
   }
-  const ruleDefaults = [...rules.matchAll(/`([a-z-]+)` defaults to `([a-z]+)`/g)];
-  expect(ruleDefaults.map(([, role]) => role)).toEqual(['judgment', 'code']);
-  for (const [, role, model] of ruleDefaults) expect(defaults[role].target).toBe(model);
+  expect(rules).toContain('All five roles default to `inherit`');
+  expect(rules).not.toMatch(/defaults to `(?:opus|sonnet|haiku|fable)`/);
+  for (const role of ['gitops', 'verifier', 'advisor', 'judgment', 'code']) expect(defaults[role].target).toBe('inherit');
 
   seed('.config/orbit/models.md', 'Written by /orbit:setup.\n\n' + headings
     + '| other-family | Panel seat | codex, grok, inherit | |\n'
     + '| verifier | Pre-land verifier | other-family, inherit | |\n'
     + '| judgment | | claudeAgent/claude-opus-5-5 | high |\n');
   const legacy = json('models', 'list');
-  expect(legacy.find((r) => r.task === 'verifier')).toMatchObject({ target: 'other-family, inherit', onAllFailed: 'inherit' });
-  expect(legacy.find((r) => r.task === 'judgment')).toMatchObject({ target: 'claudeAgent/claude-opus-5-5', effort: 'high' });
-  expect(legacy.find((r) => r.task === 'other-family')).toMatchObject({ target: 'codex, grok, inherit' });
+  expect(legacy.find((r: Item) => r.task === 'verifier')).toMatchObject({ target: 'other-family, inherit', onAllFailed: 'inherit' });
+  expect(legacy.find((r: Item) => r.task === 'judgment')).toMatchObject({ target: 'claudeAgent/claude-opus-5-5', effort: 'high' });
+  expect(legacy.find((r: Item) => r.task === 'other-family')).toMatchObject({ target: 'codex, grok, inherit' });
 
   json('models', 'set', 'gitops', 'claudeAgent/claude-sonnet-5-5', '--effort', 'low');
   json('models', 'set', 'hard', 'claudeAgent/claude-fable-5-2');
@@ -449,6 +500,6 @@ test('CLI role names, defaults and config sources match what plugin rules tell t
     profiles: { default: { tasks: { hard: { target: 'a/b' }, writing: { target: 'c/d' } }, panels: {}, workTypes: [] } },
   }));
   const renamed = json('models', 'list');
-  expect(renamed.find((r) => r.task === 'judgment').target).toBe('a/b');
-  expect(renamed.find((r) => r.task === 'writing')).toMatchObject({ kind: 'work-type', target: 'c/d' });
+  expect(renamed.find((r: Item) => r.task === 'judgment').target).toBe('a/b');
+  expect(renamed.find((r: Item) => r.task === 'writing')).toMatchObject({ kind: 'work-type', target: 'c/d' });
 });

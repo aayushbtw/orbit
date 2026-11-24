@@ -36,9 +36,9 @@ Orbit CLI manages only installs it can find under `~/.config/orbit`. When Claude
 
 ## Configure models per task
 
-User-wide routing lives in `~/.config/orbit/config.json` under named profiles. Existing preferences in `~/.config/orbit/models.md` or `~/.claude/rules/orbit-models.md` import automatically on the first read and convert on save. The orbit lead reads the same store: it runs `orbit models resolve <task> --json` when `orbit` is on `PATH`, and otherwise reads `config.json` before the Markdown files.
+User-wide routing lives in `~/.config/orbit/config.json` under named profiles. Existing preferences in `~/.config/orbit/models.md` or `~/.claude/rules/orbit-models.md` import automatically on the first read and convert on save. The orbit lead reads the same store through `orbit models list --json` and `orbit models resolve <task> --json`, and reads `config.json` directly only when `orbit` is not on `PATH`. The plugin no longer reads the Markdown files itself.
 
-Built-in tasks are orbit's roles from `plugin/rules.md`: `advisor`, `judgment`, `code`, `verifier` and `gitops`, alongside the panel slots `other-family`, `interrogate` and `arena`, plus custom work types such as `writing`. The older names `plan`, `hard`, `verify` and `fast` still work as aliases. `judgment` defaults to `opus`. Every other role defaults to `inherit`, which runs the agent's own default model. Effort is `low`, `medium`, `high`, `xhigh` or `max`, or any value the target model's effort option lists. Project overrides in `.orbit/config.json`, then `AGENTS.md` `### Models`, win over the active user profile.
+Built-in tasks are orbit's roles from `plugin/rules.md`: `advisor`, `judgment`, `code`, `verifier` and `gitops`, alongside the panel slots `other-family`, `interrogate` and `arena`, plus custom work types such as `writing`. The older names `plan`, `hard`, `verify` and `fast` still work as aliases. All five roles default to `inherit`, which runs the session's model, so orbit names no model family until you set one. Effort is `low`, `medium`, `high`, `xhigh` or `max`, or any value the target model's effort option lists. Project overrides in `.orbit/config.json`, then `AGENTS.md` `### Models`, win over the active user profile.
 
 ```bash
 orbit models sync
@@ -51,7 +51,7 @@ orbit models set arena "judgment, code" --judge other-family
 orbit models resolve code --lead antigravity/gemini-pro-orchestrator-neon --json
 ```
 
-Panel seats for `interrogate` and `arena` are comma-separated role names, `other-family`, or `<provider>/<model>[@effort]` targets. `--judge` sets the arena judge with the same syntax. In `AGENTS.md`, write the judge as a `judge=<seat>` entry, as in `| arena | | judgment, code, judge=other-family | |`.
+Panel seats for `interrogate` and `arena` are comma-separated role names, `other-family`, or `<provider>/<model>[@effort]` targets. `--judge` sets the arena judge with the same syntax. In `AGENTS.md`, write the judge as a `judge=<seat>` entry, spaces around `=` allowed, as in `| arena | | judgment, code, judge = other-family | |`. A malformed `AGENTS.md` panel entry, such as `judge = invalid`, shows up as a project config error in `orbit status` and `orbit doctor`. `--effort` is refused on `interrogate` and `arena`, because each seat takes its own `@<effort>`.
 
 `orbit models sync` fetches live providers and supported options from T3 when run inside a T3 terminal, or reads a saved JSON file with `--from <file>`. `orbit models resolve` outputs the exact `delegate_task` `target` payload, including provider-native option keys (`effort`, `reasoningEffort`, `thought_level`), retry escalations, and family checks. `orbit doctor` checks every listed target against the synced catalog, including each `other-family`, `interrogate` and `arena` entry, and reports a malformed `.orbit/config.json` as an issue.
 
@@ -73,7 +73,7 @@ orbit init --land pr --config
 
 ## Build from source
 
-From the repository root:
+`npm run build` in `cli/` bundles `dist/cli.mjs` and, in the same Vite+ pack step, stages `plugin/` into `dist/plugin/`. It fails when the CLI and plugin versions differ. From the repository root:
 
 ```bash
 npm ci --prefix cli

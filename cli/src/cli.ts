@@ -5,7 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import {
   applyNpmUpdate,
   checkNpmUpdate,
@@ -16,6 +16,7 @@ import {
   linkCheckout,
   pruneReleases,
   readPluginVersion,
+  runGlobalOrbitInstall,
   uninstallBundle,
   unlinkCheckout,
   useRelease,
@@ -56,7 +57,6 @@ import {
   parseHostId,
   removeHost,
   resolveTargetHosts,
-  type AntigravitySkillsApi,
   type HostApplyResult,
   type HostContext,
   type HostId,
@@ -76,8 +76,6 @@ function resolveBundleDir(): string {
 const home = homedir();
 const bundle = resolveBundleDir();
 const version = readPluginVersion(bundle);
-const antigravityModulePath = join(bundle, 'skills', 'setup', 'scripts', 'antigravity-skills.mjs');
-const antigravity = (await import(pathToFileURL(antigravityModulePath).href)) as AntigravitySkillsApi;
 const io = { input: process.stdin, output: process.stderr };
 
 function requireTerminal(command: string): void {
@@ -99,7 +97,6 @@ function makeHostContext(env: NodeJS.ProcessEnv = process.env): HostContext {
     skillsDir: inspection.skillsDir,
     currentLink: inspection.currentLink,
     version: inspection.activeVersion ?? version,
-    antigravity,
   };
 }
 
@@ -195,12 +192,15 @@ async function runInstall(options: { host?: string[]; all?: boolean; yes?: boole
     }
     if (!requested && !options.all) {
       const inspections = inspectAllHosts(ctxBefore);
+      for (const h of inspections.filter((i) => i.status === 'external')) {
+        log.info(`${h.displayName} skipped (external): ${h.detail}`, { output: io.output });
+      }
       const selected = await multiselect({
         ...io,
         message: 'Which T3 providers should Orbit register skills with?',
         initialValues: targets,
         required: false,
-        options: inspections.map((h) => ({
+        options: inspections.filter((h) => h.status !== 'external').map((h) => ({
           value: h.host,
           label: `${h.displayName} (${h.host})`,
           hint: h.detected ? h.status : 'not detected on disk',
@@ -391,7 +391,7 @@ async function editModels(options: { catalog?: string; project?: boolean }) {
   const resolvedTarget = target.trim();
 
   let effort = '';
-  if (resolvedTarget && !['other-family', 'other-family, inherit'].includes(resolvedTarget)) {
+  if (resolvedTarget && !['other-family', 'other-family, inherit'].includes(resolvedTarget) && name !== 'interrogate' && name !== 'arena') {
     const matchedCatalog = catalogTargets.find((entry) => entry.target === resolvedTarget);
     const effortOpt = modelEffortOption(matchedCatalog ? { id: matchedCatalog.modelId, options: matchedCatalog.options } : undefined);
     const allowedEfforts = effortOpt?.values?.map(String) ?? ['low', 'medium', 'high', 'xhigh', 'max'];
@@ -516,7 +516,7 @@ program.command('update [targetVersion]')
     if (check.latestVersion !== version) {
       applyNpmUpdate(check.latestVersion);
       // The new global CLI stages its own bundle; PATH may still resolve an older orbit first.
-      const installedJson = execFileSync(globalOrbitBin(), ['install', '--yes', '--json'], { encoding: 'utf8' });
+      const installedJson = runGlobalOrbitInstall(globalOrbitBin());
       const pruned = pruneReleases(home, options.keep);
       const parsed = JSON.parse(installedJson) as Record<string, unknown>;
       const result = { ...check, updated: true, pruned, install: parsed };
@@ -612,6 +612,7 @@ program.command('status')
       hosts,
       activeProfile: modelsState.activeProfile,
       configSource: modelsState.source ?? null,
+      ...(modelsState.legacyConfigError ? { legacyConfigError: modelsState.legacyConfigError } : {}),
       ...(modelsState.project.projectConfigError ? { projectConfigError: modelsState.project.projectConfigError } : {}),
       catalog: catalog
         ? { syncedAt: catalog.syncedAt, source: catalog.source, providerCount: catalog.providers.length }
@@ -622,6 +623,7 @@ program.command('status')
       `Orbit packaged: ${version} | active: ${bundleState.activeVersion ?? 'not installed'}${bundleState.linked ? ` (linked -> ${bundleState.currentRealPath})` : ''}`,
       `Releases: ${bundleState.releases.length ? bundleState.releases.join(', ') : 'none'}`,
       `Profile: ${modelsState.activeProfile} (${modelsState.source ?? 'defaults'})`,
+      ...(modelsState.legacyConfigError ? [`Legacy config error: ${modelsState.legacyConfigError}`] : []),
       ...(modelsState.project.projectConfigError ? [`Project config error: ${modelsState.project.projectConfigError}`] : []),
       `Catalog: ${catalog ? `${catalog.providers.length} providers synced ${catalog.syncedAt}` : 'not synced (run "orbit models sync" in T3)'}`,
       'Hosts:',
@@ -682,6 +684,9 @@ program.command('doctor')
         issues.push(`${h.host}: ${h.detail}`);
       }
     }
+    if (modelsState.legacyConfigError) {
+      issues.push(`legacy config: ${modelsState.legacyConfigError} (fix it, or run "orbit models set" or "orbit models reset" to write config.json)`);
+    }
     if (modelsState.project.projectConfigError) {
       issues.push(`project config: ${modelsState.project.projectConfigError}`);
     }
@@ -709,6 +714,7 @@ program.command('doctor')
       hosts,
       tools,
       models: modelsState.rows,
+      ...(modelsState.legacyConfigError ? { legacyConfigError: modelsState.legacyConfigError } : {}),
       ...(modelsState.project.projectConfigError ? { projectConfigError: modelsState.project.projectConfigError } : {}),
       catalogSynced: Boolean(catalog),
       fixes,
@@ -748,10 +754,10 @@ hostsCommand.command('enable <hosts...>')
   .option('--json', 'print JSON')
   .action((rawHosts: string[], options: { json?: boolean }, cmd: Command) => {
     const targets = [...new Set(rawHosts.map(parseHostId))];
-    const cfg = loadConfig(home).config;
-    setConfigHosts(home, [...(cfg.hosts ?? []), ...targets]);
     const ctx = makeHostContext();
     const results = targets.map((h) => applyHost(h, ctx));
+    const cfg = loadConfig(home).config;
+    setConfigHosts(home, [...(cfg.hosts ?? []), ...targets]);
     output(results, Boolean(options.json || cmd.optsWithGlobals().json), () => results.map((r) => `${r.host}: ${r.detail}`).join('\n'));
   });
 

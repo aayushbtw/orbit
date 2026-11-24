@@ -4,10 +4,13 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, expect, test } from 'vitest';
+import type { EffectiveAssignmentRow } from '../src/config.js';
+import { rowProviderTargets } from '../src/resolve.js';
 
 const cli = fileURLToPath(new URL('../dist/cli.mjs', import.meta.url));
-let home;
-let workspace;
+type Item = Record<string, any>;
+let home: string;
+let workspace: string;
 
 const sampleCatalog = {
   inheritedProviderInstanceId: 'antigravity',
@@ -77,7 +80,7 @@ beforeEach(() => {
 
 afterEach(() => rmSync(home, { recursive: true, force: true }));
 
-function run(...args) {
+function run(...args: string[]) {
   const result = spawnSync(process.execPath, [cli, ...args], {
     cwd: workspace,
     env: { ...process.env, HOME: home, USERPROFILE: home, PATH: '', T3_ACP_MCP_NODE: '' },
@@ -87,14 +90,14 @@ function run(...args) {
   return result;
 }
 
-function json(...args) {
+function json(...args: string[]) {
   const result = run(...args, '--json');
   expect(result.stderr).toBe('');
   expect(result.status).toBe(0);
   return JSON.parse(result.stdout);
 }
 
-const modelsTable = (rows) => `## Workflow\n\n### Models\n\n| Task | Use for | Model | Effort |\n| --- | --- | --- | --- |\n${rows}`;
+const modelsTable = (rows: string) => `## Workflow\n\n### Models\n\n| Task | Use for | Model | Effort |\n| --- | --- | --- | --- |\n${rows}`;
 
 test('unset tasks resolve to inherit with zero hardcoded provider defaults', () => {
   const res = json('models', 'resolve', 'code');
@@ -150,7 +153,7 @@ test('resolves other-family roster with family checks, disabled skips, cap of 3,
   expect(resolved.mode).toBe('delegate');
   expect(resolved.onAllFailed).toBe('ask');
   expect(resolved.target).toMatchObject({ providerInstanceId: 'grok', model: 'grok-4.7' });
-  expect(resolved.candidates.map((c) => c.providerInstanceId)).toEqual([
+  expect(resolved.candidates.map((c: Item) => c.providerInstanceId)).toEqual([
     'grok',
     'claudeAgent',
   ]);
@@ -165,7 +168,7 @@ test('resolves other-family roster with family checks, disabled skips, cap of 3,
   json('models', 'set', 'other-family', 'cursor, antigravity/gemini-4-neon, codex, grok, claudeAgent');
   json('models', 'set', 'verify', 'other-family');
   const cleanRoster = json('models', 'resolve', 'verify');
-  expect(cleanRoster.candidates.map((c) => c.providerInstanceId)).toEqual(['codex', 'grok', 'claudeAgent']);
+  expect(cleanRoster.candidates.map((c: Item) => c.providerInstanceId)).toEqual(['codex', 'grok', 'claudeAgent']);
 
   // Verify holds/asks if every listed provider is disabled
   json('models', 'set', 'other-family', 'cursor');
@@ -214,10 +217,10 @@ test('supports work-type escalation after N failed tries and panel resolution', 
 
 test('arena accepts comma-separated runner seats and validates --judge', () => {
   const rows = json('models', 'set', 'arena', 'hard, code', '--judge', 'other-family');
-  expect(rows.find((r) => r.task === 'arena')).toMatchObject({ entries: ['judgment', 'code'], judge: 'other-family' });
+  expect(rows.find((r: Item) => r.task === 'arena')).toMatchObject({ entries: ['judgment', 'code'], judge: 'other-family' });
   const defaults = json('models', 'resolve', 'arena');
-  expect(defaults.seats.map((s) => s.seat)).toEqual(['runner-1', 'runner-2', 'judge']);
-  expect(defaults.seats[0]).toMatchObject({ task: 'judgment', mode: 'alias', alias: 'opus' });
+  expect(defaults.seats.map((s: Item) => s.seat)).toEqual(['runner-1', 'runner-2', 'judge']);
+  expect(defaults.seats[0]).toMatchObject({ task: 'judgment', mode: 'inherit' });
   expect(defaults.seats[1]).toMatchObject({ task: 'code', mode: 'inherit' });
 
   const badJudge = run('models', 'set', 'arena', 'hard, code', '--judge', 'not a target');
@@ -290,19 +293,80 @@ test('interrogate and arena read AGENTS.md ### Models overrides below .orbit/con
     model: 'gpt-6.2-sol',
     options: [{ id: 'reasoningEffort', value: 'high' }],
   });
-  expect(interrogate.seats[1]).toMatchObject({ mode: 'alias', alias: 'opus' });
+  expect(interrogate.seats[1]).toMatchObject({ task: 'judgment', mode: 'inherit' });
 
   const arena = json('models', 'resolve', 'arena');
   expect(arena.source).toContain('AGENTS.md');
-  expect(arena.seats.map((s) => s.seat)).toEqual(['runner-1', 'runner-2', 'judge']);
+  expect(arena.seats.map((s: Item) => s.seat)).toEqual(['runner-1', 'runner-2', 'judge']);
   expect(arena.seats[0].target).toMatchObject({ providerInstanceId: 'claudeAgent', model: 'claude-fable-5-2' });
   expect(arena.seats[1].mode).toBe('inherit');
   expect(arena.seats[2].target).toMatchObject({ providerInstanceId: 'grok', model: 'grok-4.7' });
-  expect(json('models', 'list').filter((r) => r.task === 'interrogate' || r.task === 'arena').map((r) => r.kind))
+  expect(json('models', 'list').filter((r: Item) => r.task === 'interrogate' || r.task === 'arena').map((r: Item) => r.kind))
     .toEqual(['panel', 'panel']);
 
   json('models', 'set', 'interrogate', 'code', '--project');
   const project = json('models', 'resolve', 'interrogate');
   expect(project.source).toContain(join('.orbit', 'config.json'));
   expect(project.seats).toHaveLength(1);
+});
+
+test('all five roles default to inherit', () => {
+  const rows = json('models', 'list');
+  for (const role of ['advisor', 'judgment', 'code', 'verifier', 'gitops']) {
+    expect(rows.find((r: EffectiveAssignmentRow) => r.task === role)).toMatchObject({ target: 'inherit', targetSource: 'default' });
+    expect(json('models', 'resolve', role)).toMatchObject({ mode: 'inherit', target: null });
+  }
+});
+
+test('--effort on a panel fails and points at per-seat @effort', () => {
+  for (const panel of ['interrogate', 'arena']) {
+    const res = run('models', 'set', panel, 'judgment, codex/gpt-6.2-sol', '--effort', 'high');
+    expect(res.status).toBe(1);
+    expect(res.stderr).toContain(`--effort does not apply to the ${panel} panel`);
+    expect(res.stderr).toContain('<provider>/<model>@<effort>');
+  }
+  json('models', 'set', 'interrogate', 'judgment, codex/gpt-6.2-sol@high');
+});
+
+test('AGENTS.md arena accepts spaces around judge = and reports malformed panel entries', () => {
+  writeFileSync(join(workspace, 'AGENTS.md'), modelsTable('| arena | | code, judge = grok/grok-4.7 | |\n'));
+  const arena = json('models', 'resolve', 'arena');
+  expect(arena.seats.map((s: { seat: string }) => s.seat)).toEqual(['runner-1', 'judge']);
+  expect(arena.seats[1].target).toMatchObject({ providerInstanceId: 'grok', model: 'grok-4.7' });
+  expect(json('status').projectConfigError).toBeUndefined();
+
+  for (const [row, message] of [
+    ['| arena | | code, judge = invalid | |\n', 'Invalid arena judge "invalid"'],
+    ['| arena | | code, bad seat | |\n', 'Invalid arena seat "bad seat"'],
+    ['| interrogate | | judgment, nope | |\n', 'Invalid interrogate seat "nope"'],
+  ]) {
+    writeFileSync(join(workspace, 'AGENTS.md'), modelsTable(row));
+    expect(json('status').projectConfigError).toContain(message);
+    const doctor = json('doctor');
+    expect(doctor.healthy).toBe(false);
+    expect(doctor.issues.some((issue: string) => issue.startsWith('project config:') && issue.includes(message))).toBe(true);
+  }
+});
+
+test('doctor and resolve agree that @ is part of a single-task model id', () => {
+  const row = (task: string, kind: EffectiveAssignmentRow['kind'], target: string, extra: Partial<EffectiveAssignmentRow> = {}) => ({
+    task, kind, use: task, target, targetSource: 'test', effort: '', effortSource: 'test', options: {}, fallbacks: [], userTarget: '', userEffort: '', ...extra,
+  });
+  expect(rowProviderTargets(row('code', 'task', 'claudeAgent/claude-opus-5-5@beta', {
+    fallbacks: ['codex/gpt-6.2-sol@2026'],
+    escalate: { after: 1, target: 'grok/grok-4.7@fast' },
+  }))).toEqual(['claudeAgent/claude-opus-5-5@beta', 'codex/gpt-6.2-sol@2026', 'grok/grok-4.7@fast']);
+  expect(rowProviderTargets(row('interrogate', 'panel', 'x', { entries: ['judgment', 'codex/gpt-6.2-sol@high'], judge: undefined })))
+    .toEqual(['codex/gpt-6.2-sol']);
+  expect(rowProviderTargets(row('arena', 'panel', 'x', { entries: ['code'], judge: 'grok/grok-4.7@medium' }))).toEqual(['grok/grok-4.7']);
+
+  json('install', '--yes');
+  json('models', 'set', 'code', 'claudeAgent/claude-opus-5-5@beta');
+  expect(json('models', 'resolve', 'code')).toMatchObject({
+    mode: 'unavailable',
+    unavailable: [{ entry: 'claudeAgent/claude-opus-5-5@beta', reason: 'model claude-opus-5-5@beta not listed on claudeAgent' }],
+  });
+  expect(json('doctor').issues).toEqual([
+    'model code (claudeAgent/claude-opus-5-5@beta): model claude-opus-5-5@beta not listed on claudeAgent',
+  ]);
 });

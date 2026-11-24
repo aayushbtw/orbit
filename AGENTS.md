@@ -1,6 +1,6 @@
 ## Workflow
 
-- Check: `claude plugin validate . && claude plugin validate plugin && (cd plugin/skills/playbook/scripts && bun install --frozen-lockfile && bun test && bun run typecheck) && (cd cli && npm ci && npm run check && npm run build && npm test)`. The first validate checks the marketplace, the second the skills. The subshells run the playbook scripts' and Orbit CLI's checks, build, and tests.
+- Check: `claude plugin validate . && claude plugin validate plugin && (cd cli && npm ci && npm run check && npm run build && npm test)`. The first validate checks the marketplace, the second the skills. The subshell runs the Orbit CLI's typecheck, build (which stages `plugin/` into `cli/dist/plugin/`), and tests.
 - Land: pr, squash
 - CI: `.github/workflows/check.yml` runs the Check plus the hook, worktree-audit, diagram drift, link, reference (`tests/refs.mjs`: orbit skill, agent and path references inside `plugin/` resolve), provider-names (`tests/provider-names.mjs`: no provider name in `plugin/` outside its allowlist), T3 lane grader, ship cleanup grader, transcript audit and version-bump scripts in `tests/` on every push.
 - Ship cleanup eval: `node tests/ship/cleanup.mjs`, or `--ref <ref>` to run orbit's plugin at a git ref, grades whether Shipping lands and cleans up without worktree-guard refusals (see `tests/ship/README.md`; costs a real session; not part of Check).

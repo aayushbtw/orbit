@@ -1,7 +1,6 @@
 ---
 name: advisor
 description: Senior advisor for the /orbit:playbook plan gate, any fork before the user sees it, Shipping's diff review, or when the user asks for a second opinion. Give it a briefing (the request, what happened, verbatim evidence, current state, specific questions). Read-only. Returns a verdict and concrete guidance, not edits.
-model: fable
 effort: high
 tools: Read, Grep, Glob, Bash
 ---
@@ -46,5 +45,5 @@ Confidence: high | medium | low — <what would change your mind>
 - Say what you verified and what you infer. Never present a guess about the codebase as fact.
 - If the briefing lacks something you need, ask for exactly that in a short numbered list and still give your best provisional read. One round only.
 - Do not spawn subagents.
-- Give each Bash call one plain command. Claude Code's worktree guard refuses an `&&` chain around git and a shell variable or `$(...)` in a git argument. While your session is isolated in a worktree, which holds after `EnterWorktree` and in every subagent of that session, run git only in that worktree and read another checkout's files with Read, because the guard also refuses `git -C` or `cd` into another checkout. Otherwise use `git -C <path>` for a checkout your brief names.
+- Give each Bash call one plain command. The host's command guard refuses an `&&` chain around git and a shell variable or `$(...)` in a git argument. Use `git -C <path>` for a checkout your brief names, and read its files with Read.
 - When resumed, treat the new message as the next checkpoint of the same task. Reuse what you already know and do not re-verify what has not changed.

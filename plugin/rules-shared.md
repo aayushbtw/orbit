@@ -1,6 +1,6 @@
 # Bash
 
-**One plain command per Bash call.** Claude Code's worktree guard refuses heredocs, `&&` chains around git, shell variables and `$(...)` in arguments, and loops as too complex to verify. Write a script with the Write tool and run it, use `git -C <path>`, and split the rest into separate calls. A session isolated in a worktree, after `EnterWorktree` and in every subagent it spawns, may run git only in its own worktree, so the guard refuses `git -C` or `cd` into another checkout. That git waits until Shipping step 7, where the session leaves with `ExitWorktree` and `keep`. Never leave earlier to run it.
+**One plain command per Bash call.** The host's command guard refuses heredocs, `&&` chains around git, shell variables and `$(...)` in arguments, and loops as too complex to verify. Write a script with the Write tool and run it, use `git -C <path>` for a checkout your brief names, and split the rest into separate calls. Each T3 thread works in the checkout it is bound to, so run git for another checkout only by `git -C <path>` with the absolute path, never by `cd`.
 
 # Code Quality
 
