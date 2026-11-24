@@ -20,7 +20,7 @@
 - A local edit to a vendored skill gets a line in that skill's `edits` in `skills.json`. Otherwise `/update-skills` drops the edit.
 - Only `plugin/` ships. Dev-only files (this file, `.claude/`, `docs/`, `skills.json`, `templates/`, `tests/`) stay outside it.
 - Explain a flow in the docs with a hand-drawn diagram, not mermaid. Add a scene to `docs/diagrams/render.mjs`, run `vpr build` there, and embed the light and dark SVGs with `<picture>`.
-- Bump `version` in `plugin/.claude-plugin/plugin.json` so installs pick up the change, and add a `## <version>` entry to `CHANGELOG.md` in the same PR.
+- Bump `version` in `plugin/.claude-plugin/plugin.json` so installs pick up the change, set the same version in `cli/package.json` and `cli/package-lock.json`, because CI's Orbit CLI step fails when they differ, and add a `## <version>` entry to `CHANGELOG.md` in the same PR.
 - The user tests orbit from the main checkout, which the installed `orbit@orbit` reads in place. After an orbit change lands, gitops fast-forwards that checkout with `git -C /Users/aayush/Projects/orbit pull --ff-only` when it is on `main` and clean, and then you run `claude plugin update orbit@orbit`. This overrides Shipping step 7's rule to leave that checkout alone. If the checkout is dirty or on another branch, that's a Heads-up item. New sessions load the update.
 
 ## Mistakes made before
