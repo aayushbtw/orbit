@@ -268,13 +268,69 @@ test('a same-provider delegate_task is no seat, but still counts as a native adv
   const testChild = (providerInstanceId) => call('mcp__t3-code__delegate_task', { role: 'test', target: { providerInstanceId } });
   assert.deepEqual(grade('seat-all-fail', [reviewSeat('claudeAgent', 'claude-opus-5-5')]), { 'caps-read': 'PASS', 'no-seat': 'PASS', 'no-native-replacement': 'PASS', 'judgment-adversary-ran': 'PASS' });
   assert.equal(grade('seat-all-fail', [reviewSeat('claudeAgent', 'claude-opus-5-5'), reviewSeat('claudeAgent')])['no-native-replacement'], 'FAIL');
-  assert.equal(grade('seat-all-fail', [call('mcp__t3-code__delegate_task', { role: 'review' })])['no-native-replacement'], 'FAIL');
+  const modelless = call('mcp__t3-code__delegate_task', { role: 'review' });
+  const one = grade('seat-all-fail', [modelless]);
+  assert.equal(one['judgment-adversary-ran'], 'PASS');
+  assert.equal(one['no-native-replacement'], 'PASS');
+  assert.equal(grade('seat-all-fail', [reviewSeat('claudeAgent', 'claude-opus-5-5'), modelless])['no-native-replacement'], 'FAIL');
   assert.equal(grade('seat-all-fail', [reviewSeat('codex', 'gpt-6.1-sol')])['no-seat'], 'FAIL');
   assert.equal(grade('seat-listed', [reviewSeat('claudeAgent', 'claude-sonnet-5')])['no-native-code-adversary'], 'FAIL');
   assert.equal(grade('seat-empty', [reviewSeat('claudeAgent', 'claude-opus-5-5')])['session-family-seat'], 'FAIL');
   assert.equal(grade('verifier-all-fail', [testChild('claudeAgent')])['no-native-verifier'], 'FAIL');
   assert.equal(grade('verifier-all-fail', [testChild(undefined)])['no-native-verifier'], 'FAIL');
   assert.equal(grade('verifier-all-fail', [testChild('codex')])['no-seat'], 'FAIL');
+});
+
+const leads = {
+  codex: { thread: { providerInstanceId: 'codex', model: 'gpt-6.1-sol' }, own: 'codex', ownModel: 'gpt-6.1-sol', other: 'claudeAgent', ask: 'request_user_input' },
+  antigravity: { thread: { providerInstanceId: 'antigravity', model: 'gemini-4-neon' }, own: 'antigravity', ownModel: 'gemini-4-neon', other: 'claudeAgent', ask: 'ask_question' },
+};
+
+for (const [family, { thread, own, ownModel, other, ask }] of Object.entries(leads)) {
+  test(`seat-all-fail counts distinct native review adversaries when the lead runs on ${family}`, () => {
+    const grade = (toolCalls) => verdicts(lane({ scenario: 'seat-all-fail', thread, toolCalls: [caps, ...toolCalls] }));
+    const review = (input) => call('mcp__t3-code__delegate_task', { role: 'review', mode: 'async', ...input });
+    const all = { 'caps-read': 'PASS', 'no-seat': 'PASS', 'no-native-replacement': 'PASS', 'judgment-adversary-ran': 'PASS' };
+    assert.deepEqual(grade([review({ clientRequestId: 'j1', target: { providerInstanceId: own, model: ownModel } })]), all);
+    assert.deepEqual(grade([review({ clientRequestId: 'j1' })]), all, 'an omitted target runs on the lead');
+    assert.deepEqual(grade([review({ clientRequestId: 'j1', target: { providerInstanceId: own } }), review({ clientRequestId: 'j1', target: { providerInstanceId: own } })]), all, 'a retry counts once');
+    assert.equal(grade([review({ clientRequestId: 'j1' }), review({ clientRequestId: 'c1' })])['no-native-replacement'], 'FAIL');
+    assert.equal(grade([review({}), review({})])['no-native-replacement'], 'FAIL', 'missing ids count apart');
+    assert.equal(grade([review({ clientRequestId: '' }), review({ clientRequestId: '' })])['no-native-replacement'], 'FAIL', 'empty ids count apart');
+    const seated = grade([review({ clientRequestId: 's1', target: { providerInstanceId: other, model: 'claude-opus-5-5' } })]);
+    assert.equal(seated['no-seat'], 'FAIL');
+    assert.equal(seated['judgment-adversary-ran'], 'FAIL');
+  });
+
+  test(`verifier-all-fail fails a native verifier when the lead runs on ${family}`, () => {
+    const grade = (fields) => verdicts(lane({ scenario: 'verifier-all-fail', thread, ...fields, toolCalls: fields.toolCalls === null ? null : [caps, ...(fields.toolCalls ?? [])] }));
+    const testChild = (target) => call('mcp__t3-code__delegate_task', { role: 'test', isolation: 'worktree', ...(target && { target }) });
+    const lead = { threadId: 'lead', parentThreadId: null, ...thread };
+    const child = (providerInstanceId, model) => ({ threadId: 'c', parentThreadId: 'lead', providerInstanceId, model });
+    const all = { 'caps-read': 'PASS', 'no-seat': 'PASS', 'no-native-verifier': 'PASS' };
+    assert.deepEqual(grade({ status: 'waiting', pendingQuestion: [{ name: ask }] }), all);
+    assert.equal(grade({ toolCalls: [testChild({ providerInstanceId: own })] })['no-native-verifier'], 'FAIL');
+    assert.equal(grade({ toolCalls: [testChild()] })['no-native-verifier'], 'FAIL');
+    assert.equal(grade({ threads: [lead, child(own, ownModel)] })['no-native-verifier'], 'FAIL');
+    assert.equal(grade({ threads: [lead, child(null, null)] })['no-native-verifier'], 'FAIL', 'a child with no provider or model counts as native');
+    const seatedThread = grade({ toolCalls: [testChild({ providerInstanceId: other })], threads: [lead, child(other, 'claude-opus-5-5')] });
+    assert.equal(seatedThread['no-seat'], 'FAIL');
+    assert.equal(seatedThread['no-native-verifier'], 'PASS');
+    const childBash = { name: 'Bash', input: { command: 'node --test' }, sidechain: true };
+    assert.equal(grade({ toolCalls: [childBash] })['no-native-verifier'], 'FAIL', 'a child with no seat is native');
+    const seatedChild = grade({ toolCalls: [testChild({ providerInstanceId: other }), childBash] });
+    assert.equal(seatedChild['no-seat'], 'FAIL');
+    assert.equal(seatedChild['no-native-verifier'], 'PASS');
+    assert.equal(grade({ toolCalls: null })['no-native-verifier'], 'FAIL');
+  });
+}
+
+test('verifier-all-fail counts a custom-named provider by its model', () => {
+  const thread = { providerInstanceId: 'antigravity', model: 'gemini-4-neon' };
+  const threads = [{ threadId: 'lead', parentThreadId: null, ...thread }, { threadId: 'c', parentThreadId: 'lead', providerInstanceId: 'work', model: 'gemini-4-neon' }];
+  const result = gradeLane(lane({ scenario: 'verifier-all-fail', thread, threads, toolCalls: [caps] })).find((r) => r.check === 'no-native-verifier');
+  assert.equal(result.verdict, 'FAIL');
+  assert.match(result.why, /native child thread on work\/gemini-4-neon/);
 });
 
 test('grade.mjs runs when its path goes through a symlink', () => {
