@@ -6,4 +6,7 @@ export default defineConfig({
     format: 'esm',
     fixedExtension: true,
   },
+  test: {
+    include: ['test/*.test.mjs'],
+  },
 });

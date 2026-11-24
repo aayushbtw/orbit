@@ -21,6 +21,7 @@ import {
   defaultConfigPath,
   formatCheckStatus,
   inspectSkillsConfig,
+  removeSkillsRegistration,
 } from '../../plugin/skills/setup/scripts/antigravity-skills.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -442,5 +443,37 @@ test('doctor.sh reports skills dir, detects Antigravity status read-only, and pr
     });
     assert.equal(afterApply.status, 0, afterApply.stderr);
     assert.match(afterApply.stdout, /^antigravity skills: registered \(/m);
+  });
+});
+
+test('recognizes dangling current symlink path and removeSkillsRegistration preserves non-orbit entries', () => {
+  withTempDir((tmp) => {
+    const home = join(tmp, 'home');
+    const configPath = defaultConfigPath(home);
+    const currentSkills = join(home, '.config', 'orbit', 'current', 'plugin', 'skills');
+    const liveSkills = makeOrbitPlugin(join(tmp, 'live-plugin'), '0.78.0');
+    const otherDir = join(tmp, 'other-skills');
+    mkdirSync(otherDir, { recursive: true });
+    mkdirSync(dirname(configPath), { recursive: true });
+
+    writeFileSync(configPath, JSON.stringify({
+      inherits: ['global'],
+      entries: [{ path: otherDir }, { path: currentSkills }],
+    }));
+
+    const check = inspectSkillsConfig({ configPath, skillsDir: liveSkills, home });
+    assert.equal(check.status, 'stale');
+    assert.deepEqual(check.stalePaths, [currentSkills]);
+
+    const removed = removeSkillsRegistration({ configPath, home });
+    assert.equal(removed.action, 'removed');
+    assert.deepEqual(removed.removedPaths, [currentSkills]);
+    assert.deepEqual(JSON.parse(readFileSync(configPath, 'utf8')), {
+      inherits: ['global'],
+      entries: [{ path: otherDir }],
+    });
+
+    const noop = removeSkillsRegistration({ configPath, home });
+    assert.equal(noop.action, 'unchanged');
   });
 });

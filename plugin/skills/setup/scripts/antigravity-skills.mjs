@@ -56,10 +56,15 @@ function isOrbitSkillsPath(entryPath, home) {
   } catch {
     const posixPath = resolved.split(sep).join('/');
     const managedReleases = join(home, '.config', 'orbit', 'releases').split(sep).join('/');
+    const managedCurrent = join(home, '.config', 'orbit', 'current', 'plugin', 'skills').split(sep).join('/');
+    const realManagedCurrent = join(canonicalizePath(home, home), '.config', 'orbit', 'current', 'plugin', 'skills')
+      .split(sep)
+      .join('/');
     const releasePath = posixPath.slice(managedReleases.length);
-    return ORBIT_CACHE_SKILLS_RE.test(posixPath) || (
-      posixPath.startsWith(`${managedReleases}/`) && /^\/[^/]+\/plugin\/skills$/.test(releasePath)
-    );
+    return ORBIT_CACHE_SKILLS_RE.test(posixPath)
+      || posixPath === managedCurrent
+      || posixPath === realManagedCurrent
+      || (posixPath.startsWith(`${managedReleases}/`) && /^\/[^/]+\/plugin\/skills$/.test(releasePath));
   }
 
   const pluginJsonPath = join(real, '..', '.claude-plugin', 'plugin.json');
@@ -336,6 +341,60 @@ export function applySkillsRegistration({ configPath, skillsDir, home }) {
   };
 }
 
+export function removeSkillsRegistration({ configPath, home } = {}) {
+  const effectiveHome = resolveHome(home);
+  const resolvedConfigPath = normalizePath(configPath ?? defaultConfigPath(effectiveHome), effectiveHome);
+
+  let raw;
+  try {
+    raw = readFileSync(resolvedConfigPath, 'utf8');
+  } catch (err) {
+    if (err?.code === 'ENOENT') {
+      return { action: 'unchanged', configPath: resolvedConfigPath, removedPaths: [] };
+    }
+    throw new Error(`could not read Antigravity skills config at ${resolvedConfigPath}: ${err?.message ?? 'read error'}`);
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`invalid Antigravity skills config at ${resolvedConfigPath}: malformed JSON (${err?.message ?? 'parse error'})`);
+  }
+
+  if (!isPlainObject(parsed)) {
+    throw new Error(`invalid Antigravity skills config at ${resolvedConfigPath}: root must be a JSON object`);
+  }
+  if (parsed.entries === undefined) {
+    return { action: 'unchanged', configPath: resolvedConfigPath, removedPaths: [] };
+  }
+  if (!Array.isArray(parsed.entries)) {
+    throw new Error(`invalid Antigravity skills config at ${resolvedConfigPath}: "entries" must be an array`);
+  }
+
+  const removedPaths = [];
+  const nextEntries = [];
+  for (const entry of parsed.entries) {
+    if (
+      isPlainObject(entry)
+      && typeof entry.path === 'string'
+      && entry.path.trim() !== ''
+      && isOrbitSkillsPath(entry.path, effectiveHome)
+    ) {
+      removedPaths.push(entry.path);
+      continue;
+    }
+    nextEntries.push(entry);
+  }
+
+  if (removedPaths.length === 0) {
+    return { action: 'unchanged', configPath: resolvedConfigPath, removedPaths: [] };
+  }
+
+  writeConfigAtomically(resolvedConfigPath, { ...parsed, entries: nextEntries });
+  return { action: 'removed', configPath: resolvedConfigPath, removedPaths };
+}
+
 export function formatCheckStatus(result) {
   switch (result.status) {
     case 'missing-file':
@@ -365,6 +424,8 @@ function formatApplyResult(result) {
       return `updated (${result.stalePaths.join(', ')} -> ${result.skillsDir} in ${result.configPath})`;
     case 'registered':
       return `registered (${result.skillsDir} in ${result.configPath})`;
+    case 'removed':
+      return `removed (${result.removedPaths.join(', ')} from ${result.configPath})`;
     default:
       throw new Error(`unknown action: ${result.action}`);
   }
@@ -377,8 +438,8 @@ function parseArgs(argv) {
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === '--check' || arg === '--apply') {
-      if (mode) throw new Error('specify only one of --check or --apply');
+    if (arg === '--check' || arg === '--apply' || arg === '--remove') {
+      if (mode) throw new Error('specify only one of --check, --apply, or --remove');
       mode = arg.slice(2);
     } else if (arg === '--skills-dir') {
       skillsDir = argv[++i];
@@ -391,8 +452,8 @@ function parseArgs(argv) {
     }
   }
 
-  if (!mode) throw new Error('missing required flag: --check or --apply');
-  if (!skillsDir) throw new Error('missing required flag: --skills-dir <dir>');
+  if (!mode) throw new Error('missing required flag: --check, --apply, or --remove');
+  if (mode !== 'remove' && !skillsDir) throw new Error('missing required flag: --skills-dir <dir>');
   return { mode, skillsDir, configPath };
 }
 
@@ -411,6 +472,9 @@ if (isMainModule()) {
     if (mode === 'check') {
       const result = inspectSkillsConfig({ configPath, skillsDir });
       console.log(formatCheckStatus(result));
+    } else if (mode === 'remove') {
+      const result = removeSkillsRegistration({ configPath });
+      console.log(formatApplyResult(result));
     } else {
       const result = applySkillsRegistration({ configPath, skillsDir });
       console.log(formatApplyResult(result));
