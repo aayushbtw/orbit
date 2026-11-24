@@ -12,7 +12,7 @@ The feature, bug, refactor, perf and hillclimb flows, and `/orbit:figure-it-out`
 
 ## Give each change its own worktree
 
-Before the first edit, Claude calls `EnterWorktree` and moves into a new git worktree under `.claude/worktrees/`. The worktree is named `<type>-<slug>`, and its branch is renamed to `<type>/<slug>`, where `<type>` is the commit type of the change, such as `feat`, `fix`, `refactor` or `perf`. When the project has a lockfile, Claude runs `vp install` so the check can run there. Gitignored files the check needs, such as `.env.local`, come in through the project's `.worktreeinclude` ([Copy gitignored files into each worktree](./08-make-it-fit.md#copy-gitignored-files-into-each-worktree)).
+Before the first edit, Claude calls T3's `t3_worktree_handoff`, which moves the thread into a new git worktree on a branch named `<type>/<slug>`, where `<type>` is the commit type of the change, such as `feat`, `fix`, `refactor` or `perf`. The next turn runs there. When the project has a lockfile, Claude runs `vp install` so the check can run there. When the worktree lacks a gitignored file the check needs, such as `.env.local`, Claude copies it in once from the project root ([Copy gitignored files into each worktree](./08-make-it-fit.md#copy-gitignored-files-into-each-worktree)).
 
 A worktree exists so that parallel sessions never share a checkout. You can run two tasks at once, or keep working in your main checkout, and neither sees the other's half-finished edits. The worktrees stay out of your main checkout's `git status`.
 

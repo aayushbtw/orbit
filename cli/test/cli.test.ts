@@ -17,14 +17,14 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, expect, test } from 'vitest';
-import { checkNpmUpdate, globalOrbitBin, installBundle, pruneReleases, stageRelease } from '../src/bundle.js';
-
+import { checkNpmUpdate, globalOrbitBin, installBundle, pruneReleases, runGlobalOrbitInstall, stageRelease } from '../src/bundle.js';
 const cli = fileURLToPath(new URL('../dist/cli.mjs', import.meta.url));
 const bundleDir = fileURLToPath(new URL('../dist/plugin/', import.meta.url));
 const worktreeRoot = fileURLToPath(new URL('../..', import.meta.url));
+type Row = { host: string; action: string };
 const headings = '| Task | Use for | Model | Effort |\n| --- | --- | --- | --- |\n';
-let home;
-let workspace;
+let home: string;
+let workspace: string;
 
 beforeEach(() => {
   home = mkdtempSync(join(tmpdir(), 'orbit-cli-test-'));
@@ -34,18 +34,18 @@ beforeEach(() => {
 
 afterEach(() => rmSync(home, { recursive: true, force: true }));
 
-function seed(file, content) {
+function seed(file: string, content: string): string {
   const path = join(home, file);
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, content);
   return path;
 }
 
-function run(...args) {
+function run(...args: string[]) {
   return runWithEnv({ PATH: '' }, ...args);
 }
 
-function runWithEnv(env, ...args) {
+function runWithEnv(env: Record<string, string>, ...args: string[]) {
   const result = spawnSync(process.execPath, [cli, ...args], {
     cwd: workspace,
     env: { ...process.env, HOME: home, USERPROFILE: home, T3_ACP_MCP_NODE: '', ...env },
@@ -55,7 +55,7 @@ function runWithEnv(env, ...args) {
   return result;
 }
 
-function fakeBin(names) {
+function fakeBin(names: string[]) {
   const bin = join(home, 'fakebin');
   const log = join(home, 'fakebin.log');
   mkdirSync(bin, { recursive: true });
@@ -70,18 +70,18 @@ function fakeBin(names) {
   };
 }
 
-function jsonWithEnv(env, ...args) {
+function jsonWithEnv(env: Record<string, string>, ...args: string[]) {
   const { status, stdout, stderr } = runWithEnv(env, ...args, '--json');
   expect(stderr).toBe('');
   expect(status).toBe(0);
   return JSON.parse(stdout);
 }
 
-function skippedHosts(results) {
+function skippedHosts(results: Row[]): string[] {
   return results.filter((h) => h.action === 'skipped').map((h) => h.host).sort();
 }
 
-function json(...args) {
+function json(...args: string[]) {
   const { status, stdout, stderr } = run(...args, '--json');
   expect(stderr).toBe('');
   expect(status).toBe(0);
@@ -148,30 +148,30 @@ test('setup leaves malformed Antigravity config alone and requires TTY without -
 });
 
 test('link, unlink, use, and prune manage releases and current symlink safely', () => {
-  stageRelease(bundleDir, home, '0.75.0');
   stageRelease(bundleDir, home, '0.76.0');
   stageRelease(bundleDir, home, '0.77.0');
-  installBundle(bundleDir, home, '0.78.0');
+  stageRelease(bundleDir, home, '0.78.0');
+  installBundle(bundleDir, home, '0.79.0');
 
   const linked = json('link', worktreeRoot);
   expect(linked.repoPath).toBe(realpathSync(worktreeRoot));
   expect(json('status').bundle).toMatchObject({ linked: true });
 
   const unlinked = json('unlink');
-  expect(unlinked).toMatchObject({ unlinked: true, activeVersion: '0.78.0' });
-  expect(json('status').bundle).toMatchObject({ linked: false, activeVersion: '0.78.0' });
+  expect(unlinked).toMatchObject({ unlinked: true, activeVersion: '0.79.0' });
+  expect(json('status').bundle).toMatchObject({ linked: false, activeVersion: '0.79.0' });
 
-  const used = json('use', '0.76.0');
-  expect(used.version).toBe('0.76.0');
+  const used = json('use', '0.77.0');
+  expect(used.version).toBe('0.77.0');
 
   const pruned = pruneReleases(home, 2);
-  // Keeps 2 newest (0.78.0, 0.77.0) plus currently active 0.76.0; drops 0.75.0.
-  expect(pruned).toEqual(['0.75.0']);
-  expect(existsSync(join(home, '.config/orbit/releases/0.76.0'))).toBe(true);
-  expect(existsSync(join(home, '.config/orbit/releases/0.75.0'))).toBe(false);
+  // Keeps 2 newest (0.79.0, 0.78.0) plus currently active 0.77.0; drops 0.76.0.
+  expect(pruned).toEqual(['0.76.0']);
+  expect(existsSync(join(home, '.config/orbit/releases/0.77.0'))).toBe(true);
+  expect(existsSync(join(home, '.config/orbit/releases/0.76.0'))).toBe(false);
 
-  const updateInfo = checkNpmUpdate('0.78.0', '@aayushbtw/orbit', () => '0.79.0');
-  expect(updateInfo).toEqual({ currentVersion: '0.78.0', latestVersion: '0.79.0', updateAvailable: true });
+  const updateInfo = checkNpmUpdate('0.79.0', '@aayushbtw/orbit', () => '0.80.0');
+  expect(updateInfo).toEqual({ currentVersion: '0.79.0', latestVersion: '0.80.0', updateAvailable: true });
 });
 
 test('hosts refuses to overwrite a non-orbit skill symlink or directory', () => {
@@ -295,7 +295,7 @@ test('externally managed Claude and Grok installs are reported and never touched
   const snapshot = () => files.map((file) => readFileSync(file, 'utf8'));
   const before = snapshot();
   const fake = fakeBin(['claude', 'grok']);
-  const ok = (...args) => jsonWithEnv(fake.env, ...args);
+  const ok = (...args: string[]) => jsonWithEnv(fake.env, ...args);
 
   const oldManifest = join(stageRelease(bundleDir, home, '0.76.0'), 'plugin/.claude-plugin/plugin.json');
   writeFileSync(oldManifest, JSON.stringify({ ...JSON.parse(readFileSync(oldManifest, 'utf8')), version: '0.76.0' }));
@@ -310,15 +310,19 @@ test('externally managed Claude and Grok installs are reported and never touched
   const explicit = runWithEnv(fake.env, 'setup', '--host', 'claude', '--yes');
   expect(explicit.status).toBe(1);
   expect(explicit.stderr).toContain(`externally managed at ${external}`);
+  const configPath = join(home, '.config/orbit/config.json');
+  const readConfig = () => (existsSync(configPath) ? readFileSync(configPath, 'utf8') : null);
+  const configBefore = readConfig();
   const enable = runWithEnv(fake.env, 'hosts', 'enable', 'grok');
   expect(enable.status).toBe(1);
   expect(enable.stderr).toContain('does not manage');
+  expect(readConfig()).toBe(configBefore);
 
   expect(skippedHosts(ok('use', '0.76.0').hosts)).toEqual(['claude', 'grok']);
   expect(skippedHosts(ok('link', worktreeRoot).hosts)).toEqual(['claude', 'grok']);
   expect(skippedHosts(ok('unlink').hosts)).toEqual(['claude', 'grok']);
   ok('use', '0.76.0');
-  expect(skippedHosts(ok('update', '0.78.0', '--yes').hosts)).toEqual(['claude', 'grok']);
+  expect(skippedHosts(ok('update', '0.79.0', '--yes').hosts)).toEqual(['claude', 'grok']);
   expect(skippedHosts(ok('hosts', 'sync', '--all'))).toEqual(['claude', 'grok']);
 
   const doctor = ok('doctor', '--fix');
@@ -352,18 +356,18 @@ test('an Orbit-managed stale Claude marketplace is still updated and uninstalled
 });
 
 test('update takes [targetVersion] or --to instead of colliding with --version', () => {
-  const expected = { currentVersion: '0.78.0', latestVersion: '0.79.0', updateAvailable: true };
-  expect(json('update', '0.79.0', '--check')).toEqual(expected);
-  expect(json('update', '--to', 'v0.79.0', '--check')).toEqual(expected);
-  expect(json('update', 'v0.79.0', '--to', '0.79.0', '--check')).toEqual(expected);
+  const expected = { currentVersion: '0.79.0', latestVersion: '0.80.0', updateAvailable: true };
+  expect(json('update', '0.80.0', '--check')).toEqual(expected);
+  expect(json('update', '--to', 'v0.80.0', '--check')).toEqual(expected);
+  expect(json('update', 'v0.80.0', '--to', '0.80.0', '--check')).toEqual(expected);
 
-  const conflict = run('update', '0.79.0', '--to', '0.80.0', '--check');
+  const conflict = run('update', '0.80.0', '--to', '0.81.0', '--check');
   expect(conflict.status).toBe(1);
   expect(conflict.stderr).toContain('Conflicting target versions');
   const invalid = run('update', 'newest', '--check');
   expect(invalid.status).toBe(1);
   expect(invalid.stderr).toContain('Invalid target version');
-  expect(run('--version').stdout.trim()).toBe('0.78.0');
+  expect(run('--version').stdout.trim()).toBe('0.79.0');
   expect(run('update', '--help').stdout).toContain('--to <version>');
 });
 
@@ -371,7 +375,7 @@ test('globalOrbitBin resolves the npm global prefix bin and falls back to orbit'
   const prefix = join(home, 'npm-global');
   mkdirSync(join(prefix, 'bin'), { recursive: true });
   writeFileSync(join(prefix, 'bin', 'orbit'), '');
-  const calls = [];
+  const calls: string[][] = [];
   expect(globalOrbitBin((cmd, args) => {
     calls.push([cmd, ...args]);
     return `${prefix}\n`;
@@ -379,6 +383,30 @@ test('globalOrbitBin resolves the npm global prefix bin and falls back to orbit'
   expect(calls).toEqual([['npm', 'prefix', '-g']]);
   expect(globalOrbitBin(() => join(home, 'missing'), 'darwin')).toBe('orbit');
   expect(globalOrbitBin(() => { throw new Error('npm missing'); }, 'darwin')).toBe('orbit');
+});
+
+test('update runs the global orbit with piped stdout, inherited stderr, and a shell only on Windows', () => {
+  const calls: unknown[][] = [];
+  const fake = (file: string, args: string[], options: object) => {
+    calls.push([file, args, options]);
+    return '{"ok":true}';
+  };
+  expect(runGlobalOrbitInstall('/npm/bin/orbit', fake, 'darwin')).toBe('{"ok":true}');
+  expect(runGlobalOrbitInstall('C:\\npm global\\orbit.cmd', fake, 'win32')).toBe('{"ok":true}');
+  const stdio = ['ignore', 'pipe', 'inherit'];
+  expect(calls).toEqual([
+    ['/npm/bin/orbit', ['install', '--yes', '--json'], { encoding: 'utf8', stdio, shell: false }],
+    ['"C:\\npm global\\orbit.cmd"', ['install', '--yes', '--json'], { encoding: 'utf8', stdio, shell: true }],
+  ]);
+});
+
+test('setup doctor.sh is read-only, needs no bun or watch-pr, and points at the orbit CLI', () => {
+  const doctor = join(worktreeRoot, 'plugin/skills/setup/scripts/doctor.sh');
+  const res = spawnSync('bash', [doctor], { cwd: workspace, env: { HOME: home, PATH: '/usr/bin:/bin' }, encoding: 'utf8' });
+  expect(res.status).toBe(0);
+  expect(res.stdout).toMatch(/^orbit missing\. Install: npm install -g @aayushbtw\/orbit, then orbit setup$/m);
+  expect(res.stdout).not.toMatch(/bun|watch-pr|antigravity/);
+  expect(readdirSync(home)).toEqual(['repo']);
 });
 
 test('stageRelease replaces a partial release left by an interrupted run', () => {
@@ -423,9 +451,9 @@ test('CLI role names, defaults and config sources match what plugin rules tell t
   for (const role of ['gitops', 'verifier', 'advisor', 'judgment', 'code', 'other-family']) {
     expect(defaults[role]).toBeDefined();
   }
-  const ruleDefaults = [...rules.matchAll(/`([a-z-]+)` defaults to `([a-z]+)`/g)];
-  expect(ruleDefaults.map(([, role]) => role)).toEqual(['judgment', 'code']);
-  for (const [, role, model] of ruleDefaults) expect(defaults[role].target).toBe(model);
+  expect(rules).toContain('All five roles default to `inherit`');
+  expect(rules).not.toMatch(/defaults to `(?:opus|sonnet|haiku|fable)`/);
+  for (const role of ['gitops', 'verifier', 'advisor', 'judgment', 'code']) expect(defaults[role].target).toBe('inherit');
 
   seed('.config/orbit/models.md', 'Written by /orbit:setup.\n\n' + headings
     + '| other-family | Panel seat | codex, grok, inherit | |\n'

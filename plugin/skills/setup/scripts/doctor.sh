@@ -1,28 +1,17 @@
 #!/usr/bin/env bash
 set -u
 
-plugin_root=$(cd "$(dirname "$0")/../../.." && pwd -P)
 os=$(uname -s)
 
 install_hint() {
-	if [ "$os" = Darwin ]; then
-		case "$1" in
-		git) echo "xcode-select --install" ;;
-		bun) echo "brew install oven-sh/bun/bun" ;;
-		*) echo "brew install $1" ;;
-		esac
-		return
-	fi
 	case "$1" in
-	git) echo "https://git-scm.com/downloads" ;;
-	gh) echo "https://cli.github.com" ;;
-	node) echo "https://nodejs.org/en/download" ;;
-	bun) echo "curl -fsSL https://bun.sh/install | bash" ;;
-	jq) echo "https://jqlang.org/download" ;;
+	orbit) echo "npm install -g @aayushbtw/orbit, then orbit setup" ;;
+	git) [ "$os" = Darwin ] && echo "xcode-select --install" || echo "https://git-scm.com/downloads" ;;
+	node) [ "$os" = Darwin ] && echo "brew install node" || echo "https://nodejs.org/en/download" ;;
 	esac
 }
 
-for tool in git gh node bun jq; do
+for tool in git node orbit; do
 	if command -v "$tool" >/dev/null 2>&1; then
 		version=$("$tool" --version 2>/dev/null | head -n 1 | grep -oE '[0-9]+(\.[0-9]+)+' | head -n 1)
 		echo "ok $tool ${version:-version unknown}"
@@ -30,14 +19,6 @@ for tool in git gh node bun jq; do
 		echo "$tool missing. Install: $(install_hint "$tool")"
 	fi
 done
-
-if command -v gh >/dev/null 2>&1; then
-	if gh auth status >/dev/null 2>&1; then
-		echo "ok gh logged in"
-	else
-		echo "gh not logged in. Run: gh auth login"
-	fi
-fi
 
 if command -v git >/dev/null 2>&1 && root=$(git rev-parse --show-toplevel 2>/dev/null); then
 	echo "ok git repo $root"
@@ -62,71 +43,5 @@ else
 fi
 
 if command -v vpr >/dev/null 2>&1; then echo "vpr: found"; else echo "vpr: missing"; fi
-
-json_field() {
-	[ -f "$1" ] && jq -r --arg a "${3:-}" "($2) // empty" "$1" 2>/dev/null
-}
-
-real_dir() { (cd -P "$1" 2>/dev/null && pwd -P); }
-
-target=""
-if [ -z "${HOME:-}" ]; then
-	echo "install: check skipped, HOME unset"
-elif ! command -v jq >/dev/null 2>&1; then
-	echo "install: check skipped, it needs jq"
-else
-	plugins="$HOME/.claude/plugins"
-	key=$(json_field "$plugins/installed_plugins.json" '[.plugins // {} | keys[] | select(startswith("orbit@"))] | (map(select(startswith("orbit@orbit-head-") | not))[0] // .[0])')
-	if [ -z "$key" ]; then
-		echo "install: no orbit install record in $plugins/installed_plugins.json"
-	else
-		market=${key#orbit@}
-		record='.plugins[$a] | if type == "array" then (map(select(.scope == "user"))[0] // .[0]) else . end'
-		record_version=$(json_field "$plugins/installed_plugins.json" "$record | .version" "$key")
-		install_path=$(json_field "$plugins/installed_plugins.json" "$record | .installPath" "$key")
-		echo "install: $key record ${record_version:-unknown} at ${install_path:-unknown path}"
-		location=$(json_field "$plugins/known_marketplaces.json" '.[$a].installLocation' "$market")
-		plugin_source=$(json_field "$location/.claude-plugin/marketplace.json" '.plugins[] | select(.name == "orbit") | .source | strings')
-		if [ -z "$location" ] || [ -z "$plugin_source" ]; then
-			echo "install: cannot find the local marketplace copy for $market"
-		else
-			target=$(real_dir "$location/$plugin_source")
-			copy_version=$(json_field "$target/.claude-plugin/plugin.json" '.version')
-			echo "install: local marketplace copy ${copy_version:-unknown} at ${target:-$location/$plugin_source (missing)}"
-			if [ -n "$record_version" ] && [ "$record_version" = "$copy_version" ]; then
-				echo "ok install record matches the local marketplace copy (upstream may be ahead)"
-			else
-				echo "install drift: record ${record_version:-unknown}, local marketplace copy ${copy_version:-unknown}. Update: claude plugin marketplace update $market, then claude plugin update $key"
-			fi
-		fi
-	fi
-fi
-
-if [ -d "$plugin_root/skills/playbook/scripts/node_modules/commander" ]; then
-	echo "ok watch-pr deps installed"
-else
-	echo "watch-pr deps: not installed yet. The first watch-pr run installs them with bun and needs network"
-fi
-
-if [ -n "$target" ] && [ -d "$target/skills" ]; then
-	skills_dir="$target/skills"
-else
-	skills_dir="$plugin_root/skills"
-fi
-echo "orbit skills dir: $skills_dir"
-
-if [ -z "${HOME:-}" ]; then
-	echo "antigravity skills: check skipped, HOME unset"
-elif ! command -v agy >/dev/null 2>&1 && [ ! -d "$HOME/.gemini/config" ]; then
-	echo "antigravity skills: not detected (no agy or ~/.gemini/config)"
-elif ! command -v node >/dev/null 2>&1; then
-	echo "antigravity skills: check skipped, it needs node"
-else
-	if ag_status=$(node "$(dirname "$0")/antigravity-skills.mjs" --check --skills-dir "$skills_dir" 2>/dev/null); then
-		echo "antigravity skills: $ag_status"
-	else
-		echo "antigravity skills: check failed"
-	fi
-fi
 
 exit 0

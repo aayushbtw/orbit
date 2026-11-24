@@ -487,13 +487,13 @@ export function resolveTask(options: {
 
 /** List every `<provider>/<model>` target a row names, including roster entries, panel seats, the arena judge, fallbacks, and escalation. */
 export function rowProviderTargets(row: EffectiveAssignmentRow): string[] {
-  const entries = [
-    ...(row.entries ?? [row.target]),
-    ...(row.judge ? [row.judge] : []),
-    ...row.fallbacks,
-    ...(row.escalate?.target ? [row.escalate.target] : []),
-  ];
-  return [...new Set(entries.map((entry) => parseSeatEntry(entry).target).filter((target) => target.includes('/')))];
+  // Only interrogate and arena seats carry `@<effort>`. Elsewhere `@` may be part of the model id, as resolveTask reads it.
+  const named = [...(row.entries ?? [row.target]), ...(row.judge ? [row.judge] : [])];
+  const seats = row.task === 'interrogate' || row.task === 'arena'
+    ? named.map((entry) => parseSeatEntry(entry).target)
+    : named;
+  const entries = [...seats, ...row.fallbacks, ...(row.escalate?.target ? [row.escalate.target] : [])];
+  return [...new Set(entries.filter((target) => target.includes('/')))];
 }
 
 /** Validate whether a target string exists cleanly inside a catalog when synced. */

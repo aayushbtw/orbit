@@ -22,8 +22,8 @@ A lookup reference for orbit's commands, agents and defaults. To learn how a tas
 | A long or unattended run you'll review later | `/orbit:show-me-your-work` |
 | Catch up on what changed since your last message | `/orbit:ketchup` |
 | Disk is tight, or worktrees have piled up | `/orbit:worktree-cleanup` |
-| Check what orbit needs on this machine and in this project | `/orbit:setup`, on any host. When Antigravity is detected or enabled, it also registers orbit's skills in `~/.gemini/config/skills.json`. It changes nothing without a yes. |
-| Choose which T3 providers fill each panel's seat on another family and run the pre-land verifier, for every project | `/orbit:setup`, in a T3 thread. Setup skips this step outside T3. The same step asks whether orbit may run its native verifier when every listed provider fails. |
+| Check what orbit needs on this machine and in this project | `/orbit:setup`. It reads `orbit doctor --json`, offers `orbit setup` or `orbit hosts sync` when the install or a provider's registration drifted, and changes nothing without a yes. |
+| Choose which T3 providers fill each panel's seat on another family and run the pre-land verifier, for every project | `/orbit:setup`. The same step asks whether orbit may run its native verifier when every listed provider fails. |
 
 Mid-task, "continue" or "do it" resumes the todo list. "new task" starts a fresh one.
 
@@ -97,17 +97,11 @@ The playbook holds all 24 of pstack's principles, in pstack's five groups. [Stee
 | Setting | Default |
 | --- | --- |
 | Check | `vpr check`, then `vpr build` and `vpr test` if those scripts exist |
-| Land | `main`. Each change is built in a worktree under `.claude/worktrees/`, and Shipping fast-forwards `main` to it. |
+| Land | `main`. Each change is built in its own T3 worktree, and Shipping fast-forwards `main` to it. |
 | Review | `/orbit:interrogate` before shipping when the design is contested |
 
 A project that differs adds a `## Workflow` block to its AGENTS.md, listing only what's different. Start from [`plugin/skills/setup/workflow-block.md`](../plugin/skills/setup/workflow-block.md), or run `/orbit:setup` to have it offer a filled block. [Make orbit fit your project](guide/08-make-it-fit.md) explains each line and folder rules. [Build a change](guide/04-build-a-change.md#follow-the-stack-rules-for-typescript) covers stack rules.
 
-## Auto-update
+## Update
 
-Claude Code leaves auto-update off for third-party marketplaces, so orbit stays on the version you installed. To turn it on:
-
-1. Run `/plugin`.
-2. Open the **Marketplaces** tab and select `orbit`.
-3. Choose **Enable auto-update**.
-
-To update once by hand, run `claude plugin update orbit@orbit`.
+Orbit stays on the version you installed. Run `orbit update` to install the newest release, or `orbit update <version>` for a named one. It moves `~/.config/orbit/current` and re-syncs every registered T3 provider. `orbit update --check` only reports whether a newer release exists. A new T3 thread picks up the update.

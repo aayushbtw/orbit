@@ -368,6 +368,22 @@ export function globalOrbitBin(exec: ExecRunner = defaultExec, platform: NodeJS.
   return 'orbit';
 }
 
+export type SpawnRunner = (
+  file: string,
+  args: string[],
+  options: { encoding: 'utf8'; stdio: ['ignore', 'pipe', 'inherit']; shell: boolean },
+) => string;
+
+/** Run `<bin> install --yes --json` and return its stdout. Windows needs a shell to run npm's `.cmd` shim. */
+export function runGlobalOrbitInstall(
+  bin: string,
+  run: SpawnRunner = execFileSync,
+  platform: NodeJS.Platform = process.platform,
+): string {
+  const shell = platform === 'win32';
+  return run(shell ? `"${bin}"` : bin, ['install', '--yes', '--json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'], shell });
+}
+
 /** Install a target npm package version globally. */
 export function applyNpmUpdate(
   targetVersion: string,

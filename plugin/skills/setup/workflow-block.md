@@ -14,4 +14,4 @@ List only what differs from the Workflow Defaults in orbit's rules; delete the l
 
 | Task | Use for | Model | Effort |
 | --- | --- | --- | --- |
-| <kebab-name> | <the work this row covers> | <`opus`, `sonnet`, `haiku`, `fable`, `inherit`, or one `<providerInstanceId>/<model>` under T3 Code> | <`low`, `medium`, `high`, `xhigh` or `max`> |
+| <kebab-name> | <the work this row covers> | <`inherit`, or one `<providerInstanceId>/<model>`> | <`low`, `medium`, `high`, `xhigh` or `max`, or a value the model lists> |

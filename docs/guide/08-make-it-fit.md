@@ -69,7 +69,7 @@ Each column does one job:
 
 - **Task** names the row in kebab case. Six names are orbit's roles, which are `gitops`, `verifier`, `advisor`, `judgment`, `code` and `other-family`. A row with one of those names changes only that role. Every other row is a work type.
 - **Use for** names the work the row covers. Claude reads it to match a unit to a row.
-- **Model** is `opus`, `sonnet`, `haiku`, `fable` or `inherit`. `inherit` passes no model, so the spawn runs on `CLAUDE_CODE_SUBAGENT_MODEL` when it is set, else on your session model. On the `gitops` and `advisor` rows, `inherit` keeps the model in the agent file. `fable` is Fable 5.2 from Claude Code 2.1.321 on, and Fable 5.1 before it. Fable's safeguards block most cybersecurity work, such as penetration testing and exploit generation, and an older Opus answers in its place. On a security project, set the `advisor` row's Model to `opus` and keep `fable` off rows whose work is security. Under T3 Code, the `other-family` row's Model is an ordered list of providers, and the `verifier` row's Model may be `other-family` or `other-family, inherit` ([Give the panels a second family in T3 Code](#give-the-panels-a-second-family-in-t3-code)). Any row's Model may also be one target, `<providerInstanceId>/<model>`, which runs that row's spawns on that provider's model ([Run a row on another provider](../t3-code.md#run-a-row-on-another-provider)).
+- **Model** is `inherit` or one target, `<providerInstanceId>/<model>`. `inherit` passes no model, so the spawn runs on your session model, and every role defaults to it. A bare alias such as `opus` still passes as the model when the lead's subagent tool takes it, as a Claude lead's does. Fable's safeguards block most cybersecurity work, such as penetration testing and exploit generation, and an older Opus answers in its place. On a security project, keep Fable off rows whose work is security. The `other-family` row's Model is an ordered list of providers, and the `verifier` row's Model may be `other-family` or `other-family, inherit` ([Give the panels a second family in T3 Code](#give-the-panels-a-second-family-in-t3-code)). Any row's Model may also be one target, `<providerInstanceId>/<model>`, which runs that row's spawns on that provider's model ([Run a row on another provider](../t3-code.md#run-a-row-on-another-provider)).
 - **Effort** is `low`, `medium`, `high`, `xhigh` or `max`.
 
 Each cell comes from the project's table, else from the same cell of Orbit's [user-wide configuration](../cli.md), else from the default. An empty cell, a missing row and a missing table all fall through to the next source. The game has no role rows, so its roles keep orbit's defaults. Commits already run on Sonnet at `low` from gitops's agent file. A role row changes only the cells it fills, as the `code` row in [Give the panels a second model](#give-the-panels-a-second-model) shows.
@@ -83,10 +83,10 @@ Before each spawn, Claude asks three questions in order. The first yes decides t
   <img alt="Claude asks three questions before each spawn, with a fallback when every answer is no. If the step picks its own model or effort, such as recall's haiku or the trail reviewer's tier, the spawn keeps it. Else, if the spawn names a role (gitops, verifier, advisor, judgment, code or other-family), it takes that role's row, where an empty cell falls through to the user file, else the default. Else, if a work type fits the poteto-agent unit, it takes that work type's row, which can step up after n failed tries. Else Claude tiers by difficulty, with the hardest change or prose on judgment and the rest on code, and when the project has work types the reply names the unit so you can add a row." src="../diagrams/guide-models-light.svg">
 </picture>
 
-1. A step that names its own model or effort keeps it. `/orbit:recall` runs on Haiku, and the trail reviewer in `show-me-your-work` picks its own tier.
-2. A spawn that names a role takes that role's row. gitops, the verifier and the advisor each take their own row. Under T3 Code, a panel's seat on another family takes the `other-family` row. Interrogate's adversaries, arena's runners, swarm workers, autopilot owners, the `/orbit:how` explainer and `/orbit:recall`'s source investigators each name `judgment` or `code`. A skill that spawns with `model: "opus"` names the `judgment` role, so a `judgment` row reaches it. A two-model panel never takes a work type, so its sides follow only the `judgment` and `code` rows. Comment Sicko takes no row, so it keeps its agent file's effort and runs on the default subagent model.
+1. A step that names its own model or effort keeps it. `/orbit:recall`'s fan-out runs on the `code` model at `low`, and the trail reviewer in `show-me-your-work` picks its own model.
+2. A spawn that names a role takes that role's row. gitops, the verifier and the advisor each take their own row. A panel's seat on another family takes the `other-family` row. Interrogate's adversaries, arena's runners, swarm workers, autopilot owners, the `/orbit:how` explainer and `/orbit:recall`'s source investigators each name `judgment` or `code`. A two-model panel never takes a work type, so its sides follow only the `judgment` and `code` rows. Comment Sicko takes no row, so it keeps its agent file's effort and runs on the default subagent model.
 3. Any other `orbit:poteto-agent` spawn takes the work type whose Use for fits its unit. That covers code delegates and their fix rounds.
-4. A unit that no work type fits runs as it does with no table. A prose unit, such as docs or a written explanation, runs on the `judgment` model. A code unit tiers by difficulty. The hardest change, such as a cross-cutting design or a subtle algorithm, runs on the `judgment` model, and the rest run on the `code` model. When a `code` row sets that model to `sonnet` or `haiku`, only trivial mechanical edits go to it, and the rest run on your session model. When the project has work types, Claude's reply names each unit that none of them fit, so you can add a row.
+4. A unit that no work type fits runs as it does with no table. A prose unit, such as docs or a written explanation, runs on the `judgment` model. A code unit tiers by difficulty. The hardest change, such as a cross-cutting design or a subtle algorithm, runs on the `judgment` model, and the rest run on the `code` model. When the project has work types, Claude's reply names each unit that none of them fit, so you can add a row.
 
 A row reaches subagents only. Claude plans in your session, on the model you picked with `/model`. The game's `phase-planning` row reaches the subagents Claude spawns for planning work, not the planning in your chat.
 
@@ -104,25 +104,23 @@ An Effort cell is the level Claude passes, as written. Claude adds no judgment o
 
 A work type's cell can add a step with `after <n> failed tries`. A failed try is a delegate whose work on the unit fails Claude's review or the check, or that crashes or returns nothing. Parallel attempts, such as arena runners, count no tries, and each part of a split unit starts at zero. In the game, a `shader-math` unit runs at `high` for its first two delegates. If both fail, the third runs at `xhigh`. The unit's todo item carries its try count. The step works in a Model cell too, such as `sonnet, opus after 2 failed tries`. A cell of `opus, fable after 2 failed tries` keeps a work type on Opus and moves a unit to Fable once Opus has failed it twice.
 
-If the `Agent` tool rejects a row's model, Claude passes no model and says so. If the advisor can't run on Fable, because your account lacks it or its usage limit is reached, Claude retries it once on Opus and says so. It never sends the advisor's fork to you in its place. If the tool rejects a level, Claude tries no other level. It uses the row's level or the one in the agent file, and says so.
+If the `Agent` tool rejects a row's model, Claude passes no model and says so. If a spawn's model is unavailable or at its usage limit, Claude retries it once on the session model and says so. It never sends the advisor's fork to you in its place. If the tool rejects a level, Claude tries no other level. It uses the row's level or the one in the agent file, and says so.
 
 If `CLAUDE_CODE_EFFORT_LEVEL` is set in your environment, Claude Code applies it to every spawn, over every Effort cell in the table.
 
 ### Give the panels a second model
 
-In an Opus session under the defaults, the `judgment` and `code` models are both Opus. Interrogate's two adversaries and arena's two runners then run on one model, arena skips its judge, and a panel loses its second opinion. Work types don't help here, because panels never take one. One row fixes it:
+Under the defaults every role inherits the session's model, so the `judgment` and `code` models are the same. Interrogate's two adversaries and arena's two runners then run on one model, arena skips its judge, and a panel loses its second opinion. Work types don't help here, because panels never take one. One row fixes it:
 
 ```md
-| `code` | | sonnet | |
+| `code` | | claudeAgent/claude-sonnet-5-5 | |
 ```
 
-The row moves every spawn on the `code` role to Sonnet. That covers one side of each panel, swarm workers and `/orbit:recall`'s source investigators. In an Opus session, the same row makes all of those spawns cheaper. The row doesn't move gitops, the verifier, the advisor or Comment Sicko.
-
-Code delegates are the catch. Without a guard, a Sonnet `code` row would also move every code delegate that no work type fits and isn't the hardest, so most of your code would be written on Sonnet. Orbit guards it. When the `code` row is `sonnet` or `haiku`, only trivial mechanical edits go to it, and every other code delegate runs on your session model. To put more code on Sonnet on purpose, add a work type for that kind of work.
+The row moves every spawn on the `code` role to that model. That covers one side of each panel, swarm workers, `/orbit:recall`'s source investigators, and every code delegate that no work type fits and isn't the hardest. The row doesn't move gitops, the verifier, the advisor or Comment Sicko. To keep most code on the session model while the panels gain a second model, give that kind of code its own work type.
 
 ### Give the panels a second family in T3 Code
 
-Under T3 Code, a panel can fill one seat on another model family, such as a Codex model, instead of a second model of the lead's family. Five seats work this way. They are arena's judge, interrogate's second adversary, the trail reviewer in `show-me-your-work`, the audit seat in `autopilot-full`, and the verifier when its own row says so. `/orbit:setup` writes the `other-family` row to the user-wide store for every project, `~/.config/orbit/config.json` when the `orbit` CLI manages it, else `~/.config/orbit/models.md`. A project can set its own row:
+Under T3 Code, a panel can fill one seat on another model family, such as a Codex model, instead of a second model of the lead's family. Five seats work this way. They are arena's judge, interrogate's second adversary, the trail reviewer in `show-me-your-work`, the audit seat in `autopilot-full`, and the verifier when its own row says so. `/orbit:setup` writes the `other-family` row to the user-wide store for every project, `~/.config/orbit/config.json`, with `orbit models set`. A project can set its own row:
 
 ```md
 | `other-family` | | codex, gemini | |
@@ -147,22 +145,23 @@ Setup ranks providers Codex, Muse, Gemini, then Grok, and recommends the first t
 
 Fable 5.2 costs $8 per million input tokens and $40 per million output tokens, and Opus 5.5 costs $4 and $20 (Anthropic's model table, cached 2026-11-03). Anthropic's Fable 5.2 guidance says early testers had good results with Fable as the planner and orchestrator for other models. The same guidance says subagents can be a large part of a session's cost. A Fable lead therefore plans and reviews on Fable, and its subagents write the code on Opus at half the price.
 
-Pick Fable for the session with `/model fable`, at `high` or `medium` effort. Don't run it at `low`. Then add three rows, so that spawns don't inherit Fable from the session:
+Pick Fable for the thread in T3's model picker, at `high` or `medium` effort. Don't run it at `low`. Every role inherits the session's model, so without rows every spawn would also run on Fable. Add four rows, so that the workers run on Opus and gitops on Sonnet:
 
 ```md
-| `code` | | opus | |
-| `judgment` | | opus | |
-| `verifier` | | opus | |
+| `code` | | claudeAgent/claude-opus-5-5 | |
+| `judgment` | | claudeAgent/claude-opus-5-5 | |
+| `verifier` | | claudeAgent/claude-opus-5-5 | |
+| `gitops` | | claudeAgent/claude-sonnet-5-5 | |
 ```
 
-The `judgment` row repeats its default, so the variant below is a one-cell change. The `code` row is neither `sonnet` nor `haiku`, so the guard above leaves every code delegate on Opus, and none falls back to the Fable session. Leave each Effort cell empty on purpose. A row's effort is exact, so a filled cell would stop Claude from raising a hard unit to `high`.
+Leave each Effort cell empty on purpose. A row's effort is exact, so a filled cell would stop Claude from raising a hard unit to `high`.
 
-Two spawns stay on Fable. The advisor keeps Fable from its agent file for the plan gate and forks. Its diff review in Shipping runs on the `judgment` model, so it reads Opus code on Opus. Comment Sicko takes no row, so it runs on the session model at `medium`, unless `CLAUDE_CODE_SUBAGENT_MODEL` is set. gitops keeps Sonnet from its agent file.
+Two spawns stay on Fable. The advisor has no row, so it plans and reviews forks on the session's Fable. Its diff review in Shipping runs on the `judgment` model, so it reads Opus code on Opus. Comment Sicko takes no row, so it runs on the session model at `medium`.
 
 With `code` and `judgment` both on Opus, interrogate's two adversaries and arena's two runners run on one model. To keep a second model in the panels, put `judgment` on Fable instead:
 
 ```md
-| `judgment` | | fable | high |
+| `judgment` | | claudeAgent/claude-fable-5-2 | high |
 ```
 
 That row also moves prose delegates, the hardest code delegates, autopilot owners and the `how` explainer back to Fable, so it costs more.
@@ -226,16 +225,11 @@ The new skill goes in `.claude/skills/<handle>-mode/SKILL.md`, or in `~/.claude/
 
 ## Copy gitignored files into each worktree
 
-A new worktree holds only tracked files. If your Check needs a gitignored file, such as `.env.local`, list its pattern in a `.worktreeinclude` file at the repo root, one pattern per line. Claude Code copies matching files into each new worktree. When Claude finds the Check needs a file the list lacks, it adds the pattern and copies the file in once.
-
-```text
-.env.local
-.claude/settings.local.json
-```
+A new worktree holds only tracked files. When your Check needs a gitignored file, such as `.env.local`, and the new worktree lacks it, Claude copies it in once from the project root by absolute path.
 
 ## Clean up old worktrees
 
-Every change gets its own worktree under `.claude/worktrees/`, so parallel sessions never share a checkout. When a change lands, Shipping removes its worktree and the verifier's and owners' worktrees. It deletes the branch only when the branch holds nothing that did not land, and it never switches or updates your main checkout. A worktree with uncommitted changes stays, and so does the worktree of a T3 thread that T3 bound to it. The reply names each worktree and branch that stays. Worktrees from abandoned or unshipped tasks still add up on disk. `/orbit:worktree-cleanup` removes them, and it also runs when you ask Claude to clean up worktrees or free up space.
+Every change gets its own T3 worktree, so parallel sessions never share a checkout. When a change lands, Shipping removes its worktree and the verifier's and owners' worktrees. It deletes the branch only when the branch holds nothing that did not land, and it never switches or updates your main checkout. A worktree with uncommitted changes stays, and so does the worktree of a T3 thread that T3 bound to it. The reply names each worktree and branch that stays. Worktrees from abandoned or unshipped tasks still add up on disk. `/orbit:worktree-cleanup` removes them, and it also runs when you ask Claude to clean up worktrees or free up space.
 
 ```text
 /orbit:worktree-cleanup
@@ -247,6 +241,6 @@ It pauses on a worktree a session is still using. It also pauses on uncommitted 
 
 ## Keep orbit up to date
 
-Claude Code leaves auto-update off for third-party marketplaces, so orbit stays on the version you installed. [Auto-update](../usage.md#auto-update) lists the steps to turn it on. To update once by hand, run `claude plugin update orbit@orbit`.
+Orbit stays on the version you installed. Run `orbit update` to move to a newer release, as [Update](../usage.md#update) says.
 
 Back to the [guide index](./README.md)

@@ -4,6 +4,22 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.79.0
+
+### Breaking or behavior changes
+
+- Orbit runs in T3 Code only. The host adapter (`plugin/docs/harness/t3-code.md`) maps every PR, CI, issue, worktree, wait, schedule, secret and HTML step to a T3 tool, and drops the "outside T3" and absent-column branches, the `/loop` and `Monitor` fallbacks, and `gh` as the forge. A T3 tool a thread lacks takes the adapter's **When a tool is absent** path.
+- Babysit reads each PR with `pull_request_read` and names its verdict (`COMPLETE`, `BLOCKER`, `WAIT`, `READY`). gitops opens PRs with `pull_request_create`, replies with `pull_request_respond`, merges with `pull_request_merge`, and reads and reruns CI with `ci_logs` and `ci_rerun`. The Worktree gate calls `t3_worktree_handoff`.
+- Remove `plugin/skills/playbook/scripts/` (the `watch-pr` watcher and its bun toolchain) and `plugin/skills/setup/scripts/antigravity-skills.mjs`. `/orbit:setup` drives the orbit CLI (`orbit doctor --json`, `orbit setup`, `orbit hosts sync`, `orbit models set`, `orbit init`), and `doctor.sh` checks only git, node, orbit, the repo and the Workflow block.
+- All five roles (`advisor`, `judgment`, `code`, `verifier`, `gitops`) default to `inherit`. `judgment` no longer defaults to `opus`, `orbit:gitops` and `orbit:advisor` name no model, the advisor's Fable-to-Opus retry is gone, and skills name roles instead of `model: "opus"`. Orbit reads Models rows from `orbit models` or `~/.config/orbit/config.json`, then `.orbit/config.json` and AGENTS.md, and no longer reads `models.md` itself.
+
+### CLI
+
+- Port Antigravity skills registration to `cli/src/antigravity.ts`, imported statically, with its tests in `cli/test/antigravity.test.ts`. Convert the CLI tests to TypeScript and stage the plugin in `vite.config.ts`'s pack `onSuccess`, so no `.mjs` source is left in `plugin/` or `cli/`.
+- `orbit models set interrogate|arena --effort` fails and points at per-seat `@<effort>`. `AGENTS.md` arena rows accept spaces around `judge =`, and malformed `interrogate` or `arena` entries show up as a project config error.
+- `orbit hosts enable` registers the host before it saves `config.hosts`, so a failure on an external host leaves `config.json` untouched. Interactive `orbit setup` skips external hosts in its picker and says why. `orbit update` runs the new global CLI with stderr inherited, and through a shell on Windows.
+- `orbit doctor` strips `@<effort>` only from `interrogate` and `arena` seats, so it agrees with `orbit models resolve` on a `provider/model@word` target.
+
 ## 0.78.0
 
 - Make the `orbit` CLI a T3-first control plane with atomic `~/.config/orbit/current` symlink management (`install`, `update`, `use`, `link`, `unlink`, `uninstall`, `status`, `doctor --fix`).

@@ -25,7 +25,7 @@ Open a todolist with one entry per phase before launching anything.
 
 ## Phase B: Fan out
 
-Spawn the workers as `Agent` calls with `subagent_type: "general-purpose"`, `isolation: "worktree"`, and the step 3 model and effort, under the Parallel cap (rules.md Workflow Defaults). Spawn up to the cap in one message, then start the next as one finishes. Name the branch or commit each worker checks out. Omit `isolation` only when the worker needs something a fresh worktree lacks, such as the parent's uncommitted files. In T3 Code, a worker that needs its own checkout runs per the host adapter's Where a child runs section (rules.md Delegation, **Host tools.**), and a worker that only reads is a foreground `Agent` call with no worktree.
+Spawn the workers with `subagent_type: "general-purpose"` and the step 3 model and effort, under the Parallel cap (rules.md Workflow Defaults). A worker that needs its own checkout runs per the host adapter's Where a child runs section (rules.md Delegation, **Host tools.**), and a worker that only reads, or needs something a fresh worktree lacks, such as the parent's uncommitted files, is a foreground `Agent` call with no worktree. Spawn up to the cap in one message, then start the next as one finishes. Name the branch or commit each worker checks out.
 
 When a worker must start from another branch or commit, tell it to check out that ref first.
 

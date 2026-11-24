@@ -14,6 +14,7 @@ import {
   unlinkSync,
 } from 'node:fs';
 import { delimiter, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import * as antigravity from './antigravity.js';
 import { orbitPaths, readOptional } from './paths.js';
 
 export const HOST_IDS = ['antigravity', 'codex', 'agents', 'claude', 'grok'] as const;
@@ -49,32 +50,6 @@ export interface HostRemoveResult {
   command?: string;
 }
 
-export interface AntigravitySkillsApi {
-  defaultConfigPath: (home?: string) => string;
-  inspectSkillsConfig: (opts: { configPath?: string; skillsDir: string; home?: string }) => {
-    status: 'missing-file' | 'unregistered' | 'registered' | 'stale' | 'invalid';
-    configPath: string;
-    skillsDir: string;
-    matchedPath?: string;
-    filtered?: boolean;
-    stalePaths?: string[];
-    reason?: string;
-  };
-  applySkillsRegistration: (opts: { configPath?: string; skillsDir: string; home?: string }) => {
-    action: 'unchanged' | 'registered' | 'updated';
-    configPath: string;
-    skillsDir: string;
-    filtered?: boolean;
-    stalePaths?: string[];
-  };
-  removeSkillsRegistration: (opts: { configPath?: string; home?: string }) => {
-    action: 'unchanged' | 'removed';
-    configPath: string;
-    removedPaths: string[];
-  };
-  formatCheckStatus: (result: unknown) => string;
-}
-
 export type HostExecRunner = (cmd: string, args: string[], env: NodeJS.ProcessEnv) => string;
 
 export interface HostContext {
@@ -84,7 +59,6 @@ export interface HostContext {
   skillsDir: string;
   currentLink: string;
   version: string;
-  antigravity: AntigravitySkillsApi;
   exec?: HostExecRunner;
 }
 
@@ -541,18 +515,18 @@ export function inspectHost(host: HostId, ctx: HostContext): HostInspection {
   const env = ctx.env ?? process.env;
   switch (host) {
     case 'antigravity': {
-      const configPath = ctx.antigravity.defaultConfigPath(ctx.home);
+      const configPath = antigravity.defaultConfigPath(ctx.home);
       const detected = existsSync(join(ctx.home, '.gemini', 'config')) || isExecutableOnPath('agy', env.PATH);
-      const res = ctx.antigravity.inspectSkillsConfig({ configPath, skillsDir: ctx.skillsDir, home: ctx.home });
+      const res = antigravity.inspectSkillsConfig({ configPath, skillsDir: ctx.skillsDir, home: ctx.home });
       return {
         host,
         displayName: DISPLAY_NAMES.antigravity,
         detected,
         status: res.status,
         path: res.configPath,
-        detail: ctx.antigravity.formatCheckStatus(res),
-        filtered: res.filtered,
-        stalePaths: res.stalePaths,
+        detail: antigravity.formatCheckStatus(res),
+        filtered: res.status === 'registered' ? res.filtered : undefined,
+        stalePaths: res.status === 'stale' ? res.stalePaths : undefined,
       };
     }
     case 'codex': {
@@ -582,8 +556,8 @@ export function applyHost(host: HostId, ctx: HostContext): HostApplyResult {
   const env = ctx.env ?? process.env;
   switch (host) {
     case 'antigravity': {
-      const configPath = ctx.antigravity.defaultConfigPath(ctx.home);
-      const res = ctx.antigravity.applySkillsRegistration({ configPath, skillsDir: ctx.skillsDir, home: ctx.home });
+      const configPath = antigravity.defaultConfigPath(ctx.home);
+      const res = antigravity.applySkillsRegistration({ configPath, skillsDir: ctx.skillsDir, home: ctx.home });
       return {
         host,
         action: res.action,
@@ -612,8 +586,8 @@ export function removeHost(host: HostId, ctx: HostContext): HostRemoveResult {
   const env = ctx.env ?? process.env;
   switch (host) {
     case 'antigravity': {
-      const configPath = ctx.antigravity.defaultConfigPath(ctx.home);
-      const res = ctx.antigravity.removeSkillsRegistration({ configPath, home: ctx.home });
+      const configPath = antigravity.defaultConfigPath(ctx.home);
+      const res = antigravity.removeSkillsRegistration({ configPath, home: ctx.home });
       return {
         host,
         action: res.action,

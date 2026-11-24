@@ -47,7 +47,7 @@ Each phase has one job:
 
 Arena returns one artifact and a short note that names the base, the judge's verdict or that arena skipped the judge, each graft and its source, and what was rejected.
 
-When the `judgment` and `code` models are the same, as in an Opus session under the defaults, both runners run on one model and arena skips the judge, so the panel loses its model diversity. Arena still gives you independent attempts, but they come from one model, and Claude picks the base alone. In T3 Code with providers listed in `/orbit:setup`, the judge runs on another family, so arena keeps it unless every listed provider fails.
+When the `judgment` and `code` models are the same, as they are under the defaults, both runners run on one model and arena skips the judge, so the panel loses its model diversity. Arena still gives you independent attempts, but they come from one model, and Claude picks the base alone. In T3 Code with providers listed in `/orbit:setup`, the judge runs on another family, so arena keeps it unless every listed provider fails.
 
 Arena also runs inside architect for a large or contested design, and inside the feature flow when the code admits several valid shapes, such as two ways to handle errors or structure the tests.
 
@@ -69,7 +69,7 @@ Each worker runs in its own worktree on the `code` model and reports `PASS`, `IS
 
 ## Invite a hostile review with `/orbit:interrogate`
 
-A design that looks sound to the model that wrote it can still hide a flaw that model is blind to. `/orbit:interrogate` sends two adversaries to break the change, one on the `judgment` model and one on the `code` model, each in its own worktree. When those two models are the same, as in an Opus session under the defaults, both adversaries run on one model. In T3 Code with providers listed in `/orbit:setup`, a seat on another family replaces the `code` adversary. When every listed provider fails, the `judgment` adversary runs alone.
+A design that looks sound to the model that wrote it can still hide a flaw that model is blind to. `/orbit:interrogate` sends two adversaries to break the change, one on the `judgment` model and one on the `code` model, each in its own worktree. When those two models are the same, as they are under the defaults, both adversaries run on one model. With providers listed in `/orbit:setup`, a seat on another family replaces the `code` adversary. When every listed provider fails, the `judgment` adversary runs alone.
 
 ```text
 /orbit:interrogate this branch. i think the new cache could serve one user's data to another.
