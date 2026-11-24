@@ -13,15 +13,19 @@ A step whose tool is absent does what **When a tool is absent** below says. Neve
 
 In T3 Default mode you are already executing. A playbook's Plan gate is a review step within the current mode. Your tool list may hold a plan-mode exit tool, such as `ExitPlanMode` or `exit_plan_mode`. Call it only when the operator put the thread in plan mode and gave the plan a go. Never call it on a wake-up, before a tool call or to restate a plan. A step you can take now gets no written plan.
 
-Orbit's text names Claude Code's tools. A tool that your tool search can load counts as in your tool list. When your tool list lacks one, use your own equivalent, as the table below says. Every row keys on what your tool list holds, never on which provider runs you.
+Orbit's text names Claude Code's tools and skill syntax. A tool that your tool search can load counts as in your tool list. When your tool list lacks one, or your host leaves the syntax in place, use your own equivalent, as the table below says. Every row keys on what you have, never on which provider runs you.
 
-| Claude Code | When your tool list lacks it |
+| Claude Code | When you lack it |
 | --- | --- |
 | `Skill` | Read the skill's `SKILL.md` by path, `skills/<name>/SKILL.md` in orbit's plugin folder. |
 | `TaskCreate`, `TaskUpdate`, `TodoWrite` | Your own plan tool, else track the list silently, as `/orbit:start` step 3 says. |
 | `AskUserQuestion` | Your own question tool, else a numbered question in the reply. |
 | `ToolSearch` | Your own tool search, else your tool list, as Probe says. |
 | `${CLAUDE_PLUGIN_ROOT}`, `${CLAUDE_SKILL_DIR}` | Orbit's plugin folder, two levels above the `rules` skill's base directory, and the skill's own base directory. |
+| `$ARGUMENTS` in a skill | The user's text after the skill name. |
+| A skill line that is `` !`<cmd>` `` | Run `<cmd>` yourself in the project root and use its output in place of the line. |
+| A step that reads a session transcript under `~/.claude/projects/` | When you have no `CLAUDE_SESSION_ID`, or no file matches it, read threads instead. Call `t3_thread_read` with view `activity`. The `parentThreadId` that `orchestrator_capabilities` returns is your own thread's id. A step that reads `${CLAUDE_SESSION_ID}.jsonl` reads your own thread. A step that reads a prior session reads the prior thread that the resume note names. A step that reads past sessions lists this project's threads with `t3_thread_list` and reads each one it needs. A step that reads `${CLAUDE_SESSION_ID}/subagents/*.jsonl` reads your child threads. List them with `t3_thread_list` with `includeSubagents` set to true, and keep each thread whose `parentThreadId` is your own thread's id. |
+| `effort` in an agent file's frontmatter | Pass it as the spawn's effort option, as Seats on another family says. |
 | `Agent` with an `orbit:` `subagent_type` | Your own subagent tool when you have one, so the child runs on your provider. When that tool cannot select an orbit agent, the brief names the agent file as Where a child runs step 5 says and states the agent's `tools` limit, because a file the child reads by hand enforces no limit. With no subagent tool of your own, do gitops's work yourself, following `agents/gitops.md`. Send every other child to a same-provider `delegate_task` with `target.providerInstanceId` set to `inheritedProviderInstanceId`. A child that shares your checkout gets `isolation: "shared"`, and a child that needs its own checkout follows steps 3 to 11 of Where a child runs. With neither tool, do each child's work yourself, one at a time, and say so in the reply. Never send a child to another provider unless its Models cell names that provider. Only a seat on another family (`t3-seats.md`) and a spawn whose cell names another provider (A cell that names a provider) leave your provider. |
 
 A Models cell with a bare model name your subagent tool does not take means you omit `model` or `target.model`. The spawn then runs on your default model, and the reply names the model that ran. An Effort cell still applies through your provider's own effort option, as Seats on another family says. A cell with a target, `<providerInstanceId>/<model>`, runs as A cell that names a provider says.

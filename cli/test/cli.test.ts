@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { checkNpmUpdate, globalOrbitBin, installBundle, pruneReleases, runGlobalOrbitInstall, stageRelease } from '../src/bundle.js';
 import { setConfigHosts } from '../src/config.js';
+import { RULES_BLOCK } from '../src/hosts.js';
 const cli = fileURLToPath(new URL('../dist/cli.mjs', import.meta.url));
 const bundleDir = fileURLToPath(new URL('../dist/plugin/', import.meta.url));
 const worktreeRoot = fileURLToPath(new URL('../..', import.meta.url));
@@ -52,7 +53,7 @@ function run(...args: string[]) {
 function runWithEnv(env: Record<string, string>, ...args: string[]) {
   const result = spawnSync(process.execPath, [cli, ...args], {
     cwd: workspace,
-    env: { ...process.env, HOME: home, USERPROFILE: home, T3_ACP_MCP_NODE: '', ...env },
+    env: { ...process.env, HOME: home, USERPROFILE: home, T3_ACP_MCP_NODE: '', CODEX_HOME: '', GROK_HOME: '', ...env },
     encoding: 'utf8',
   });
   if (result.error) throw result.error;
@@ -79,6 +80,20 @@ function jsonWithEnv(env: Record<string, string>, ...args: string[]) {
   expect(stderr).toBe('');
   expect(status).toBe(0);
   return JSON.parse(stdout);
+}
+
+function grokRegistry(sourcePath: string, pluginVersion: string): string {
+  const key = 'plugin-17a04497';
+  return JSON.stringify({
+    version: 1,
+    repos: {
+      [key]: {
+        kind: { type: 'Local', source_path: sourcePath },
+        path: join(home, '.grok/installed-plugins', key),
+        plugins: { orbit: { version: pluginVersion } },
+      },
+    },
+  });
 }
 
 function skippedHosts(results: Row[]): string[] {
@@ -111,6 +126,9 @@ test('setup stages bundle, flips current symlink, registers multi-host targets, 
   });
   expect(readlinkSync(join(home, '.codex/skills/orbit'))).toBe(currentSkills);
   expect(readlinkSync(join(home, '.agents/skills/orbit'))).toBe(currentSkills);
+  expect(readFileSync(join(home, '.codex/AGENTS.md'), 'utf8')).toBe(`${RULES_BLOCK}\n`);
+  expect(readFileSync(join(home, '.gemini/config/AGENTS.md'), 'utf8')).toBe(`${RULES_BLOCK}\n`);
+  expect(existsSync(join(home, '.agents/AGENTS.md'))).toBe(false);
 
   expect(json('setup', '--yes').action).toBe('unchanged');
   const doc = json('doctor');
@@ -125,7 +143,101 @@ test('setup stages bundle, flips current symlink, registers multi-host targets, 
   expect(un.removedReleases).toBe(true);
   expect(existsSync(join(home, '.codex/skills/orbit'))).toBe(false);
   expect(existsSync(join(home, '.agents/skills/orbit'))).toBe(false);
+  expect(existsSync(join(home, '.codex/AGENTS.md'))).toBe(false);
+  expect(existsSync(join(home, '.gemini/config/AGENTS.md'))).toBe(false);
   expect(JSON.parse(readFileSync(agConfig, 'utf8'))).toEqual(existing);
+});
+
+test('the rules line is one marked block that leaves the rest of each instructions file alone, byte for byte', () => {
+  const userText = '# Mine\n\nKeep replies short.\n';
+  const codexRules = seed('.codex/AGENTS.md', userText);
+  const dotfile = seed('dotfiles/gemini.md', 'Gemini notes.');
+  const geminiRules = join(home, '.gemini/config/AGENTS.md');
+  mkdirSync(dirname(geminiRules), { recursive: true });
+  symlinkSync(dotfile, geminiRules);
+  const withBlock = `${userText}\n${RULES_BLOCK}\n`;
+  expect(run('hosts', 'list').stdout).not.toContain('rules line missing');
+
+  json('setup', '--host', 'codex', '--host', 'antigravity', '--yes');
+  expect(readFileSync(codexRules, 'utf8')).toBe(withBlock);
+  expect(lstatSync(geminiRules).isSymbolicLink()).toBe(true);
+  expect(readFileSync(dotfile, 'utf8')).toBe(`Gemini notes.\n${RULES_BLOCK}\n`);
+
+  expect(json('hosts', 'enable', 'codex')[0].action).toBe('unchanged');
+  expect(readFileSync(codexRules, 'utf8')).toBe(withBlock);
+
+  writeFileSync(codexRules, withBlock.replace('first reply', 'reply'));
+  expect(json('hosts', 'list').find((h: Item) => h.host === 'codex').rules).toEqual({ path: codexRules, present: false });
+  const listed = run('hosts', 'list').stdout.split('\n').filter((line) => line.includes('rules line missing'));
+  expect(listed).toEqual([expect.stringMatching(new RegExp(`^codex: .*; rules line missing from ${codexRules}$`))]);
+  const drift = json('doctor');
+  expect(drift.healthy).toBe(false);
+  expect(drift.issues).toContain(`codex: orbit rules line missing from ${codexRules}`);
+  const fixed = json('doctor', '--fix');
+  expect(fixed.fixes).toContain('codex: updated');
+  expect(fixed.healthy).toBe(true);
+  expect(readFileSync(codexRules, 'utf8')).toBe(withBlock);
+
+  writeFileSync(codexRules, `${userText}<!-- orbit:rules:start -->\nedited\n`);
+  const broken = run('hosts', 'enable', 'codex');
+  expect(broken.status).toBe(1);
+  expect(broken.stderr).toContain('<!-- orbit:rules:end -->');
+  writeFileSync(codexRules, withBlock);
+
+  expect(json('hosts', 'disable', 'codex')[0].action).toBe('removed');
+  expect(readFileSync(codexRules, 'utf8')).toBe(userText);
+  json('uninstall', '--yes');
+  expect(lstatSync(geminiRules).isSymbolicLink()).toBe(true);
+  expect(readFileSync(dotfile, 'utf8')).toBe('Gemini notes.');
+});
+
+test('codex and grok paths follow CODEX_HOME and GROK_HOME', () => {
+  const fake = fakeBin(['grok']);
+  const codexHome = join(home, 'codex-home');
+  const grokHome = join(home, 'grok-home');
+  const env = { ...fake.env, CODEX_HOME: codexHome, GROK_HOME: grokHome };
+  const pluginDir = join(home, '.config/orbit/current/plugin');
+
+  jsonWithEnv(env, 'setup', '--host', 'codex', '--host', 'grok', '--yes');
+  expect(readlinkSync(join(codexHome, 'skills/orbit'))).toBe(join(pluginDir, 'skills'));
+  expect(readFileSync(join(codexHome, 'AGENTS.md'), 'utf8')).toBe(`${RULES_BLOCK}\n`);
+  expect(readFileSync(join(grokHome, 'AGENTS.md'), 'utf8')).toBe(`${RULES_BLOCK}\n`);
+  expect(existsSync(join(home, '.codex'))).toBe(false);
+  expect(existsSync(join(home, '.grok'))).toBe(false);
+
+  seed('grok-home/installed-plugins/registry.json', grokRegistry(pluginDir, version));
+  const rows: Item[] = jsonWithEnv(env, 'hosts', 'list');
+  expect(rows.find((h) => h.host === 'grok')).toMatchObject({ status: 'registered', rules: { path: join(grokHome, 'AGENTS.md'), present: true } });
+  expect(rows.find((h) => h.host === 'codex')).toMatchObject({ status: 'registered', path: join(codexHome, 'skills/orbit') });
+
+  jsonWithEnv(env, 'hosts', 'disable', 'codex', 'grok');
+  expect(existsSync(join(codexHome, 'skills/orbit'))).toBe(false);
+  expect(existsSync(join(codexHome, 'AGENTS.md'))).toBe(false);
+  expect(existsSync(join(grokHome, 'AGENTS.md'))).toBe(false);
+});
+
+test('grok installs with --trust and reinstalls a stale copy from the registry grok writes', () => {
+  const fake = fakeBin(['grok']);
+  const pluginDir = join(home, '.config/orbit/current/plugin');
+  const install = `grok plugin install ${pluginDir} --trust`;
+  const grokRules = join(home, '.grok/AGENTS.md');
+  const grokRow = (rows: Item[]): Item => rows.find((h) => h.host === 'grok')!;
+
+  expect(grokRow(jsonWithEnv(fake.env, 'setup', '--host', 'grok', '--yes').hosts).action).toBe('registered');
+  expect(fake.calls()).toEqual([install]);
+  expect(readFileSync(grokRules, 'utf8')).toBe(`${RULES_BLOCK}\n`);
+
+  seed('.grok/installed-plugins/registry.json', grokRegistry(pluginDir, version));
+  expect(grokRow(jsonWithEnv(fake.env, 'hosts', 'list'))).toMatchObject({ status: 'registered', rules: { present: true } });
+
+  seed('.grok/installed-plugins/registry.json', grokRegistry(pluginDir, '0.1.0'));
+  expect(grokRow(jsonWithEnv(fake.env, 'hosts', 'list')).status).toBe('stale');
+  expect(jsonWithEnv(fake.env, 'hosts', 'enable', 'grok')[0].action).toBe('updated');
+  expect(fake.calls().slice(1)).toEqual(['grok plugin uninstall orbit', install]);
+
+  jsonWithEnv(fake.env, 'hosts', 'disable', 'grok');
+  expect(fake.calls().at(-1)).toBe('grok plugin uninstall orbit');
+  expect(existsSync(grokRules)).toBe(false);
 });
 
 test('setup replaces old versioned Antigravity path with current symlink and preserves filters', () => {
@@ -294,7 +406,8 @@ test('externally managed Claude and Grok installs are reported and never touched
       plugins: { 'orbit@orbit': [{ scope: 'user', version: '0.70.0', installPath: join(home, '.claude/plugins/cache/orbit/orbit/0.70.0') }] },
     })),
     seed('.claude/plugins/known_marketplaces.json', JSON.stringify({ orbit: { installLocation: external } })),
-    seed('.grok/installed-plugins/registry.json', JSON.stringify({ repos: { orbit: { path: join(external, 'plugin') } } })),
+    seed('.grok/installed-plugins/registry.json', grokRegistry(join(external, 'plugin'), '0.70.0')),
+    seed('.grok/AGENTS.md', `Mine.\n\n${RULES_BLOCK.replace('first reply', 'reply')}\n`),
   ];
   const snapshot = () => files.map((file) => readFileSync(file, 'utf8'));
   const before = snapshot();

@@ -32,6 +32,10 @@ orbit hosts disable grok
 orbit hosts sync
 ```
 
+Claude Code loads orbit's rules from a SessionStart hook. Other hosts load them only when the lead opens orbit's `rules` skill. So `orbit hosts enable`, `orbit hosts sync` and `orbit setup` also write one marked block into each such host's user-wide instructions file. The block tells the lead to load the `rules` skill before its first reply. The files are `~/.codex/AGENTS.md` for Codex, `~/.grok/AGENTS.md` for Grok and `~/.gemini/config/AGENTS.md` for Antigravity. When `CODEX_HOME` or `GROK_HOME` is set, the Codex or Grok adapter uses that folder in place of `~/.codex` or `~/.grok`, for the instructions file, the Codex skills link and the Grok registry. The block sits between `<!-- orbit:rules:start -->` and `<!-- orbit:rules:end -->`, and Orbit CLI never changes text outside those markers. A symlinked file keeps its link, and the CLI writes its target. `orbit hosts disable` and `orbit uninstall` remove the block and the newline before it, so the file returns to its exact bytes. `orbit doctor` and `orbit hosts list` report a registered or stale host whose block is missing or edited, and `orbit doctor --fix` rewrites it.
+
+Grok copies a local plugin when it installs it, so the Grok adapter installs with `grok plugin install <dir> --trust`. When the copy's version or source no longer matches `~/.config/orbit/current/plugin`, the adapter reinstalls it, because `grok plugin update` skips local installs.
+
 Orbit CLI manages only installs it can find under `~/.config/orbit`. When Claude Code's `orbit` marketplace or Grok's `orbit` plugin points somewhere else, such as a local checkout you installed by hand, `orbit hosts` reports that host as `external`. Setup, `use`, `link`, `unlink`, `update`, `hosts sync`, `doctor --fix` and `uninstall` skip it and report it as skipped. `orbit doctor` counts it as healthy. An explicit `--host` or `orbit hosts enable` for that host fails with the external path. Remove that install with the host's own plugin command to let Orbit CLI manage the host.
 
 ## Configure models per task
