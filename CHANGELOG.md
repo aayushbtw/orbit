@@ -7,7 +7,7 @@ Before 1.0.0, a change to a rule or a flow that changes what orbit does for you 
 ## 0.81.0
 
 - Keep Autopilot's queue, verification and landing in the main thread. Delegate builds early, follow completion events, use CI for routine checks and recheck affected behavior after minor fixes.
-- Keep playbook planning within T3's current mode and proceed on the operator's go without a mode-change call.
+- Call a plan-mode exit tool only when the operator put the thread in plan mode and approved the plan. The lead no longer calls one on each wake-up or before a step, and writes no plan for a step it can take now.
 
 ## 0.80.0
 

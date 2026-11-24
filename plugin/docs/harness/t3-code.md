@@ -11,7 +11,7 @@ A step whose tool is absent does what **When a tool is absent** below says. Neve
 
 ## Any lead
 
-In T3 Default mode, keep the plan in the main thread and execute it there. Use the host's plan mode only when the operator asks for it. A playbook's Plan gate is a review step within the current mode. After the operator's go, start the first authorized unit without replaying the plan in a mode-change tool.
+In T3 Default mode you are already executing. A playbook's Plan gate is a review step within the current mode. Your tool list may hold a plan-mode exit tool, such as `ExitPlanMode` or `exit_plan_mode`. Call it only when the operator put the thread in plan mode and gave the plan a go. Never call it on a wake-up, before a tool call or to restate a plan. A step you can take now gets no written plan.
 
 Orbit's text names Claude Code's tools. A tool that your tool search can load counts as in your tool list. When your tool list lacks one, use your own equivalent, as the table below says. Every row keys on what your tool list holds, never on which provider runs you.
 
