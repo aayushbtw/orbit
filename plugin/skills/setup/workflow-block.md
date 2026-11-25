@@ -6,6 +6,7 @@ List only what differs from the Workflow Defaults in orbit's rules; delete the l
 - Check: <only if not `vpr check` + build + test, eg `vpr e2e`, knip>.
 - Land: `pr` (default is `main`, which lands directly onto trunk), plus the merge method if not squash.
 - Trunk: <only to pin the default branch, eg `trunk`; without it orbit reads `origin/HEAD`, then `git ls-remote --symref origin HEAD`, then falls back to `main`>.
+- Verification skill: <only to pin the project's verification skill, as the path to its `SKILL.md` or its directory, eg `tools/verify-app/`; without it orbit searches `.agents/skills/verify-*/`, then `.claude/skills/verify-*/`, then other root-level `.*/skills/verify-*/` and `skills/verify-*/`>.
 - Before code: <guidance for writing code under a path, which code delegates and `/orbit:interrogate` load and never skip; one `<path>: <source>` entry per source, separated by `;`, where a source is a file to read or a command that prints a skill or its path, eg `src/server/: node_modules/effect/AGENTS.md`; `src/routes/: vpx @tanstack/intent@latest load @tanstack/react-start#react-start --path`>.
 - Review also checks: <docs read before planning and at review only; scope one to a path with `src/server/: <source>`>.
 
