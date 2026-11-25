@@ -3,10 +3,11 @@ import { execFileSync, spawn } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
-import { dirname, join, sep } from 'node:path';
+import { delimiter, dirname, join, sep } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { clash } from './branches.mjs';
+import { bundleMarker, stampBundleMarker, verifyRevisionEvidence } from './revision.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const git = (dir, ...args) => execFileSync('git', ['-C', dir, '-c', 'user.name=t', '-c', 'user.email=t@t.invalid', ...args], { encoding: 'utf8' }).trim();
@@ -127,7 +128,12 @@ function runLane(argv, env, started = () => {}) {
   });
 }
 
-async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0, kill = false, interruptOrganize = false, starts = true, listed = [], activity = {}, pending = {}, inspect = () => null } = {}) {
+const CLAUDE_STUB = `#!/bin/sh
+if [ "$1 $2 $3" = "plugin marketplace list" ]; then echo '[]'; fi
+exit 0
+`;
+
+async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0, kill = false, interruptOrganize = false, starts = true, installed = true, listed = [], activity = {}, pending = {}, inspect = () => null } = {}) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'orbit-lane-test-')));
   let launcherErr = '';
   let interrupted = false;
@@ -147,15 +153,19 @@ async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0,
     const stub = join(root, 't3');
     writeFileSync(stub, STUB);
     chmodSync(stub, 0o755);
+    mkdirSync(join(root, 'bin'));
+    writeFileSync(join(root, 'bin', 'claude'), CLAUDE_STUB);
+    chmodSync(join(root, 'bin', 'claude'), 0o755);
     const base = git(project, 'rev-parse', 'HEAD');
     const before = branches(project);
     const env = {
       ...process.env,
       T3CODE_CLI_PATH: stub, STUB_STATE: join(root, 'state.json'), STUB_WORKTREES: join(root, 'worktrees'), STUB_AGENT: agent, STUB_SAW: join(root, 'saw'),
       CLAUDE_CONFIG_DIR: join(root, 'claude'), T3CODE_HOME: join(root, 't3home'), STUB_CHILDREN: JSON.stringify(listed),
+      PATH: `${join(root, 'bin')}${delimiter}${process.env.PATH}`,
       ...extra,
     };
-    const argv = [join(here, 'lane.mjs'), '--head', 'HEAD', '--scenario', 'probe', '--project', project, '--installed', '--out', join(root, 'out.json'), ...args];
+    const argv = [join(here, 'lane.mjs'), '--head', 'HEAD', '--scenario', 'probe', '--project', project, ...(installed ? ['--installed'] : []), '--out', join(root, 'out.json'), ...args];
     if (kill) {
       await killLauncher(argv, env);
     } else {
@@ -399,6 +409,55 @@ test('a lane with a non-Claude --provider reads its tool calls from T3 activity,
   assert.deepEqual(out.toolCalls, []);
   assert.equal(out.session, null);
   assert.equal(out.pendingQuestion, null);
+  assert.equal(out.revision.mode, 'installed');
+  assert.equal(out.revision.loader, 'installed');
+  assert.equal(out.revision.proven, false);
+  assert.equal(out.revision.provider, 'stub');
+});
+
+test('a --head lane with a non-Claude --provider refuses the exact-head claim before it starts a thread', async () => {
+  const { out } = await withProject([], 'true', { installed: false, args: ['--provider', 'codex'], exit: 1, starts: false });
+  assert.equal(out.thread, null);
+  assert.equal(out.marketplace, null);
+  assert.deepEqual(out.revision, { requestedSha: out.head.sha, mode: 'head', provider: 'codex', loader: 'unsupported', marker: null, proven: false, evidence: out.revision.evidence });
+  assert.match(out.revision.evidence, /codex/);
+  assert.match(out.error, /--installed/);
+});
+
+test('a --head lane whose project default resolves to a non-Claude provider fails as unproven after the run', async () => {
+  const { out } = await withProject([], 'true', { installed: false, exit: 1 });
+  assert.equal(out.status, 'failed');
+  assert.equal(out.thread.providerInstanceId, 'stub');
+  assert.equal(out.revision.loader, 'unsupported');
+  assert.equal(out.revision.provider, 'stub');
+  assert.equal(out.revision.proven, false);
+  assert.match(out.error, /--installed/);
+});
+
+test('a stamped bundle marker proves only the lane that stamped it', () => {
+  const root = mkdtempSync(join(tmpdir(), 'orbit-revision-test-'));
+  try {
+    const plugin = join(root, 'plugin');
+    mkdirSync(join(plugin, 'skills', 'rules'), { recursive: true });
+    writeFileSync(join(plugin, 'rules.md'), '# Rules\n');
+    writeFileSync(join(plugin, 'skills', 'rules', 'SKILL.md'), '---\nname: rules\n---\nbody\n');
+    const sha = 'a'.repeat(40);
+    const marker = bundleMarker(sha, '1a2b3c4d');
+    assert.equal(marker, 'orbit-lane-rev-aaaaaaaaaaaa-1a2b3c4d');
+    stampBundleMarker(plugin, marker);
+    const rules = readFileSync(join(plugin, 'rules.md'), 'utf8');
+    assert.ok(rules.startsWith('# Rules\n') && rules.includes(`<!-- ${marker} -->`), rules);
+    assert.ok(readFileSync(join(plugin, 'skills', 'rules', 'SKILL.md'), 'utf8').startsWith('---\nname: rules\n---\n'), 'frontmatter stays first');
+    const session = (name, text) => { const path = join(root, name); writeFileSync(path, JSON.stringify({ type: 'attachment', content: text }) + '\n'); return path; };
+    assert.deepEqual(verifyRevisionEvidence({ marker, session: session('ours.jsonl', rules) }), { proven: true, evidence: 'marker observed in lead session' });
+    assert.equal(verifyRevisionEvidence({ marker, session: session('other.jsonl', `<!-- ${bundleMarker(sha, '9f9f9f9f')} -->`) }).proven, false, "another lane's marker");
+    const runDirOnly = verifyRevisionEvidence({ marker, session: session('rundir.jsonl', `${tmpdir()}/orbit-lane-1a2b3c4d/plugin orbit@orbit-head-1a2b3c4d`) });
+    assert.deepEqual(runDirOnly, { proven: false, evidence: 'marker absent from lead session' });
+    assert.deepEqual(verifyRevisionEvidence({ marker, session: null }), { proven: false, evidence: 'no lead session file found to verify bundle marker' });
+    assert.equal(verifyRevisionEvidence({ marker, session: null, messages: [{ role: 'assistant', text: `saw ${marker}` }] }).evidence, 'marker observed in lead messages');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("a waiting non-Claude lead's pending question comes from t3_pending_request", async () => {
