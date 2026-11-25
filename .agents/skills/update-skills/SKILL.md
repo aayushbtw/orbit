@@ -1,4 +1,5 @@
 ---
+name: update-skills
 description: Update vendored skills in orbit from upstream, keeping local edits
 argument-hint: [skill name, or empty for all]
 ---
