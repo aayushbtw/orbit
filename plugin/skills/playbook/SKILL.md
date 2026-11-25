@@ -5,9 +5,9 @@ argument-hint: investigate | bug | feature | refactor | prototype | perf | hillc
 ---
 Task type: $ARGUMENTS
 
-Find the task type in **Playbooks** below, read `${CLAUDE_SKILL_DIR}/playbooks/<file>.md` whole and follow only it, with Principles and Stack rules. Paths in `playbooks/*.md` are relative to this skill's directory, `${CLAUDE_SKILL_DIR}`. Check and Land come from the Workflow block in the project's AGENTS.md (or CLAUDE.md). Each playbook opens with its stance and ends with its **Reply:**, the content the task reports.
+Find the task type in **Playbooks** below, read `playbooks/<file>.md` whole and follow only it, with Principles and Stack rules. That path and the paths in `playbooks/*.md` are relative to this skill's directory, the folder that holds this file. Check and Land come from the Workflow block in the project's AGENTS.md (or CLAUDE.md). Each playbook opens with its stance and ends with its **Reply:**, the content the task reports.
 
-Bundled skills live at `../<name>/SKILL.md` from this file, so put this file's absolute path in every `orbit:poteto-agent` prompt.
+Bundled skills live at `../<name>/SKILL.md` from this file, so put this file's real path (`realpath`, inside `<orbit-plugin>/skills/playbook/`) in every `orbit:poteto-agent` prompt. A symlinked skill path would send the delegate's `../../rules-shared.md` outside orbit's plugin folder.
 
 **Waivers.** A waiver the user gave the task (`no commit`, `no subagents`, `just testing`, `quick check`, `skip e2e`) stays active until the user lifts it. It outranks the default action of every nested playbook, gate, cleanup step and worktree continuation, **Ship by default** in Opening a PR included. Each waiver skips only its own actions:
 - `no commit` skips gitops commits, the PR and Shipping.

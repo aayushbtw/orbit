@@ -11,7 +11,7 @@ A coding agent can stop at code that compiles and never run it. Orbit uses T3's 
 
 ## What orbit does in T3
 
-- A model on any T3 provider can lead the thread. A lead in Claude Code gets orbit's hooks, its agents and the worktree guard natively. Another lead maps each Claude Code tool to its own, by what its tool list holds. To switch providers mid-task, run `/orbit:pause-safely`, switch, then run `/orbit:session-pickup`.
+- A model on any T3 provider can lead the thread. Every provider loads orbit through the `orbit` CLI, which registers orbit's skills directory and adds a marked rules block to the provider's user-wide instructions file. Each lead maps orbit's steps to its own tool list. To switch providers mid-task, run `/orbit:pause-safely`, switch, then run `/orbit:session-pickup`.
 - Work that needs its own checkout runs as a child thread with its own worktree. That covers parallel units, review adversaries and the verifier. A review seat on another model family, and work that runs while the lead keeps going, such as an autopilot build round, also get a child thread. Helpers that share your checkout stay nested in your thread.
 - Review panels and the verifier can use a second model family, such as Codex or Grok. Orbit uses only the providers you list in `/orbit:setup`.
 - Before a change lands, an agent that did not write it runs it the way a user would. It returns `PASS`, `PASS+NOTES` or `FAIL`, and only a pass lands. Green CI is not a pass.
@@ -31,7 +31,7 @@ orbit models
 orbit doctor
 ```
 
-`orbit setup` stages the bundle at `~/.config/orbit/current` and registers it with each T3 provider it detects, including Claude Code through its plugin marketplace. Open the Orbit start skill in a new T3 thread. See [Orbit CLI](docs/cli.md) for scriptable commands and model configuration.
+`orbit setup` stages the bundle at `~/.config/orbit/current` and registers its skills directory and user-wide instructions block with each T3 provider it detects. Open the Orbit start skill in a new T3 thread. See [Orbit CLI](docs/cli.md) for scriptable commands and model configuration.
 
 Then run `/orbit:setup` in a T3 thread. It lists missing tools, checks the install and the project, and asks which providers to use for review. It asks before it changes anything. Run `orbit update` to move to a newer release.
 
@@ -45,6 +45,8 @@ Then run `/orbit:setup` in a T3 thread. It lists missing tools, checks the insta
 | Stop or switch model | `/orbit:pause-safely`, then `/orbit:session-pickup` in a new thread |
 | Learn how or why code works | `/orbit:how` or `/orbit:why` |
 | Stop a repeated mistake | `/orbit:correct` |
+
+A host that links each skill flat, such as Claude Code, drops the `orbit:` prefix, so you run `/start`, `/ship` and so on.
 
 [Every command](docs/usage.md#every-command) lists the rest. [The guide](docs/guide/README.md) walks through one task from start to finish. [Orbit in T3 Code](docs/t3-code.md) explains how orbit loads and picks providers, and lists [each live result](docs/t3-code.md#what-is-verified).
 
@@ -70,8 +72,7 @@ Orbit started as [pstack](https://github.com/cursor/plugins/tree/main/pstack) by
 
 ## Maintain
 
-- Run orbit from source with `claude --plugin-dir ~/Projects/orbit/plugin`.
-- Run the Check line in AGENTS.md. On each push, CI runs it plus the hook, worktree audit, diagram drift, link, T3 grader and version tests in `tests/`.
+- Run orbit from source with `orbit link ~/Projects/orbit`.
+- Run the Check line in AGENTS.md. On each push, CI runs it plus the worktree audit, diagram drift, link, T3 grader and version tests in `tests/`.
 - Update vendored skills, listed in `skills.json`, with `/update-skills [name]`.
-- Allow `Read(~/.claude/plugins/**)` so `/orbit:interrogate` doesn't ask to read the plugin folder.
-- To release, bump `version` in `plugin/.claude-plugin/plugin.json`. CI fails a `plugin/` change without a higher version.
+- To release, bump `version` in `plugin/manifest.json`. CI fails a `plugin/` change without a higher version.

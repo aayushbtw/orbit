@@ -23,7 +23,7 @@ Every host registration points at `~/.config/orbit/current`, so upgrades and rol
 
 ## Register T3 providers
 
-Orbit includes adapters for Antigravity (`~/.gemini/config/skills.json`), Codex (`~/.codex/skills/orbit`), Agent Skills (`~/.agents/skills/orbit`), Claude Code, and Grok.
+Orbit includes adapters for Antigravity (`~/.gemini/config/skills.json`), Codex (`~/.codex/skills/orbit`), Agent Skills (`~/.agents/skills/orbit`), Claude Code (`~/.claude/skills/`), and Grok (`~/.grok/skills/`).
 
 ```bash
 orbit hosts
@@ -32,11 +32,11 @@ orbit hosts disable grok
 orbit hosts sync
 ```
 
-Claude Code loads orbit's rules from a SessionStart hook. Other hosts load them only when the lead opens orbit's `rules` skill. So `orbit hosts enable`, `orbit hosts sync` and `orbit setup` also write one marked block into each such host's user-wide instructions file. The block tells the lead to load the `rules` skill before its first reply. The files are `~/.codex/AGENTS.md` for Codex, `~/.grok/AGENTS.md` for Grok and `~/.gemini/config/AGENTS.md` for Antigravity. When `CODEX_HOME` or `GROK_HOME` is set, the Codex or Grok adapter uses that folder in place of `~/.codex` or `~/.grok`, for the instructions file, the Codex skills link and the Grok registry. The block sits between `<!-- orbit:rules:start -->` and `<!-- orbit:rules:end -->`, and Orbit CLI never changes text outside those markers. A symlinked file keeps its link, and the CLI writes its target. `orbit hosts disable` and `orbit uninstall` remove the block and the newline before it, so the file returns to its exact bytes. `orbit doctor` and `orbit hosts list` report a registered or stale host whose block is missing or edited, and `orbit doctor --fix` rewrites it.
+Claude Code and Grok each read one directory per skill, so their adapters create per-skill symlinks inside `~/.claude/skills/` and `~/.grok/skills/` pointing at `~/.config/orbit/current/plugin/skills/<name>`. Before linking, the adapter checks for non-orbit entries that collide with an orbit skill name and fails as `invalid` instead of overwriting them. On sync, it repoints outdated orbit links and prunes orbit links for skills the active bundle no longer ships.
 
-Grok copies a local plugin when it installs it, so the Grok adapter installs with `grok plugin install <dir> --trust`. When the copy's version or source no longer matches `~/.config/orbit/current/plugin`, the adapter reinstalls it, because `grok plugin update` skips local installs.
+Every host with a user-wide instructions file loads orbit's rules by opening the `rules` skill. `orbit hosts enable`, `orbit hosts sync`, and `orbit setup` write one marked block into that file to tell the lead to load the `rules` skill before its first reply. The files are `~/.claude/CLAUDE.md` for Claude Code, `~/.codex/AGENTS.md` for Codex, `~/.grok/AGENTS.md` for Grok, and `~/.gemini/config/AGENTS.md` for Antigravity. When `CODEX_HOME` or `GROK_HOME` is set, the Codex or Grok adapter uses that folder in place of `~/.codex` or `~/.grok` for both the skills directory and the instructions file. The block sits between `<!-- orbit:rules:start -->` and `<!-- orbit:rules:end -->`, and Orbit CLI never changes text outside those markers. A symlinked file keeps its link, and the CLI writes its target. `orbit hosts disable` and `orbit uninstall` remove the block and the newline before it, so the file returns to its exact bytes. `orbit doctor` and `orbit hosts list` report a registered or stale host whose block is missing or edited, and `orbit doctor --fix` rewrites it.
 
-Orbit CLI manages only installs it can find under `~/.config/orbit`. When Claude Code's `orbit` marketplace or Grok's `orbit` plugin points somewhere else, such as a local checkout you installed by hand, `orbit hosts` reports that host as `external`. Setup, `use`, `link`, `unlink`, `update`, `hosts sync`, `doctor --fix` and `uninstall` skip it and report it as skipped. `orbit doctor` counts it as healthy. An explicit `--host` or `orbit hosts enable` for that host fails with the external path. Remove that install with the host's own plugin command to let Orbit CLI manage the host.
+`orbit doctor` and `orbit hosts` also check for legacy plugin installs, specifically `orbit@*` in `~/.claude/plugins/installed_plugins.json` and `orbit` in `~/.grok/installed-plugins/registry.json`. When either is present, the host reports as `stale` and prints its uninstall command (`claude plugin uninstall orbit@orbit` or `grok plugin uninstall orbit`). Orbit CLI never runs either host CLI itself.
 
 ## Configure models per task
 

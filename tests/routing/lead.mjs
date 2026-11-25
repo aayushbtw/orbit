@@ -1,9 +1,10 @@
 import { spawn, execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { installOrbit, shadowedSkills, skillNames } from '../install-orbit.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, '../..');
@@ -144,6 +145,9 @@ export function createLeads({ host, model, provider, keep, timeoutMs, maxTurns, 
       try { execFileSync(c, ['--version'], { stdio: 'ignore' }); return true; } catch { return false; }
     });
     if (!t3) throw new Error(`no T3 CLI runs: tried T3CODE_CLI_PATH (${process.env.T3CODE_CLI_PATH ?? 'unset'}) and t3 on PATH`);
+  } else {
+    const shadowed = shadowedSkills(skillNames(pluginDir));
+    if (shadowed.length) console.error(`warning: ~/.claude/skills holds ${shadowed.join(', ')}, which Claude Code ranks above the run's project skills if it loads them`);
   }
 
   const t3Projects = new Set();
@@ -179,11 +183,13 @@ export function createLeads({ host, model, provider, keep, timeoutMs, maxTurns, 
     const errFd = openSync(join(outDir, 'stderr.log'), 'w');
     if (host === 'claude') {
       const project = scaffold(undefined, spec);
+      installOrbit(project, pluginDir);
+      appendFileSync(join(project, '.git', 'info', 'exclude'), '/.claude/skills/\n/CLAUDE.md\n');
       const settings = join(outDir, 'settings.json');
-      writeFileSync(settings, JSON.stringify({ enabledPlugins: { 'orbit@orbit': false }, hooks }, null, 2));
+      writeFileSync(settings, JSON.stringify({ hooks }, null, 2));
       const outFd = openSync(join(outDir, 'stream.jsonl'), 'w');
       const child = spawn('claude', [
-        '-p', '--model', model, '--plugin-dir', pluginDir, '--settings', settings, '--setting-sources', 'project,local',
+        '-p', '--model', model, '--settings', settings, '--setting-sources', 'project,local',
         '--permission-mode', 'bypassPermissions', '--max-turns', String(maxTurns), '--output-format', 'stream-json', '--verbose',
       ], { cwd: project, detached: true, stdio: ['pipe', outFd, errFd] });
       child.stdin.end(prompt);

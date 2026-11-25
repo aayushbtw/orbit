@@ -21,7 +21,7 @@ Setup checks orbit's prerequisites, so a missing tool shows up here and not mid-
 
 ### 1. Doctor
 
-Run `"${CLAUDE_SKILL_DIR}/scripts/doctor.sh"` as one Bash call from the project folder. The script writes no files, needs no network and always exits 0. With `ok orbit` in its output, also run `orbit doctor --json`, which writes nothing without `--fix`.
+Run `scripts/doctor.sh`, from this skill's directory, as one Bash call from the project folder. The script writes no files, needs no network and always exits 0. With `ok orbit` in its output, also run `orbit doctor --json`, which writes nothing without `--fix`.
 
 Relay the findings to the user nearly verbatim. Each missing tool comes with its install command. Keep going whatever is missing. The later steps use these findings:
 
@@ -39,7 +39,6 @@ From `orbit doctor --json`:
 - `installed: false`, or an `activeVersion` that differs from `version` while `linked` is false. Offer `orbit setup --yes`.
 - A host whose `status` is `stale` or `unregistered` while `detected` is true. Offer `orbit hosts sync`.
 - A host whose `status` is `invalid`. Report its `detail` and make no offer. Tell the user to fix that file by hand, so setup never overwrites it.
-- A host whose `status` is `external`. Say orbit there is managed outside the CLI and make no offer.
 - Any other entry in `issues`. Report it.
 
 When everything is current, say so and make no offer.

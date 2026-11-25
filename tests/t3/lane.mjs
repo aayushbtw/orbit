@@ -1,11 +1,12 @@
 import { spawn, execFileSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, rmdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { clash, deleteLaneBranches, isAncestor, laneBranches, listBranches, listWorktrees } from './branches.mjs';
+import { shadowedSkills, skillNames, withRules } from '../install-orbit.mjs';
 import { SCENARIOS } from './scenarios.mjs';
 import { bundleMarker, stampBundleMarker, verifyRevisionEvidence } from './revision.mjs';
 import { CLAUDE_HOME, claude, isClaude, pendingQuestions, readT3ActivityTree } from './sessions.mjs';
@@ -90,8 +91,8 @@ const timeoutMs = Number(opts.timeout) * 60_000;
 const wakeMs = opts.wake === undefined ? 0 : Number(opts.wake) * 60_000;
 const wakeCount = Number(opts.wakes ?? 1);
 const POLL_MS = Number(process.env.ORBIT_LANE_POLL_MS ?? 10_000);
-const marketplace = opts.installed ? null : `orbit-head-${id}`;
 const runDir = join(tmpdir(), `orbit-lane-${id}`);
+const headPlugin = opts.installed ? null : join(runDir, 'plugin');
 const title = `orbit lane ${slug} ${id}`;
 const branch = `orbit-lane/${slug}-${id}`;
 const sessionCtx = { message, since: LANE_START, home: CLAUDE_HOME };
@@ -99,7 +100,7 @@ const sessionCtx = { message, since: LANE_START, home: CLAUDE_HOME };
 const result = {
   scenario: slug ?? null, message: message ?? null,
   head: { ref: opts.head ?? null, sha: null }, project: null, laneCommit: null,
-  orbit: opts.installed ? 'installed' : 'head', marketplace: null, memoryDir,
+  orbit: opts.installed ? 'installed' : 'head', shadowed: null, memoryDir,
   exit: 1, status: 'error', reply: null, error: null, wake: null, wakes: [],
   pendingQuestion: null, thread: null, threads: [], messages: [],
   session: null, firstTurnInputTokens: null, activitySource: null, toolCalls: null, branches: null, kept: null,
@@ -141,7 +142,7 @@ try {
 
 const unsupportedHead = (provider, evidence) => {
   result.revision = { requestedSha: result.head.sha, mode: 'head', provider, loader: 'unsupported', marker: null, proven: false, evidence };
-  return `${evidence}. Exact-head isolation works only through Claude's per-lane plugin marketplace, so pass --installed to run against the installed orbit bundle instead`;
+  return `${evidence}. Exact-head isolation works only through the lane commit's Claude Code project skills, so pass --installed to run against the installed orbit bundle instead`;
 };
 if (!opts.installed && opts.provider && !isClaude(opts.provider)) {
   fail(unsupportedHead(opts.provider, `--head refuses --provider ${opts.provider}, which has no isolated loader for orbit at ${result.head.sha}`));
@@ -214,21 +215,16 @@ try {
 const project = result.project;
 const prerequisite = SCENARIOS[slug]?.prerequisite;
 
-const unregister = (name) => {
-  tryRun('claude', ['plugin', 'uninstall', `orbit@${name}`, '--scope', 'user']);
-  tryRun('claude', ['plugin', 'marketplace', 'remove', name]);
-};
-
 const removeRunDir = (dir) => rmSync(dir, { recursive: true, force: true });
 
 function reap() {
-  for (const m of JSON.parse(run('claude', ['plugin', 'marketplace', 'list', '--json']))) {
-    if (!m.name?.startsWith('orbit-head-') || !m.path) continue;
-    const pid = Number(tryRead(join(m.path, 'lane.pid')));
+  for (const name of readdirSync(tmpdir())) {
+    const dir = join(tmpdir(), name);
+    if (!/^orbit-lane-[0-9a-f]{8}$/.test(name) || dir === runDir || !existsSync(join(dir, 'lane.pid'))) continue;
+    const pid = Number(tryRead(join(dir, 'lane.pid')));
     if (pid && alive(pid)) continue;
-    unregister(m.name);
-    removeRunDir(m.path);
-    console.error(`reaped ${m.name}, left by a lane that is no longer running`);
+    removeRunDir(dir);
+    console.error(`reaped ${dir}, left by a lane that is no longer running`);
   }
 }
 
@@ -244,18 +240,12 @@ function buildLaneCommit() {
   try {
     run('git', ['-C', project, 'read-tree', base], { env });
     add('100644', '.claude/settings.local.json', json({ ...tracked('.claude/settings.local.json'), autoMemoryDirectory: memoryDir }));
-    if (marketplace) {
-      const settings = tracked('.claude/settings.json');
-      const user = JSON.parse(tryRead(join(CLAUDE_HOME, 'settings.json')) ?? '{}');
-      const enabledOrbits = [user, settings]
-        .flatMap((s) => Object.entries(s.enabledPlugins ?? {}))
-        .filter(([key, on]) => key.startsWith('orbit@') && on)
-        .map(([key]) => [key, false]);
-      settings.enabledPlugins = { ...settings.enabledPlugins, ...Object.fromEntries(enabledOrbits), [`orbit@${marketplace}`]: true };
-      add('100644', '.claude/settings.json', json(settings));
+    if (headPlugin) {
+      for (const name of skillNames(headPlugin)) add('120000', `.claude/skills/${name}`, join(headPlugin, 'skills', name));
+      add('100644', 'CLAUDE.md', withRules(tryRun('git', ['-C', project, 'show', `${base}:CLAUDE.md`], { stdio: ['pipe', 'pipe', 'ignore'] }) ?? ''));
     }
     const tree = run('git', ['-C', project, 'write-tree'], { env });
-    return run('git', ['-C', project, '-c', 'user.name=orbit lane', '-c', 'user.email=lane@orbit.invalid', 'commit-tree', tree, '-p', base, '-m', `orbit lane ${slug} ${id}${marketplace ? `: load orbit from ${marketplace}` : ''}`]);
+    return run('git', ['-C', project, '-c', 'user.name=orbit lane', '-c', 'user.email=lane@orbit.invalid', 'commit-tree', tree, '-p', base, '-m', `orbit lane ${slug} ${id}${headPlugin ? `: load orbit from ${headPlugin}` : ''}`]);
   } finally {
     rmSync(index, { force: true });
   }
@@ -318,12 +308,11 @@ function keep(state) {
   const left = {
     worktree: path ?? null,
     branch: (checkedOut ?? `refs/heads/${branch}`).replace(/^refs\/heads\//, ''),
-    marketplace: result.marketplace,
     runDir: existsSync(runDir) ? runDir : null,
   };
   result.kept = { ...left, rootBranch };
   const root = rootBranch ? ` The project root ${project} stays on ${left.branch}, so run git -C ${project} checkout ${rootBranch} once the thread ends.` : '';
-  console.error(`warning: after ${opts.timeout} minutes thread ${result.thread.link} is ${state}, not idle, so cleanup undid nothing and kept ${Object.values(left).filter(Boolean).join(', ')}. The next lane's reaper removes the marketplace once worker ${process.pid} is dead. Remove the worktree with git worktree remove and delete the branch by hand.${root}`);
+  console.error(`warning: after ${opts.timeout} minutes thread ${result.thread.link} is ${state}, not idle, so cleanup undid nothing and kept ${Object.values(left).filter(Boolean).join(', ')}. The next lane's reaper removes the run directory once worker ${process.pid} is dead. Remove the worktree with git worktree remove and delete the branch by hand.${root}`);
 }
 
 const undo = [];
@@ -438,25 +427,16 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
 }
 
 async function loadHead() {
+  await withLock(reap);
   undo.push(() => removeRunDir(runDir));
-  mkdirSync(join(runDir, '.claude-plugin'), { recursive: true });
+  mkdirSync(runDir, { recursive: true });
   writeFileSync(join(runDir, 'lane.pid'), String(process.pid));
   run('tar', ['-x', '-C', runDir], { input: execFileSync('git', ['-C', ORBIT, 'archive', result.head.sha, 'plugin'], { maxBuffer: 256 * 1024 * 1024 }) });
   const marker = bundleMarker(result.head.sha, id);
-  stampBundleMarker(join(runDir, 'plugin'), marker);
-  result.revision = { requestedSha: result.head.sha, mode: 'head', provider: opts.provider ?? null, loader: 'claude-marketplace', marker, proven: false, evidence: null };
-  const manifest = JSON.parse(run('git', ['-C', ORBIT, 'show', `${result.head.sha}:.claude-plugin/marketplace.json`]));
-  writeFileSync(join(runDir, '.claude-plugin', 'marketplace.json'), JSON.stringify({ ...manifest, name: marketplace }, null, 2) + '\n');
-
-  await withLock(() => {
-    reap();
-    undo.push(() => tryRun('claude', ['plugin', 'marketplace', 'remove', marketplace]));
-    run('claude', ['plugin', 'marketplace', 'add', runDir]);
-    result.marketplace = marketplace;
-    undo.push(() => tryRun('claude', ['plugin', 'uninstall', `orbit@${marketplace}`, '--scope', 'user']));
-    run('claude', ['plugin', 'install', `orbit@${marketplace}`, '--scope', 'user']);
-    run('claude', ['plugin', 'disable', `orbit@${marketplace}`, '--scope', 'user']);
-  });
+  stampBundleMarker(headPlugin, marker);
+  result.revision = { requestedSha: result.head.sha, mode: 'head', provider: opts.provider ?? null, loader: 'claude-project-skills', marker, proven: false, evidence: null };
+  result.shadowed = shadowedSkills(skillNames(headPlugin), join(CLAUDE_HOME, 'skills'));
+  if (result.shadowed.length) console.error(`warning: ${join(CLAUDE_HOME, 'skills')} holds ${result.shadowed.join(', ')}, which Claude Code ranks above the head's project skills, so a Claude lead runs those instead`);
 }
 
 function startThread(args) {

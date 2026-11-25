@@ -13,9 +13,8 @@ import {
   rmSync,
   symlinkSync,
   unlinkSync,
-  writeFileSync,
 } from 'node:fs';
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { isAbsolute, join, relative, resolve } from 'node:path';
 import { orbitPaths, readOptional } from './paths.js';
 
 const SEMVER_RE = /^(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z0-9.-]+))?$/;
@@ -80,7 +79,7 @@ export function semverCompare(a: string, b: string): number {
 
 /** Read and validate an Orbit plugin manifest version from pluginDir. */
 export function readPluginVersion(pluginDir: string): string {
-  const manifestPath = join(pluginDir, '.claude-plugin', 'plugin.json');
+  const manifestPath = join(pluginDir, 'manifest.json');
   const raw = readOptional(manifestPath);
   if (raw === undefined) throw new Error(`Missing plugin manifest at ${manifestPath}.`);
   const parsed = JSON.parse(raw) as { name?: string; version?: string };
@@ -88,28 +87,6 @@ export function readPluginVersion(pluginDir: string): string {
     throw new Error(`Invalid Orbit plugin manifest at ${manifestPath}.`);
   }
   return parsed.version;
-}
-
-function writeMarketplaceManifest(releaseRoot: string): void {
-  const manifestPath = join(releaseRoot, '.claude-plugin', 'marketplace.json');
-  if (existsSync(manifestPath)) return;
-  mkdirSync(dirname(manifestPath), { recursive: true });
-  writeFileSync(
-    manifestPath,
-    `${JSON.stringify({
-      name: 'orbit',
-      owner: { name: 'Aayush', url: 'https://github.com/aayushbtw' },
-      description: 'Name the goal. Orbit ships it.',
-      plugins: [
-        {
-          name: 'orbit',
-          source: './plugin',
-          description: 'Name the goal. Orbit ships it.',
-        },
-      ],
-    }, null, 2)}\n`,
-    'utf8',
-  );
 }
 
 function isUnderDir(childPath: string, parentDir: string): boolean {
@@ -122,16 +99,12 @@ export function stageRelease(bundleDir: string, home: string, version: string): 
   const paths = orbitPaths(home);
   const releaseRoot = paths.releaseDir(version);
   const pluginDest = paths.releasePluginDir(version);
-  if (existsSync(join(pluginDest, 'skills', 'start', 'SKILL.md'))) {
-    writeMarketplaceManifest(releaseRoot);
-    return releaseRoot;
-  }
+  if (existsSync(join(pluginDest, 'skills', 'start', 'SKILL.md'))) return releaseRoot;
 
   mkdirSync(paths.releasesDir, { recursive: true });
   const stage = mkdtempSync(join(paths.releasesDir, '.stage-'));
   try {
     cpSync(bundleDir, join(stage, 'plugin'), { recursive: true });
-    writeMarketplaceManifest(stage);
     if (existsSync(releaseRoot) && !existsSync(join(pluginDest, 'skills', 'start', 'SKILL.md'))) {
       rmSync(releaseRoot, { recursive: true, force: true });
     }
@@ -217,7 +190,7 @@ export function inspectBundle(home: string, packagedVersion: string): BundleInsp
   );
 
   let activeVersion: string | null = null;
-  if (existsSync(join(paths.currentPluginDir, '.claude-plugin', 'plugin.json'))) {
+  if (existsSync(join(paths.currentPluginDir, 'manifest.json'))) {
     try {
       activeVersion = readPluginVersion(paths.currentPluginDir);
     } catch {

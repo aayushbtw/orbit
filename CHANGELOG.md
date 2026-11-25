@@ -4,6 +4,21 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.85.0
+
+### Distribution and CLI
+
+- Removed the Claude Code plugin, marketplace (`.claude-plugin/`), `plugin/hooks/`, and `tests/hooks/`. Every T3 provider now loads Orbit through one `orbit` CLI path.
+- Replaced `plugin/.claude-plugin/plugin.json` with `plugin/manifest.json`.
+- Unified `orbit` CLI host registration for Claude Code (`~/.claude/skills/` and `~/.claude/CLAUDE.md`) and Grok (`~/.grok/skills/` and `~/.grok/AGENTS.md`) using per-skill symlinks, preflight collision checks, dangling-link pruning, and legacy plugin detection warnings that print the uninstall command without running either host CLI.
+- A host that links each skill flat, such as Claude Code, runs orbit's skills without the `orbit:` prefix, as `/start`, `/ship` and so on.
+
+### Plugin and tests
+
+- Removed `${CLAUDE_PLUGIN_ROOT}` and `${CLAUDE_SKILL_DIR}` from `plugin/` in favor of relative paths, `realpath` resolution in the `rules` skill, and brief-provided plugin paths for agents.
+- Migrated eval and test harnesses off `--plugin-dir` and Claude marketplace staging.
+- A `--head` T3 lane loads orbit as project skills in the lane commit, so its `revision.loader` is `claude-project-skills`. The lane still stamps its marker into `rules.md` and `skills/rules/SKILL.md`, which the lead loads through the rules block in `CLAUDE.md`.
+
 ## 0.84.0
 
 ### Playbook

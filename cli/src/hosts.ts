@@ -1,11 +1,10 @@
-import { execFileSync } from 'node:child_process';
 import {
   accessSync,
   constants,
   existsSync,
   lstatSync,
   mkdirSync,
-  readFileSync,
+  readdirSync,
   readlinkSync,
   realpathSync,
   renameSync,
@@ -14,15 +13,14 @@ import {
   symlinkSync,
   unlinkSync,
 } from 'node:fs';
-import { delimiter, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { delimiter, dirname, isAbsolute, join, resolve } from 'node:path';
 import * as antigravity from './antigravity.js';
-import { orbitPaths, readOptional, writeFileAtomic } from './paths.js';
+import { readOptional, writeFileAtomic } from './paths.js';
 
 export const HOST_IDS = ['antigravity', 'codex', 'agents', 'claude', 'grok'] as const;
 export type HostId = (typeof HOST_IDS)[number];
 
-/** `external` marks an orbit install the user manages outside ~/.config/orbit, which the CLI never touches. */
-export type HostStatus = 'registered' | 'unregistered' | 'missing-file' | 'stale' | 'invalid' | 'external';
+export type HostStatus = 'registered' | 'unregistered' | 'missing-file' | 'stale' | 'invalid';
 
 export interface HostInspection {
   host: HostId;
@@ -38,30 +36,25 @@ export interface HostInspection {
 
 export interface HostApplyResult {
   host: HostId;
-  action: 'registered' | 'updated' | 'unchanged' | 'manual' | 'skipped';
+  action: 'registered' | 'updated' | 'unchanged';
   path: string;
   detail: string;
+  /** A command the user still has to run, such as uninstalling a legacy orbit plugin. */
   command?: string;
 }
 
 export interface HostRemoveResult {
   host: HostId;
-  action: 'removed' | 'unchanged' | 'skipped' | 'manual';
+  action: 'removed' | 'unchanged' | 'skipped';
   path: string;
   detail: string;
   command?: string;
 }
 
-export type HostExecRunner = (cmd: string, args: string[], env: NodeJS.ProcessEnv) => string;
-
 export interface HostContext {
   home: string;
   env?: NodeJS.ProcessEnv;
-  pluginDir: string;
   skillsDir: string;
-  currentLink: string;
-  version: string;
-  exec?: HostExecRunner;
 }
 
 const DISPLAY_NAMES: Record<HostId, string> = {
@@ -80,10 +73,10 @@ function grokDir(ctx: HostContext): string {
   return (ctx.env ?? process.env).GROK_HOME || join(ctx.home, '.grok');
 }
 
-/** Each host's user-wide instructions file, which its lead reads on every session. A host that runs orbit's SessionStart hook has none. */
 const RULES_FILES: Partial<Record<HostId, (ctx: HostContext) => string>> = {
   antigravity: (ctx) => join(ctx.home, '.gemini', 'config', 'AGENTS.md'),
   codex: (ctx) => join(codexDir(ctx), 'AGENTS.md'),
+  claude: (ctx) => join(ctx.home, '.claude', 'CLAUDE.md'),
   grok: (ctx) => join(grokDir(ctx), 'AGENTS.md'),
 };
 
@@ -127,9 +120,6 @@ function removeRulesBlock(path: string): boolean {
   return true;
 }
 
-const defaultExec: HostExecRunner = (cmd, args, env) =>
-  execFileSync(cmd, args, { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-
 /** Check whether a binary exists and is executable on PATH without spawning a shell. */
 export function isExecutableOnPath(binary: string, envPath?: string): boolean {
   if (!envPath) return false;
@@ -161,104 +151,73 @@ function safeRealpath(target: string): string {
   }
 }
 
-function isWithin(child: string, parent: string): boolean {
-  const rel = relative(parent, child);
-  return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-function isOrbitManaged(location: string, home: string): boolean {
-  const { orbitDir } = orbitPaths(home);
-  return isWithin(resolve(location), orbitDir) || isWithin(safeRealpath(location), safeRealpath(orbitDir));
+function readJsonObject(path: string): Record<string, unknown> | undefined {
+  const raw = readOptional(path);
+  if (raw === undefined) return undefined;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return isPlainObject(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
-function externalInspection(host: 'claude' | 'grok', detected: boolean, location: string): HostInspection {
-  return {
-    host,
-    displayName: DISPLAY_NAMES[host],
-    detected,
-    status: 'external',
-    path: location,
-    detail: `externally managed at ${location} (Orbit CLI leaves it alone)`,
-  };
-}
-
-function externalError(inspection: HostInspection): Error {
-  return new Error(
-    `${inspection.displayName} loads orbit from ${inspection.path}, which Orbit CLI does not manage. `
-    + `Orbit CLI leaves it alone. Remove that install with ${inspection.host}'s own plugin command to let Orbit CLI register ${inspection.host}.`,
-  );
+function isOrbitManifest(path: string): boolean {
+  return readJsonObject(path)?.name === 'orbit';
 }
 
 function looksLikeOrbitSkills(targetPath: string): boolean {
   const posix = targetPath.replace(/\\/g, '/');
   if (/(?:^|\/)\.config\/orbit\/(?:current|releases\/[^/]+)\/plugin\/skills\/?$/.test(posix)) return true;
   if (/(?:^|\/)\.claude\/plugins\/(?:cache|marketplaces)\/orbit(?:\/.*)?\/skills\/?$/.test(posix)) return true;
-  const manifestPath = join(safeRealpath(targetPath), '..', '.claude-plugin', 'plugin.json');
+  const pluginDir = join(safeRealpath(targetPath), '..');
+  return isOrbitManifest(join(pluginDir, 'manifest.json')) || isOrbitManifest(join(pluginDir, '.claude-plugin', 'plugin.json'));
+}
+
+type LinkState = { kind: 'missing' } | { kind: 'other' } | { kind: 'link'; raw: string; target: string };
+
+function readLink(path: string): LinkState {
   try {
-    const parsed = JSON.parse(readFileSync(manifestPath, 'utf8')) as { name?: string };
-    return parsed.name === 'orbit';
-  } catch {
-    return false;
+    if (!lstatSync(path).isSymbolicLink()) return { kind: 'other' };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return { kind: 'missing' };
+    throw error;
+  }
+  const raw = readlinkSync(path);
+  return { kind: 'link', raw, target: isAbsolute(raw) ? raw : resolve(dirname(path), raw) };
+}
+
+function replaceSymlink(target: string, linkPath: string): void {
+  const tempLink = join(dirname(linkPath), `.orbit-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+  try {
+    symlinkSync(target, tempLink);
+    renameSync(tempLink, linkPath);
+  } catch (error) {
+    rmSync(tempLink, { force: true });
+    throw error;
   }
 }
 
 function inspectSymlinkHost(host: 'codex' | 'agents', linkPath: string, detected: boolean, ctx: HostContext): HostInspection {
-  const displayName = DISPLAY_NAMES[host];
-  try {
-    const stat = lstatSync(linkPath);
-    if (!stat.isSymbolicLink()) {
-      return {
-        host,
-        displayName,
-        detected,
-        status: 'invalid',
-        path: linkPath,
-        detail: `non-symlink entry exists at ${linkPath}`,
-      };
-    }
-    const rawTarget = readlinkSync(linkPath);
-    const resolvedTarget = isAbsolute(rawTarget) ? rawTarget : resolve(dirname(linkPath), rawTarget);
-    if (resolvedTarget === ctx.skillsDir || safeRealpath(linkPath) === safeRealpath(ctx.skillsDir)) {
-      return {
-        host,
-        displayName,
-        detected,
-        status: 'registered',
-        path: linkPath,
-        detail: `registered (${linkPath} -> ${rawTarget})`,
-      };
-    }
-    if (looksLikeOrbitSkills(resolvedTarget)) {
-      return {
-        host,
-        displayName,
-        detected,
-        status: 'stale',
-        path: linkPath,
-        stalePaths: [rawTarget],
-        detail: `stale (${rawTarget} -> ${ctx.skillsDir})`,
-      };
-    }
-    return {
-      host,
-      displayName,
-      detected,
-      status: 'invalid',
-      path: linkPath,
-      detail: `symlink points to non-orbit directory (${rawTarget})`,
-    };
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return {
-        host,
-        displayName,
-        detected,
-        status: 'unregistered',
-        path: linkPath,
-        detail: `not registered (${linkPath} missing)`,
-      };
-    }
-    throw error;
+  const base = { host, displayName: DISPLAY_NAMES[host], detected, path: linkPath };
+  const link = readLink(linkPath);
+  switch (link.kind) {
+    case 'missing':
+      return { ...base, status: 'unregistered', detail: `not registered (${linkPath} missing)` };
+    case 'other':
+      return { ...base, status: 'invalid', detail: `non-symlink entry exists at ${linkPath}` };
+    case 'link':
+      if (link.target === ctx.skillsDir || safeRealpath(linkPath) === safeRealpath(ctx.skillsDir)) {
+        return { ...base, status: 'registered', detail: `registered (${linkPath} -> ${link.raw})` };
+      }
+      if (looksLikeOrbitSkills(link.target)) {
+        return { ...base, status: 'stale', stalePaths: [link.raw], detail: `stale (${link.raw} -> ${ctx.skillsDir})` };
+      }
+      return { ...base, status: 'invalid', detail: `symlink points to non-orbit directory (${link.raw})` };
   }
 }
 
@@ -271,20 +230,9 @@ function applySymlinkHost(host: 'codex' | 'agents', linkPath: string, detected: 
     return { host, action: 'unchanged', path: linkPath, detail: current.detail };
   }
   mkdirSync(dirname(linkPath), { recursive: true });
-  const tempLink = join(dirname(linkPath), `.orbit-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`);
-  try {
-    symlinkSync(ctx.skillsDir, tempLink);
-    renameSync(tempLink, linkPath);
-  } catch (error) {
-    rmSync(tempLink, { force: true });
-    throw error;
-  }
-  return {
-    host,
-    action: current.status === 'stale' ? 'updated' : 'registered',
-    path: linkPath,
-    detail: `${current.status === 'stale' ? 'updated' : 'registered'} (${linkPath} -> ${ctx.skillsDir})`,
-  };
+  replaceSymlink(ctx.skillsDir, linkPath);
+  const action = current.status === 'stale' ? 'updated' : 'registered';
+  return { host, action, path: linkPath, detail: `${action} (${linkPath} -> ${ctx.skillsDir})` };
 }
 
 function removeSymlinkHost(host: 'codex' | 'agents', linkPath: string, detected: boolean, ctx: HostContext): HostRemoveResult {
@@ -299,290 +247,172 @@ function removeSymlinkHost(host: 'codex' | 'agents', linkPath: string, detected:
   return { host, action: 'removed', path: linkPath, detail: `removed symlink ${linkPath}` };
 }
 
-function activeBundleVersion(ctx: HostContext): string {
-  const raw = readOptional(join(ctx.pluginDir, '.claude-plugin', 'plugin.json'));
-  return (raw ? (JSON.parse(raw) as { version?: string }).version : undefined) ?? ctx.version;
+type SkillDirHost = 'claude' | 'grok';
+
+const SKILL_DIR_HOSTS: Record<SkillDirHost, {
+  targetDir: (ctx: HostContext) => string;
+  detected: (ctx: HostContext) => boolean;
+  hasLegacyPlugin: (ctx: HostContext) => boolean;
+  legacyUninstall: string;
+}> = {
+  claude: {
+    targetDir: (ctx) => join(ctx.home, '.claude', 'skills'),
+    detected: (ctx) => existsSync(join(ctx.home, '.claude')) || isExecutableOnPath('claude', (ctx.env ?? process.env).PATH),
+    hasLegacyPlugin: (ctx) => {
+      const plugins = readJsonObject(join(ctx.home, '.claude', 'plugins', 'installed_plugins.json'))?.plugins;
+      return isPlainObject(plugins) && Object.keys(plugins).some((key) => key.startsWith('orbit@'));
+    },
+    legacyUninstall: 'claude plugin uninstall orbit@orbit',
+  },
+  grok: {
+    targetDir: (ctx) => join(grokDir(ctx), 'skills'),
+    detected: (ctx) => existsSync(grokDir(ctx)) || isExecutableOnPath('grok', (ctx.env ?? process.env).PATH),
+    hasLegacyPlugin: (ctx) => {
+      const repos = readJsonObject(join(grokDir(ctx), 'installed-plugins', 'registry.json'))?.repos;
+      return isPlainObject(repos)
+        && Object.values(repos).some((repo) => isPlainObject(repo) && isPlainObject(repo.plugins) && 'orbit' in repo.plugins);
+    },
+    legacyUninstall: 'grok plugin uninstall orbit',
+  },
+};
+
+type SkillEntry =
+  | { kind: 'linked'; name: string }
+  | { kind: 'missing'; name: string }
+  | { kind: 'repoint'; name: string }
+  | { kind: 'foreign'; name: string; path: string };
+
+interface SkillDirScan {
+  targetDir: string;
+  detected: boolean;
+  entries: SkillEntry[];
+  obsolete: string[];
+  legacyUninstall?: string;
 }
 
-function inspectClaude(ctx: HostContext): HostInspection {
-  const env = ctx.env ?? process.env;
-  const claudeDir = join(ctx.home, '.claude');
-  const pluginsFile = join(claudeDir, 'plugins', 'installed_plugins.json');
-  const marketplacesFile = join(claudeDir, 'plugins', 'known_marketplaces.json');
-  const detected = existsSync(claudeDir) || isExecutableOnPath('claude', env.PATH);
-
-  let markets: Record<string, { installLocation?: string }> = {};
-  const rawMarkets = readOptional(marketplacesFile);
-  if (rawMarkets !== undefined) {
-    try {
-      markets = JSON.parse(rawMarkets) as Record<string, { installLocation?: string }>;
-    } catch {}
-  }
-  const externalLocation = (marketName: string) => {
-    const location = markets[marketName]?.installLocation;
-    return location && !isOrbitManaged(location, ctx.home) ? location : undefined;
-  };
-
-  const rawPlugins = readOptional(pluginsFile);
-  if (rawPlugins === undefined) {
-    const location = externalLocation('orbit');
-    if (location) return externalInspection('claude', detected, location);
-    return {
-      host: 'claude',
-      displayName: DISPLAY_NAMES.claude,
-      detected,
-      status: 'missing-file',
-      path: pluginsFile,
-      detail: `not registered (${pluginsFile} missing)`,
-    };
-  }
-  let parsedPlugins: { plugins?: Record<string, Array<{ scope?: string; version?: string; installPath?: string }> | { scope?: string; version?: string; installPath?: string }> };
+function listDir(dir: string): string[] {
   try {
-    parsedPlugins = JSON.parse(rawPlugins);
-  } catch {
-    return {
-      host: 'claude',
-      displayName: DISPLAY_NAMES.claude,
-      detected,
-      status: 'invalid',
-      path: pluginsFile,
-      detail: `invalid JSON in ${pluginsFile}`,
-    };
+    return readdirSync(dir).sort();
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
+    throw error;
   }
+}
 
-  const keys = Object.keys(parsedPlugins.plugins ?? {}).filter((k) => k.startsWith('orbit@'));
-  const key = keys.find((k) => !k.startsWith('orbit@orbit-head-')) ?? keys[0];
-  const marketName = key ? key.slice('orbit@'.length) : 'orbit';
-  const external = externalLocation(marketName) ?? externalLocation('orbit');
-  if (external) return externalInspection('claude', detected, external);
-  if (!key) {
-    return {
-      host: 'claude',
-      displayName: DISPLAY_NAMES.claude,
-      detected,
-      status: 'unregistered',
-      path: pluginsFile,
-      detail: `not registered (no orbit plugin in ${pluginsFile})`,
-    };
-  }
+function orbitSkillNames(skillsDir: string): string[] {
+  return listDir(skillsDir).filter((name) => existsSync(join(skillsDir, name, 'SKILL.md')));
+}
 
-  const rawEntry = parsedPlugins.plugins?.[key];
-  const record = Array.isArray(rawEntry) ? (rawEntry.find((r) => r.scope === 'user') ?? rawEntry[0]) : rawEntry;
-  const recordVersion = record?.version;
-  const marketLocation = markets[marketName]?.installLocation;
+function isOrbitSkillLink(target: string, ctx: HostContext): boolean {
+  return dirname(target) === resolve(ctx.skillsDir) || looksLikeOrbitSkills(dirname(target));
+}
 
-  const activeVersion = activeBundleVersion(ctx);
+function orbitLinks(targetDir: string, ctx: HostContext): string[] {
+  return listDir(targetDir).filter((name) => {
+    const link = readLink(join(targetDir, name));
+    return link.kind === 'link' && isOrbitSkillLink(link.target, ctx);
+  });
+}
 
-  if (recordVersion === activeVersion) {
-    return {
-      host: 'claude',
-      displayName: DISPLAY_NAMES.claude,
-      detected,
-      status: 'registered',
-      path: pluginsFile,
-      detail: `registered (${key} ${recordVersion}${marketLocation ? ` via ${marketLocation}` : ''})`,
-    };
-  }
-
+function scanSkillDir(host: SkillDirHost, ctx: HostContext): SkillDirScan {
+  const spec = SKILL_DIR_HOSTS[host];
+  const targetDir = spec.targetDir(ctx);
+  const skills = orbitSkillNames(ctx.skillsDir);
+  const entries = skills.map((name): SkillEntry => {
+    const path = join(targetDir, name);
+    const link = readLink(path);
+    if (link.kind === 'missing') return { kind: 'missing', name };
+    if (link.kind === 'link' && link.target === join(resolve(ctx.skillsDir), name)) return { kind: 'linked', name };
+    if (link.kind === 'link' && isOrbitSkillLink(link.target, ctx)) return { kind: 'repoint', name };
+    return { kind: 'foreign', name, path };
+  });
+  const shipped = new Set(skills);
   return {
-    host: 'claude',
-    displayName: DISPLAY_NAMES.claude,
-    detected,
+    targetDir,
+    detected: spec.detected(ctx),
+    entries,
+    obsolete: orbitLinks(targetDir, ctx).filter((name) => !shipped.has(name)),
+    ...(spec.hasLegacyPlugin(ctx) ? { legacyUninstall: spec.legacyUninstall } : {}),
+  };
+}
+
+function inspectScan(host: SkillDirHost, scan: SkillDirScan): HostInspection {
+  const { targetDir, entries, obsolete, legacyUninstall } = scan;
+  const base = { host, displayName: DISPLAY_NAMES[host], detected: scan.detected, path: targetDir };
+  const legacy = legacyUninstall ? `; legacy orbit plugin still installed, run: ${legacyUninstall}` : '';
+  const foreign = entries.flatMap((entry) => (entry.kind === 'foreign' ? [entry.path] : []));
+  if (foreign.length > 0) {
+    return { ...base, status: 'invalid', detail: `non-orbit entries block orbit skills: ${foreign.join(', ')}${legacy}` };
+  }
+  const linked = entries.filter((entry) => entry.kind === 'linked').length;
+  const repoint = entries.flatMap((entry) => (entry.kind === 'repoint' ? [join(targetDir, entry.name)] : []));
+  const stalePaths = [...repoint, ...obsolete.map((name) => join(targetDir, name))];
+  if (stalePaths.length === 0 && linked === entries.length && linked > 0 && !legacyUninstall) {
+    return { ...base, status: 'registered', detail: `registered (${linked} skills linked in ${targetDir})` };
+  }
+  if (stalePaths.length === 0 && linked === 0 && !legacyUninstall) {
+    return { ...base, status: 'unregistered', detail: `not registered (no orbit skills in ${targetDir})` };
+  }
+  return {
+    ...base,
     status: 'stale',
-    path: pluginsFile,
-    stalePaths: [record?.installPath ?? `${key}@${recordVersion ?? 'unknown'}`],
-    detail: `stale (${key} record ${recordVersion ?? 'unknown'}, bundle ${activeVersion})`,
+    ...(stalePaths.length > 0 ? { stalePaths } : {}),
+    detail: `stale (${linked}/${entries.length} skills linked in ${targetDir}${stalePaths.length ? `, ${stalePaths.length} outdated` : ''})${legacy}`,
   };
 }
 
-function applyClaude(ctx: HostContext): HostApplyResult {
-  const env = ctx.env ?? process.env;
-  const exec = ctx.exec ?? defaultExec;
-  const current = inspectClaude(ctx);
-  if (current.status === 'invalid') throw new Error(current.detail);
-  if (current.status === 'external') throw externalError(current);
-  if (current.status === 'registered') {
-    return { host: 'claude', action: 'unchanged', path: current.path, detail: current.detail };
-  }
-
-  const manualCmd = `claude plugin marketplace add ${ctx.currentLink} && claude plugin install orbit@orbit`;
-  if (!isExecutableOnPath('claude', env.PATH)) {
-    return {
-      host: 'claude',
-      action: 'manual',
-      path: current.path,
-      command: manualCmd,
-      detail: `claude CLI not on PATH; run: ${manualCmd}`,
-    };
-  }
-
-  const marketsFile = join(ctx.home, '.claude', 'plugins', 'known_marketplaces.json');
-  let orbitLocation: string | undefined;
-  const rawMarkets = readOptional(marketsFile);
-  if (rawMarkets) {
-    try {
-      const parsed = JSON.parse(rawMarkets) as Record<string, { installLocation?: string }>;
-      orbitLocation = parsed.orbit?.installLocation;
-    } catch {}
-  }
-
-  if (orbitLocation && safeRealpath(orbitLocation) !== safeRealpath(ctx.currentLink)) {
-    exec('claude', ['plugin', 'marketplace', 'remove', 'orbit'], env);
-    exec('claude', ['plugin', 'marketplace', 'add', ctx.currentLink], env);
-  } else if (!orbitLocation) {
-    exec('claude', ['plugin', 'marketplace', 'add', ctx.currentLink], env);
-  } else {
-    exec('claude', ['plugin', 'marketplace', 'update', 'orbit'], env);
-  }
-
-  if (current.status === 'stale') {
-    exec('claude', ['plugin', 'update', 'orbit@orbit'], env);
-    return { host: 'claude', action: 'updated', path: current.path, detail: `updated orbit@orbit from ${ctx.currentLink}` };
-  }
-  exec('claude', ['plugin', 'install', 'orbit@orbit'], env);
-  return { host: 'claude', action: 'registered', path: current.path, detail: `installed orbit@orbit from ${ctx.currentLink}` };
+function inspectSkillDirHost(host: SkillDirHost, ctx: HostContext): HostInspection {
+  return inspectScan(host, scanSkillDir(host, ctx));
 }
 
-function removeClaude(ctx: HostContext): HostRemoveResult {
-  const env = ctx.env ?? process.env;
-  const exec = ctx.exec ?? defaultExec;
-  const current = inspectClaude(ctx);
-  if (current.status === 'unregistered' || current.status === 'missing-file') {
-    return { host: 'claude', action: 'unchanged', path: current.path, detail: 'not registered' };
+function applySkillDirHost(host: SkillDirHost, ctx: HostContext): HostApplyResult {
+  const scan = scanSkillDir(host, ctx);
+  const current = inspectScan(host, scan);
+  if (current.status === 'invalid') {
+    throw new Error(`${DISPLAY_NAMES[host]} skills are blocked: ${current.detail}`);
   }
-  if (current.status === 'external') {
-    return { host: 'claude', action: 'skipped', path: current.path, detail: current.detail };
-  }
-  const cmd = 'claude plugin uninstall orbit@orbit';
-  if (!isExecutableOnPath('claude', env.PATH)) {
-    return { host: 'claude', action: 'manual', path: current.path, command: cmd, detail: `claude CLI not on PATH; run: ${cmd}` };
-  }
-  exec('claude', ['plugin', 'uninstall', 'orbit@orbit'], env);
-  return { host: 'claude', action: 'removed', path: current.path, detail: 'uninstalled orbit@orbit' };
-}
+  const toLink = scan.entries.filter((entry) => entry.kind === 'missing' || entry.kind === 'repoint');
+  if (toLink.length > 0) mkdirSync(scan.targetDir, { recursive: true });
+  for (const { name } of toLink) replaceSymlink(join(ctx.skillsDir, name), join(scan.targetDir, name));
+  for (const name of scan.obsolete) unlinkSync(join(scan.targetDir, name));
 
-function inspectGrok(ctx: HostContext): HostInspection {
-  const env = ctx.env ?? process.env;
-  const registryPath = join(grokDir(ctx), 'installed-plugins', 'registry.json');
-  const detected = existsSync(grokDir(ctx)) || isExecutableOnPath('grok', env.PATH);
-
-  const raw = readOptional(registryPath);
-  if (raw === undefined) {
-    return {
-      host: 'grok',
-      displayName: DISPLAY_NAMES.grok,
-      detected,
-      status: 'missing-file',
-      path: registryPath,
-      detail: `not registered (${registryPath} missing)`,
-    };
-  }
-
-  let parsed: Record<string, unknown>;
-  try {
-    parsed = JSON.parse(raw) as Record<string, unknown>;
-  } catch {
-    return {
-      host: 'grok',
-      displayName: DISPLAY_NAMES.grok,
-      detected,
-      status: 'invalid',
-      path: registryPath,
-      detail: `invalid JSON in ${registryPath}`,
-    };
-  }
-
-  type GrokRepo = { kind?: { source_path?: string }; path?: string; plugins?: Record<string, { version?: string }> };
-  const repos = (parsed.repos && typeof parsed.repos === 'object' ? parsed.repos : {}) as Record<string, GrokRepo>;
-  const hit = Object.entries(repos).find(([, repo]) => repo?.plugins?.orbit);
-  if (!hit) {
-    return {
-      host: 'grok',
-      displayName: DISPLAY_NAMES.grok,
-      detected,
-      status: 'unregistered',
-      path: registryPath,
-      detail: `not registered (orbit absent from ${registryPath})`,
-    };
-  }
-  // Grok copies a local plugin at install time, so the copy goes stale when the source moves or its version changes.
-  const [repoKey, repo] = hit;
-  const source = repo.kind?.source_path;
-  if (!source || !isOrbitManaged(source, ctx.home)) {
-    return externalInspection('grok', detected, source ?? repo.path ?? repoKey);
-  }
-  const installedVersion = repo.plugins?.orbit?.version;
-  const activeVersion = activeBundleVersion(ctx);
-  const sameSource = resolve(source) === resolve(ctx.pluginDir) || safeRealpath(source) === safeRealpath(ctx.pluginDir);
-  if (sameSource && installedVersion === activeVersion) {
-    return {
-      host: 'grok',
-      displayName: DISPLAY_NAMES.grok,
-      detected,
-      status: 'registered',
-      path: registryPath,
-      detail: `registered (orbit ${installedVersion} from ${source})`,
-    };
-  }
+  const hadOrbit = scan.obsolete.length > 0 || scan.entries.some((entry) => entry.kind === 'linked' || entry.kind === 'repoint');
+  const changed = toLink.length + scan.obsolete.length > 0;
+  const action = !changed ? 'unchanged' : hadOrbit ? 'updated' : 'registered';
+  const summary = changed
+    ? `${action} (linked ${toLink.length}, pruned ${scan.obsolete.length} orbit skills in ${scan.targetDir})`
+    : `registered (${scan.entries.length} skills linked in ${scan.targetDir})`;
+  const legacy = scan.legacyUninstall ? `; legacy orbit plugin still installed, run: ${scan.legacyUninstall}` : '';
   return {
-    host: 'grok',
-    displayName: DISPLAY_NAMES.grok,
-    detected,
-    status: 'stale',
-    path: registryPath,
-    stalePaths: [source],
-    detail: `stale (orbit ${installedVersion ?? 'unknown'} from ${source}, bundle ${activeVersion} at ${ctx.pluginDir})`,
+    host,
+    action,
+    path: scan.targetDir,
+    detail: `${summary}${legacy}`,
+    ...(scan.legacyUninstall ? { command: scan.legacyUninstall } : {}),
   };
 }
 
-function applyGrok(ctx: HostContext): HostApplyResult {
-  const env = ctx.env ?? process.env;
-  const exec = ctx.exec ?? defaultExec;
-  const current = inspectGrok(ctx);
-  if (current.status === 'invalid') throw new Error(current.detail);
-  if (current.status === 'external') throw externalError(current);
-  if (current.status === 'registered') {
-    return { host: 'grok', action: 'unchanged', path: current.path, detail: current.detail };
-  }
-  const stale = current.status === 'stale';
-  const cmd = `${stale ? 'grok plugin uninstall orbit && ' : ''}grok plugin install ${ctx.pluginDir} --trust`;
-  if (!isExecutableOnPath('grok', env.PATH)) {
-    return { host: 'grok', action: 'manual', path: current.path, command: cmd, detail: `grok CLI not on PATH; run: ${cmd}` };
-  }
-  // `grok plugin update` skips local installs, so a stale copy is replaced by reinstalling.
-  if (stale) exec('grok', ['plugin', 'uninstall', 'orbit'], env);
-  exec('grok', ['plugin', 'install', ctx.pluginDir, '--trust'], env);
+function removeSkillDirHost(host: SkillDirHost, ctx: HostContext): HostRemoveResult {
+  const spec = SKILL_DIR_HOSTS[host];
+  const targetDir = spec.targetDir(ctx);
+  const owned = orbitLinks(targetDir, ctx);
+  for (const name of owned) unlinkSync(join(targetDir, name));
+  const legacy = spec.hasLegacyPlugin(ctx) ? spec.legacyUninstall : undefined;
+  const summary = owned.length > 0 ? `removed ${owned.length} orbit skill links from ${targetDir}` : 'not registered';
   return {
-    host: 'grok',
-    action: current.status === 'stale' ? 'updated' : 'registered',
-    path: current.path,
-    detail: `installed orbit plugin at ${ctx.pluginDir}`,
+    host,
+    action: owned.length > 0 ? 'removed' : 'unchanged',
+    path: targetDir,
+    detail: `${summary}${legacy ? `; legacy orbit plugin still installed, run: ${legacy}` : ''}`,
+    ...(legacy ? { command: legacy } : {}),
   };
-}
-
-function removeGrok(ctx: HostContext): HostRemoveResult {
-  const env = ctx.env ?? process.env;
-  const exec = ctx.exec ?? defaultExec;
-  const current = inspectGrok(ctx);
-  if (current.status === 'unregistered' || current.status === 'missing-file') {
-    return { host: 'grok', action: 'unchanged', path: current.path, detail: 'not registered' };
-  }
-  if (current.status === 'external') {
-    return { host: 'grok', action: 'skipped', path: current.path, detail: current.detail };
-  }
-  const cmd = 'grok plugin uninstall orbit';
-  if (!isExecutableOnPath('grok', env.PATH)) {
-    return { host: 'grok', action: 'manual', path: current.path, command: cmd, detail: `grok CLI not on PATH; run: ${cmd}` };
-  }
-  exec('grok', ['plugin', 'uninstall', 'orbit'], env);
-  return { host: 'grok', action: 'removed', path: current.path, detail: 'uninstalled orbit plugin from grok' };
 }
 
 /** Inspect registration status for a single host, with its rules line when the host has an instructions file. */
 export function inspectHost(host: HostId, ctx: HostContext): HostInspection {
   const inspection = inspectRegistration(host, ctx);
   const rulesPath = RULES_FILES[host]?.(ctx);
-  if (!rulesPath || inspection.status === 'external') return inspection;
+  if (!rulesPath) return inspection;
   return { ...inspection, rules: { path: rulesPath, present: hasRulesBlock(rulesPath) } };
 }
 
@@ -614,9 +444,8 @@ function inspectRegistration(host: HostId, ctx: HostContext): HostInspection {
       return inspectSymlinkHost('agents', join(agentsDir, 'skills', 'orbit'), detected, ctx);
     }
     case 'claude':
-      return inspectClaude(ctx);
     case 'grok':
-      return inspectGrok(ctx);
+      return inspectSkillDirHost(host, ctx);
   }
 }
 
@@ -629,7 +458,7 @@ export function inspectAllHosts(ctx: HostContext): HostInspection[] {
 export function applyHost(host: HostId, ctx: HostContext): HostApplyResult {
   const result = applyRegistration(host, ctx);
   const rulesPath = RULES_FILES[host]?.(ctx);
-  if (!rulesPath || result.action === 'manual' || result.action === 'skipped' || !ensureRulesBlock(rulesPath)) return result;
+  if (!rulesPath || !ensureRulesBlock(rulesPath)) return result;
   return {
     ...result,
     action: result.action === 'unchanged' ? 'updated' : result.action,
@@ -659,18 +488,16 @@ function applyRegistration(host: HostId, ctx: HostContext): HostApplyResult {
       return applySymlinkHost('agents', join(agentsDir, 'skills', 'orbit'), existsSync(agentsDir), ctx);
     }
     case 'claude':
-      return applyClaude(ctx);
     case 'grok':
-      return applyGrok(ctx);
+      return applySkillDirHost(host, ctx);
   }
 }
 
 /** Deregister Orbit from one host cleanly and remove its rules line. */
 export function removeHost(host: HostId, ctx: HostContext): HostRemoveResult {
-  const rulesPath = RULES_FILES[host]?.(ctx);
-  if (!rulesPath || inspectRegistration(host, ctx).status === 'external') return removeRegistration(host, ctx);
   const result = removeRegistration(host, ctx);
-  if (!removeRulesBlock(rulesPath)) return result;
+  const rulesPath = RULES_FILES[host]?.(ctx);
+  if (!rulesPath || !removeRulesBlock(rulesPath)) return result;
   return {
     ...result,
     action: result.action === 'unchanged' ? 'removed' : result.action,
@@ -700,13 +527,12 @@ function removeRegistration(host: HostId, ctx: HostContext): HostRemoveResult {
       return removeSymlinkHost('agents', join(agentsDir, 'skills', 'orbit'), existsSync(agentsDir), ctx);
     }
     case 'claude':
-      return removeClaude(ctx);
     case 'grok':
-      return removeGrok(ctx);
+      return removeSkillDirHost(host, ctx);
   }
 }
 
-/** Select hosts to apply during setup/install/sync. Implicit and --all selections skip externally managed hosts. */
+/** Select hosts to apply during setup/install/sync: the requested ones, else configured and detected hosts. */
 export function resolveTargetHosts(
   requested: string[] | undefined,
   configured: HostId[] | undefined,
@@ -716,17 +542,7 @@ export function resolveTargetHosts(
   if (requested && requested.length > 0 && !options.all) {
     return [...new Set(requested.map(parseHostId))];
   }
-  const inspections = inspectAllHosts(ctx);
-  const external = new Set(inspections.filter((h) => h.status === 'external').map((h) => h.host));
-  const candidates = options.all
-    ? [...HOST_IDS]
-    : [...(configured ?? []), ...inspections.filter((h) => h.detected).map((h) => h.host)];
-  return [...new Set(candidates)].filter((host) => !external.has(host));
-}
-
-/** Report each externally managed host as a skipped apply result. */
-export function externalHostResults(ctx: HostContext): HostApplyResult[] {
-  return inspectAllHosts(ctx)
-    .filter((h) => h.status === 'external')
-    .map((h) => ({ host: h.host, action: 'skipped' as const, path: h.path, detail: h.detail }));
+  if (options.all) return [...HOST_IDS];
+  const detected = inspectAllHosts(ctx).filter((h) => h.detected).map((h) => h.host);
+  return [...new Set([...(configured ?? []), ...detected])];
 }

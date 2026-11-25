@@ -107,7 +107,7 @@ test('readT3ActivityTree reads the lead, then each descendant as sidechain, for 
     lead: [toolItem(0, 't3-code.orchestrator_capabilities', {}), toolItem(1, 't3-code.delegate_task', { role: 'review', target: { providerInstanceId: 'claudeAgent' } })],
     codexChild: [item(0, 'command_execution', '$ /bin/zsh -lc "node --test"\nok')],
     grokChild: [toolItem(0, 'mcp_t3-code_t3_thread_read', { threadId: 'lead' })],
-    claudeGrandchild: [toolItem(0, 'Agent', { subagent_type: 'orbit:gitops' })],
+    claudeGrandchild: [toolItem(0, 'Agent', { subagent_type: 'general-purpose' })],
   });
   const threads = [
     { threadId: 'lead', parentThreadId: null },

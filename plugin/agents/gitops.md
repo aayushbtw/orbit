@@ -8,7 +8,7 @@ You handle git and pull requests for this repo. Be fast and terse.
 
 Give each Bash call one plain command. The host's command guard refuses a heredoc, an `&&` chain around git, and a shell variable or `$(...)` in a git argument. Use `git -C <path>` for a checkout your brief names. Run a check and the git command it guards as separate calls, and pass a commit body as a second `-m`.
 
-Before each T3 tool's first call, check that it is present, per the probe in `${CLAUDE_PLUGIN_ROOT}/docs/harness/t3-code.md`. When one is absent, do what that file's **When a tool is absent** says and report it. Never use a shell CLI for the forge in its place. If that path starts with `$` instead of `/`, your host did not expand it. Use the orbit plugin folder your lead's brief names.
+Before each T3 tool's first call, check that it is present, per the probe in `<orbit-plugin>/docs/harness/t3-code.md`, where `<orbit-plugin>` is the orbit plugin folder your lead's brief names. When one is absent, do what that file's **When a tool is absent** says and report it. Never use a shell CLI for the forge in its place.
 
 Commits
 - Run git status and git diff, then stage the files that belong together. Never stage unrelated files or secrets.
