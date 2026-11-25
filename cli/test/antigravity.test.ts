@@ -34,9 +34,8 @@ function withTempDir(fn: (dir: string) => void): void {
 }
 
 function makeOrbitPlugin(root: string, version = '0.74.0'): string {
-  mkdirSync(join(root, '.claude-plugin'), { recursive: true });
   mkdirSync(join(root, 'skills'), { recursive: true });
-  writeFileSync(join(root, '.claude-plugin', 'plugin.json'), JSON.stringify({ name: 'orbit', version }, null, 2));
+  writeFileSync(join(root, 'manifest.json'), JSON.stringify({ name: 'orbit', version }, null, 2));
   return join(root, 'skills');
 }
 
@@ -279,5 +278,26 @@ test('recognizes dangling current symlink path and removeSkillsRegistration pres
     expect(removeSkillsRegistration({ configPath, home })).toMatchObject({ action: 'removed', removedPaths: [currentSkills] });
     expect(JSON.parse(readFileSync(configPath, 'utf8'))).toEqual({ inherits: ['global'], entries: [{ path: otherDir }] });
     expect(removeSkillsRegistration({ configPath, home }).action).toBe('unchanged');
+  });
+});
+
+test('a skills dir whose plugin still has the pre-move .claude-plugin manifest counts as a stale orbit entry', () => {
+  withTempDir((tmp) => {
+    const home = join(tmp, 'home');
+    const configPath = defaultConfigPath(home);
+    const skillsDir = makeOrbitPlugin(join(tmp, 'orbit-plugin'));
+    const legacy = join(tmp, 'legacy-plugin');
+    mkdirSync(join(legacy, '.claude-plugin'), { recursive: true });
+    mkdirSync(join(legacy, 'skills'), { recursive: true });
+    writeFileSync(join(legacy, '.claude-plugin', 'plugin.json'), JSON.stringify({ name: 'orbit', version: '0.70.0' }));
+    mkdirSync(dirname(configPath), { recursive: true });
+    writeFileSync(configPath, JSON.stringify({ entries: [{ path: join(legacy, 'skills') }] }));
+
+    expect(inspectSkillsConfig({ configPath, skillsDir, home })).toEqual({
+      status: 'stale',
+      configPath,
+      skillsDir,
+      stalePaths: [join(legacy, 'skills')],
+    });
   });
 });

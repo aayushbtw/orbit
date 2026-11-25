@@ -110,8 +110,13 @@ function isOrbitSkillsPath(entryPath: string, home: string): boolean {
       || (posixPath.startsWith(`${managedReleases}/`) && /^\/[^/]+\/plugin\/skills$/.test(releasePath));
   }
 
+  // Releases staged before the manifest moved keep it under .claude-plugin/.
+  return isOrbitManifest(join(real, '..', 'manifest.json')) || isOrbitManifest(join(real, '..', '.claude-plugin', 'plugin.json'));
+}
+
+function isOrbitManifest(path: string): boolean {
   try {
-    const parsed: unknown = JSON.parse(readFileSync(join(real, '..', '.claude-plugin', 'plugin.json'), 'utf8'));
+    const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'));
     return isPlainObject(parsed) && parsed.name === 'orbit';
   } catch {
     return false;

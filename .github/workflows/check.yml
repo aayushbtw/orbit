@@ -20,16 +20,6 @@ jobs:
           node-version: 22
       - name: Install ripgrep
         run: sudo apt-get update -qq && sudo apt-get install -y -qq ripgrep
-      - name: Install claude CLI
-        run: npm install -g @anthropic-ai/claude-code@2.1.325
-      - name: Validate marketplace
-        run: claude plugin validate .
-      - name: Validate plugin
-        run: claude plugin validate plugin
-      - name: SessionStart hook test
-        run: bash tests/hooks/session-start.test.sh
-      - name: Trailer hook test
-        run: bash tests/hooks/no-claude-trailer.test.sh
       - name: Worktree audit test
         run: bash tests/worktree-audit.test.sh
       - name: Diagram drift

@@ -82,22 +82,15 @@ function jsonWithEnv(env: Record<string, string>, ...args: string[]) {
   return JSON.parse(stdout);
 }
 
-function grokRegistry(sourcePath: string, pluginVersion: string): string {
-  const key = 'plugin-17a04497';
-  return JSON.stringify({
-    version: 1,
-    repos: {
-      [key]: {
-        kind: { type: 'Local', source_path: sourcePath },
-        path: join(home, '.grok/installed-plugins', key),
-        plugins: { orbit: { version: pluginVersion } },
-      },
-    },
-  });
+const skillNames = readdirSync(join(bundleDir, 'skills')).filter((name) => existsSync(join(bundleDir, 'skills', name, 'SKILL.md'))).sort();
+
+function expectSkillLinks(dir: string): void {
+  const currentSkills = join(home, '.config/orbit/current/plugin/skills');
+  for (const name of skillNames) expect(readlinkSync(join(dir, name))).toBe(join(currentSkills, name));
 }
 
-function skippedHosts(results: Row[]): string[] {
-  return results.filter((h) => h.action === 'skipped').map((h) => h.host).sort();
+function hostRow(rows: Item[], host: string): Item {
+  return rows.find((h) => h.host === host)!;
 }
 
 function json(...args: string[]) {
@@ -118,7 +111,7 @@ test('setup stages bundle, flips current symlink, registers multi-host targets, 
   expect(first.action).toBe('registered');
   expect(lstatSync(join(home, '.config/orbit/current')).isSymbolicLink()).toBe(true);
   expect(existsSync(join(first.installDir, 'skills/start/SKILL.md'))).toBe(true);
-  expect(existsSync(join(first.installDir, '../.claude-plugin/marketplace.json'))).toBe(true);
+  expect(existsSync(join(first.installDir, 'manifest.json'))).toBe(true);
 
   expect(JSON.parse(readFileSync(agConfig, 'utf8'))).toEqual({
     ...existing,
@@ -192,52 +185,127 @@ test('the rules line is one marked block that leaves the rest of each instructio
 });
 
 test('codex and grok paths follow CODEX_HOME and GROK_HOME', () => {
-  const fake = fakeBin(['grok']);
   const codexHome = join(home, 'codex-home');
   const grokHome = join(home, 'grok-home');
-  const env = { ...fake.env, CODEX_HOME: codexHome, GROK_HOME: grokHome };
-  const pluginDir = join(home, '.config/orbit/current/plugin');
+  const env = { PATH: '', CODEX_HOME: codexHome, GROK_HOME: grokHome };
 
   jsonWithEnv(env, 'setup', '--host', 'codex', '--host', 'grok', '--yes');
-  expect(readlinkSync(join(codexHome, 'skills/orbit'))).toBe(join(pluginDir, 'skills'));
+  expect(readlinkSync(join(codexHome, 'skills/orbit'))).toBe(join(home, '.config/orbit/current/plugin/skills'));
+  expectSkillLinks(join(grokHome, 'skills'));
   expect(readFileSync(join(codexHome, 'AGENTS.md'), 'utf8')).toBe(`${RULES_BLOCK}\n`);
   expect(readFileSync(join(grokHome, 'AGENTS.md'), 'utf8')).toBe(`${RULES_BLOCK}\n`);
   expect(existsSync(join(home, '.codex'))).toBe(false);
   expect(existsSync(join(home, '.grok'))).toBe(false);
 
-  seed('grok-home/installed-plugins/registry.json', grokRegistry(pluginDir, version));
   const rows: Item[] = jsonWithEnv(env, 'hosts', 'list');
-  expect(rows.find((h) => h.host === 'grok')).toMatchObject({ status: 'registered', rules: { path: join(grokHome, 'AGENTS.md'), present: true } });
-  expect(rows.find((h) => h.host === 'codex')).toMatchObject({ status: 'registered', path: join(codexHome, 'skills/orbit') });
+  expect(hostRow(rows, 'grok')).toMatchObject({ status: 'registered', path: join(grokHome, 'skills'), rules: { path: join(grokHome, 'AGENTS.md'), present: true } });
+  expect(hostRow(rows, 'codex')).toMatchObject({ status: 'registered', path: join(codexHome, 'skills/orbit') });
 
   jsonWithEnv(env, 'hosts', 'disable', 'codex', 'grok');
   expect(existsSync(join(codexHome, 'skills/orbit'))).toBe(false);
+  expect(readdirSync(join(grokHome, 'skills'))).toEqual([]);
   expect(existsSync(join(codexHome, 'AGENTS.md'))).toBe(false);
   expect(existsSync(join(grokHome, 'AGENTS.md'))).toBe(false);
 });
 
-test('grok installs with --trust and reinstalls a stale copy from the registry grok writes', () => {
-  const fake = fakeBin(['grok']);
-  const pluginDir = join(home, '.config/orbit/current/plugin');
-  const install = `grok plugin install ${pluginDir} --trust`;
+test('claude and grok get one symlink per skill and the same rules block, and disable removes both', () => {
+  const ownSkill = seed('.claude/skills/own/SKILL.md', 'mine');
+  const userRules = '# Mine\n';
+  const claudeRules = seed('.claude/CLAUDE.md', userRules);
   const grokRules = join(home, '.grok/AGENTS.md');
-  const grokRow = (rows: Item[]): Item => rows.find((h) => h.host === 'grok')!;
 
-  expect(grokRow(jsonWithEnv(fake.env, 'setup', '--host', 'grok', '--yes').hosts).action).toBe('registered');
-  expect(fake.calls()).toEqual([install]);
+  const setup = json('setup', '--host', 'claude', '--host', 'grok', '--yes');
+  expect(setup.hosts.map((h: Row) => h.action)).toEqual(['registered', 'registered']);
+  expectSkillLinks(join(home, '.claude/skills'));
+  expectSkillLinks(join(home, '.grok/skills'));
+  expect(readFileSync(claudeRules, 'utf8')).toBe(`${userRules}\n${RULES_BLOCK}\n`);
   expect(readFileSync(grokRules, 'utf8')).toBe(`${RULES_BLOCK}\n`);
 
-  seed('.grok/installed-plugins/registry.json', grokRegistry(pluginDir, version));
-  expect(grokRow(jsonWithEnv(fake.env, 'hosts', 'list'))).toMatchObject({ status: 'registered', rules: { present: true } });
+  const rows: Item[] = json('hosts', 'list');
+  expect(hostRow(rows, 'claude')).toMatchObject({ status: 'registered', rules: { path: claudeRules, present: true } });
+  expect(hostRow(rows, 'grok')).toMatchObject({ status: 'registered', rules: { path: grokRules, present: true } });
+  expect(json('hosts', 'sync').map((h: Row) => h.action)).toEqual(['unchanged', 'unchanged']);
 
-  seed('.grok/installed-plugins/registry.json', grokRegistry(pluginDir, '0.1.0'));
-  expect(grokRow(jsonWithEnv(fake.env, 'hosts', 'list')).status).toBe('stale');
-  expect(jsonWithEnv(fake.env, 'hosts', 'enable', 'grok')[0].action).toBe('updated');
-  expect(fake.calls().slice(1)).toEqual(['grok plugin uninstall orbit', install]);
-
-  jsonWithEnv(fake.env, 'hosts', 'disable', 'grok');
-  expect(fake.calls().at(-1)).toBe('grok plugin uninstall orbit');
+  expect(json('hosts', 'disable', 'claude', 'grok').map((h: Row) => h.action)).toEqual(['removed', 'removed']);
+  expect(readdirSync(join(home, '.claude/skills'))).toEqual(['own']);
+  expect(readFileSync(ownSkill, 'utf8')).toBe('mine');
+  expect(readdirSync(join(home, '.grok/skills'))).toEqual([]);
+  expect(readFileSync(claudeRules, 'utf8')).toBe(userRules);
   expect(existsSync(grokRules)).toBe(false);
+});
+
+test('a non-orbit skill with an orbit skill name blocks claude before any symlink is written', () => {
+  const collision = seed('.claude/skills/start/SKILL.md', 'my own start');
+
+  const setup = run('setup', '--host', 'claude', '--yes');
+  expect(setup.status).toBe(1);
+  expect(setup.stderr).toContain(join(home, '.claude/skills/start'));
+  expect(readdirSync(join(home, '.claude/skills'))).toEqual(['start']);
+  expect(existsSync(join(home, '.config/orbit/releases'))).toBe(false);
+
+  json('setup', '--host', 'codex', '--yes');
+  expect(hostRow(json('hosts', 'list'), 'claude').status).toBe('invalid');
+  expect(run('hosts', 'enable', 'claude').status).toBe(1);
+  expect(readdirSync(join(home, '.claude/skills'))).toEqual(['start']);
+  expect(readFileSync(collision, 'utf8')).toBe('my own start');
+  expect(existsSync(join(home, '.claude/CLAUDE.md'))).toBe(false);
+});
+
+test('sync repoints and prunes orbit skill links and leaves every other entry alone', () => {
+  json('setup', '--host', 'claude', '--yes');
+  const skills = join(home, '.claude/skills');
+  const custom = join(home, 'custom-skill');
+  mkdirSync(custom);
+  symlinkSync(custom, join(skills, 'mine'));
+  seed('.claude/skills/own/SKILL.md', 'mine');
+  rmSync(join(skills, 'start'));
+  symlinkSync(join(home, '.config/orbit/releases/0.1.0/plugin/skills/start'), join(skills, 'start'));
+  symlinkSync(join(home, '.config/orbit/current/plugin/skills/retired'), join(skills, 'retired'));
+
+  const stale = hostRow(json('hosts', 'list'), 'claude');
+  expect(stale.status).toBe('stale');
+  expect(stale.stalePaths).toEqual([join(skills, 'start'), join(skills, 'retired')]);
+
+  expect(json('hosts', 'sync')[0].action).toBe('updated');
+  expectSkillLinks(skills);
+  expect(existsSync(join(skills, 'retired'))).toBe(false);
+  expect(readlinkSync(join(skills, 'mine'))).toBe(custom);
+  expect(hostRow(json('hosts', 'list'), 'claude').status).toBe('registered');
+
+  json('uninstall', '--yes');
+  expect(readdirSync(skills).sort()).toEqual(['mine', 'own']);
+});
+
+test('a legacy claude or grok orbit plugin is reported as stale with its uninstall command, and neither CLI runs', () => {
+  seed('.claude/plugins/installed_plugins.json', JSON.stringify({ plugins: { 'orbit@orbit': [{ scope: 'user', version: '0.70.0' }] } }));
+  seed('.grok/installed-plugins/registry.json', JSON.stringify({ version: 1, repos: { 'plugin-1': { plugins: { orbit: { version: '0.70.0' } } } } }));
+  const fake = fakeBin(['claude', 'grok']);
+  const ok = (...args: string[]) => jsonWithEnv(fake.env, ...args);
+  const claudeCmd = 'claude plugin uninstall orbit@orbit';
+  const grokCmd = 'grok plugin uninstall orbit';
+
+  const before: Item[] = ok('hosts', 'list');
+  expect(hostRow(before, 'claude')).toMatchObject({ detected: true, status: 'stale' });
+  expect(hostRow(before, 'claude').detail).toContain(claudeCmd);
+  expect(hostRow(before, 'grok')).toMatchObject({ detected: true, status: 'stale' });
+  expect(hostRow(before, 'grok').detail).toContain(grokCmd);
+
+  const setup = ok('setup', '--host', 'claude', '--host', 'grok', '--yes');
+  expect(hostRow(setup.hosts, 'claude')).toMatchObject({ action: 'registered', command: claudeCmd });
+  expect(hostRow(setup.hosts, 'grok')).toMatchObject({ action: 'registered', command: grokCmd });
+  expectSkillLinks(join(home, '.claude/skills'));
+  expectSkillLinks(join(home, '.grok/skills'));
+
+  const after: Item[] = ok('hosts', 'list');
+  expect(hostRow(after, 'claude').status).toBe('stale');
+  expect(hostRow(after, 'claude').stalePaths).toBeUndefined();
+  const doctor = ok('doctor');
+  expect(doctor.issues).toEqual(expect.arrayContaining([expect.stringContaining(claudeCmd), expect.stringContaining(grokCmd)]));
+
+  const removed = ok('hosts', 'disable', 'claude', 'grok');
+  expect(removed.map((h: Item) => h.command)).toEqual([claudeCmd, grokCmd]);
+  expect(readdirSync(join(home, '.claude/skills'))).toEqual([]);
+  expect(fake.calls()).toEqual([]);
 });
 
 test('setup replaces old versioned Antigravity path with current symlink and preserves filters', () => {
@@ -396,80 +464,6 @@ test('models sync ingests ACP payloads and orbit init scaffolds AGENTS.md + .orb
 
   // Interactive check without TTY errors clearly
   expect(runWithEnv({ PATH: '' }, 'init').status).toBe(1);
-});
-
-test('externally managed Claude and Grok installs are reported and never touched', () => {
-  const external = join(home, 'src/orbit');
-  mkdirSync(join(external, 'plugin'), { recursive: true });
-  const files = [
-    seed('.claude/plugins/installed_plugins.json', JSON.stringify({
-      plugins: { 'orbit@orbit': [{ scope: 'user', version: '0.70.0', installPath: join(home, '.claude/plugins/cache/orbit/orbit/0.70.0') }] },
-    })),
-    seed('.claude/plugins/known_marketplaces.json', JSON.stringify({ orbit: { installLocation: external } })),
-    seed('.grok/installed-plugins/registry.json', grokRegistry(join(external, 'plugin'), '0.70.0')),
-    seed('.grok/AGENTS.md', `Mine.\n\n${RULES_BLOCK.replace('first reply', 'reply')}\n`),
-  ];
-  const snapshot = () => files.map((file) => readFileSync(file, 'utf8'));
-  const before = snapshot();
-  const fake = fakeBin(['claude', 'grok']);
-  const ok = (...args: string[]) => jsonWithEnv(fake.env, ...args);
-
-  const oldManifest = join(stageRelease(bundleDir, home, '0.76.0'), 'plugin/.claude-plugin/plugin.json');
-  writeFileSync(oldManifest, JSON.stringify({ ...JSON.parse(readFileSync(oldManifest, 'utf8')), version: '0.76.0' }));
-  const setup = ok('setup', '--yes');
-  expect(skippedHosts(setup.hosts)).toEqual(['claude', 'grok']);
-  expect(setup.hosts.find((h: Item) => h.host === 'claude').detail).toContain(`externally managed at ${external}`);
-
-  const listed = ok('hosts', 'list');
-  expect(listed.find((h: Item) => h.host === 'claude')).toMatchObject({ status: 'external', path: external });
-  expect(listed.find((h: Item) => h.host === 'grok')).toMatchObject({ status: 'external', path: join(external, 'plugin') });
-
-  const explicit = runWithEnv(fake.env, 'setup', '--host', 'claude', '--yes');
-  expect(explicit.status).toBe(1);
-  expect(explicit.stderr).toContain(`externally managed at ${external}`);
-  const configPath = join(home, '.config/orbit/config.json');
-  const readConfig = () => (existsSync(configPath) ? readFileSync(configPath, 'utf8') : null);
-  const configBefore = readConfig();
-  const enable = runWithEnv(fake.env, 'hosts', 'enable', 'grok');
-  expect(enable.status).toBe(1);
-  expect(enable.stderr).toContain('does not manage');
-  expect(readConfig()).toBe(configBefore);
-
-  expect(skippedHosts(ok('use', '0.76.0').hosts)).toEqual(['claude', 'grok']);
-  expect(skippedHosts(ok('link', worktreeRoot).hosts)).toEqual(['claude', 'grok']);
-  expect(skippedHosts(ok('unlink').hosts)).toEqual(['claude', 'grok']);
-  ok('use', '0.76.0');
-  expect(skippedHosts(ok('update', version, '--yes').hosts)).toEqual(['claude', 'grok']);
-  expect(skippedHosts(ok('hosts', 'sync', '--all'))).toEqual(['claude', 'grok']);
-
-  const doctor = ok('doctor', '--fix');
-  expect(doctor.healthy).toBe(true);
-  expect(doctor.fixes.filter((fix: string) => /claude|grok/.test(fix))).toEqual([]);
-  expect(doctor.hosts.filter((h: Item) => h.status === 'external').map((h: Item) => h.host)).toEqual(['claude', 'grok']);
-
-  expect(ok('hosts', 'disable', 'claude', 'grok').map((h: Item) => h.action)).toEqual(['skipped', 'skipped']);
-  expect(skippedHosts(ok('uninstall', '--yes').hosts)).toEqual(['claude', 'grok']);
-  expect(fake.calls()).toEqual([]);
-  expect(snapshot()).toEqual(before);
-});
-
-test('an Orbit-managed stale Claude marketplace is still updated and uninstalled', () => {
-  seed('.claude/plugins/installed_plugins.json', JSON.stringify({
-    plugins: { 'orbit@orbit': [{ scope: 'user', version: '0.70.0' }] },
-  }));
-  seed('.claude/plugins/known_marketplaces.json', JSON.stringify({
-    orbit: { installLocation: join(home, '.config/orbit/releases/0.70.0') },
-  }));
-  const fake = fakeBin(['claude']);
-  const setup = jsonWithEnv(fake.env, 'setup', '--yes');
-  expect(setup.hosts.find((h: Item) => h.host === 'claude').action).toBe('updated');
-  expect(fake.calls()).toEqual([
-    'claude plugin marketplace remove orbit',
-    `claude plugin marketplace add ${join(home, '.config/orbit/current')}`,
-    'claude plugin update orbit@orbit',
-  ]);
-  jsonWithEnv(fake.env, 'uninstall', '--yes');
-  expect(fake.calls().at(-1)).toBe('claude plugin uninstall orbit@orbit');
 });
 
 test('update takes [targetVersion] or --to instead of colliding with --version', () => {

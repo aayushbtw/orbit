@@ -51,7 +51,6 @@ import {
 import {
   HOST_IDS,
   applyHost,
-  externalHostResults,
   inspectAllHosts,
   inspectHost,
   isExecutableOnPath,
@@ -69,9 +68,9 @@ import { inspectTargetAvailability, resolveTask, rowProviderTargets } from './re
 
 function resolveBundleDir(): string {
   const packaged = fileURLToPath(new URL('./plugin/', import.meta.url));
-  if (existsSync(join(packaged, '.claude-plugin', 'plugin.json'))) return packaged;
+  if (existsSync(join(packaged, 'manifest.json'))) return packaged;
   const source = fileURLToPath(new URL('../../plugin/', import.meta.url));
-  if (existsSync(join(source, '.claude-plugin', 'plugin.json'))) return source;
+  if (existsSync(join(source, 'manifest.json'))) return source;
   throw new Error(`Could not locate Orbit plugin bundle near ${import.meta.url}.`);
 }
 
@@ -91,20 +90,12 @@ function output(value: unknown, json: boolean | undefined, summary: () => string
 }
 
 function makeHostContext(env: NodeJS.ProcessEnv = process.env): HostContext {
-  const inspection = inspectBundle(home, version);
-  return {
-    home,
-    env,
-    pluginDir: inspection.pluginDir,
-    skillsDir: inspection.skillsDir,
-    currentLink: inspection.currentLink,
-    version: inspection.activeVersion ?? version,
-  };
+  return { home, env, skillsDir: inspectBundle(home, version).skillsDir };
 }
 
 function syncHosts(ctx: HostContext, options: { all?: boolean } = {}): HostApplyResult[] {
   const targets = resolveTargetHosts(undefined, loadConfig(home).config.hosts, ctx, options);
-  return [...targets.map((h) => applyHost(h, ctx)), ...externalHostResults(ctx)];
+  return targets.map((h) => applyHost(h, ctx));
 }
 
 function parseHostFlags(raw?: string[]): string[] | undefined {
@@ -197,16 +188,12 @@ async function runInstall(options: { host?: string[]; all?: boolean; yes?: boole
       }
     }
     if (!requested && !options.all) {
-      const inspections = inspectAllHosts(ctxBefore);
-      for (const h of inspections.filter((i) => i.status === 'external')) {
-        log.info(`${h.displayName} skipped (external): ${h.detail}`, { output: io.output });
-      }
       const selected = await multiselect({
         ...io,
         message: 'Which T3 providers should Orbit register skills with?',
         initialValues: targets,
         required: false,
-        options: inspections.filter((h) => h.status !== 'external').map((h) => ({
+        options: inspectAllHosts(ctxBefore).map((h) => ({
           value: h.host,
           label: `${h.displayName} (${h.host})`,
           hint: h.detected ? h.status : 'not detected on disk',
@@ -220,13 +207,12 @@ async function runInstall(options: { host?: string[]; all?: boolean; yes?: boole
     }
   }
 
+  // Check against the skills about to be installed, so a skill name collision fails before anything is staged.
+  const preflightCtx = { ...ctxBefore, skillsDir: join(bundle, 'skills') };
   for (const hostId of targets) {
-    const inspected = inspectHost(hostId, ctxBefore);
+    const inspected = inspectHost(hostId, preflightCtx);
     if (inspected.status === 'invalid') {
       throw new Error(`Invalid ${inspected.displayName} config at ${inspected.path}: ${inspected.detail}`);
-    }
-    if (inspected.status === 'external') {
-      throw new Error(`${inspected.displayName} is ${inspected.detail}. Drop --host ${hostId}, or remove that install first to let Orbit CLI manage it.`);
     }
   }
 
@@ -237,7 +223,7 @@ async function runInstall(options: { host?: string[]; all?: boolean; yes?: boole
 
   const installed = installBundle(bundle, home, version);
   const ctxAfter = makeHostContext();
-  const hostResults = [...targets.map((hostId) => applyHost(hostId, ctxAfter)), ...externalHostResults(ctxAfter)];
+  const hostResults = targets.map((hostId) => applyHost(hostId, ctxAfter));
 
   let catalogSynced: { ok: boolean; source?: string; providers?: number; error?: string } = { ok: false };
   if (process.env.T3_ACP_MCP_NODE) {
@@ -659,7 +645,7 @@ program.command('doctor')
       const ctxFix = makeHostContext();
       for (const hostId of resolveTargetHosts(undefined, loaded.config.hosts, ctxFix)) {
         const res = applyHost(hostId, ctxFix);
-        if (res.action !== 'unchanged' && res.action !== 'manual') fixes.push(`${hostId}: ${res.action}`);
+        if (res.action !== 'unchanged') fixes.push(`${hostId}: ${res.action}`);
       }
     }
 
