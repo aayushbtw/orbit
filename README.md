@@ -46,6 +46,8 @@ Then run `/orbit:setup` in a T3 thread. It lists missing tools, checks the insta
 | Learn how or why code works | `/orbit:how` or `/orbit:why` |
 | Stop a repeated mistake | `/orbit:correct` |
 
+A host that links each skill flat, such as Claude Code, drops the `orbit:` prefix, so you run `/start`, `/ship` and so on.
+
 [Every command](docs/usage.md#every-command) lists the rest. [The guide](docs/guide/README.md) walks through one task from start to finish. [Orbit in T3 Code](docs/t3-code.md) explains how orbit loads and picks providers, and lists [each live result](docs/t3-code.md#what-is-verified).
 
 Each task ends with a plain reply. It names anything skipped, failed or left behind. After "don't ship" it tells you to run `/orbit:ship`, and after a pause it tells you to run `/orbit:session-pickup` in a new thread.

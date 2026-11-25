@@ -11,6 +11,7 @@ Before 1.0.0, a change to a rule or a flow that changes what orbit does for you 
 - Removed the Claude Code plugin, marketplace (`.claude-plugin/`), `plugin/hooks/`, and `tests/hooks/`. Every T3 provider now loads Orbit through one `orbit` CLI path.
 - Replaced `plugin/.claude-plugin/plugin.json` with `plugin/manifest.json`.
 - Unified `orbit` CLI host registration for Claude Code (`~/.claude/skills/` and `~/.claude/CLAUDE.md`) and Grok (`~/.grok/skills/` and `~/.grok/AGENTS.md`) using per-skill symlinks, preflight collision checks, dangling-link pruning, and legacy plugin detection warnings that print the uninstall command without running either host CLI.
+- A host that links each skill flat, such as Claude Code, runs orbit's skills without the `orbit:` prefix, as `/start`, `/ship` and so on.
 
 ### Plugin and tests
 
