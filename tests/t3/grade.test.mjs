@@ -333,6 +333,27 @@ test('verifier-all-fail counts a custom-named provider by its model', () => {
   assert.match(result.why, /native child thread on work\/gemini-4-neon/);
 });
 
+test('a --head lane grades only when its revision record proves the requested SHA', () => {
+  const sha = 'a'.repeat(40);
+  const passing = [{ name: 'Bash', input: { command: 'pwd' }, sidechain: false }];
+  const proof = { requestedSha: sha, mode: 'head', provider: 'claudeAgent', loader: 'claude-marketplace', marker: `orbit-lane-rev-${sha.slice(0, 12)}-1a2b3c4d`, proven: true, evidence: 'marker observed in lead session' };
+  const head = (revision) => gradeLane(parseLane(JSON.stringify(lane({ scenario: 'probe', toolCalls: passing, orbit: 'head', head: { ref: 'HEAD', sha }, revision })), 'x.json'));
+  assert.deepEqual(head(proof).map((r) => r.verdict), ['PASS', 'PASS']);
+  const unproven = [
+    [{ ...proof, proven: false, evidence: 'marker absent from lead session' }, /marker absent from lead session/],
+    [undefined, /no revision record/],
+    [{ ...proof, requestedSha: 'b'.repeat(40) }, /requestedSha b+ differs/],
+    [{ ...proof, marker: null }, /no bundle marker/],
+  ];
+  for (const [revision, why] of unproven) {
+    const results = head(revision);
+    assert.ok(results.every((r) => r.verdict === 'FAIL' && r.why.startsWith('unproven Orbit revision: ') && why.test(r.why)), JSON.stringify(results));
+  }
+  const installed = { requestedSha: sha, mode: 'installed', provider: 'claudeAgent', loader: 'installed', marker: null, proven: false, evidence: 'installed mode; exact-head proof not claimed' };
+  assert.deepEqual(verdicts(lane({ scenario: 'probe', toolCalls: passing, orbit: 'installed', head: { ref: 'HEAD', sha }, revision: installed })), { 'ran-pwd': 'PASS', 'loaded-no-skill': 'PASS' });
+  assert.deepEqual(verdicts(lane({ scenario: 'probe', toolCalls: passing })), { 'ran-pwd': 'PASS', 'loaded-no-skill': 'PASS' });
+});
+
 test('grade.mjs runs when its path goes through a symlink', () => {
   const tmp = mkdtempSync(join(tmpdir(), 'orbit-grade-'));
   try {

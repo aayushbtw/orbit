@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { clash, deleteLaneBranches, isAncestor, laneBranches, listBranches, listWorktrees } from './branches.mjs';
 import { SCENARIOS } from './scenarios.mjs';
+import { bundleMarker, stampBundleMarker, verifyRevisionEvidence } from './revision.mjs';
 import { CLAUDE_HOME, claude, isClaude, pendingQuestions, readT3ActivityTree } from './sessions.mjs';
 
 const ORBIT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -102,6 +103,7 @@ const result = {
   exit: 1, status: 'error', reply: null, error: null, wake: null, wakes: [],
   pendingQuestion: null, thread: null, threads: [], messages: [],
   session: null, firstTurnInputTokens: null, activitySource: null, toolCalls: null, branches: null, kept: null,
+  revision: null,
 };
 
 function save() {
@@ -135,6 +137,14 @@ try {
   result.head.sha = run('git', ['-C', ORBIT, 'rev-parse', '--verify', `${opts.head}^{commit}`]);
 } catch (e) {
   fail(gitError(e));
+}
+
+const unsupportedHead = (provider, evidence) => {
+  result.revision = { requestedSha: result.head.sha, mode: 'head', provider, loader: 'unsupported', marker: null, proven: false, evidence };
+  return `${evidence}. Exact-head isolation works only through Claude's per-lane plugin marketplace, so pass --installed to run against the installed orbit bundle instead`;
+};
+if (!opts.installed && opts.provider && !isClaude(opts.provider)) {
+  fail(unsupportedHead(opts.provider, `--head refuses --provider ${opts.provider}, which has no isolated loader for orbit at ${result.head.sha}`));
 }
 
 let locked = false;
@@ -432,6 +442,9 @@ async function loadHead() {
   mkdirSync(join(runDir, '.claude-plugin'), { recursive: true });
   writeFileSync(join(runDir, 'lane.pid'), String(process.pid));
   run('tar', ['-x', '-C', runDir], { input: execFileSync('git', ['-C', ORBIT, 'archive', result.head.sha, 'plugin'], { maxBuffer: 256 * 1024 * 1024 }) });
+  const marker = bundleMarker(result.head.sha, id);
+  stampBundleMarker(join(runDir, 'plugin'), marker);
+  result.revision = { requestedSha: result.head.sha, mode: 'head', provider: opts.provider ?? null, loader: 'claude-marketplace', marker, proven: false, evidence: null };
   const manifest = JSON.parse(run('git', ['-C', ORBIT, 'show', `${result.head.sha}:.claude-plugin/marketplace.json`]));
   writeFileSync(join(runDir, '.claude-plugin', 'marketplace.json'), JSON.stringify({ ...manifest, name: marketplace }, null, 2) + '\n');
 
@@ -624,11 +637,28 @@ async function lane() {
   result.error = reply?.error ?? (result.status === 'timeout' ? `no reply within ${opts.timeout} minutes` : result.status === 'failed' ? stderr.trim() || `t3 exited ${code}` : null);
   await recordThreads(reply?.threadId);
   if (!result.thread) return;
+  const { providerInstanceId } = result.thread;
+  if (!opts.installed && providerInstanceId && !isClaude(providerInstanceId)) {
+    const error = unsupportedHead(providerInstanceId, `--head ran on the project default provider ${providerInstanceId}, which never loads the orbit bundle staged for ${result.head.sha}`);
+    Object.assign(result, { status: 'failed', exit: 1, error });
+    return;
+  }
   if (wakeMs && result.status === 'completed') {
     await holdForWake(result.thread.threadId);
     await recordThreads(result.thread.threadId);
   }
   await readSession(result.thread);
+  verifyLoadedRevision();
+}
+
+function verifyLoadedRevision() {
+  const provider = result.thread?.providerInstanceId ?? opts.provider ?? null;
+  if (opts.installed) {
+    result.revision = { requestedSha: result.head.sha, mode: 'installed', provider, loader: 'installed', marker: null, proven: false, evidence: 'installed mode; exact-head proof not claimed' };
+    return;
+  }
+  const { marker } = result.revision;
+  Object.assign(result.revision, { provider, ...verifyRevisionEvidence({ marker, session: result.session, reply: result.reply, messages: result.messages }) });
 }
 
 try {

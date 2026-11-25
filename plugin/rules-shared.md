@@ -13,7 +13,7 @@
 
 # Files
 
-Never create `.md` files in a repo root. The root holds only README, AGENTS (or CLAUDE), DESIGN, LICENSE and CHANGELOG. Resume notes and other working notes go in your auto memory directory, not the repo (`.claude/` is a protected path and prompts on every write). Permanent docs go in `docs/`.
+Never create `.md` files in a repo root. The root holds only README, AGENTS (or CLAUDE), DESIGN, LICENSE and CHANGELOG. Resume notes go in `~/.config/orbit/checkpoints/`, as `/orbit:pause-safely` says. Other working notes go in your auto memory directory. Neither goes in the repo (`.claude/` is a protected path and prompts on every write). Permanent docs go in `docs/`.
 
 # Comments
 

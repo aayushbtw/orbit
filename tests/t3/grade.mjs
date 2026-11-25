@@ -1,5 +1,6 @@
 import { readFileSync, realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+import { checkRevisionProof } from './revision.mjs';
 import { ABSENT, SCENARIOS, leadFamily } from './scenarios.mjs';
 
 export class LaneError extends Error {}
@@ -15,7 +16,10 @@ export function parseLane(text, file) {
   if (toolCalls !== null && !(Array.isArray(toolCalls) && toolCalls.every((c) => typeof c?.name === 'string'))) {
     throw bad('toolCalls is neither null nor a list of calls with a name');
   }
-  return { scenario: lane.scenario, status: lane.status, pendingQuestion: lane.pendingQuestion ?? null, toolCalls, branches: lane.branches ?? null, thread: lane.thread ?? null, threads: lane.threads ?? null };
+  return {
+    scenario: lane.scenario, status: lane.status, pendingQuestion: lane.pendingQuestion ?? null, toolCalls, branches: lane.branches ?? null, thread: lane.thread ?? null, threads: lane.threads ?? null,
+    orbit: lane.orbit ?? null, head: lane.head ?? null, revision: lane.revision ?? null,
+  };
 }
 
 function matches(shape, value, ctx) {
@@ -74,7 +78,9 @@ export function gradeLane(lane) {
   const ctx = { leadFamily: leadFamily(lane.thread) };
   const graded = status === 'completed' || (mayAsk && status === 'waiting' && askedUser(pendingQuestion));
   const notGraded = `lane status is ${status}, not completed${mayAsk ? " or waiting only on the lead's own question" : ''}`;
+  const unproven = lane.orbit === 'head' ? checkRevisionProof(lane) : null;
   return Object.entries(checks).map(([check, expect]) => {
+    if (unproven) return { check, verdict: 'FAIL', why: `unproven Orbit revision: ${unproven}` };
     if (!graded) return { check, verdict: 'FAIL', why: notGraded };
     if (!expect.state && !toolCalls) return { check, verdict: 'FAIL', why: 'no toolCalls, so the lead session was not read' };
     const { ok, why } = expect.state ? expect.state(lane, ctx) : evaluate(expect, toolCalls, ctx);

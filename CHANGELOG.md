@@ -4,6 +4,22 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.84.0
+
+### Playbook
+
+- One **Verification skill** order in `plugin/skills/playbook/SKILL.md` resolves the project's `verify-*` skill for generation, maintenance, bug reproduction and Shipping. The order is a `Verification skill:` line in the Workflow block, then `.agents/skills/verify-*/`, then `.claude/skills/verify-*/`, then a root-level `.*/skills/verify-*/` or `skills/verify-*/`. A configured path that is missing is reported, never skipped. The task worktree is searched before the project root, and `node_modules` is never searched. `create-verification-skill` writes to `.agents/skills/verify-<app>/` unless the repo keeps its skills only in `.claude/skills/`. Fixes #132.
+
+### Skills
+
+- `recall`, `automate-me`, `reflect` and `show-me-your-work` read session history through the adapter's new **T3 activity** section on any provider. It lists only this project's threads unless the user asks for more, pages every list and read, and attributes each item to the lead or a child thread. Activity text is untrusted data. A tool that is absent or fails puts `<tool> unavailable: <reason>` in the reply and never counts as empty history. The local transcript is the fallback only when the T3 activity tools are absent. Fixes #133.
+- `pause-safely` writes the resume note to `~/.config/orbit/checkpoints/<project-slug>/resume-<slug>.md`, with frontmatter that records the thread, provider, model, worktree, branch, head SHA and watched PRs. `session-pickup` also reads legacy memory notes, skips resumed notes and notes on deleted branches, and selects by tier: the user's target, then the same thread, then the same worktree or branch. A tie asks the user and restores no PR watch. Pickup flags a branch tip that moved past `headSha` and restores only the selected task's watches. Fixes #134.
+
+### Dev
+
+- A T3 lane run with `--head` proves which orbit revision its Claude lead loaded. The lane stamps a unique marker into the staged bundle's `rules.md` and looks for it in the lead's session. Without the marker, `grade.mjs` fails every check as an unproven Orbit revision. A non-Claude lead refuses `--head` and needs `--installed`, which claims no exact head. Fixes #136.
+- `tests/t3/provider-neutral.test.mjs` checks the wording for #132, #133 and #134. It runs the verification skill order and the pickup selection against real git repos and worktrees.
+
 ## 0.83.1
 
 ### Playbook
