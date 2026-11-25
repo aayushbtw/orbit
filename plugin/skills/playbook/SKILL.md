@@ -5,14 +5,14 @@ argument-hint: investigate | bug | feature | refactor | prototype | perf | hillc
 ---
 Task type: $ARGUMENTS
 
-Find the task type in **Playbooks** below, read `${CLAUDE_SKILL_DIR}/playbooks/<file>.md` whole and follow only it, with Principles and Stack rules. Paths in `playbooks/*.md` are relative to this skill's directory, `${CLAUDE_SKILL_DIR}`. Check and Land come from the Workflow block in the project's AGENTS.md (or CLAUDE.md). Each playbook opens with its stance and ends with its **Reply:**, the content the task reports, placed per **Final reply** in rules.md Task End.
+Find the task type in **Playbooks** below, read `${CLAUDE_SKILL_DIR}/playbooks/<file>.md` whole and follow only it, with Principles and Stack rules. Paths in `playbooks/*.md` are relative to this skill's directory, `${CLAUDE_SKILL_DIR}`. Check and Land come from the Workflow block in the project's AGENTS.md (or CLAUDE.md). Each playbook opens with its stance and ends with its **Reply:**, the content the task reports.
 
 Bundled skills live at `../<name>/SKILL.md` from this file, so put this file's absolute path in every `orbit:poteto-agent` prompt.
 
 **Waivers.** A waiver the user gave the task (`no commit`, `no subagents`, `just testing`, `quick check`, `skip e2e`) stays active until the user lifts it. It outranks the default action of every nested playbook, gate, cleanup step and worktree continuation, **Ship by default** in Opening a PR included. Each waiver skips only its own actions:
 - `no commit` skips gitops commits, the PR and Shipping.
 - `just testing` or `quick check` skips the commit, the PR and Shipping. The Delegate gate still runs unless `no subagents` is also active.
-- `no subagents` lets you edit directly, with no `orbit:poteto-agent` or `orbit:gitops` spawn, so you make gitops's commits and PR calls yourself per `../../agents/gitops.md`. It never lets you verify your own change. Shipping stops at the PR or branch, and Heads-up says no verifier ran.
+- `no subagents` lets you edit directly, with no `orbit:poteto-agent` or `orbit:gitops` spawn, so you make gitops's commits and PR calls yourself per `../../agents/gitops.md`. It never lets you verify your own change. Shipping stops at the PR or branch, and the reply says no verifier ran.
 - `skip e2e` skips the end-to-end run only.
 
 A more specific instruction, in the same message or a later one, permits the action it names and lifts only that part of the waiver. "just testing, commit each unit, no PR" commits each unit, and still opens no PR and ships nothing. Carry every active waiver verbatim in the `t3_worktree_handoff` `continuationPrompt` and in every subagent or `delegate_task` brief.

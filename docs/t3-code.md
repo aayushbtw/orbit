@@ -29,7 +29,7 @@ A provider that loads skills from its own config, rather than from Claude Code's
 
 ## Find T3's tools
 
-T3 serves its tools as MCP tools, and a step probes each tool before its first call. A tool that is not present takes the adapter's **When a tool is absent** path, which names the gap in the reply's Heads-up and goes on.
+T3 serves its tools as MCP tools, and a step probes each tool before its first call. A tool that is not present takes the adapter's **When a tool is absent** path, which names the gap in the reply and goes on.
 
 The lead finds a tool in its tool list, or loads it with `ToolSearch`. It never probes with dummy arguments, because a dummy `delegate_task` starts a thread.
 

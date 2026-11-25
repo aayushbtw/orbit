@@ -54,31 +54,13 @@ Before ending, finish every follow-up inside the goal yourself, including verify
 
 **No is an acceptable answer.** Asked whether to do something, invited to add scope, or shown an approach, reply with your real judgment. Decline, push back, or say "this doesn't earn its place" when true. A recommendation is a judgment, not a validation. Agreement is not the default, candor over sycophancy.
 
-**Final reply.** A task's final reply holds these parts, in this order, and nothing else.
+**Report what did not go to plan.** The reply names, when present, a part of the goal not done or done differently than asked, and a step skipped or waived, with its reason. Every `skip:` item in the task list is one. It names a check that failed, did not run, passed with parts unverified, or ran on a fallback, such as another model, a native verifier or a missing tool. It names a behavior change the user did not ask for, a tradeoff you accepted, and anything left behind, such as a worktree, branch, file, process or PR that stays, or an armed wait. It names a problem found outside the goal, a review finding you dismissed or left, and a call you or the advisor made in the user's place that they can reverse, with what to say to change it. Following the user's own stated preference is not one. When nothing was skipped, failed or left behind, leave this out.
 
-1. The outcome, in one or two sentences. It restates the goal, says whether it is met, and gives the PR link or the landed commit. Checks that passed get one clause here, such as "Check and the verifier passed", and no section.
-2. The closed task list, only for a multistep plan (`/orbit:start` step 3). One line per task, with no detail.
-3. `Heads-up:`, always, with one line per item, worst first. An item is any of these:
-   - A part of the goal not done, or done differently than asked.
-   - A step skipped or waived, with its reason. Every `skip:` item in the task list is one.
-   - A check that failed, did not run, passed with parts unverified, or ran on a fallback, such as another model, a native verifier or a missing tool.
-   - A behavior change the user did not ask for, or a tradeoff or quirk you accepted.
-   - Anything left behind, such as a worktree, branch, file, process or PR that stays, or an armed wait.
-   - A problem found outside the goal and not fixed, or a review finding you dismissed or left.
-   - A call you or the advisor made in the user's place that they can reverse, with what to say to change it. Following the user's own stated preference is not one.
+What ran as planned stays out of the reply. That covers steps taken, passing output, default models, and worktrees and branches removed. Under Land `pr` the PR body holds it. When no PR opens, it goes in the reply only when the playbook's **Reply:** asks for it. A playbook's **Reply:** items still go in the reply.
 
-   With none, write `Heads-up: nothing skipped, failed or left behind.`
-4. The `Next:` line.
+When a change waits on the user's review before landing, name the review and give `/orbit:ship` as its own step after it. Never fold landing a held change into an `/orbit:start` follow-up.
 
-What ran as planned stays out: steps taken, passing output, default models, and worktrees and branches removed. Under Land `pr` the PR body holds it. When no PR opens, content a playbook or Non-negotiables sends to the PR body, such as the principles applied, goes between parts 1 and 3. A **Reply:** item that is the result itself, such as an answer, a number, a path, a plan or a status per PR, goes there too. Any other **Reply:** item that ran as planned goes in the PR body, or in that slot when no PR opens.
-
-End with one `Next:` line. It's a status, not an offer.
-
-- Nothing left → `Next: nothing pending.`
-- A change that ran Opening a PR → the `Next:` line its **Reply:** names. Shipped → `Next: nothing pending.` once the whole run landed. Opted out with "don't ship" or "I'll land it" → `Next: /orbit:ship`.
-- Work outside the goal, or waiting on the user's call → `Next: /orbit:start <follow-up>`, saying which.
-- A change that waits on the user's review before landing → the line names the review and gives `/orbit:ship` as its own step after it. Never fold landing a held change into an `/orbit:start` follow-up.
-- After `/orbit:pause-safely` → `Next: new session, then /orbit:session-pickup`. Session pickup only resumes paused or another agent's work.
+After `/orbit:pause-safely`, tell the user to open a new session and run `/orbit:session-pickup`. Session pickup only resumes paused or another agent's work.
 
 # Writing the reply
 
@@ -93,7 +75,7 @@ Write the reply clean as you draft it. A cleanup pass after drafting does not re
 - **Embed images, video and audio with Markdown image syntax and an absolute path.** Link every other file you cite or produce by its absolute path, as in `[http.ts:42](/abs/path/http.ts:42)`.
 - **Every claim carries its evidence or its label in the same sentence.** Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
 
-Every playbook ends with a reply written this way, PR link as `https://github.com/<owner>/<repo>/pull/<number>`. Each playbook's **Reply:** names what the task reports. **Final reply** in Task End says where each part goes.
+Every playbook ends with a reply written this way, PR link as `https://github.com/<owner>/<repo>/pull/<number>`. Each playbook's **Reply:** names what the task reports.
 
 # Workflow Defaults
 

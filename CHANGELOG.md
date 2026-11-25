@@ -4,6 +4,16 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.83.0
+
+### Rules
+
+- The final reply returns to pstack's freeform style. `# Task End` in `plugin/rules.md` drops the fixed four-part contract, the `Heads-up:` section and the `Next:` footer. The reply still reports what did not go to plan when something did, and leaves that out otherwise. A held change still names its review and gives `/orbit:ship` as its own step.
+
+### Dev
+
+- `tests/t3/worktree-trunk-waivers.test.mjs` checks that `# Task End` keeps shortfall reporting and drops the old reply contract.
+
 ## 0.82.3
 
 ### Playbook

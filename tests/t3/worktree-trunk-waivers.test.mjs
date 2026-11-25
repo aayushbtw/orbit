@@ -62,8 +62,18 @@ test('#129 playbook, start, opening-a-pr and t3-code define Waivers and carry th
 });
 
 test('#129 no subagents never lets the lead verify its own change', () => {
-  has('playbook', 'It never lets you verify your own change.', 'Heads-up says no verifier ran');
+  has('playbook', 'It never lets you verify your own change.', 'the reply says no verifier ran');
   has('openingPr', '`no subagents` stops it at the PR or branch, because no verifier runs.');
+});
+
+test('Task End keeps shortfall reporting and drops the fixed reply contract', () => {
+  const taskEnd = docs.rules.match(/^# Task End\n([\s\S]*?)(?=^# )/m)[1];
+  for (const f of ['**Report what did not go to plan.**', 'When nothing was skipped, failed or left behind, leave this out.', 'Never fold landing a held change into an `/orbit:start` follow-up.', '/orbit:session-pickup']) {
+    assert.ok(taskEnd.includes(f), `Task End says ${JSON.stringify(f)}`);
+  }
+  for (const f of ['**Final reply.**', 'Heads-up:', 'End with one `Next:` line.']) {
+    assert.ok(!taskEnd.includes(f), `Task End drops ${JSON.stringify(f)}`);
+  }
 });
 
 test('#129 a more specific instruction lifts only the part it names', () => {

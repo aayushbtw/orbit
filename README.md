@@ -6,7 +6,7 @@ A coding agent can stop at code that compiles and never run it. Orbit uses T3's 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/readme-dark.svg">
-  <img alt="Three swimlanes for you, orbit and checks. You name a goal with /orbit:start. Orbit picks a flow and opens a worktree. For each small unit, orbit writes it, a check reads and runs it, and orbit commits it. Then a fresh agent runs the change like a user. On PASS, orbit lands the change and you get a Next: line. On FAIL, nothing lands and you get a repro." src="docs/diagrams/readme-light.svg">
+  <img alt="Three swimlanes for you, orbit and checks. You name a goal with /orbit:start. Orbit picks a flow and opens a worktree. For each small unit, orbit writes it, a check reads and runs it, and orbit commits it. Then a fresh agent runs the change like a user. On PASS, orbit lands the change and replies with what landed. On FAIL, nothing lands and you get a repro." src="docs/diagrams/readme-light.svg">
 </picture>
 
 ## What orbit does in T3
@@ -48,14 +48,7 @@ Then run `/orbit:setup` in a T3 thread. It lists missing tools, checks the insta
 
 [Every command](docs/usage.md#every-command) lists the rest. [The guide](docs/guide/README.md) walks through one task from start to finish. [Orbit in T3 Code](docs/t3-code.md) explains how orbit loads and picks providers, and lists [each live result](docs/t3-code.md#what-is-verified).
 
-Each task ends with a `Next:` line that tells you what to run.
-
-| Line | Means | You run |
-| --- | --- | --- |
-| `Next: nothing pending.` | Done | `/orbit:start` with your next goal |
-| `Next: /orbit:ship` | You said "don't ship" | `/orbit:ship` to verify and land |
-| `Next: /orbit:start <follow-up>` | Work outside the goal, or a call for you | That line, when ready |
-| `Next: new session, then /orbit:session-pickup` | Work was paused | `/orbit:session-pickup` in a new thread |
+Each task ends with a plain reply. It names anything skipped, failed or left behind. After "don't ship" it tells you to run `/orbit:ship`, and after a pause it tells you to run `/orbit:session-pickup` in a new thread.
 
 ## Make it fit a project
 
