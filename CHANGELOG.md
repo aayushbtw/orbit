@@ -4,6 +4,19 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.83.1
+
+### Playbook
+
+- Autopilot owners no longer inherit landing authority. Every owner brief, continuation and later round in `autopilot-full` and `autopilot-stack` carries one build contract. It runs `/orbit:start <item>, don't ship`, names the one branch the owner may write, and says "Never merge a PR, never push `<trunk>`". Under Land `main`, the owner stops at the committed local branch. Only the main thread lands. The `autopilot-full-owner-authority` and `autopilot-stack-owner-authority` T3 lane scenarios grade it. Fixes #131.
+- The verifier proves a separate checkout before it moves HEAD. It runs `git rev-parse --show-toplevel` and needs a path that differs from the lead's checkout, the task worktree and the project root, all three named in its brief. Otherwise it switches in place to read-only `git archive` exports, skipping each checkout and its HEAD confirmation, or replies `BLOCKED`, which holds the PR. A verifier never reruns in the task worktree. Fixes #135.
+- Autopilot's live verifier lane and its re-check verifier follow Shipping step 1's `verifier` row. A named target, `other-family` and `other-family, inherit` each hold, and an unavailable verifier holds the item when the row bars a native verifier. The diff-review lane and the additive audit seat stay. Fixes #156.
+
+### Interrogate
+
+- Cleanup removes only worktrees that a `delegate_task` child of this run reported, that `git worktree list` shows, and that differ from the caller's checkout and the project root. Serial adversaries skip the checkout and patch apply and keep repros in a `mktemp -d` folder. When HEAD is not the named commit, they run against a `git archive` export of it there. The report lists every kept path under **Kept**. Fixes #154.
+- The report names the provider and model of each seat under **Panel**. It labels a `single-model panel` when both seats ran on one model or the outside seat was unavailable or skipped, and marks an opaque model `family unverified`. Fixes #155.
+
 ## 0.83.0
 
 ### Rules
