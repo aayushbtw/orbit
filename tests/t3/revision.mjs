@@ -3,11 +3,10 @@ import { join } from 'node:path';
 
 export const bundleMarker = (sha, id) => `orbit-lane-rev-${sha.slice(0, 12)}-${id}`;
 
-// The SessionStart hook prints rules.md into the lead's session, so the marker lands in its JSONL.
-export const MARKED_FILES = ['rules.md', join('skills', 'rules', 'SKILL.md')];
+export const LEAD_RULES_FILES = ['rules.md', join('skills', 'rules', 'SKILL.md')];
 
 export function stampBundleMarker(pluginDir, marker) {
-  for (const file of MARKED_FILES) appendFileSync(join(pluginDir, file), `\n<!-- ${marker} -->\n`);
+  for (const file of LEAD_RULES_FILES) appendFileSync(join(pluginDir, file), `\n<!-- ${marker} -->\n`);
 }
 
 const tryRead = (path) => { try { return readFileSync(path, 'utf8'); } catch { return null; } };
