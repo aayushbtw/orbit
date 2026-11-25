@@ -18,7 +18,7 @@
 
 - pstack (`cursor/plugins` at the `sha` in `skills.json`) is the reference. Copy its wording and names. Record each divergence in `docs/pstack-differences.md`.
 - A local edit to a vendored skill gets a line in that skill's `edits` in `skills.json`. Otherwise `/update-skills` drops the edit.
-- Only `plugin/` ships. Dev-only files (this file, `.claude/`, `docs/`, `skills.json`, `templates/`, `tests/`) stay outside it.
+- Only `plugin/` ships. Dev-only files (this file, `.agents/`, `.claude/`, `docs/`, `skills.json`, `templates/`, `tests/`) stay outside it.
 - Explain a flow in the docs with a hand-drawn diagram, not mermaid. Add a scene to `docs/diagrams/render.mjs`, run `vpr build` there, and embed the light and dark SVGs with `<picture>`.
 - Bump `version` in `plugin/manifest.json` so installs pick up the change, set the same version in `cli/package.json` and `cli/package-lock.json`, because CI's Orbit CLI step fails when they differ, and add a `## <version>` entry to `CHANGELOG.md` in the same PR.
 - The user tests orbit from the main checkout when `~/.config/orbit/current` points at it via `orbit link`. After an orbit change lands, gitops fast-forwards that checkout with `git -C /Users/aayush/Projects/orbit pull --ff-only` when it is on `main` and clean, and then you run `orbit hosts sync` when `~/.config/orbit/current` points at it. This overrides Shipping step 7's rule to leave that checkout alone. If the checkout is dirty or on another branch, report it in the reply. New sessions load the update.

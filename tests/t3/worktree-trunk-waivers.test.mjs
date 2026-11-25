@@ -19,7 +19,7 @@ const docs = {
   autopilotStack: read('plugin/skills/playbook/playbooks/autopilot-stack.md'),
   rules: read('plugin/rules.md'),
   workflowBlock: read('plugin/skills/setup/workflow-block.md'),
-  updateSkills: read('.claude/commands/update-skills.md'),
+  updateSkills: read('.agents/skills/update-skills/SKILL.md'),
 };
 const has = (doc, ...fragments) => {
   for (const f of fragments) assert.ok(docs[doc].includes(f), `${doc} says ${JSON.stringify(f)}`);
