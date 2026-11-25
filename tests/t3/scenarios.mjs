@@ -286,6 +286,14 @@ const docsQueueProject = {
   ],
 };
 
+const ownerBrief = { task: (t) => typeof t === 'string' && /don['’]t ship/.test(t) && /never merge a PR, never push `?(<trunk>|main)`?/i.test(t) };
+const ownerAuthority = {
+  'owner-brief-no-ship': some(t3('delegate_task'), ownerBrief, 'lead'),
+  'no-child-merge': none(t3('pull_request_merge'), undefined, 'child'),
+  'no-child-trunk-push': none('Bash', { command: /\bgit\b.*\bpush\b[^\n]*:(main|trunk)\b/ }, 'child'),
+};
+const docFixes = "two queue items, each a one-line doc fix: (1) in README.md change 'teh' to 'the'; (2) in NOTES.md change 'recieve' to 'receive'. Stop each item at code-ready and skip the step 4 swarm; this is a lane test.";
+
 export const SCENARIOS = {
   probe: {
     prompt: 'Probe. Make no edits and load no skills. Run pwd, then list every skill whose name starts with orbit: with its description quoted verbatim.',
@@ -453,5 +461,15 @@ export const SCENARIOS = {
       'no-shell-worktree': noShellWorktree,
       'tick-bound': boundToThread,
     },
+  },
+  'autopilot-full-owner-authority': {
+    prompt: `/orbit:start autopilot-full, Land main, ${docFixes}`,
+    project: docsQueueProject,
+    checks: ownerAuthority,
+  },
+  'autopilot-stack-owner-authority': {
+    prompt: `/orbit:start autopilot-stack, Land main, ${docFixes}`,
+    project: docsQueueProject,
+    checks: ownerAuthority,
   },
 };
