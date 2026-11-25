@@ -230,7 +230,7 @@ test('#130 trunk docs use the resolved <trunk> and pass baseRef to t3_worktree_h
 
 test('#137 /update-skills resolves its checkout, bumps every version file and reports unreplayable edits', () => {
   assert.doesNotMatch(docs.updateSkills, /~\/Projects\/orbit/, 'no hardcoded checkout path');
-  has('updateSkills', '`git rev-parse --show-toplevel`', '`plugin/.claude-plugin/plugin.json`', '`cli/package.json`', '`cli/package-lock.json`', '`CHANGELOG.md`', 'tests/version-bump.sh', 'could not be replayed');
+  has('updateSkills', '`git rev-parse --show-toplevel`', '`plugin/manifest.json`', '`cli/package.json`', '`cli/package-lock.json`', '`CHANGELOG.md`', 'tests/version-bump.sh', 'could not be replayed');
 });
 
 // The Open a PR row. `status` is the lead's t3_worktree_status read, `intended` the task branch.

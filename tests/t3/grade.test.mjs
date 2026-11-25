@@ -150,26 +150,28 @@ test('a schedule_task interval under 60 s fails', () => {
 });
 
 test('a lead Agent call without run_in_background: false fails every-agent-foreground', () => {
-  const agent = (input) => ({ name: 'Agent', input: { subagent_type: 'orbit:poteto-agent', ...input }, sidechain: false });
+  const agent = (input) => ({ name: 'Agent', input: { subagent_type: 'general-purpose', prompt: 'Follow /p/plugin/agents/poteto-agent.md.', ...input }, sidechain: false });
   const grade = (toolCalls) => verdicts(lane({ scenario: 'foreground', toolCalls }))['every-agent-foreground'];
   assert.equal(grade([agent({})]), 'FAIL');
   assert.equal(grade([agent({ run_in_background: false })]), 'PASS');
 });
 
-test("a non-Claude lead's native child passes on its own calls; a Claude lead still needs the Agent call", () => {
+test("a native child passes on its own calls or on a lead brief that names the agent file, from any lead", () => {
   const codexLead = { providerInstanceId: 'codex', model: 'gpt-6.1-sol' };
   const listPrs = { name: 'mcp__t3-code__list_thread_pull_requests', input: {}, sidechain: true };
   const gitops = (toolCalls, thread) => verdicts(lane({ scenario: 'gitops-native', toolCalls, thread }));
   assert.deepEqual(gitops([listPrs], codexLead), { 'gitops-native-child': 'PASS', 'no-child-thread': 'PASS' });
   assert.equal(gitops([{ ...listPrs, sidechain: false }], codexLead)['gitops-native-child'], 'FAIL', 'the lead listing PRs itself is no gitops child');
-  assert.equal(gitops([listPrs])['gitops-native-child'], 'FAIL');
-  assert.equal(gitops([{ name: 'Agent', input: { subagent_type: 'orbit:gitops' }, sidechain: false }], codexLead)['gitops-native-child'], 'PASS');
+  assert.equal(gitops([listPrs])['gitops-native-child'], 'PASS');
+  assert.equal(gitops([{ name: 'Agent', input: { subagent_type: 'general-purpose', prompt: 'Follow /p/plugin/agents/gitops.md.' }, sidechain: false }])['gitops-native-child'], 'PASS');
+  assert.equal(gitops([{ name: 'Agent', input: { subagent_type: 'orbit:gitops' }, sidechain: false }], codexLead)['gitops-native-child'], 'PASS', 'a lane recorded with native agents still grades');
+  assert.equal(gitops([{ name: 'Agent', input: { subagent_type: 'general-purpose', prompt: 'List the PRs.' }, sidechain: false }])['gitops-native-child'], 'FAIL', 'a brief that names no agent file is no gitops child');
   const readsPoteto = (name, input) => ({ name, input, sidechain: true });
   const delegate = (toolCalls, thread) => verdicts(lane({ scenario: 'foreground', toolCalls, thread }))['delegate-ran'];
   assert.equal(delegate([readsPoteto('Bash', { command: 'cat /p/plugin/agents/poteto-agent.md' })], codexLead), 'PASS');
   assert.equal(delegate([readsPoteto('Read', { file_path: '/p/plugin/agents/poteto-agent.md' })], { providerInstanceId: 'antigravity' }), 'PASS');
   assert.equal(delegate([readsPoteto('Bash', { command: 'cat /p/plugin/agents/gitops.md' })], codexLead), 'FAIL');
-  assert.equal(delegate([readsPoteto('Bash', { command: 'cat /p/plugin/agents/poteto-agent.md' })]), 'FAIL');
+  assert.equal(delegate([readsPoteto('Bash', { command: 'cat /p/plugin/agents/poteto-agent.md' })]), 'PASS');
 });
 
 test('an expectation with min passes only when that many calls match, naming each', () => {
@@ -336,7 +338,7 @@ test('verifier-all-fail counts a custom-named provider by its model', () => {
 test('a --head lane grades only when its revision record proves the requested SHA', () => {
   const sha = 'a'.repeat(40);
   const passing = [{ name: 'Bash', input: { command: 'pwd' }, sidechain: false }];
-  const proof = { requestedSha: sha, mode: 'head', provider: 'claudeAgent', loader: 'claude-marketplace', marker: `orbit-lane-rev-${sha.slice(0, 12)}-1a2b3c4d`, proven: true, evidence: 'marker observed in lead session' };
+  const proof = { requestedSha: sha, mode: 'head', provider: 'claudeAgent', loader: 'claude-project-skills', marker: `orbit-lane-rev-${sha.slice(0, 12)}-1a2b3c4d`, proven: true, evidence: 'marker observed in lead session' };
   const head = (revision) => gradeLane(parseLane(JSON.stringify(lane({ scenario: 'probe', toolCalls: passing, orbit: 'head', head: { ref: 'HEAD', sha }, revision })), 'x.json'));
   assert.deepEqual(head(proof).map((r) => r.verdict), ['PASS', 'PASS']);
   const unproven = [

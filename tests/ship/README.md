@@ -5,7 +5,7 @@
 ## What it does
 
 1. Builds a scratch project at `$TMPDIR/greet-<random>` with the `scaffold` in `tests/routing/lead.mjs`: an AGENTS.md whose Workflow block says `Check: node --test` and `Land: main`, one passing test, and a README.md with the typo "teh". A bare sibling repo, `greet-<random>-origin.git`, is its `origin` with `main` pushed.
-2. Runs `claude -p` there through the lead launcher in `lead.mjs`, with the same settings isolation as the routing eval (see `tests/routing/README.md`), the prompt `/orbit:start fix the typo "teh" in README.md`, at most 150 turns and a 45-minute timeout. No hook rewrites any call, so every subagent, the verifier included, runs on the model the lead picks.
+2. Runs `claude -p` there through the lead launcher in `lead.mjs`, with the same orbit install and settings isolation as the routing eval (see `tests/routing/README.md`), the prompt `/orbit:start fix the typo "teh" in README.md`, at most 150 turns and a 45-minute timeout. No hook rewrites any call, so every subagent, the verifier included, runs on the model the lead picks.
 3. After the lead exits and before the scratch project is removed, it records the end state in `state.json`: `main:README.md` and `git log` on `origin`, `git worktree list` with each worktree's branch and whether it has uncommitted changes, and the local branches. Worktree paths are relative to the project root.
 4. Grades the lead's stream (`stream.jsonl`, stream-json with `--verbose`) and `state.json`. Subagent tool calls and results appear in the stream with `parent_tool_use_id` set to the `Agent` call that spawned them, so the grade covers them and names the subagent type.
 
@@ -25,7 +25,7 @@
 ```sh
 node tests/ship/cleanup.mjs                          # this worktree's plugin/, opus lead, 1 run
 node tests/ship/cleanup.mjs --ref origin/main        # orbit's plugin/ at a git ref, exported with git archive
-node tests/ship/cleanup.mjs --plugin-dir <dir>       # any orbit checkout's plugin/
+node tests/ship/cleanup.mjs --plugin-dir <dir>       # any orbit plugin/ folder with a manifest.json
 node tests/ship/cleanup.mjs --model sonnet --runs 3  # opus, sonnet, fable or haiku; runs go in parallel
 node tests/ship/cleanup.mjs --keep                   # keep the scratch projects
 node tests/ship/cleanup.mjs --grade <dir>            # regrade saved runs, no new session

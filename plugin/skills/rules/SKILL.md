@@ -1,6 +1,6 @@
 ---
 name: rules
-description: "Orbit's rules for the chat that leads a T3 Code session. A lead on any provider loads it before its first reply when Non-negotiables is not in its context. A lead whose host runs no SessionStart hook gets orbit's rules only from this skill. A subagent never loads it."
+description: "Orbit's rules for the chat that leads a T3 Code session. A lead on any provider loads it before its first reply when Non-negotiables is not in its context, because every lead gets orbit's rules only from this skill. A subagent never loads it."
 user-invocable: false
 ---
 A subagent stops here. These rules are for the lead.

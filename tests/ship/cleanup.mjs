@@ -73,7 +73,7 @@ function pluginSource(outRoot) {
   if (opts.ref) return exportRef(opts.ref, outRoot);
   if (opts['plugin-dir']) {
     const pluginDir = resolve(opts['plugin-dir']);
-    if (!existsSync(join(pluginDir, '.claude-plugin', 'plugin.json'))) fail(`--plugin-dir ${pluginDir} has no .claude-plugin/plugin.json`);
+    if (!existsSync(join(pluginDir, 'manifest.json'))) fail(`--plugin-dir ${pluginDir} has no manifest.json`);
     return { pluginDir, rev: orbitRev(pluginDir) };
   }
   return { pluginDir: PLUGIN_DIR, rev: orbitRev() };

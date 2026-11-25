@@ -3,7 +3,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
-import { delimiter, dirname, join, sep } from 'node:path';
+import { dirname, join, sep } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { clash } from './branches.mjs';
@@ -60,7 +60,7 @@ if (args[0] === 'thread' && args[1] === 'show') {
   writeFileSync(state, JSON.stringify({ ...s, shows: n + 1 }));
   const asks = Boolean(process.env.STUB_ASKS);
   const activeRunId = asks || !existsSync(done) ? 'stub-run' : null;
-  console.log(JSON.stringify({ thread: { threadId: s.threadId, projectId: 'stub-project', link: 't3://stub', providerInstanceId: 'stub', model: 'stub', runtimeMode: 'full-access', worktreePath: s.worktreePath, pendingRequestCount: asks ? 1 : 0, activeRunId }, messages: shows[Math.min(n, shows.length - 1)] }));
+  console.log(JSON.stringify({ thread: { threadId: s.threadId, projectId: 'stub-project', link: 't3://stub', providerInstanceId: process.env.STUB_PROVIDER ?? 'stub', model: 'stub', runtimeMode: 'full-access', worktreePath: s.worktreePath, pendingRequestCount: asks ? 1 : 0, activeRunId }, messages: shows[Math.min(n, shows.length - 1)] }));
   process.exit(0);
 }
 process.exit(1);
@@ -128,11 +128,6 @@ function runLane(argv, env, started = () => {}) {
   });
 }
 
-const CLAUDE_STUB = `#!/bin/sh
-if [ "$1 $2 $3" = "plugin marketplace list" ]; then echo '[]'; fi
-exit 0
-`;
-
 async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0, kill = false, interruptOrganize = false, starts = true, installed = true, listed = [], activity = {}, pending = {}, inspect = () => null } = {}) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'orbit-lane-test-')));
   let launcherErr = '';
@@ -153,16 +148,12 @@ async function withProject(setup, agent, { args = [], env: extra = {}, exit = 0,
     const stub = join(root, 't3');
     writeFileSync(stub, STUB);
     chmodSync(stub, 0o755);
-    mkdirSync(join(root, 'bin'));
-    writeFileSync(join(root, 'bin', 'claude'), CLAUDE_STUB);
-    chmodSync(join(root, 'bin', 'claude'), 0o755);
     const base = git(project, 'rev-parse', 'HEAD');
     const before = branches(project);
     const env = {
       ...process.env,
       T3CODE_CLI_PATH: stub, STUB_STATE: join(root, 'state.json'), STUB_WORKTREES: join(root, 'worktrees'), STUB_AGENT: agent, STUB_SAW: join(root, 'saw'),
       CLAUDE_CONFIG_DIR: join(root, 'claude'), T3CODE_HOME: join(root, 't3home'), STUB_CHILDREN: JSON.stringify(listed),
-      PATH: `${join(root, 'bin')}${delimiter}${process.env.PATH}`,
       ...extra,
     };
     const argv = [join(here, 'lane.mjs'), '--head', 'HEAD', '--scenario', 'probe', '--project', project, ...(installed ? ['--installed'] : []), '--out', join(root, 'out.json'), ...args];
@@ -299,6 +290,28 @@ test('an --installed lane commit on the base points Claude auto memory at the la
   assert.equal(seen.local.autoMemoryDirectory, out.memoryDir);
 });
 
+test('a head lane commit links each head skill into .claude/skills, stamps its marker into the linked rules skill, adds the rules block, and cleanup removes the run directory', async () => {
+  const { out, seen, saw } = await withProject([], 'cat .claude/skills/rules/SKILL.md > "$STUB_SAW"', {
+    installed: false,
+    env: { STUB_PROVIDER: 'claudeAgent' },
+    inspect: ({ project, out }) => ({
+      rules: git(project, 'ls-tree', out.laneCommit, '.claude/skills/rules'),
+      target: git(project, 'show', `${out.laneCommit}:.claude/skills/rules`),
+      claudeMd: git(project, 'show', `${out.laneCommit}:CLAUDE.md`),
+    }),
+  });
+  assert.equal(out.orbit, 'head');
+  assert.deepEqual(out.shadowed, []);
+  assert.match(seen.rules, /^120000 blob /);
+  assert.match(seen.target, /\/orbit-lane-[0-9a-f]{8}\/plugin\/skills\/rules$/);
+  assert.ok(!existsSync(dirname(dirname(dirname(seen.target)))), 'cleanup removed the run directory');
+  assert.match(seen.claudeMd, /<!-- orbit:rules:start -->[\s\S]*load the orbit `rules` skill[\s\S]*<!-- orbit:rules:end -->/);
+  assert.equal(out.status, 'completed');
+  assert.equal(out.revision.loader, 'claude-project-skills');
+  assert.match(out.revision.marker, new RegExp(`^orbit-lane-rev-${out.head.sha.slice(0, 12)}-[0-9a-f]{8}$`));
+  assert.ok(saw.endsWith(`<!-- ${out.revision.marker} -->`), 'the lead reads the marker from the linked rules skill');
+});
+
 test('a lane whose launcher is killed still completes and cleans up only after the thread ends', async () => {
   const { before, after, worktrees, out, saw } = await withProject([], sees(2), { kill: true });
   assert.equal(out.status, 'completed');
@@ -418,7 +431,6 @@ test('a lane with a non-Claude --provider reads its tool calls from T3 activity,
 test('a --head lane with a non-Claude --provider refuses the exact-head claim before it starts a thread', async () => {
   const { out } = await withProject([], 'true', { installed: false, args: ['--provider', 'codex'], exit: 1, starts: false });
   assert.equal(out.thread, null);
-  assert.equal(out.marketplace, null);
   assert.deepEqual(out.revision, { requestedSha: out.head.sha, mode: 'head', provider: 'codex', loader: 'unsupported', marker: null, proven: false, evidence: out.revision.evidence });
   assert.match(out.revision.evidence, /codex/);
   assert.match(out.error, /--installed/);

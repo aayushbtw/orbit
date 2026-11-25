@@ -4,7 +4,7 @@ argument-hint: [skill name, or empty for all]
 ---
 Update the vendored skills and files in orbit. Scope: $ARGUMENTS (empty means all).
 
-Resolve orbit's checkout with `git rev-parse --show-toplevel` from the session's directory, and stop if it is not orbit (no `skills.json` and `plugin/.claude-plugin/plugin.json` at its root). Never write the main checkout the user tests from. Make a task worktree per the playbook's Worktree gate (`plugin/skills/playbook/SKILL.md`), on a `chore/update-skills-<slug>` branch off `origin/<trunk>`, and do every step below in it by absolute path. Below, `<orbit>` is that worktree's root.
+Resolve orbit's checkout with `git rev-parse --show-toplevel` from the session's directory, and stop if it is not orbit (no `skills.json` and `plugin/manifest.json` at its root). Never write the main checkout the user tests from. Make a task worktree per the playbook's Worktree gate (`plugin/skills/playbook/SKILL.md`), on a `chore/update-skills-<slug>` branch off `origin/<trunk>`, and do every step below in it by absolute path. Below, `<orbit>` is that worktree's root.
 
 The source of truth is `<orbit>/skills.json`: per skill the upstream `repo`, `path` (a folder or one file), the pinned `sha`, files to `skip`, the local `edits` to redo, and `dest`, the local path when it isn't `skills/<name>`.
 
@@ -17,7 +17,7 @@ For each skill in scope:
 6. **Pin.** Set `sha` in skills.json to the new commit.
 
 After all skills:
-1. **Version.** Bump the patch version in all three files together: `version` in `plugin/.claude-plugin/plugin.json`, `version` in `cli/package.json`, and both version fields in `cli/package-lock.json` (the top-level `version` and `packages[""].version`). Add a `## <version>` entry to `CHANGELOG.md` that names the updated skills.
+1. **Version.** Bump the patch version in all three files together: `version` in `plugin/manifest.json`, `version` in `cli/package.json`, and both version fields in `cli/package-lock.json` (the top-level `version` and `packages[""].version`). Add a `## <version>` entry to `CHANGELOG.md` that names the updated skills.
 2. **Checks.** Run each, and fix what fails before the commit:
    - `bash tests/version-bump.sh origin/<trunk>`
    - `node tests/refs.mjs`

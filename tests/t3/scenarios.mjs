@@ -26,10 +26,13 @@ const native = (role, model = () => true) => (input, ctx) => input?.role === rol
 const notOpus = (m) => !/opus/i.test(m ?? '');
 
 const noChildThread = none(t3('delegate_task'));
-// A non-Claude lead's native spawn is no lead call, so its child's own calls stand in for it. A Claude lead's always shows as `Agent`.
-const nonClaudeLead = (_, ctx) => ctx.leadFamily !== 'claude';
-const childReads = (file) => some(/^(Bash|Read)$/, (input, ctx) => nonClaudeLead(input, ctx)
-  && [input?.command, input?.file_path].some((v) => typeof v === 'string' && v.includes(file)), 'child');
+// Orbit registers no native agents, so a lead names an agent's file in a general-purpose child's brief. Lanes recorded before that spawn `orbit:<agent>`.
+const names = (file) => (v) => typeof v === 'string' && v.includes(file);
+const spawnsAgent = (agent) => (input) => input?.subagent_type === `orbit:${agent}` || names(`agents/${agent}.md`)(input?.prompt);
+const briefs = (agent) => some('Agent', spawnsAgent(agent), 'lead');
+// A non-Claude lead's native spawn is no lead call, so its child's own calls stand in for it.
+const childReads = (agent) => some(/^(Bash|Read)$/, (input) => [input?.command, input?.file_path].some(names(`agents/${agent}.md`)), 'child');
+const ranAgent = (agent) => ({ anyOf: [briefs(agent), childReads(agent)] });
 const otherSeat = { target: { providerInstanceId: otherFamily } };
 const noSeat = none(t3('delegate_task'), otherSeat);
 const seatOn = (target) => ({ role: 'review', mode: 'async', runtimeMode: ABSENT, target });
@@ -145,7 +148,7 @@ const target = (t) => `${t.providerInstanceId}/${t.model}`;
 const onTarget = (t) => (c) => c.providerInstanceId === t.providerInstanceId && c.model === t.model;
 
 const isNativeVerifier = (call, ctx) => agentOrDelegate.test(call.name)
-  && (call.input?.subagent_type === 'orbit:verifier' || native('test')(call.input, ctx));
+  && ((call.name === 'Agent' && spawnsAgent('verifier')(call.input)) || native('test')(call.input, ctx));
 const noNativeVerifier = {
   state: (lane, ctx) => {
     const { toolCalls, threads } = lane;
@@ -316,14 +319,14 @@ export const SCENARIOS = {
   'gitops-native': {
     prompt: "/orbit:start investigate: which pull requests are linked to this T3 thread? Have orbit's gitops agent check it with T3's list_thread_pull_requests tool, then answer. Make no edits.",
     checks: {
-      'gitops-native-child': { anyOf: [some('Agent', { subagent_type: 'orbit:gitops' }, 'lead'), some(t3('list_thread_pull_requests'), nonClaudeLead, 'child')] },
+      'gitops-native-child': { anyOf: [briefs('gitops'), some(t3('list_thread_pull_requests'), undefined, 'child')] },
       'no-child-thread': noChildThread,
     },
   },
   foreground: {
     prompt: "/orbit:start just testing: create the file scratch/lane-fg.txt containing the single line 'lane fg'. Run the Delegate gate for the edit. No commit, no PR.",
     checks: {
-      'delegate-ran': { anyOf: [some('Agent', { subagent_type: 'orbit:poteto-agent' }, 'lead'), childReads('agents/poteto-agent.md')] },
+      'delegate-ran': ranAgent('poteto-agent'),
       'every-agent-foreground': none('Agent', { run_in_background: (v) => v !== false }, 'lead'),
     },
   },
@@ -331,7 +334,7 @@ export const SCENARIOS = {
     prompt: verifierMedian,
     project: seatProject,
     checks: {
-      'verifier-ran': { anyOf: [some(t3('delegate_task'), verifierSeat, 'lead'), some('Agent', { subagent_type: 'orbit:verifier' }, 'lead')] },
+      'verifier-ran': { anyOf: [some(t3('delegate_task'), verifierSeat, 'lead'), briefs('verifier')] },
       'seat-other-family': some(t3('delegate_task'), verifierSeat, 'lead'),
     },
   },
