@@ -2,7 +2,6 @@ import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, symlinkSyn
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 
-// Mirrors RULES_BLOCK in cli/src/hosts.ts, the block the orbit CLI writes into a host's rules file.
 export const RULES_BLOCK = '<!-- orbit:rules:start -->\nIf Non-negotiables is not in your context, load the orbit `rules` skill before your first reply.\n<!-- orbit:rules:end -->';
 
 export const skillNames = (pluginDir) => readdirSync(join(pluginDir, 'skills')).filter((name) => existsSync(join(pluginDir, 'skills', name, 'SKILL.md'))).sort();

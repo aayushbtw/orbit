@@ -26,7 +26,6 @@ const native = (role, model = () => true) => (input, ctx) => input?.role === rol
 const notOpus = (m) => !/opus/i.test(m ?? '');
 
 const noChildThread = none(t3('delegate_task'));
-// Orbit registers no native agents, so a lead names an agent's file in a general-purpose child's brief. Lanes recorded before that spawn `orbit:<agent>`.
 const names = (file) => (v) => typeof v === 'string' && v.includes(file);
 const spawnsAgent = (agent) => (input) => input?.subagent_type === `orbit:${agent}` || names(`agents/${agent}.md`)(input?.prompt);
 const briefs = (agent) => some('Agent', spawnsAgent(agent), 'lead');

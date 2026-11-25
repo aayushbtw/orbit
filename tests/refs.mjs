@@ -21,8 +21,6 @@ const skillDir = (file) => {
 };
 
 // Each path resolves against the file's dir, its skill dir (playbooks/*.md are relative to it) and plugin/, and must land inside plugin/ since only plugin/ ships.
-// It is orbit's only if it starts with ./, ../ or <orbit-plugin>, or its first segment is a dir in one of those bases; the rest belong to the user's project.
-// Orbit installs as plain skills on every host, and no host expands a plugin variable, so one always fails.
 function pathBases(file, ref) {
   if (/^\$\{CLAUDE_(SKILL_DIR|PLUGIN_ROOT)\}\//.test(ref)) return { path: ref, bases: [] };
   const anchored = ref.match(/^<orbit-plugin>\/(.*)$/);

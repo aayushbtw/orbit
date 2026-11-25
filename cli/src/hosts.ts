@@ -73,7 +73,6 @@ function grokDir(ctx: HostContext): string {
   return (ctx.env ?? process.env).GROK_HOME || join(ctx.home, '.grok');
 }
 
-/** Each host's user-wide instructions file, which its lead reads on every session. */
 const RULES_FILES: Partial<Record<HostId, (ctx: HostContext) => string>> = {
   antigravity: (ctx) => join(ctx.home, '.gemini', 'config', 'AGENTS.md'),
   codex: (ctx) => join(codexDir(ctx), 'AGENTS.md'),
@@ -171,7 +170,6 @@ function isOrbitManifest(path: string): boolean {
   return readJsonObject(path)?.name === 'orbit';
 }
 
-/** Recognize a skills directory from any orbit install, including the pre-CLI Claude plugin cache. */
 function looksLikeOrbitSkills(targetPath: string): boolean {
   const posix = targetPath.replace(/\\/g, '/');
   if (/(?:^|\/)\.config\/orbit\/(?:current|releases\/[^/]+)\/plugin\/skills\/?$/.test(posix)) return true;
@@ -193,7 +191,6 @@ function readLink(path: string): LinkState {
   return { kind: 'link', raw, target: isAbsolute(raw) ? raw : resolve(dirname(path), raw) };
 }
 
-/** Point linkPath at target by renaming a fresh symlink over it, so readers never see it missing. */
 function replaceSymlink(target: string, linkPath: string): void {
   const tempLink = join(dirname(linkPath), `.orbit-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`);
   try {
@@ -252,11 +249,9 @@ function removeSymlinkHost(host: 'codex' | 'agents', linkPath: string, detected:
 
 type SkillDirHost = 'claude' | 'grok';
 
-/** Hosts that read one directory per skill. Orbit links each of its skills there by name. */
 const SKILL_DIR_HOSTS: Record<SkillDirHost, {
   targetDir: (ctx: HostContext) => string;
   detected: (ctx: HostContext) => boolean;
-  /** The pre-CLI plugin install, which loads a second copy of orbit until the user removes it. */
   hasLegacyPlugin: (ctx: HostContext) => boolean;
   legacyUninstall: string;
 }> = {
@@ -291,7 +286,6 @@ interface SkillDirScan {
   targetDir: string;
   detected: boolean;
   entries: SkillEntry[];
-  /** Orbit-owned links whose skill the active bundle no longer ships. */
   obsolete: string[];
   legacyUninstall?: string;
 }
@@ -313,7 +307,6 @@ function isOrbitSkillLink(target: string, ctx: HostContext): boolean {
   return dirname(target) === resolve(ctx.skillsDir) || looksLikeOrbitSkills(dirname(target));
 }
 
-/** Names of the symlinks in targetDir that point into any orbit skills directory. */
 function orbitLinks(targetDir: string, ctx: HostContext): string[] {
   return listDir(targetDir).filter((name) => {
     const link = readLink(join(targetDir, name));

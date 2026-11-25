@@ -110,7 +110,6 @@ function isOrbitSkillsPath(entryPath: string, home: string): boolean {
       || (posixPath.startsWith(`${managedReleases}/`) && /^\/[^/]+\/plugin\/skills$/.test(releasePath));
   }
 
-  // Releases staged before the manifest moved keep it under .claude-plugin/.
   return isOrbitManifest(join(real, '..', 'manifest.json')) || isOrbitManifest(join(real, '..', '.claude-plugin', 'plugin.json'));
 }
 

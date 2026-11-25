@@ -207,7 +207,6 @@ async function runInstall(options: { host?: string[]; all?: boolean; yes?: boole
     }
   }
 
-  // Check against the skills about to be installed, so a skill name collision fails before anything is staged.
   const preflightCtx = { ...ctxBefore, skillsDir: join(bundle, 'skills') };
   for (const hostId of targets) {
     const inspected = inspectHost(hostId, preflightCtx);
