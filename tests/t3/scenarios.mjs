@@ -140,7 +140,7 @@ test('sum adds every value', () => {
 
 const providerCells = [
   { row: 'code', useFor: 'code units', providerInstanceId: 'claudeAgent', model: 'claude-opus-5-5', effort: 'medium' },
-  { row: 'advisor', useFor: 'plan gate and forks', providerInstanceId: 'claudeAgent', model: 'claude-fable-5-2', effort: '' },
+  { row: 'advisor', useFor: 'forks and requested second opinions', providerInstanceId: 'claudeAgent', model: 'claude-fable-5-2', effort: '' },
   { row: 'writing', useFor: 'docs and prose', providerInstanceId: 'antigravity', model: 'gemini-4-neon', effort: '' },
 ];
 const target = (t) => `${t.providerInstanceId}/${t.model}`;

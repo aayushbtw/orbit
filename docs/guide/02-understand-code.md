@@ -46,7 +46,7 @@ Ask this kind of question before a risky change, not after. A wrong premise foun
 
 `/orbit:how` spawns one read-only explainer that explores and writes the answer in a single pass. It doesn't edit files, and Claude checks `git status` after it returns. The bulk reading stays in that subagent, so your session gets the finished explanation instead of every file.
 
-You don't always have to type it. Claude runs `/orbit:how` on its own when your question matches it, and before a nontrivial change or an architecture decision.
+You don't always have to type it. Claude runs `/orbit:how` on its own when your question matches it.
 
 ## Learn why code is the way it is with /orbit:why
 

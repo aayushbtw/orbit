@@ -54,7 +54,7 @@ export interface OrbitConfig {
 
 // Role names and defaults mirror plugin/rules.md Workflow Defaults, Models, which the lead reads.
 export const CANONICAL_TASKS: Record<string, { use: string; default: string }> = {
-  advisor: { use: 'Plan gate, fork advisor, and diff review (orbit:advisor)', default: 'inherit' },
+  advisor: { use: 'Fork advisor, diff review, and second opinions (orbit:advisor)', default: 'inherit' },
   judgment: { use: 'Hardest changes, prose delegates, explainers, and first panel seats', default: 'inherit' },
   code: { use: 'Code delegates, swarm workers, and second panel seats', default: 'inherit' },
   verifier: { use: 'Pre-land independent verification (orbit:verifier)', default: 'inherit' },

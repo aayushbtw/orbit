@@ -131,7 +131,7 @@ function docs(theme) {
   const pick = box('claude', 1, 'Pick the flow', 'bug, feature, perf…');
   const answer = box('you', 1, 'Answer', 'a question stops', { kind: 'done', optional: true });
   const wt = box('claude', 2, 'Worktree', 'off origin/main');
-  const plan = box('agent', 3, 'Check the plan', 'advisor, if > 3 files', { optional: true });
+  const guidance = box('claude', 3, 'Read project guidance', 'rules for the paths in scope');
   k.frame(205, rowY(4) - 10, 730, 2 * 108 + 100, 'repeats for each unit');
   const write = box('agent', 4, 'Write a unit', 'poteto-agent');
   const review = box('claude', 5, 'Review it', 'reads and runs it');
@@ -150,8 +150,8 @@ function docs(theme) {
   down(start, pick);
   k.arrow([[pick.x - 6, pick.cy], [answer.r + 6, answer.cy]], true);
   k.arrow([[pick.cx, pick.bot + 6], [wt.cx, wt.y - 6]]);
-  down(wt, plan, true);
-  k.arrow([[plan.cx, plan.bot + 6], [write.cx, write.y - 6]]);
+  down(wt, guidance);
+  down(guidance, write);
   down(write, review);
   down(review, commit);
   k.arrow([[commit.r + 6, commit.cy], [commit.r + 36, (commit.cy + write.cy) / 2], [write.r + 6, write.cy]]);

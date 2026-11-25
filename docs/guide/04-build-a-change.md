@@ -18,19 +18,11 @@ A worktree exists so that parallel sessions never share a checkout. You can run 
 
 If the session is already in a clean worktree, Claude reuses it. If that worktree holds unrelated work or is in a bad state, Claude starts a fresh one with a new slug. When the change lands, Claude leaves the worktree. Shipping then removes it, and deletes its branch when the branch holds nothing that did not land. A T3 thread that T3 bound to the worktree keeps it, and the reply names it. `/orbit:worktree-cleanup` removes worktrees from tasks that never landed.
 
-## Check a large plan before writing it
+## Read the project guidance
 
-A plan that adds a module or touches more than 3 files goes through the plan gate. Claude first reads the project's guidance for the paths the plan touches:
+Before editing or reviewing, read the AGENTS.md or CLAUDE.md files for the paths in scope and the folders above them, plus any matching `.claude/rules/` files. Read matching Before code sources before editing and Review also checks sources when reviewing.
 
-- the Workflow block's "Review also checks" sources and its `Before code` entries for those paths
-- every AGENTS.md or CLAUDE.md in those folders and the folders above them
-- each `.claude/rules/` file whose `paths` match
-
-Then it briefs the advisor with the plan and those sources. The advisor runs on your session model at `high` effort unless an `advisor` row in your Models table changes it, reads the repository itself, and edits nothing. It returns a verdict of `proceed`, `proceed with changes` or `stop`, with concrete recommendations, and Claude acts on it.
-
-The gate exists because a wrong shape is cheapest to fix before any code depends on it. A second model checks a multi-file plan against the project's own rules at that point, not after review.
-
-The advisor also decides forks. Before Claude asks you which approach to take, it briefs the advisor with every open fork, acts on the advisor's pick, and tells you what you could say to change it. Claude still asks you before an irreversible write, at a gate you named, when the pick drops or changes what you asked for, and for a skill's own questions. Shipping also has the advisor review each PR's diff ([Prove it works, then ship](./05-prove-and-ship.md#the-advisor-reviews-the-diff-first)). You can also ask for the advisor at any other time:
+The advisor helps decide forks. Before Claude asks you which approach to take, it briefs the advisor with every open fork, acts on the advisor's pick, and tells you what you could say to change it. Claude still asks you before an irreversible write, at a gate you named, when the pick drops or changes what you asked for, and for a skill's own questions. Shipping also has the advisor review each PR's diff ([Prove it works, then ship](./05-prove-and-ship.md#the-advisor-reviews-the-diff-first)). You can also ask for the advisor at any other time:
 
 ```text
 before you touch anything, get the advisor's read on this migration plan.
