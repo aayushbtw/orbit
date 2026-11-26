@@ -4,6 +4,10 @@
 
 Before 1.0.0, a change to a rule or a flow that changes what orbit does for you bumps the minor version. A fix bumps the patch version. From 1.0.0 on, a change of that kind will bump the major version.
 
+## 0.86.1
+
+- Update `## Probe` in `plugin/docs/harness/t3-code.md` to allow one `acp-mcp-call <name>` attempt through T3 Code's ACP terminal fallback when `T3_ACP_MCP_NODE` or `T3_ACP_MCP_CALL` is set and a T3 tool is missing from direct declarations and `ToolSearch`, without treating either variable as proof that the tool is enabled. Fixes #174.
+
 ## 0.86.0
 
 - Run /orbit:how on request and drop the file-count plan gate. Keep path-scoped project guidance in the playbook and load pstack’s worker instructions in agent kickoffs.
